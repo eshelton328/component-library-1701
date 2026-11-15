@@ -16,7 +16,7 @@ const restricted = [
       'Arbitrary values ("[...]") skip the token set. Use a semantic token; if none fits, stop and name the missing token.',
   },
   {
-    selector: "Property[value.type='Literal'][value.value=/^[a-zA-Z][\\w.-]*\\/[\\w.]+$/]",
+    selector: "Property[value.type='Literal'][value.value=/^[a-zA-Z][\\w.-]*\\/\\d+(\\.\\d+)?$/]",
     message:
       'Opacity modifiers ("token/37") make new colours outside the token set. Use the semantic token for that role, such as a subtle or strong variant.',
   },

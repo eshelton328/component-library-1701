@@ -1,0 +1,52 @@
+{
+  "name": "component-library-1701",
+  "version": "2025.10",
+  "description": "Theme picks the theme file; mode picks its dark or light group.",
+  "sets": {
+    "layout": {
+      "sources": [
+        {
+          "$ref": "layout.json"
+        }
+      ]
+    }
+  },
+  "modifiers": {
+    "theme": {
+      "contexts": {
+        "viewscreen": [
+          {
+            "$ref": "themes/viewscreen.json"
+          }
+        ]
+      },
+      "default": "viewscreen"
+    },
+    "mode": {
+      "contexts": {
+        "dark": [
+          {
+            "$ref": "modes/dark.json"
+          }
+        ],
+        "light": [
+          {
+            "$ref": "modes/light.json"
+          }
+        ]
+      },
+      "default": "dark"
+    }
+  },
+  "resolutionOrder": [
+    {
+      "$ref": "#/sets/layout"
+    },
+    {
+      "$ref": "#/modifiers/theme"
+    },
+    {
+      "$ref": "#/modifiers/mode"
+    }
+  ]
+}

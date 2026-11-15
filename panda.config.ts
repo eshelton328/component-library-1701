@@ -1,10 +1,11 @@
 import { defineConfig } from '@pandacss/dev'
+import tokens from './tokens/generated/preset'
 
-// Tokens and themes arrive in phase 3, built from DTCG JSON. Until then the
-// theme is empty, so `strictTokens` allows no colour, size or radius at all.
+// Tokens come from tokens/*.json through `pnpm tokens`, never from here.
+// preset-base gives utilities and conditions (`.dark &` for dark mode);
+// preset-panda's default tokens stay out, so only our tokens are valid.
 export default defineConfig({
-  // Utilities and conditions only; preset-panda's default tokens stay out.
-  presets: ['@pandacss/preset-base'],
+  presets: ['@pandacss/preset-base', tokens],
   preflight: true,
   include: ['./src/**/*.{ts,tsx}'],
   exclude: ['./src/**/*.test.{ts,tsx}'],
@@ -16,5 +17,7 @@ export default defineConfig({
   jsxStyleProps: 'none',
   strictTokens: true,
   strictPropertyValues: true,
-  theme: { extend: {} },
+  globalCss: {
+    body: { bg: 'bg.canvas', color: 'fg.default', fontFamily: 'sans', textStyle: 'body' },
+  },
 })

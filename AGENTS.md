@@ -14,7 +14,7 @@ inventory before adding a token or a component.
 
 ## Verify
 
-Run `pnpm verify` before you finish. It runs Panda codegen, `tsc`,
+Run `pnpm verify` before you finish. It runs the token checks, Panda codegen, `tsc`,
 ESLint, the hook tests, the check fixtures (`checks/`) and the Storybook
 story tests in Chromium. CI runs the same command and builds Storybook.
 
@@ -33,8 +33,29 @@ story tests in Chromium. CI runs the same command and builds Storybook.
   screenshot baseline, to make a check pass. Baselines change only through
   a CI workflow Erik starts.
 - Panda v2 builds a library with `panda lib`, not `panda ship`.
-- Tokens arrive in phase 3 and components in phase 4. Until then
-  `panda.config.ts` has no tokens, so no colour, size or radius is valid.
+- Components arrive in phase 4.
+
+## Tokens
+
+The source is DTCG JSON in `tokens/`: `layout.json` (spacing and sizes,
+the same in every theme), one file per theme in `themes/` (a `dark` and a
+`light` group of colours and shadows, plus type, radii, border widths,
+blur and opacity) and `modes/`, which picks the dark or light group.
+`resolver.json` lists the themes and modes. `pnpm tokens` checks the tokens
+and writes `tokens/generated/preset.ts` and
+`src/foundations/colours.mdx`; never edit those two by hand.
+
+- The checks, in `tokens/build.mjs`: every theme and mode has the same
+  tokens, every token has a `$description` saying where to use it, each
+  colour's `hex` matches its `components`, and each pair in
+  `tokens/contrast.json` meets its minimum in every theme and mode.
+- A theme changes colours, shadows, type size, family and weight, radii,
+  border widths, blur and opacity. It never changes spacing or sizes.
+- Use a text style (`textStyle: 'body'`), not `fontSize` alone.
+- `fg.subtle` is allowed only on the surfaces its description names. On
+  `surface.raised` or `surface.selected`, use `fg.muted`.
+- A new token needs a reason and a description, and Erik's approval: the
+  token set changes only through a decision (d-050).
 
 ## Hooks
 

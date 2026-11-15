@@ -4,7 +4,7 @@
 // (stop_hook_active) it lets the agent stop, so a check that cannot pass
 // does not loop; the agent then reports the failure.
 import { spawnSync } from 'node:child_process'
-import { readInput, root } from './lib.mjs'
+import { readInput, root } from './lib.ts'
 
 const input = readInput()
 if (input.stop_hook_active) process.exit(0)

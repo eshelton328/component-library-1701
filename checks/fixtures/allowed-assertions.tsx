@@ -1,4 +1,5 @@
 // expect: clean
+// scope: scripts too
 // Literal-preserving forms and checked narrowing are allowed.
 export const modes = ['dark', 'light'] as const
 type Mode = (typeof modes)[number]

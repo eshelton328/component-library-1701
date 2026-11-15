@@ -3,18 +3,18 @@
     "PreToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/guard-checks.mjs\"" }]
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/guard-checks.ts\"" }]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/lint-edit.mjs\"" }]
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/lint-edit.ts\"" }]
       }
     ],
     "Stop": [
       {
-        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/verify-stop.mjs\"", "timeout": 600 }]
+        "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/scripts/agent-hooks/verify-stop.ts\"", "timeout": 600 }]
       }
     ]
   }

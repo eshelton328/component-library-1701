@@ -1,4 +1,4 @@
-import { libraryConfig } from './eslint.shared.js'
+import { libraryConfig, scriptConfig } from './eslint.shared.js'
 
 export default [
   {
@@ -19,4 +19,8 @@ export default [
     // Every hand-written TypeScript file; scripts/check-fixtures checks the scope.
     files: ['src/**/*.{ts,tsx}', '.storybook/**/*.{ts,tsx}', '*.ts'],
   })),
+  ...scriptConfig({
+    tsconfigRootDir: import.meta.dirname,
+    files: ['scripts/**/*.ts', 'tokens/*.ts'],
+  }),
 ]

@@ -9,6 +9,17 @@ import storybook from 'eslint-plugin-storybook'
 import panda from '@pandacss/eslint-plugin'
 import globals from 'globals'
 
+// Type syntax that no typescript-eslint rule covers. A definite-assignment
+// assertion (`value!: string`, `let value!: T`) tells tsc a value is set
+// when nothing checks that it is.
+const typeSyntax = [
+  {
+    selector: 'PropertyDefinition[definite=true], VariableDeclarator[definite=true]',
+    message:
+      'A definite-assignment assertion ("!:") claims a value is set without a check. Initialise it, or type it as "T | undefined" and check before use.',
+  },
+]
+
 const restricted = [
   {
     selector: "Property[value.type='Literal'][value.value=/^\\[.*\\]$/]",
@@ -26,18 +37,49 @@ const restricted = [
     message:
       'Opacity modifiers ("token/37", "token/disabled") make new colours outside the token set. Use the semantic token for that role, such as a subtle or faint variant.',
   })),
-  {
-    // A definite-assignment assertion (`value!: string`, `let value!: T`)
-    // tells tsc a value is set when nothing checks that it is.
-    selector: 'PropertyDefinition[definite=true], VariableDeclarator[definite=true]',
-    message:
-      'A definite-assignment assertion ("!:") claims a value is set without a check. Initialise it, or type it as "T | undefined" and check before use.',
-  },
+  ...typeSyntax,
   {
     selector: "JSXAttribute[name.name='style']",
     message: 'Inline styles skip the token set. Use the component recipe variants.',
   },
 ]
+
+// Type safety (omni rule type-safety.md, TypeScript profile), for the
+// library and the scripts alike: no disable comments, no `any`, no
+// unchecked narrowing, no object literal cast to a full type, and every
+// member of a closed union handled in a switch.
+const typeRules = {
+  '@eslint-community/eslint-comments/no-use': 'error',
+  '@typescript-eslint/ban-ts-comment': [
+    'error',
+    { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true },
+  ],
+  '@typescript-eslint/no-explicit-any': 'error',
+  '@typescript-eslint/no-unsafe-type-assertion': 'error',
+  '@typescript-eslint/no-non-null-assertion': 'error',
+  '@typescript-eslint/consistent-type-assertions': [
+    'error',
+    { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
+  ],
+  '@typescript-eslint/switch-exhaustiveness-check': [
+    'error',
+    { considerDefaultExhaustiveForUnions: false },
+  ],
+}
+
+// The Node scripts (token build, checks, hooks): the type rules without
+// the Panda and React rules.
+export function scriptConfig({ tsconfigRootDir, files }) {
+  return tseslint.config({
+    files,
+    extends: [js.configs.recommended, ...tseslint.configs.strictTypeChecked, comments.recommended],
+    languageOptions: {
+      globals: globals.node,
+      parserOptions: { projectService: true, tsconfigRootDir },
+    },
+    rules: { ...typeRules, 'no-restricted-syntax': ['error', ...typeSyntax] },
+  })
+}
 
 export async function libraryConfig({ pandaConfig, tsconfigRootDir, files }) {
   return tseslint.config(
@@ -60,26 +102,8 @@ export async function libraryConfig({ pandaConfig, tsconfigRootDir, files }) {
     {
       files,
       rules: {
-        // Agents silence checks they cannot pass. No disable comments at all.
-        '@eslint-community/eslint-comments/no-use': 'error',
-        '@typescript-eslint/ban-ts-comment': [
-          'error',
-          { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true },
-        ],
-        '@typescript-eslint/no-explicit-any': 'error',
-        // Type safety (omni rule type-safety.md, TypeScript profile): no
-        // unchecked narrowing, no object literal cast to a full type, and
-        // every member of a closed union handled in a switch.
-        '@typescript-eslint/no-unsafe-type-assertion': 'error',
-        '@typescript-eslint/no-non-null-assertion': 'error',
-        '@typescript-eslint/consistent-type-assertions': [
-          'error',
-          { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
-        ],
-        '@typescript-eslint/switch-exhaustiveness-check': [
-          'error',
-          { considerDefaultExhaustiveForUnions: false },
-        ],
+        // Agents silence checks they cannot pass, so typeRules bans disable comments.
+        ...typeRules,
         'no-restricted-syntax': ['error', ...restricted],
         '@pandacss/prefer-token': 'error',
         '@pandacss/no-primitive-token': 'error',

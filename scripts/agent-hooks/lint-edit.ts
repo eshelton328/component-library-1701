@@ -3,7 +3,7 @@
 // the errors, so the agent fixes them in the next step.
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
-import { readInput, repoPath, root } from './lib.mjs'
+import { readInput, repoPath, root } from './lib.ts'
 
 const path = repoPath(readInput().tool_input?.file_path)
 if (/^(src|\.storybook)\/.*\.(ts|tsx)$/.test(path)) {

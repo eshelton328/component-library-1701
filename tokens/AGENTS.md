@@ -15,7 +15,7 @@ the Panda preset.
   not to (d-050). A new token or a changed value needs Erik's approval.
 - Run `pnpm tokens` after a change. It writes `generated/preset.ts` and
   `../src/foundations/colours.mdx`; never edit those by hand.
-- `build.mjs` holds the checks, `test.mjs` the cases that prove them, and
+- `build.ts` holds the checks, `test.ts` the cases that prove them, and
   `contrast.json` the contrast pairs. Agents change these three only in a
   session started with `LIB_ALLOW_CHECK_EDITS=1`. A new check gets a case
-  in `test.mjs`.
+  in `test.ts`.

@@ -10,14 +10,14 @@ import { dirname, join, relative } from 'node:path'
 const root = new URL('..', import.meta.url).pathname
 const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
 const ignore = readFileSync(join(root, '.agentsignore'), 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#')).map((l) => l.replace(/\/$/, ''))
-const exempt = (d) => d.split('/').some((p) => p.startsWith('.')) || ignore.some((i) => d === i || d.startsWith(`${i}/`))
+const exempt = (d: string) => d.split('/').some((p) => p.startsWith('.')) || ignore.some((i: string) => d === i || d.startsWith(`${i}/`))
 
-const dirs = new Set()
+const dirs = new Set<string>()
 for (const f of files) {
   for (let d = dirname(f); d !== '.'; d = dirname(d)) dirs.add(d)
 }
-const hasOwnFiles = (d) => files.some((f) => dirname(f) === d)
-const problems = []
+const hasOwnFiles = (d: string) => files.some((f) => dirname(f) === d)
+const problems: string[] = []
 const need = ['.', ...[...dirs].filter((d) => !exempt(d) && (hasOwnFiles(d) || [...dirs].some((c) => dirname(c) === d && !exempt(c))))]
 for (const d of need) {
   const agents = join(root, d, 'AGENTS.md')

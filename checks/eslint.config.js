@@ -5,7 +5,7 @@ export default [
   ...(await libraryConfig({
     pandaConfig: './checks/panda.config.ts',
     tsconfigRootDir: import.meta.dirname,
-    files: ['checks/fixtures/**/*.tsx'],
+    files: ['checks/fixtures/**/*.{ts,tsx}'],
     srcDir: 'checks/fixtures/src',
   })),
 ]

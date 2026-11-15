@@ -1,4 +1,4 @@
-// expect: eslint no-restricted-syntax
+// expect: eslint structure/story-title
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
 const Thing = () => <p>Thing</p>

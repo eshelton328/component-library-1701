@@ -8,7 +8,7 @@ export default defineConfig({
   // Fixtures use only their two test tokens, not the library's tokens.
   presets: ['@pandacss/preset-base'],
   globalCss: {},
-  include: ['./checks/fixtures/**/*.tsx'],
+  include: ['./checks/fixtures/**/*.{ts,tsx}'],
   exclude: [],
   outdir: 'checks/styled-system',
   theme: {

@@ -44,7 +44,7 @@ const eslintRules = lintWith('checks/eslint.config.js')
 const scriptRules = lintWith('checks/eslint.scripts.config.js')
 
 // Fixtures may sit in folders: checks/fixtures/src/<tier>/ shows the tier rules.
-const fixtureFiles = readdirSync(fixtures, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.tsx')).sort()
+const fixtureFiles = readdirSync(fixtures, { recursive: true, encoding: 'utf8' }).filter((f) => /\.tsx?$/.test(f) && !f.endsWith('.d.ts')).sort()
 for (const name of fixtureFiles) {
   const [head = '', second = ''] = readFileSync(join(fixtures, name), 'utf8').split('\n')
   const [, tool, want] = head.match(/^\/\/ expect: (clean|tsc|eslint) ?(\S*)/) ?? []

@@ -8,6 +8,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs'
 import storybook from 'eslint-plugin-storybook'
 import panda from '@pandacss/eslint-plugin'
 import globals from 'globals'
+import { resolve } from 'node:path'
 import { structurePlugin } from './eslint.structure.js'
 import {
   arkTier,
@@ -184,18 +185,15 @@ function folderPatterns(folder, { story = false } = {}) {
   return patterns
 }
 
-// Dynamic imports skip no-restricted-imports, so tier-imports checks the
-// package rules that have no importNames against them too.
-const dynamicPatterns = (folder) => folderPatterns(folder).filter((p) => !p.importNames)
+// Dynamic imports skip no-restricted-imports, so tier-imports checks every
+// package rule against them, including those limited to some names.
+const dynamicPatterns = (folder) => folderPatterns(folder).map(({ regex, message }) => ({ regex, message }))
 
-// styled(element, { base: ... }) defines a recipe inside a component.
-const inlineRecipe = {
-  selector: "CallExpression[callee.name='styled'][arguments.1.type='ObjectExpression']",
-  message:
-    'Component styles live in a config recipe in src/theme/recipes (d-067). Pass the generated recipe: styled(element, recipe).',
-}
+const repoRoot = import.meta.dirname
 
-function structureConfig(srcDir) {
+function structureConfig(relativeSrcDir) {
+  // Absolute, so the tier rule does not depend on ESLint's working directory.
+  const srcDir = resolve(repoRoot, relativeSrcDir)
   const tierRule = (folder) => [
     'error',
     {
@@ -210,21 +208,24 @@ function structureConfig(srcDir) {
     { plugins: { structure: structurePlugin } },
     ...[...tierNames, 'theme'].flatMap((folder) => [
       {
-        files: [`${srcDir}/${folder}/**/*.{ts,tsx}`],
+        files: [`${relativeSrcDir}/${folder}/**/*.{ts,tsx}`],
         rules: {
           ...stateRules,
           'structure/tier-imports': tierRule(folder),
           'no-restricted-imports': ['error', { patterns: folderPatterns(folder) }],
-          ...(componentTiers.includes(folder) ? { 'no-restricted-syntax': ['error', ...restricted, inlineRecipe] } : {}),
+          ...(componentTiers.includes(folder) ? { 'structure/no-inline-recipe': 'error' } : {}),
         },
       },
       {
-        files: [`${srcDir}/${folder}/**/*.stories.tsx`],
-        rules: { 'no-restricted-imports': ['error', { patterns: folderPatterns(folder, { story: true }) }] },
+        files: [`${relativeSrcDir}/${folder}/**/*.stories.{ts,tsx}`],
+        rules: {
+          'no-restricted-imports': ['error', { patterns: folderPatterns(folder, { story: true }) }],
+          'structure/no-inline-recipe': 'off',
+        },
       },
     ]),
     {
-      files: [`${srcDir}/**/*.stories.tsx`],
+      files: [`${relativeSrcDir}/**/*.stories.{ts,tsx}`],
       rules: {
         'no-restricted-syntax': ['error', ...restricted],
         'structure/story-title': ['error', { groups }],

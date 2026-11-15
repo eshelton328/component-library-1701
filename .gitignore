@@ -1,0 +1,14 @@
+node_modules/
+dist/
+storybook-static/
+styled-system/
+coverage/
+test-results/
+playwright-report/
+.vitest-attachments/
+*.tgz
+.DS_Store
+.claude/settings.local.json
+
+# Panda
+styled-system

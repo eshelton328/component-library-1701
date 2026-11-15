@@ -48,14 +48,13 @@ for (const t of targets) {
 // types file, and every types file its runtime file. Panda writes these
 // internal helpers with no types file; only its own files import them.
 const internalRuntime = new Set(['styled-system/patterns/runtime.js'])
+const isRuntime = /\.[cm]?js$/
 const runtime: string[] = []
 for (const value of Object.values(isRecord(exportsField) ? exportsField : {})) {
   const types = isRecord(value) && typeof value['types'] === 'string' ? strip(value['types']) : undefined
   const def = isRecord(value) && typeof value['default'] === 'string' ? strip(value['default']) : typeof value === 'string' ? strip(value) : undefined
-  if (def?.endsWith('.js')) {
-    if (def.includes('*')) runtime.push(...[...files].filter((f) => toRegex(def).test(f)))
-    else runtime.push(def)
-  }
+  // Expand the target to files first, so `./dist/panda/*` gives its .mjs.
+  if (def) runtime.push(...(def.includes('*') ? [...files].filter((f) => toRegex(def).test(f)) : [def]).filter((f) => isRuntime.test(f)))
   if (!types || !def || !types.includes('*') || !def.includes('*')) continue
   const stems = (pattern: string) => new Set([...files].flatMap((f) => toRegex(pattern).exec(f)?.[1] ?? []))
   const typeStems = stems(types)
@@ -73,6 +72,8 @@ else {
     const ref = isRecord(manifest) ? manifest[key] : undefined
     if (typeof ref !== 'string') problems.push(`${manifestPath} has no ${key}`)
     else if (!files.has(posix.join(posix.dirname(manifestPath), ref))) problems.push(`${manifestPath} names ${ref} as ${key}, but it is not packed`)
+    // A consumer's panda.config.ts loads the preset, so it must import too.
+    else if (key === 'preset') runtime.push(posix.join(posix.dirname(manifestPath), ref))
   }
 }
 

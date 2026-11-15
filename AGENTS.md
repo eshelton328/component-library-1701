@@ -92,8 +92,8 @@ declares the first stable contract.
   of a version; publish a fix as a new version, never over an old one.
   semantic-release pushes the tag before it publishes, so a failed
   publish leaves a tag with no package. `pnpm check:release-registry`
-  then fails a rerun with no new commit; push a fix commit, and leave the
-  tag.
+  then fails a rerun until a commit after the tag makes a release (`fix`
+  or `feat`, not `ci` or `docs`); push a fix commit, and leave the tag.
 - `panda.config.ts` sets `forceImportExtension`, so the packed
   `styled-system` files import under plain Node. `pnpm check:pack`
   imports each one.

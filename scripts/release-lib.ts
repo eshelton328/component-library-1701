@@ -139,22 +139,22 @@ export type RegistryState = { ok: boolean; problem?: string; warning?: string }
 /**
  * Compares the last release tag on the branch with the versions in the
  * registry. semantic-release pushes the tag before it publishes, so a
- * failed publish leaves a tag with no package. A rerun with no new commit
- * then finds nothing to release and passes with no package. That case
- * fails here. With new commits, semantic-release publishes the next
- * version, so a tag with no package is only a warning.
+ * failed publish leaves a tag with no package. A rerun publishes only when
+ * the commits after the tag make a release (`releaseType` from the commit
+ * analyzer); with none, or only `ci:` or `docs:` commits, it passes with no
+ * package. That case fails here.
  */
-export function registryState(input: { latestTag: string | undefined; tagAtHead: boolean; versions: readonly string[] }): RegistryState {
-  const { latestTag, tagAtHead, versions } = input
+export function registryState(input: { latestTag: string | undefined; releaseType: string | null; versions: readonly string[] }): RegistryState {
+  const { latestTag, releaseType, versions } = input
   if (!latestTag) return { ok: true }
   const version = latestTag.replace(/^v/, '')
   if (versions.includes(version)) return { ok: true }
   const gone = `${latestTag} has no package ${version} in the registry: an earlier release pushed the tag and did not publish.`
-  if (tagAtHead) {
+  if (releaseType === null) {
     return {
       ok: false,
-      problem: `${gone} HEAD has no commit after the tag, so semantic-release would publish nothing and pass. Push a fix commit, so the release publishes the next version. Do not move or delete the tag.`,
+      problem: `${gone} No commit after the tag makes a release, so semantic-release would publish nothing and pass. Push a fix commit, so the release publishes the next version. Do not move or delete the tag.`,
     }
   }
-  return { ok: true, warning: `${gone} This release publishes the next version.` }
+  return { ok: true, warning: `${gone} This release publishes the next version (${releaseType}).` }
 }

@@ -167,21 +167,27 @@ void test('reads a report with CRLF line ends', () => {
 })
 
 void test('a first release, with no tag, passes the registry check', () => {
-  assert.deepEqual(registryState({ latestTag: undefined, tagAtHead: false, versions: [] }), { ok: true })
+  assert.deepEqual(registryState({ latestTag: undefined, releaseType: null, versions: [] }), { ok: true })
 })
 
 void test('a tag whose package is in the registry passes', () => {
-  assert.deepEqual(registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: true, versions: ['1.0.0-beta.1', '1.0.0-beta.2'] }), { ok: true })
+  assert.deepEqual(registryState({ latestTag: 'v1.0.0-beta.2', releaseType: null, versions: ['1.0.0-beta.1', '1.0.0-beta.2'] }), { ok: true })
 })
 
-void test('a rerun at a tag with no package fails (Codex audit, 2026-11-15)', () => {
-  const s = registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: true, versions: ['1.0.0-beta.1'] })
+void test('a rerun with no commit after a tag with no package fails (Codex audit, 2026-11-15)', () => {
+  const s = registryState({ latestTag: 'v1.0.0-beta.2', releaseType: null, versions: ['1.0.0-beta.1'] })
   assert.equal(s.ok, false)
   assert.match(s.problem ?? '', /Push a fix commit/)
 })
 
-void test('new commits after a tag with no package only warn', () => {
-  const s = registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: false, versions: ['1.0.0-beta.1'] })
+void test('only ci or docs commits after a tag with no package fail (Codex review of #11)', () => {
+  // The analyzer returns null for ci: and docs: commits.
+  const s = registryState({ latestTag: 'v1.0.0-beta.2', releaseType: null, versions: [] })
+  assert.equal(s.ok, false)
+})
+
+void test('a releasing commit after a tag with no package only warns', () => {
+  const s = registryState({ latestTag: 'v1.0.0-beta.2', releaseType: 'patch', versions: ['1.0.0-beta.1'] })
   assert.equal(s.ok, true)
-  assert.match(s.warning ?? '', /publishes the next version/)
+  assert.match(s.warning ?? '', /publishes the next version \(patch\)/)
 })

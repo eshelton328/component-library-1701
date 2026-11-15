@@ -40,11 +40,13 @@ Repository scripts that are not part of the package.
   `pnpm build:lib` and checks the exports and the packed files. A
   wildcard export must pack a types file for each runtime file and the
   reverse, and the Panda manifest's preset and build info must be packed.
-  It unpacks the tarball and imports each runtime entry under plain Node.
+  It unpacks the tarball and imports each packed `.js`, `.mjs` and `.cjs`
+  export target, and the Panda preset, under plain Node.
 - `check-release-registry.ts` (`pnpm check:release-registry`) runs in the
   release job before semantic-release. It fails when the token cannot
-  read the package, or when the last release tag has no package and HEAD
-  is at that tag.
+  read the package, or when the last release tag has no package and
+  `@semantic-release/commit-analyzer` finds no release in the commits
+  after it. `semantic-release.d.ts` types the analyzer and the config.
 - `release-lib.ts` holds the pure functions of these checks, and
   `release.test.ts` (`pnpm test:release`) tests them.
 

@@ -64,4 +64,47 @@ export const guarded = [
 // Baselines change only through the CI workflow Erik starts, in any session.
 export const baselines = [/(^|\/)__screenshots__\//, /-snapshots\//]
 
+// A node_modules linked from another checkout resolves outside the
+// repository, so Vite refuses to serve it and pnpm refuses to run.
+// The command is split into simple commands at top-level separators
+// (; && || | & and newlines), outside quotes and $( ) or backticks, and
+// each one is split into words. Only an `ln` command with a word naming
+// node_modules counts, so `rg 'ln.*node_modules'` is allowed.
+export function splitCommands(cmd: string): string[][] {
+  const commands: string[][] = []
+  let words: string[] = []
+  let word = ''
+  let quote: '' | "'" | '"' = ''
+  let depth = 0
+  let tick = false
+  const endWord = () => { if (word) words.push(word); word = '' }
+  const endCommand = () => { endWord(); if (words.length) commands.push(words); words = [] }
+  for (let i = 0; i < cmd.length; i++) {
+    const c = cmd.charAt(i)
+    const next = cmd.charAt(i + 1)
+    if (quote === "'") { if (c === "'") quote = ''; else word += c; continue }
+    if (c === '\\' && next) { word += next; i++; continue }
+    if (c === '$' && next === '(') { depth++; word += '$('; i++; continue }
+    if (c === '`') { tick = !tick; word += c; continue }
+    if (tick) { word += c; continue }
+    if (depth > 0) { if (c === '(') depth++; if (c === ')') depth--; word += c; continue }
+    if (quote === '"') { if (c === '"') quote = ''; else word += c; continue }
+    if (c === "'" || c === '"') { quote = c; continue }
+    if (c === ';' || c === '\n' || c === '|' || c === '&') { endCommand(); continue }
+    if (c === ' ' || c === '\t') { endWord(); continue }
+    word += c
+  }
+  endCommand()
+  return commands
+}
+
+const isAssignment = (w: string) => /^[A-Za-z_]\w*=/.test(w)
+export function linksModules(cmd: string): boolean {
+  return splitCommands(cmd).some((words) => {
+    const args = words.filter((w, i) => !(isAssignment(w) && words.slice(0, i).every(isAssignment)))
+    const program = args[0]?.split('/').pop()
+    return program === 'ln' && args.slice(1).some((w) => /(^|\/)node_modules(\/|$)/.test(w))
+  })
+}
+
 export const updateFlags = /(vitest|playwright|test)\b[^|;&]*\s(-u|--update|--update-snapshots)\b/

@@ -50,6 +50,13 @@ const cases: [string, boolean][] = [
   ['guard: theme token edit passes', !denied(hook('guard-checks.ts', edit('tokens/themes/viewscreen.json')))],
   ['guard: update flag blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm vitest run -u' } }))],
   ['guard: playwright update blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'npx playwright test --update-snapshots' } }))],
+  ['guard: linking node_modules blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'ln -s ../main/node_modules node_modules' } }))],
+  ['guard: link built with a substitution blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'ln -s "$(cd ../main && pwd)/node_modules" node_modules' } }))],
+  ['guard: link after cd blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'cd /tmp/wt && /bin/ln -sf ../main/node_modules .' } }))],
+  ['guard: search for the pattern passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: "rg 'ln.*node_modules' scripts/agent-hooks/lib.ts" } }))],
+  ['guard: unrelated link then ls passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'ln -s README.md README-link.md\nls node_modules' } }))],
+  ['guard: link built with backticks blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'ln -s "`cd ../main; pwd`/node_modules" node_modules' } }))],
+  ['guard: pnpm install passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm install --frozen-lockfile' } }))],
   ['guard: plain test run passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm test' } }))],
   ['stop: second stop passes', hook('verify-stop.ts', { stop_hook_active: true }) === null],
 ]

@@ -8,7 +8,7 @@
 //   node scripts/check-fixtures.ts --static  skip the browser story checks
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync, mkdtempSync } from 'node:fs'
-import { join, basename } from 'node:path'
+import { join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const root = new URL('..', import.meta.url).pathname
@@ -16,6 +16,7 @@ const bin = (name: string) => join(root, 'node_modules/.bin', name)
 const run = (cmd: string, args: string[]) => spawnSync(bin(cmd), args, { cwd: root, encoding: 'utf8' })
 type Result = { check: string; expect: string; ok: boolean; tsc?: string[]; eslint?: string[]; got?: string; unscoped?: string[] }
 const results: Result[] = []
+const fixtures = join(root, 'checks/fixtures')
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
@@ -35,15 +36,17 @@ const lintWith = (config: string): Record<string, string[]> => {
   const rules: Record<string, string[]> = {}
   for (const file of list(report)) {
     if (!isRecord(file)) continue
-    rules[basename(str(file['filePath']))] = list(file['messages']).map((m) => (isRecord(m) && typeof m['ruleId'] === 'string' ? m['ruleId'] : 'eslint'))
+    rules[relative(fixtures, str(file['filePath']))] = list(file['messages']).map((m) => (isRecord(m) && typeof m['ruleId'] === 'string' ? m['ruleId'] : 'eslint'))
   }
   return rules
 }
 const eslintRules = lintWith('checks/eslint.config.js')
 const scriptRules = lintWith('checks/eslint.scripts.config.js')
 
-for (const name of readdirSync(join(root, 'checks/fixtures')).sort()) {
-  const [head = '', second = ''] = readFileSync(join(root, 'checks/fixtures', name), 'utf8').split('\n')
+// Fixtures may sit in folders: checks/fixtures/src/<tier>/ shows the tier rules.
+const fixtureFiles = readdirSync(fixtures, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.tsx')).sort()
+for (const name of fixtureFiles) {
+  const [head = '', second = ''] = readFileSync(join(fixtures, name), 'utf8').split('\n')
   const [, tool, want] = head.match(/^\/\/ expect: (clean|tsc|eslint) ?(\S*)/) ?? []
   const gotTsc = tscErrors[name] ?? []
   const gotLint = eslintRules[name] ?? []

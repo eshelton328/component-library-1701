@@ -7,10 +7,32 @@ Storybook. It ships as the private package
 
 Planning lives in Erik's brain, not here: the plan, the toolkit plan and
 the approved token set and component list are in
-`~/omni-brain/projects/ncc-1701/product/features/f-005-the-bridge/`
+`~/ncc-1701/engine/projects/ncc-1701/product/features/f-005-the-bridge/`
 (`design-system.md`, `design-system-toolkit.md`, `design-inventory.md`),
-and the decisions in `~/omni-brain/projects/ncc-1701/decisions/`. Read the
-inventory before adding a token or a component.
+and the decisions (`d-NNN`) in
+`~/ncc-1701/engine/projects/ncc-1701/decisions/`. Read the inventory
+before adding a token or a component.
+
+## Structure
+
+`src/structure.ts` holds the structure, and the lint reads it:
+
+- **Tiers** (d-064): `foundations`, `controls`, `parts`, `shell` and
+  `pages` folders, each limited in what it may import. Only Controls
+  import Ark UI.
+- **Purpose groups** (d-065): Foundations, Actions, Forms, Navigation,
+  Layout, Overlays, Status, Data display, Conversation and Examples. They
+  name the Storybook sidebar and the Figma library pages. A tier name
+  never does.
+- **Theme** (d-067): every component style is a config recipe in
+  `src/theme/recipes/`.
+- **Layout** (d-066): pages and parts place components with Container,
+  Stack, Inline and Grid. There is no Box and no Spacer.
+- **No smart components** (d-068, d-069): data comes in as props and
+  goes out through callbacks.
+- **Breaking changes** (d-063): the exported props and recipe variants
+  are the contract. A change from Figma comes as a PR that Erik
+  approves.
 
 ## Verify
 
@@ -37,7 +59,7 @@ A new step in `verify` needs a `run: pnpm <step>` line in
 ## Type safety
 
 The library follows omni's type-safety rule
-(`~/omni-brain/toolkit/rules/type-safety.md`) and its TypeScript profile.
+(`~/ncc-1701/engine/toolkit/rules/type-safety.md`) and its TypeScript profile.
 In every hand-written `.ts` and `.tsx` file, `tsc` and ESLint reject
 unchecked casts (`value as Order`, `as unknown as`, `!`, `value!: T`, an
 object literal cast to a full type), `any` and values that come from
@@ -111,7 +133,7 @@ or says none needed a change.
 ## Folders
 
 - [src/AGENTS.md](src/AGENTS.md): read before writing a component, a
-  recipe or a story.
+  recipe or a story, or before changing `src/structure.ts`.
 - [tokens/AGENTS.md](tokens/AGENTS.md): read before adding or changing a
   token, a theme or the token build.
 - [checks/AGENTS.md](checks/AGENTS.md): read before changing a check

@@ -31,6 +31,24 @@ const preview: Preview = {
     a11y: { test: 'error' },
     backgrounds: { disable: true },
     layout: 'fullscreen',
+    // The purpose groups of src/structure.ts, in the same order. Storybook
+    // reads storySort without running this file, so the list is a literal.
+    options: {
+      storySort: {
+        order: [
+          'Foundations',
+          'Actions',
+          'Forms',
+          'Navigation',
+          'Layout',
+          'Overlays',
+          'Status',
+          'Data display',
+          'Conversation',
+          'Examples',
+        ],
+      },
+    },
   },
 }
 

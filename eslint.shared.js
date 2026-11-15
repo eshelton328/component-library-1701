@@ -27,6 +27,13 @@ const restricted = [
       'Opacity modifiers ("token/37", "token/disabled") make new colours outside the token set. Use the semantic token for that role, such as a subtle or faint variant.',
   })),
   {
+    // A definite-assignment assertion (`value!: string`, `let value!: T`)
+    // tells tsc a value is set when nothing checks that it is.
+    selector: 'PropertyDefinition[definite=true], VariableDeclarator[definite=true]',
+    message:
+      'A definite-assignment assertion ("!:") claims a value is set without a check. Initialise it, or type it as "T | undefined" and check before use.',
+  },
+  {
     selector: "JSXAttribute[name.name='style']",
     message: 'Inline styles skip the token set. Use the component recipe variants.',
   },

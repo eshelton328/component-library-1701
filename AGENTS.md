@@ -35,19 +35,26 @@ Chromium. CI runs the same command and builds Storybook.
 
 The library follows omni's type-safety rule
 (`~/omni-brain/toolkit/rules/type-safety.md`) and its TypeScript profile.
-`tsc` and ESLint reject unchecked casts (`value as Order`, `as unknown as`,
-`!`, an object literal cast to a full type), `any` and values that come
-from `any`, a `switch` on a union that misses a member, unchecked index
-reads and `undefined` written into an optional field. `as const`,
-`satisfies` and type guards are allowed.
+In every hand-written `.ts` and `.tsx` file, `tsc` and ESLint reject
+unchecked casts (`value as Order`, `as unknown as`, `!`, `value!: T`, an
+object literal cast to a full type), `any` and values that come from
+`any`, a `switch` on a union that misses a member, unchecked index reads,
+and `undefined` written into an optional field. `as const`, `satisfies`
+and type guards are allowed.
 
 - Narrow `unknown` with a type guard or a schema parse, never a cast.
+- A type guard (`value is T`) or an assertion function (`asserts value is
+  T`) is a claim the compiler trusts without a check. Its body must test
+  every property the type promises, and its tests must include input it
+  rejects. Review checks this; no lint rule can.
 - Parse data from outside the code (JSON, storage, network) before you
   use it as a domain type. No lint rule checks this; review does.
 - Keep one definition for each shared type and import it; no lint rule
   checks this either.
-- Each setting and lint rule has a fixture in `checks/fixtures/` that must
-  fail, so a weaker `tsconfig.json` or ESLint config fails `pnpm checks`.
+- Each `tsconfig.json` setting and type lint rule has its own fixture in
+  `checks/fixtures/` that fails when that one check is off, and
+  `pnpm checks` fails when a tracked TypeScript file is outside the lint
+  rules.
 - `tsc` does not check the `.mjs` scripts in `scripts/`, `tokens/` and
   `checks/` yet.
 

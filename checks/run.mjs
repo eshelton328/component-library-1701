@@ -62,6 +62,19 @@ if (!process.argv.includes('--static')) {
   }
 }
 
+// Scope: every tracked TypeScript file outside checks/ and generated output
+// gets the type rules, so a narrower `files` glob in eslint.config.js fails.
+const { ESLint } = await import('eslint')
+const linter = new ESLint({ cwd: root })
+const tracked = execFileSync('git', ['ls-files', '*.ts', '*.tsx'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
+const unscoped = []
+for (const file of tracked.filter((f) => !/^(checks|tokens\/generated)\//.test(f))) {
+  const config = (await linter.isPathIgnored(file)) ? undefined : await linter.calculateConfigForFile(file)
+  const rule = config?.rules?.['@typescript-eslint/no-unsafe-type-assertion']
+  if (!rule || [rule].flat()[0] !== 2) unscoped.push(file)
+}
+results.push({ check: 'scope: type rules on every tracked .ts and .tsx file', expect: 'none unscoped', ok: unscoped.length === 0, unscoped })
+
 const ok = results.every((r) => r.ok)
 console.log(JSON.stringify({ ok, failed: results.filter((r) => !r.ok), passed: results.filter((r) => r.ok).length }, null, 1))
 process.exit(ok ? 0 : 1)

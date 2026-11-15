@@ -21,7 +21,8 @@
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
     "test:tokens": "node tokens/test.ts",
-    "check:agents-md": "node scripts/check-agents-md.ts"
+    "check:agents-md": "node scripts/check-agents-md.ts",
+    "check:worktree": "node scripts/check-worktree.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",

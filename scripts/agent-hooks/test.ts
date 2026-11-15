@@ -50,6 +50,8 @@ const cases: [string, boolean][] = [
   ['guard: theme token edit passes', !denied(hook('guard-checks.ts', edit('tokens/themes/viewscreen.json')))],
   ['guard: update flag blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm vitest run -u' } }))],
   ['guard: playwright update blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'npx playwright test --update-snapshots' } }))],
+  ['guard: linking node_modules blocked', denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'ln -s ../main/node_modules node_modules' } }))],
+  ['guard: pnpm install passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm install --frozen-lockfile' } }))],
   ['guard: plain test run passes', !denied(hook('guard-checks.ts', { tool_name: 'Bash', tool_input: { command: 'pnpm test' } }))],
   ['stop: second stop passes', hook('verify-stop.ts', { stop_hook_active: true }) === null],
 ]

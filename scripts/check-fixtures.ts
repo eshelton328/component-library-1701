@@ -66,10 +66,24 @@ if (!process.argv.includes('--static')) {
   // Vitest's JSON report: { testResults: [{ assertionResults: [{ title, status }] }] }.
   const report: unknown = JSON.parse(readFileSync(out, 'utf8'))
   const status: Record<string, string> = {}
+  // A story file that fails to import runs no tests. Report its error, so
+  // the failure names the cause rather than a list of missing stories.
+  const importErrors: string[] = []
   for (const file of list(isRecord(report) ? report['testResults'] : [])) {
-    for (const a of list(isRecord(file) ? file['assertionResults'] : [])) {
+    if (!isRecord(file)) continue
+    const assertions = list(file['assertionResults'])
+    if (assertions.length === 0 && file['status'] === 'failed') importErrors.push(str(file['message']).split('\n').slice(0, 3).join(' '))
+    for (const a of assertions) {
       if (isRecord(a)) status[str(a['title'])] = str(a['status'])
     }
+  }
+  if (importErrors.length) {
+    results.push({
+      check: 'stories: the story files load',
+      expect: 'every story file imports',
+      ok: false,
+      got: `${importErrors[0] ?? ''} Vite serves only files inside the repository, so in a git worktree run pnpm install there; never link node_modules from another checkout.`,
+    })
   }
   for (const name of readdirSync(join(root, 'checks/stories'))) {
     const lines = readFileSync(join(root, 'checks/stories', name), 'utf8').split('\n')

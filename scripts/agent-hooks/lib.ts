@@ -64,4 +64,8 @@ export const guarded = [
 // Baselines change only through the CI workflow Erik starts, in any session.
 export const baselines = [/(^|\/)__screenshots__\//, /-snapshots\//]
 
+// A node_modules linked from another checkout resolves outside the
+// repository, so Vite refuses to serve it and pnpm refuses to run.
+export const linkModules = /\bln\b[^|;&]*\bnode_modules\b/
+
 export const updateFlags = /(vitest|playwright|test)\b[^|;&]*\s(-u|--update|--update-snapshots)\b/

@@ -61,6 +61,21 @@ and type guards are allowed.
   `namespace`, no parameter properties. Import local files with their
   `.ts` extension.
 
+## Worktrees
+
+Agents often work in a git worktree, and every check must pass there.
+
+- In a new worktree, run `pnpm install --frozen-lockfile`. It takes
+  seconds, because pnpm links from its store. Never link `node_modules`
+  from another checkout: Vite serves only files inside the repository, so
+  the story tests load nothing, and pnpm refuses to run. The guard hook
+  blocks the link.
+- The story tests pick a free port on each run, so worktrees can run
+  `pnpm verify` at the same time. `pnpm storybook` uses port 6006.
+- `pnpm check:worktree` adds a fresh worktree of `HEAD`, runs
+  `pnpm install` and `pnpm verify` in it, and removes it. CI runs it on
+  every PR.
+
 ## Hooks
 
 `.claude/settings.json` wires three Claude Code hooks from

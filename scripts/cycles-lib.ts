@@ -1,32 +1,51 @@
 // Pure functions for check-cycles.ts, so cycles.test.ts can test them:
 // read the runtime imports of a file, build the import graph of a folder,
 // and find the cycles in it (brain decision d-071).
-import { readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { globSync, readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import ts from 'typescript'
 
 /**
- * The module names a file imports at runtime: static imports, re-exports
- * and dynamic imports with a string. `import type` and `export type` are
- * left out, because TypeScript erases them, so they cannot make a cycle
- * when the code runs.
+ * What a file imports at runtime: the module names of static imports,
+ * re-exports and dynamic imports with a string, and the patterns of
+ * `import.meta.glob`, which Vite turns into imports of each matching file.
+ * `import type` and `export type` are left out, because TypeScript erases
+ * them, so they cannot make a cycle when the code runs.
  */
-export function runtimeImports(fileName: string, text: string): string[] {
+export function runtimeImports(fileName: string, text: string): { modules: string[]; globs: string[] } {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true)
-  const found: string[] = []
+  const modules: string[] = []
+  const globs: string[] = []
+  const strings = (node: ts.Expression | undefined): string[] =>
+    node === undefined ? [] : ts.isStringLiteralLike(node) ? [node.text] : ts.isArrayLiteralExpression(node) ? node.elements.flatMap((e) => strings(e)) : []
   const visit = (node: ts.Node) => {
     if (ts.isImportDeclaration(node) && node.importClause?.phaseModifier !== ts.SyntaxKind.TypeKeyword && ts.isStringLiteral(node.moduleSpecifier)) {
-      found.push(node.moduleSpecifier.text)
+      modules.push(node.moduleSpecifier.text)
     } else if (ts.isExportDeclaration(node) && !node.isTypeOnly && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
-      found.push(node.moduleSpecifier.text)
+      modules.push(node.moduleSpecifier.text)
     } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-      const [arg] = node.arguments
-      if (arg && ts.isStringLiteralLike(arg)) found.push(arg.text)
+      modules.push(...strings(node.arguments[0]))
+    } else if (ts.isCallExpression(node) && node.expression.getText(source) === 'import.meta.glob') {
+      globs.push(...strings(node.arguments[0]))
     }
     ts.forEachChild(node, visit)
   }
   visit(source)
-  return found
+  return { modules, globs }
+}
+
+/**
+ * The files a file's `import.meta.glob` patterns match. A pattern that
+ * starts with `/` is relative to root, as in Vite; one that starts with
+ * `!` removes its matches. The file itself is never a target.
+ */
+export function globTargets(file: string, globs: readonly string[], root: string): string[] {
+  const base = (p: string) => (p.startsWith('/') ? root : dirname(file))
+  const rel = (p: string) => (p.startsWith('/') ? `.${p}` : p)
+  const match = (p: string) => globSync(rel(p), { cwd: base(p) }).map((f) => resolve(base(p), f))
+  const removed = new Set(globs.filter((g) => g.startsWith('!')).flatMap((g) => match(g.slice(1))))
+  // Vite leaves the importing file out of its own glob.
+  return globs.filter((g) => !g.startsWith('!')).flatMap(match).filter((f) => !removed.has(f) && f !== file)
 }
 
 /** Every .ts and .tsx file under dir, except declaration files. */
@@ -39,15 +58,16 @@ export function sourceFiles(dir: string): string[] {
 
 /**
  * The import graph of the files: each file maps to the files in the same
- * set that it imports at runtime. Imports that resolve outside the set,
+ * set that it imports at runtime, glob matches included. Imports that
+ * resolve outside the set,
  * such as packages and generated code, are left out.
  */
-export function importGraph(files: readonly string[], options: ts.CompilerOptions): Map<string, string[]> {
+export function importGraph(files: readonly string[], options: ts.CompilerOptions, root: string): Map<string, string[]> {
   const set = new Set(files)
   const graph = new Map<string, string[]>()
   for (const file of files) {
-    const targets = runtimeImports(file, readFileSync(file, 'utf8'))
-      .map((spec) => ts.resolveModuleName(spec, file, options, ts.sys).resolvedModule?.resolvedFileName)
+    const { modules, globs } = runtimeImports(file, readFileSync(file, 'utf8'))
+    const targets = [...modules.map((spec) => ts.resolveModuleName(spec, file, options, ts.sys).resolvedModule?.resolvedFileName), ...globTargets(file, globs, root)]
       .filter((t): t is string => t !== undefined && set.has(t))
     graph.set(file, [...new Set(targets)])
   }

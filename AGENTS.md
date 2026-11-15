@@ -38,7 +38,7 @@ before adding a token or a component.
 
 Run `pnpm verify` before you finish. It runs the token checks and their
 tests, Panda codegen, `tsc`, ESLint, the hook tests, the check fixtures
-(`checks/`), the `AGENTS.md` check and the Storybook story tests in
+(`checks/`), the import cycle check and its tests, the `AGENTS.md` check and the Storybook story tests in
 Chromium, the API report, the release script tests and the package
 check. CI runs the same steps as separate jobs (typecheck, lint, tokens,
 checks, test, package, build, worktree), so a PR shows which one failed.

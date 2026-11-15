@@ -18,7 +18,8 @@ groups and the bans that the lint reads. Read it before you add a file.
   (`structure/tier-imports` in `../eslint.structure.js`) resolves each
   relative import, re-export and dynamic import to its folder, so the
   spelling of a path does not matter, and names the allowed tiers. A
-  tier may import files in its own folder. No file imports the `src`
+  tier may import files in its own folder (d-071), but no files may
+  import each other in a cycle: `pnpm check:cycles` fails on one. No file imports the `src`
   barrel (`index.ts`); a tier folder such as `../controls` is that tier.
   A dynamic import needs a static path, and may not load a restricted
   module such as a Panda pattern.

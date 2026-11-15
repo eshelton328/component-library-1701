@@ -14,6 +14,10 @@ Repository scripts that are not part of the package.
 - `check-ci.ts` fails when a step of `pnpm verify` does not run on every
   pull request: it must be a `run: pnpm <step>` in a CI job, with no
   `if:` on the job or the step.
+- `check-cycles.ts` (`pnpm check:cycles`) fails when files in `src/`
+  import each other in a cycle; type-only imports do not count.
+  `cycles-lib.ts` holds its pure functions, and `cycles.test.ts`
+  (`pnpm test:cycles`) tests them.
 - `check-agents-md.ts` runs in `pnpm verify`. It fails when a folder has
   no `AGENTS.md`, a `CLAUDE.md` is not the one-line shim `@AGENTS.md`, or a
   parent `AGENTS.md` does not link a child's. Exempt a folder in

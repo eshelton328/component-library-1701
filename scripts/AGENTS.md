@@ -37,7 +37,14 @@ Repository scripts that are not part of the package.
   runs it, because a squash message can drop the `!` that the PR title
   had. `semantic-release.d.ts` types the analyzer and the config.
 - `check-pack.ts` (`pnpm check:pack`) builds the package with
-  `pnpm build:lib` and checks the exports and the packed files.
+  `pnpm build:lib` and checks the exports and the packed files. A
+  wildcard export must pack a types file for each runtime file and the
+  reverse, and the Panda manifest's preset and build info must be packed.
+  It unpacks the tarball and imports each runtime entry under plain Node.
+- `check-release-registry.ts` (`pnpm check:release-registry`) runs in the
+  release job before semantic-release. It fails when the token cannot
+  read the package, or when the last release tag has no package and HEAD
+  is at that tag.
 - `release-lib.ts` holds the pure functions of these checks, and
   `release.test.ts` (`pnpm test:release`) tests them.
 

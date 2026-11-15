@@ -39,6 +39,12 @@ jobs:
       # compare the API with the last release and require a breaking
       # marker when it broke.
       - run: pnpm check:release-api
+      # semantic-release pushes the tag before it publishes. Check the
+      # token's package access and the last tag's package first, so a
+      # rerun after a failed publish cannot pass with no package.
+      - run: pnpm check:release-registry
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

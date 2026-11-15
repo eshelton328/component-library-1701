@@ -133,3 +133,28 @@ export function diffApi(before: string, after: string): ApiDiff {
   }
   return { removed, added, addedRequired, breaking: removed.length > 0 || addedRequired.length > 0 }
 }
+
+export type RegistryState = { ok: boolean; problem?: string; warning?: string }
+
+/**
+ * Compares the last release tag on the branch with the versions in the
+ * registry. semantic-release pushes the tag before it publishes, so a
+ * failed publish leaves a tag with no package. A rerun with no new commit
+ * then finds nothing to release and passes with no package. That case
+ * fails here. With new commits, semantic-release publishes the next
+ * version, so a tag with no package is only a warning.
+ */
+export function registryState(input: { latestTag: string | undefined; tagAtHead: boolean; versions: readonly string[] }): RegistryState {
+  const { latestTag, tagAtHead, versions } = input
+  if (!latestTag) return { ok: true }
+  const version = latestTag.replace(/^v/, '')
+  if (versions.includes(version)) return { ok: true }
+  const gone = `${latestTag} has no package ${version} in the registry: an earlier release pushed the tag and did not publish.`
+  if (tagAtHead) {
+    return {
+      ok: false,
+      problem: `${gone} HEAD has no commit after the tag, so semantic-release would publish nothing and pass. Push a fix commit, so the release publishes the next version. Do not move or delete the tag.`,
+    }
+  }
+  return { ok: true, warning: `${gone} This release publishes the next version.` }
+}

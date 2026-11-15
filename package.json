@@ -40,7 +40,8 @@
     "api:update": "node scripts/check-api.ts --update",
     "test:release": "node --test scripts/release.test.ts",
     "check:commits": "node scripts/check-commits.ts",
-    "check:release-api": "node scripts/check-release-api.ts"
+    "check:release-api": "node scripts/check-release-api.ts",
+    "check:release-registry": "node scripts/check-release-registry.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",

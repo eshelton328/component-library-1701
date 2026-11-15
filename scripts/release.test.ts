@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
 import config from '../release.config.js'
-import { apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader } from './release-lib.ts'
+import { apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader, registryState } from './release-lib.ts'
 
 const report = (body: string) => `## API Report File\n\n\`\`\`ts\n\n// comment\nimport { X } from 'y';\n${body}\n\n\`\`\`\n`
 
@@ -164,4 +164,24 @@ void test('an empty baseline makes everything an addition', () => {
 void test('reads a report with CRLF line ends', () => {
   const crlf = report('export const a: number;').replace(/\n/g, '\r\n')
   assert.deepEqual(apiLines(crlf), ['export const a: number;'])
+})
+
+void test('a first release, with no tag, passes the registry check', () => {
+  assert.deepEqual(registryState({ latestTag: undefined, tagAtHead: false, versions: [] }), { ok: true })
+})
+
+void test('a tag whose package is in the registry passes', () => {
+  assert.deepEqual(registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: true, versions: ['1.0.0-beta.1', '1.0.0-beta.2'] }), { ok: true })
+})
+
+void test('a rerun at a tag with no package fails (Codex audit, 2026-11-15)', () => {
+  const s = registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: true, versions: ['1.0.0-beta.1'] })
+  assert.equal(s.ok, false)
+  assert.match(s.problem ?? '', /Push a fix commit/)
+})
+
+void test('new commits after a tag with no package only warn', () => {
+  const s = registryState({ latestTag: 'v1.0.0-beta.2', tagAtHead: false, versions: ['1.0.0-beta.1'] })
+  assert.equal(s.ok, true)
+  assert.match(s.warning ?? '', /publishes the next version/)
 })

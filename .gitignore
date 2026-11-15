@@ -7,6 +7,7 @@ test-results/
 playwright-report/
 .vitest-attachments/
 *.tgz
+.pack-smoke-*/
 .DS_Store
 .claude/settings.local.json
 

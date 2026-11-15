@@ -7,7 +7,8 @@ Storybook for docs and tests.
 ## Status
 
 Not released. The repository has its checks (lint, type checks, story
-tests and CI); tokens and themes come next, then the components.
+tests and CI) and the Viewscreen theme's tokens in dark and light. The
+components come next.
 
 ## Prerequisites
 

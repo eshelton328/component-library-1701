@@ -1,0 +1,271 @@
+{
+ "$comment": "Contrast pairs checked in every theme and mode. A background 'a@b' is a laid over b; every background is laid over bg.canvas. Insets and wells are also checked on the pane or overlay they sit in.",
+ "pairs": [
+  {
+   "fg": "fg.default",
+   "on": [
+    "bg.canvas",
+    "surface.chrome",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset",
+    "surface.well",
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Body text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "fg.muted",
+   "on": [
+    "bg.canvas",
+    "surface.chrome",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset",
+    "surface.well",
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Secondary text."
+  },
+  {
+   "fg": "fg.subtle",
+   "on": [
+    "bg.canvas",
+    "surface.chrome",
+    "surface.pane",
+    "surface.overlay",
+    "surface.inset",
+    "surface.well",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Third-level text, only on these surfaces."
+  },
+  {
+   "fg": "fg.accent",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset",
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Links and selected labels."
+  },
+  {
+   "fg": "fg.onAccent",
+   "on": [
+    "accent.default",
+    "status.danger.fg"
+   ],
+   "min": 4.5,
+   "why": "Labels on solid accent and danger fills."
+  },
+  {
+   "fg": "accent.discuss",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 4.5,
+   "why": "The Discuss label."
+  },
+  {
+   "fg": "status.working.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.working.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "status.running.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.running.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "status.needsYou.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.needsYou.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "status.idle.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.idle.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "status.done.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.done.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "status.danger.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "status.danger.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Status text, alone or on its tint."
+  },
+  {
+   "fg": "diff.added.fg",
+   "on": [
+    "diff.added.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Diff text on its tint."
+  },
+  {
+   "fg": "diff.removed.fg",
+   "on": [
+    "diff.removed.bg@surface.pane"
+   ],
+   "min": 4.5,
+   "why": "Diff text on its tint."
+  },
+  {
+   "fg": "kind.skill",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Kind marks are graphics (WCAG 1.4.11)."
+  },
+  {
+   "fg": "kind.agent",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Kind marks are graphics (WCAG 1.4.11)."
+  },
+  {
+   "fg": "kind.rule",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Kind marks are graphics (WCAG 1.4.11)."
+  },
+  {
+   "fg": "kind.workflow",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Kind marks are graphics (WCAG 1.4.11)."
+  },
+  {
+   "fg": "kind.hook",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Kind marks are graphics (WCAG 1.4.11)."
+  },
+  {
+   "fg": "agent.claude",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Agent marks are graphics."
+  },
+  {
+   "fg": "agent.codex",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Agent marks are graphics."
+  },
+  {
+   "fg": "agent.shell",
+   "on": [
+    "surface.pane",
+    "surface.raised"
+   ],
+   "min": 3,
+   "why": "Agent marks are graphics."
+  },
+  {
+   "fg": "border.focus",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.selected"
+   ],
+   "min": 3,
+   "why": "The focus ring (WCAG 2.4.11)."
+  },
+  {
+   "fg": "accent.default",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay"
+   ],
+   "min": 3,
+   "why": "Primary buttons and checked boxes must stand out from the surface."
+  }
+ ]
+}

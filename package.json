@@ -16,15 +16,21 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test",
-    "test:hooks": "node scripts/agent-hooks/test.mjs"
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test",
+    "test:hooks": "node scripts/agent-hooks/test.mjs",
+    "tokens": "node tokens/build.mjs",
+    "tokens:check": "node tokens/build.mjs --check",
+    "test:tokens": "node tokens/test.mjs",
+    "check:agents-md": "node scripts/check-agents-md.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "dependencies": {
-    "@ark-ui/react": "5.40.0"
+    "@ark-ui/react": "5.40.0",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
@@ -36,6 +42,8 @@
     "@storybook/addon-docs": "10.6.7",
     "@storybook/addon-vitest": "10.6.7",
     "@storybook/react-vite": "10.6.7",
+    "@terrazzo/cli": "2.10.0",
+    "@terrazzo/parser": "2.10.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",

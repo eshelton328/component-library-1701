@@ -1,0 +1,194 @@
+{
+  "spacing": {
+    "0": {
+      "$type": "dimension",
+      "$value": { "value": 0, "unit": "px" },
+      "$description": "0px of padding, gap or margin."
+    },
+    "2": {
+      "$type": "dimension",
+      "$value": { "value": 2, "unit": "px" },
+      "$description": "2px of padding, gap or margin."
+    },
+    "4": {
+      "$type": "dimension",
+      "$value": { "value": 4, "unit": "px" },
+      "$description": "4px of padding, gap or margin."
+    },
+    "6": {
+      "$type": "dimension",
+      "$value": { "value": 6, "unit": "px" },
+      "$description": "6px of padding, gap or margin."
+    },
+    "8": {
+      "$type": "dimension",
+      "$value": { "value": 8, "unit": "px" },
+      "$description": "8px of padding, gap or margin."
+    },
+    "10": {
+      "$type": "dimension",
+      "$value": { "value": 10, "unit": "px" },
+      "$description": "10px of padding, gap or margin."
+    },
+    "12": {
+      "$type": "dimension",
+      "$value": { "value": 12, "unit": "px" },
+      "$description": "12px of padding, gap or margin."
+    },
+    "16": {
+      "$type": "dimension",
+      "$value": { "value": 16, "unit": "px" },
+      "$description": "16px of padding, gap or margin."
+    },
+    "20": {
+      "$type": "dimension",
+      "$value": { "value": 20, "unit": "px" },
+      "$description": "20px of padding, gap or margin."
+    },
+    "24": {
+      "$type": "dimension",
+      "$value": { "value": 24, "unit": "px" },
+      "$description": "24px of padding, gap or margin."
+    },
+    "32": {
+      "$type": "dimension",
+      "$value": { "value": 32, "unit": "px" },
+      "$description": "32px of padding, gap or margin."
+    },
+    "40": {
+      "$type": "dimension",
+      "$value": { "value": 40, "unit": "px" },
+      "$description": "40px of padding, gap or margin."
+    }
+  },
+  "size": {
+    "control": {
+      "sm": {
+        "$type": "dimension",
+        "$value": { "value": 28, "unit": "px" },
+        "$description": "Icon buttons."
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": { "value": 32, "unit": "px" },
+        "$description": "Desktop buttons, inputs and chips."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": { "value": 36, "unit": "px" },
+        "$description": "Tablet and phone controls."
+      },
+      "xl": {
+        "$type": "dimension",
+        "$value": { "value": 44, "unit": "px" },
+        "$description": "Sheet rows and full-width phone buttons."
+      }
+    },
+    "icon": {
+      "12": {
+        "$type": "dimension",
+        "$value": { "value": 12, "unit": "px" },
+        "$description": "A 12px icon."
+      },
+      "14": {
+        "$type": "dimension",
+        "$value": { "value": 14, "unit": "px" },
+        "$description": "A 14px icon."
+      },
+      "16": {
+        "$type": "dimension",
+        "$value": { "value": 16, "unit": "px" },
+        "$description": "A 16px icon."
+      },
+      "18": {
+        "$type": "dimension",
+        "$value": { "value": 18, "unit": "px" },
+        "$description": "A 18px icon."
+      },
+      "20": {
+        "$type": "dimension",
+        "$value": { "value": 20, "unit": "px" },
+        "$description": "A 20px icon."
+      },
+      "24": {
+        "$type": "dimension",
+        "$value": { "value": 24, "unit": "px" },
+        "$description": "A 24px icon."
+      }
+    },
+    "kindTile": {
+      "sm": {
+        "$type": "dimension",
+        "$value": { "value": 28, "unit": "px" },
+        "$description": "A kind tile in a row."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": { "value": 36, "unit": "px" },
+        "$description": "A kind tile in a header."
+      }
+    },
+    "shell": {
+      "rail": {
+        "$type": "dimension",
+        "$value": { "value": 64, "unit": "px" },
+        "$description": "Width of the desktop nav rail."
+      },
+      "tabBar": {
+        "$type": "dimension",
+        "$value": { "value": 77, "unit": "px" },
+        "$description": "Height of the tablet and phone tab bar, with the home-indicator area."
+      },
+      "listPane": {
+        "$type": "dimension",
+        "$value": { "value": 420, "unit": "px" },
+        "$description": "Width of a list pane: Inbox, Artifacts and Toolkit."
+      },
+      "sidebar": {
+        "$type": "dimension",
+        "$value": { "value": 330, "unit": "px" },
+        "$description": "Width of the Workbench sidebar and the file tree."
+      },
+      "sidePane": {
+        "$type": "dimension",
+        "$value": { "value": 380, "unit": "px" },
+        "$description": "Width of the Workbench side chat."
+      },
+      "widePane": {
+        "$type": "dimension",
+        "$value": { "value": 420, "unit": "px" },
+        "$description": "Width of the Workbench subagents pane."
+      },
+      "popoverSm": {
+        "$type": "dimension",
+        "$value": { "value": 240, "unit": "px" },
+        "$description": "Width of a small menu."
+      },
+      "popover": {
+        "$type": "dimension",
+        "$value": { "value": 320, "unit": "px" },
+        "$description": "Width of a filter or snooze popover."
+      },
+      "popoverLg": {
+        "$type": "dimension",
+        "$value": { "value": 360, "unit": "px" },
+        "$description": "Width of the skill picker."
+      },
+      "dialog": {
+        "$type": "dimension",
+        "$value": { "value": 440, "unit": "px" },
+        "$description": "Width of a confirm dialog."
+      },
+      "dialogLg": {
+        "$type": "dimension",
+        "$value": { "value": 540, "unit": "px" },
+        "$description": "Width of the New chat dialog."
+      },
+      "safeAreaBottom": {
+        "$type": "dimension",
+        "$value": { "value": 34, "unit": "px" },
+        "$description": "Bottom padding for the phone home indicator."
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+# Folders that do not get their own AGENTS.md; they use the nearest
+# ancestor's. Gitignore syntax. Dot-folders and gitignored paths are always
+# skipped. scripts/check-agents-md.mjs reads this file.
+
+# Generated output
+tokens/generated/
+
+# Token data; tokens/AGENTS.md covers it
+tokens/themes/
+tokens/modes/
+
+# Check fixtures; checks/AGENTS.md covers them
+checks/fixtures/
+checks/stories/
+
+# Foundation stories and docs; src/AGENTS.md covers them
+src/foundations/

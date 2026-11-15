@@ -5,6 +5,9 @@ import base from '../panda.config'
 // checks accept and reject. These tokens never enter the library.
 export default defineConfig({
   ...base,
+  // Fixtures use only their two test tokens, not the library's tokens.
+  presets: ['@pandacss/preset-base'],
+  globalCss: {},
   include: ['./checks/fixtures/**/*.tsx'],
   exclude: [],
   outdir: 'checks/styled-system',

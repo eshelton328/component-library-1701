@@ -1,0 +1,8 @@
+{
+  "color": {
+    "$extends": "{light.color}"
+  },
+  "shadow": {
+    "$extends": "{light.shadow}"
+  }
+}

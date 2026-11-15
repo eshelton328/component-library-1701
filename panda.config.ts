@@ -12,6 +12,9 @@ export default defineConfig({
   exclude: ['./src/**/*.test.{ts,tsx}'],
   outdir: 'styled-system',
   outExtension: 'js',
+  // Write '.js' on internal imports, so the packed styled-system runs
+  // under plain Node ESM, not only through a bundler.
+  forceImportExtension: true,
   jsxFramework: 'react',
   // No style props on JSX: a screen styles a component only through its
   // recipe variants, never by passing CSS props.

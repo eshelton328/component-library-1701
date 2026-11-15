@@ -1,4 +1,5 @@
-// Types for the two untyped modules that check-release-api.ts loads.
+// Types for the two untyped modules that check-release-api.ts and
+// check-release-registry.ts load.
 declare module '@semantic-release/commit-analyzer' {
   type Logger = Record<'log' | 'error' | 'warn' | 'success', (...args: unknown[]) => void>
   export function analyzeCommits(

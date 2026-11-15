@@ -60,6 +60,19 @@ export async function libraryConfig({ pandaConfig, tsconfigRootDir, files }) {
           { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true },
         ],
         '@typescript-eslint/no-explicit-any': 'error',
+        // Type safety (omni rule type-safety.md, TypeScript profile): no
+        // unchecked narrowing, no object literal cast to a full type, and
+        // every member of a closed union handled in a switch.
+        '@typescript-eslint/no-unsafe-type-assertion': 'error',
+        '@typescript-eslint/no-non-null-assertion': 'error',
+        '@typescript-eslint/consistent-type-assertions': [
+          'error',
+          { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
+        ],
+        '@typescript-eslint/switch-exhaustiveness-check': [
+          'error',
+          { considerDefaultExhaustiveForUnions: false },
+        ],
         'no-restricted-syntax': ['error', ...restricted],
         '@pandacss/prefer-token': 'error',
         '@pandacss/no-primitive-token': 'error',

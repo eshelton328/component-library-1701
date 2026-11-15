@@ -31,6 +31,26 @@ Chromium. CI runs the same command and builds Storybook.
   a CI workflow Erik starts.
 - Panda v2 builds a library with `panda lib`, not `panda ship`.
 
+## Type safety
+
+The library follows omni's type-safety rule
+(`~/omni-brain/toolkit/rules/type-safety.md`) and its TypeScript profile.
+`tsc` and ESLint reject unchecked casts (`value as Order`, `as unknown as`,
+`!`, an object literal cast to a full type), `any` and values that come
+from `any`, a `switch` on a union that misses a member, unchecked index
+reads and `undefined` written into an optional field. `as const`,
+`satisfies` and type guards are allowed.
+
+- Narrow `unknown` with a type guard or a schema parse, never a cast.
+- Parse data from outside the code (JSON, storage, network) before you
+  use it as a domain type. No lint rule checks this; review does.
+- Keep one definition for each shared type and import it; no lint rule
+  checks this either.
+- Each setting and lint rule has a fixture in `checks/fixtures/` that must
+  fail, so a weaker `tsconfig.json` or ESLint config fails `pnpm checks`.
+- `tsc` does not check the `.mjs` scripts in `scripts/`, `tokens/` and
+  `checks/` yet.
+
 ## Hooks
 
 `.claude/settings.json` wires three Claude Code hooks from

@@ -14,7 +14,8 @@
     "surface.selected",
     "surface.inset@surface.pane",
     "surface.inset@surface.overlay",
-    "surface.well@surface.pane"
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
    ],
    "min": 4.5,
    "why": "Body text (WCAG 1.4.3)."
@@ -32,7 +33,8 @@
     "surface.selected",
     "surface.inset@surface.pane",
     "surface.inset@surface.overlay",
-    "surface.well@surface.pane"
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
    ],
    "min": 4.5,
    "why": "Secondary text."
@@ -48,7 +50,8 @@
     "surface.well",
     "surface.inset@surface.pane",
     "surface.inset@surface.overlay",
-    "surface.well@surface.pane"
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
    ],
    "min": 4.5,
    "why": "Third-level text, only on these surfaces."
@@ -64,7 +67,8 @@
     "surface.selected",
     "surface.inset@surface.pane",
     "surface.inset@surface.overlay",
-    "surface.well@surface.pane"
+    "surface.well@surface.pane",
+    "surface.well@surface.overlay"
    ],
    "min": 4.5,
    "why": "Links and selected labels."

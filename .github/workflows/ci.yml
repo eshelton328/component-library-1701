@@ -14,9 +14,10 @@ permissions:
 # event and the PR number, because an edit of a closed PR runs with the
 # base branch's ref, and with `ci-${{ github.ref }}` it cancelled the
 # checks of a release run on main (2026-11-15). A push run, called by
-# release.yml, is never cancelled, so a release never loses its checks.
+# release.yml, gets a group of its own commit, so no other run can cancel
+# it or replace it while it waits.
 concurrency:
-  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

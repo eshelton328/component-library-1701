@@ -3,8 +3,9 @@ name: ci
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
-  push:
-    branches: [main]
+  # release.yml calls this workflow on each push to main and beta, so the
+  # release runs only after these checks pass on the same commit.
+  workflow_call:
 
 permissions:
   contents: read
@@ -70,6 +71,17 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm codegen
       - run: pnpm build-storybook
+
+  # The public API report, the release script tests and the packed package.
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+      - run: pnpm codegen
+      - run: pnpm check:api
+      - run: pnpm test:release
+      - run: pnpm check:pack
 
   # Agents work in git worktrees, so the checks must pass in a fresh one.
   worktree:

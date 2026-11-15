@@ -39,8 +39,9 @@ before adding a token or a component.
 Run `pnpm verify` before you finish. It runs the token checks and their
 tests, Panda codegen, `tsc`, ESLint, the hook tests, the check fixtures
 (`checks/`), the `AGENTS.md` check and the Storybook story tests in
-Chromium. CI runs the same steps as separate jobs (typecheck, lint,
-tokens, checks, test, build, worktree), so a PR shows which one failed.
+Chromium, the API report, the release script tests and the package
+check. CI runs the same steps as separate jobs (typecheck, lint, tokens,
+checks, test, package, build, worktree), so a PR shows which one failed.
 A new step in `verify` needs a `run: pnpm <step>` line in
 `.github/workflows/ci.yml`; `pnpm check:ci` fails without it.
 
@@ -55,6 +56,37 @@ A new step in `verify` needs a `run: pnpm <step>` line in
   screenshot baseline, to make a check pass. Baselines change only through
   a CI workflow Erik starts.
 - Panda v2 builds a library with `panda lib`, not `panda ship`.
+
+## Releases
+
+semantic-release publishes `@eshelton328/component-library-1701` to
+GitHub Packages, with GitHub release notes and no `CHANGELOG.md` (brain
+decision d-061). `release.config.js` holds the config, and
+`.github/workflows/release.yml` runs it after the CI checks pass on a push
+to `beta` (always) or `main` (only when the repository variable
+`RELEASE_MAIN` is `true`). Versions are `1.0.0-beta.N` until Erik
+declares the first stable contract.
+
+- The PR title becomes the commit that sets the version: `fix` is a
+  patch, `feat` a minor version, and `!` with a `BREAKING CHANGE:` footer
+  a major version. `build`, `ci`, `docs`, `test` and `chore` release
+  nothing. Never hide a shipped change under one of those.
+- The public API is `src/index.ts`. `api/component-library-1701.api.md`
+  is its report; `pnpm check:api` fails when the API changes and the
+  report does not. Run `pnpm api:update` and commit the report with the
+  change.
+- A removed or changed line in the report is a breaking change (d-063).
+  The `api-report` workflow then labels the PR `breaking-change`,
+  comments, and fails until the title has `!`. Prefer to deprecate in a
+  minor version first and remove in the next major version.
+- `pnpm build:lib` runs `panda lib`, which writes `dist/panda/` and the
+  `exports` in `package.json`. Commit the exports it writes;
+  `pnpm check:pack` fails when they differ or a target is not packed.
+- The version in `package.json` stays `0.0.0-development`. The release
+  job writes the real version only in its own checkout.
+- After a failed release, look at the tags, the GitHub release and the
+  package version before you run it again. A failed job can publish part
+  of a version; publish a fix as a new version, never over an old one.
 
 ## Type safety
 

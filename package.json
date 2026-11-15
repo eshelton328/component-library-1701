@@ -1,7 +1,17 @@
 {
   "name": "@eshelton328/component-library-1701",
   "version": "0.0.0-development",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eshelton328/component-library-1701.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "files": [
+    "dist",
+    "styled-system"
+  ],
   "type": "module",
   "packageManager": "pnpm@11.24.0",
   "engines": {
@@ -16,14 +26,20 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test && pnpm check:ci",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
     "test:hooks": "node scripts/agent-hooks/test.ts",
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
     "test:tokens": "node tokens/test.ts",
     "check:agents-md": "node scripts/check-agents-md.ts",
     "check:worktree": "node scripts/check-worktree.ts",
-    "check:ci": "node scripts/check-ci.ts"
+    "check:ci": "node scripts/check-ci.ts",
+    "build:lib": "panda codegen && panda lib --max-warnings 0 --files \"./**/*.{js,mjs}\"",
+    "check:pack": "node scripts/check-pack.ts",
+    "check:api": "node scripts/check-api.ts",
+    "api:update": "node scripts/check-api.ts --update",
+    "test:release": "node --test scripts/release.test.ts",
+    "check:commits": "node scripts/check-commits.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -37,9 +53,15 @@
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint/js": "10.0.1",
+    "@microsoft/api-extractor": "7.60.1",
     "@pandacss/dev": "2.5.0",
     "@pandacss/eslint-plugin": "2.5.0",
     "@pandacss/preset-base": "2.5.0",
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/exec": "7.1.0",
+    "@semantic-release/github": "12.0.11",
+    "@semantic-release/npm": "13.2.0",
+    "@semantic-release/release-notes-generator": "14.1.1",
     "@storybook/addon-a11y": "10.6.7",
     "@storybook/addon-docs": "10.6.7",
     "@storybook/addon-vitest": "10.6.7",
@@ -52,6 +74,7 @@
     "@vitejs/plugin-react": "6.3.0",
     "@vitest/browser": "5.1.0",
     "@vitest/browser-playwright": "5.1.0",
+    "conventional-changelog-conventionalcommits": "9.3.1",
     "eslint": "10.15.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-storybook": "10.6.7",
@@ -59,11 +82,50 @@
     "playwright": "1.65.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "semantic-release": "25.0.9",
     "storybook": "10.6.7",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
     "vite": "8.3.8",
     "vitest": "5.1.0",
     "yaml": "2.9.1"
+  },
+  "exports": {
+    "./panda/*": "./dist/panda/*",
+    "./css": {
+      "types": "./styled-system/css/index.d.ts",
+      "default": "./styled-system/css/index.js"
+    },
+    "./css/*": {
+      "types": "./styled-system/css/*.d.ts",
+      "default": "./styled-system/css/*.js"
+    },
+    "./patterns": {
+      "types": "./styled-system/patterns/index.d.ts",
+      "default": "./styled-system/patterns/index.js"
+    },
+    "./patterns/*": {
+      "types": "./styled-system/patterns/*.d.ts",
+      "default": "./styled-system/patterns/*.js"
+    },
+    "./jsx": {
+      "types": "./styled-system/jsx/index.d.ts",
+      "default": "./styled-system/jsx/index.js"
+    },
+    "./jsx/*": {
+      "types": "./styled-system/jsx/*.d.ts",
+      "default": "./styled-system/jsx/*.js"
+    },
+    "./tokens": {
+      "types": "./styled-system/tokens/index.d.ts",
+      "default": "./styled-system/tokens/index.js"
+    },
+    "./helpers": {
+      "types": "./styled-system/helpers.d.ts",
+      "default": "./styled-system/helpers.js"
+    },
+    "./types": {
+      "types": "./styled-system/types/index.d.ts"
+    }
   }
 }

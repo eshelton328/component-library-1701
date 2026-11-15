@@ -18,3 +18,6 @@ src/foundations/
 
 # Recipe files; src/theme/AGENTS.md covers them
 src/theme/recipes/
+
+# The API report; AGENTS.md (Releases) covers it
+api/

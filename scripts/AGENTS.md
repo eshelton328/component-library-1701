@@ -19,6 +19,18 @@ Repository scripts that are not part of the package.
   parent `AGENTS.md` does not link a child's. Exempt a folder in
   `.agentsignore`, not by deleting its file.
 
+- `check-api.ts` (`pnpm check:api`, `pnpm api:update`) builds the
+  declarations of `src/index.ts` with `tsconfig.api.json` and compares
+  them with `api/` through API Extractor (`api-extractor.json`).
+- `check-api-diff.ts` compares the API report with a base ref and finds
+  removed or changed lines; the `api-report` workflow runs it on PRs.
+- `check-commits.ts` checks every commit header since the last release
+  tag; the release job runs it before semantic-release.
+- `check-pack.ts` (`pnpm check:pack`) builds the package with
+  `pnpm build:lib` and checks the exports and the packed files.
+- `release-lib.ts` holds the pure functions of these checks, and
+  `release.test.ts` (`pnpm test:release`) tests them.
+
 ## Folders
 
 - [agent-hooks/AGENTS.md](agent-hooks/AGENTS.md): read before changing a

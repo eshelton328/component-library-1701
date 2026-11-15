@@ -25,7 +25,10 @@ for (const [i, m] of DATA.modes.entries()) {
   modeIds[m] = mode ? mode.modeId : col.addMode(m);
 }
 const all = await figma.variables.getLocalVariablesAsync();
-const mine = new Map(all.filter(v => v.variableCollectionId === col.id).map(v => [v.name, v]));
+const own = all.filter(v => v.variableCollectionId === col.id);
+const twins = own.filter(v => own.some(o => o !== v && o.name === v.name));
+if (twins.length) throw new Error('Variables with the same name in ' + DATA.name + ': ' + twins.map(v => v.name + ' ' + v.id).join(', '));
+const mine = new Map(own.map(v => [v.name, v]));
 const aliasCol = DATA.aliasFrom ? cols.find(c => c.name === DATA.aliasFrom) : null;
 if (DATA.aliasFrom && !aliasCol) throw new Error('Missing collection ' + DATA.aliasFrom);
 const aliasPool = aliasCol ? new Map(all.filter(v => v.variableCollectionId === aliasCol.id).map(v => [v.name, v])) : new Map();
@@ -41,6 +44,7 @@ for (const d of DATA.vars) {
   v.description = d.d || '';
   v.hiddenFromPublishing = !!d.h;
   if (d.w) v.setVariableCodeSyntax('WEB', d.w);
+  else if (v.codeSyntax.WEB !== undefined) v.removeVariableCodeSyntax('WEB');
   for (const [m, val] of Object.entries(d.v || {})) v.setValueForMode(modeIds[m], val);
   for (const [m, target] of Object.entries(d.a || {})) {
     const t = aliasPool.get(target);
@@ -76,6 +80,14 @@ for (const d of DATA) {
   s.lineHeight = { unit: 'PERCENT', value: d.lineHeightPercent };
   s.letterSpacing = { unit: 'PIXELS', value: d.letterSpacingPx };
   s.textCase = d.textCase;
+  // The tokens set none of these, so each one goes back to Figma's default.
+  s.textDecoration = 'NONE';
+  s.paragraphSpacing = 0;
+  s.paragraphIndent = 0;
+  s.listSpacing = 0;
+  s.leadingTrim = 'NONE';
+  s.hangingPunctuation = false;
+  s.hangingList = false;
   s.description = d.description || '';
   s.setBoundVariable('fontFamily', fv);
 }
@@ -83,7 +95,8 @@ return { created, updated, total: DATA.length };`
 
 /**
  * Read-only. Returns one FNV-1a hash for each variable and text style in
- * the file. expectedHashes() in lib.ts makes the same hashes from the
+ * the file, with a key of its own for a second item of the same name.
+ * expectedHashes() in lib.ts makes the same hashes from the
  * tokens, so a reply of about 10 KB verifies every value.
  */
 export const fingerprintScript = `const fnv = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); };
@@ -97,7 +110,8 @@ const out = {};
 for (const v of all) {
   const c = colById.get(v.variableCollectionId);
   const modes = [...c.modes].sort((a, b) => a.name < b.name ? -1 : 1).map(m => m.name + '=' + val(v.valuesByMode[m.modeId])).join(';');
-  out['var|' + c.name + '|' + v.name] = fnv([v.resolvedType, [...v.scopes].sort().join(','), v.codeSyntax.WEB || '', v.hiddenFromPublishing ? 1 : 0, v.description || '', modes].join('|'));
+  const vkey = 'var|' + c.name + '|' + v.name;
+  out[vkey in out ? vkey + '|duplicate|' + v.id : vkey] = fnv([v.resolvedType, [...v.scopes].sort().join(','), v.codeSyntax.WEB || '', v.hiddenFromPublishing ? 1 : 0, v.description || '', modes].join('|'));
 }
 for (const s of await figma.getLocalTextStylesAsync()) {
   const b = s.boundVariables?.fontFamily;
@@ -105,6 +119,6 @@ for (const s of await figma.getLocalTextStylesAsync()) {
   const key = 'style|' + s.name;
   // A second style with the same name gets its own key, so the compare
   // reports it as extra, with its ID.
-  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
+  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, s.textDecoration, f4(s.paragraphSpacing), f4(s.paragraphIndent), f4(s.listSpacing), s.leadingTrim, s.hangingPunctuation ? 1 : 0, s.hangingList ? 1 : 0, b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
 }
 return out;`

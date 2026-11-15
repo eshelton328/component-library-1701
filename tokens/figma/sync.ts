@@ -14,10 +14,11 @@ import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { compareHashes, expectedHashes, exportTokens, renderScripts } from './lib.ts'
 import type { FigmaTokens } from './lib.ts'
 
-const root = new URL('../..', import.meta.url).pathname
+const root = fileURLToPath(new URL('../..', import.meta.url))
 const tokens = join(root, 'tokens')
 const args = process.argv.slice(2)
 const [command] = args

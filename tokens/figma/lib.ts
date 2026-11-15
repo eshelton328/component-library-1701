@@ -275,7 +275,7 @@ export function expectedHashes(doc: FigmaTokens): Record<string, string> {
   }
   for (const t of doc.textStyles) {
     const style = fontStyle[t.fontWeight] ?? fail(`${t.name}: no font style for weight ${String(t.fontWeight)}`)
-    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
+    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, 'NONE', f4(0), f4(0), f4(0), 'NONE', '0', '0', t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
   }
   return out
 }

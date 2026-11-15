@@ -3,11 +3,12 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { runInNewContext } from 'node:vm'
 import { colourScopes, compareHashes, escapeHtml, expectedHashes, exportTokens, fnv, renderScripts } from './lib.ts'
 import type { FigmaTokens } from './lib.ts'
 
-const tokens = new URL('..', import.meta.url).pathname
+const tokens = fileURLToPath(new URL('..', import.meta.url))
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'))
 const themes = readdirSync(join(tokens, 'themes')).filter((f) => f.endsWith('.json')).map((f) => ({ name: f.replace(/\.json$/, ''), json: readJson(join(tokens, 'themes', f)) }))
 const doc = exportTokens({ themes, layout: readJson(join(tokens, 'layout.json')), commit: 'test', tokensSha256: 'test' })
@@ -193,4 +194,69 @@ void test('rejects a text style that differs between themes', () => {
   heading['$value'] = { ...record(heading['$value']), fontSize: { value: 32, unit: 'px' } }
   text['eyebrow'] = heading
   assert.throws(() => exportTokens({ themes: [{ name: 'a', json: theme }, { name: 'b', json: { ...record(second), text } }], layout: {}, commit: '', tokensSha256: '' }), /text\/eyebrow differs between themes/)
+})
+
+void test('a text decoration or paragraph spacing left in Figma changes the hash, and a rerun resets it', async () => {
+  const d = sansOnly()
+  const figma = stubFigma([])
+  await run(textScript(d), figma)
+  const first = figma.styles[0]
+  assert.ok(first)
+  first['textDecoration'] = 'STRIKETHROUGH'
+  first['paragraphSpacing'] = 40
+  assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))), [`changed style|${first.name}`])
+  await run(textScript(d), figma)
+  assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))), [])
+})
+
+// A stub of the variables API for the upsert scripts: one collection with
+// one mode, holding the variables a test gives it.
+type StubVar = { id: string; name: string; resolvedType: string; variableCollectionId: string; codeSyntax: Record<string, string>; [k: string]: unknown }
+function stubVariables(name: string, mode: string, vars: { name: string; type: string; web?: string }[]) {
+  const col = { id: 'C:1', name, modes: [{ modeId: 'm1', name: mode }], renameMode: () => undefined, addMode: () => 'm2' }
+  const all: StubVar[] = vars.map((v, i) => ({
+    id: `V:${String(i)}`, name: v.name, resolvedType: v.type, variableCollectionId: col.id, scopes: [], description: '', hiddenFromPublishing: false,
+    valuesByMode: {}, codeSyntax: v.web === undefined ? {} : { WEB: v.web },
+  }))
+  for (const v of all) {
+    v['setVariableCodeSyntax'] = (_: string, w: string) => (v.codeSyntax = { WEB: w })
+    v['removeVariableCodeSyntax'] = () => (v.codeSyntax = {})
+    v['setValueForMode'] = () => undefined
+  }
+  return {
+    all,
+    variables: {
+      getLocalVariableCollectionsAsync: () => Promise.resolve([col]),
+      getLocalVariablesAsync: () => Promise.resolve(all),
+      createVariableCollection: () => col,
+      createVariable: () => fail('the stub creates no variables'),
+    },
+    getLocalTextStylesAsync: () => Promise.resolve([]),
+  }
+}
+const fail = (m: string): never => {
+  throw new Error(m)
+}
+const layoutScript = renderScripts(doc).find((s) => s.file === 'layout.js')?.code ?? ''
+const layoutVars = collection(doc, 'Layout')?.variables ?? []
+
+void test('the upsert stops before any change when two variables share a name (Codex review of #14)', async () => {
+  const [first] = layoutVars
+  assert.ok(first)
+  const figma = stubVariables('Layout', 'Value', [...layoutVars.map((v) => ({ name: v.name, type: v.type })), { name: first.name, type: first.type }])
+  await assert.rejects(run(layoutScript, figma), new RegExp(`same name in Layout: ${first.name} V:0`))
+  const got = record(await run(fingerprint(doc), figma))
+  assert.ok(`var|Layout|${first.name}|duplicate|V:${String(layoutVars.length)}` in got)
+})
+
+void test('the upsert removes a WEB code syntax that the tokens do not set', async () => {
+  // The dark and light primitives have no WEB syntax in the tokens.
+  const themeVars = collection(doc, 'Theme')?.variables ?? []
+  assert.ok(themeVars.some((v) => v.web === undefined))
+  const figma = stubVariables('Theme', 'Viewscreen', themeVars.map((v) => ({ name: v.name, type: v.type, web: 'var(--obsolete)' })))
+  await run(renderScripts(doc).find((s) => s.file === 'theme.js')?.code ?? '', figma)
+  for (const [i, v] of figma.all.entries()) {
+    const web = themeVars[i]?.web
+    assert.deepEqual(v.codeSyntax, web === undefined ? {} : { WEB: web }, v.name)
+  }
 })

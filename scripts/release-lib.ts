@@ -1,6 +1,6 @@
 // Pure functions for the release checks, so release.test.ts can test them
 // without git or a build: the commit header format, the breaking-change
-// markers, and the API report diff that finds a breaking change (brain
+// marker, and the API report diff that finds a breaking change (brain
 // decision d-063).
 
 /** The Conventional Commits header that the pr-title job in ci.yml checks. */
@@ -10,16 +10,6 @@ export const isConventionalHeader = (subject: string): boolean => header.test(su
 
 /** A `!` before the colon marks a breaking change for semantic-release. */
 export const hasBreakingMarker = (title: string): boolean => /^[a-z]+(\([a-z0-9-]+\))?!: /.test(title)
-
-/**
- * True when one full commit message makes semantic-release cut a major
- * version: a `!` header, or a `BREAKING CHANGE:` or `BREAKING-CHANGE:`
- * footer line.
- */
-export const isBreakingCommit = (message: string): boolean => {
-  const [subject = '', ...body] = message.split(/\r?\n/)
-  return hasBreakingMarker(subject.trim()) || body.some((l) => /^BREAKING[ -]CHANGE: \S/.test(l))
-}
 
 /**
  * The declaration lines of an API Extractor report: the lines of its
@@ -50,18 +40,24 @@ export type ApiItem = {
   required: boolean
 }
 
-const declName = /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(?:const|let|var|function|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)/
+const declName = /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(const|let|var|function|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)/
 const memberName = /^(?:readonly\s+)?(?:static\s+)?(?:readonly\s+)?(?:["']([^"']+)["']|([A-Za-z_$][\w$]*))(\?)?\s*[:(<]/
 const isClosing = (t: string) => /^[}\])>;,\s]+$/.test(t)
 const braces = (t: string) => (t.match(/[{]/g)?.length ?? 0) - (t.match(/[}]/g)?.length ?? 0)
+/** Only these declarations are split into members; a type alias stays whole. */
+const splitKinds = new Set(['interface', 'class'])
 
 /**
  * Splits a report into declarations and members. A line with no indent
- * that starts with `export` or `declare` opens a declaration. A line one
- * brace level inside it is a member, keyed by the declaration name. Deeper
- * lines and continuation lines are joined to the item they belong to, so a
- * change inside a nested type changes that item's text. A repeated key, as
- * for an overloaded function, gets a `#2` suffix.
+ * that starts with `export` or `declare` opens a declaration. In an
+ * interface or a class, a line one brace level inside it is a member,
+ * keyed by the declaration name. Every other line joins the item it
+ * belongs to, with nested closing braces kept, so a member moved between
+ * nested objects or between the branches of a union changes the text. A
+ * type alias is one item, because its depth-one lines can belong to
+ * different union branches. A member line the parser cannot name (a call,
+ * construct, index or computed signature) counts as required. A repeated
+ * key, as for an overloaded function, gets a `#2` suffix.
  */
 export function apiItems(report: string): ApiItem[] {
   const items: ApiItem[] = []
@@ -73,19 +69,24 @@ export function apiItems(report: string): ApiItem[] {
   }
   let depth = 0
   let decl: ApiItem | undefined
+  let split = false
   let last: ApiItem | undefined
   for (const line of apiLines(report)) {
     const t = line.trim()
     if (depth === 0 && /^(export|declare)\b/.test(line)) {
-      decl = { key: unique(declName.exec(t)?.[1] ?? t), text: t, required: false }
+      const m = declName.exec(t)
+      decl = { key: unique(m?.[2] ?? t), text: t, required: false }
+      split = splitKinds.has(m?.[1] ?? '')
       items.push(decl)
       last = decl
-    } else if (depth === 1 && decl && !isClosing(t)) {
+    } else if (depth === 1 && split && decl && isClosing(t)) {
+      // The end of an interface or class body.
+    } else if (depth === 1 && split && decl) {
       const m = memberName.exec(t)
       const name = m ? (m[1] ?? m[2] ?? t) : t
-      last = { key: unique(`${decl.key}.${name}`), text: t, required: !!m && !m[3] }
+      last = { key: unique(`${decl.key}.${name}`), text: t, required: !m || !m[3] }
       items.push(last)
-    } else if (last && !isClosing(t)) {
+    } else if (last) {
       last.text += ` ${t}`
     }
     depth = Math.max(0, depth + braces(t))

@@ -23,16 +23,19 @@ Repository scripts that are not part of the package.
   declarations of `src/index.ts` with `tsconfig.api.json` and compares
   them with `api/` through API Extractor (`api-extractor.json`).
 - `check-api-diff.ts` compares two API reports by declaration and member,
-  and finds removed or changed items and new required members. The
-  `api-report` workflow runs the base branch's copy of it and reads the
-  PR's report as data, so a change to this file takes effect only after
-  it merges.
+  and finds removed or changed items and new required members. Interface
+  and class members are items; a type alias is one item. The `api-report`
+  workflow runs on `pull_request_target`, so GitHub runs the base
+  branch's copy of the workflow and of this script, and reads the PR's
+  report as data. A change to either takes effect only after it merges.
 - `check-commits.ts` checks every commit header since the last release
   tag; the release job runs it before semantic-release.
 - `check-release-api.ts` (`pnpm check:release-api`) compares the API with
-  the last release tag. When it broke, a commit in the range must have
-  `!` or a `BREAKING CHANGE:` footer. The release job runs it, because a
-  squash message can drop the `!` that the PR title had.
+  the last release tag. When it broke, `@semantic-release/commit-analyzer`
+  with `release.config.js` must return `major` for the commits in the
+  range, so a reverted breaking commit does not count. The release job
+  runs it, because a squash message can drop the `!` that the PR title
+  had. `semantic-release.d.ts` types the analyzer and the config.
 - `check-pack.ts` (`pnpm check:pack`) builds the package with
   `pnpm build:lib` and checks the exports and the packed files.
 - `release-lib.ts` holds the pure functions of these checks, and

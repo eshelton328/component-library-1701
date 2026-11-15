@@ -79,9 +79,9 @@ declares the first stable contract.
   breaking change, and so is a new member with no `?` (d-063). The
   `api-report` workflow then labels the PR `breaking-change`, comments,
   and fails until the title has `!`. The release job checks again against
-  the last release tag and fails when no commit marks the break. Prefer
-  to deprecate in a minor version first and remove in the next major
-  version.
+  the last release tag and fails when the analyzer would not make a
+  major release. Prefer to deprecate in a minor version first and remove
+  in the next major version.
 - `pnpm build:lib` runs `panda lib`, which writes `dist/panda/` and the
   `exports` in `package.json`. Commit the exports it writes;
   `pnpm check:pack` fails when they differ or a target is not packed.

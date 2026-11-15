@@ -7,13 +7,14 @@ name: api-report
 # PR title has no `!`. An addition adds the api-change label.
 #
 # This job can write labels and comments, so it runs no code from the PR.
-# It checks out the base commit, runs the compare script from there, and
-# reads the PR's report only as data with `git show`. A PR that changes
-# scripts/ runs the base version of them here. A PR from a fork gets a
-# read-only token, so it skips the labels and the comment; the check
-# itself still runs and can fail.
+# pull_request_target runs this file as it is on the base branch, so a PR
+# cannot change these steps; a pull_request job would run the PR's copy.
+# The PR head is checked out into pr/ only to read its report as data,
+# with no saved credentials and only api/ on disk. Nothing in pr/ runs:
+# no install, no script, no action. A PR that changes scripts/ or this
+# file takes effect only after it merges.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, edited]
     paths: [api/**]
 
@@ -31,8 +32,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      # Data only: the PR's history, for its report and the merge base.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
           fetch-depth: 0
           persist-credentials: false
+          sparse-checkout: api
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -43,18 +51,22 @@ jobs:
           TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "$HEAD"
           report=api/component-library-1701.api.md
-          git show "$HEAD:$report" > "$RUNNER_TEMP/after.api.md"
-          # No report at the merge base means no API before: an empty file.
-          git show "$(git merge-base "$BASE" "$HEAD"):$report" > "$RUNNER_TEMP/before.api.md" 2>/dev/null || : > "$RUNNER_TEMP/before.api.md"
+          git -C pr show "$HEAD:$report" > "$RUNNER_TEMP/after.api.md"
+          # A missing merge base stops the job; only a merge base with no
+          # report file means no API before (an empty file).
+          base=$(git -C pr merge-base "$BASE" "$HEAD")
+          if git -C pr cat-file -e "$base:$report" 2>/dev/null; then
+            git -C pr show "$base:$report" > "$RUNNER_TEMP/before.api.md"
+          else
+            : > "$RUNNER_TEMP/before.api.md"
+          fi
           set +e
           node scripts/check-api-diff.ts --before "$RUNNER_TEMP/before.api.md" --after "$RUNNER_TEMP/after.api.md" \
             --title "$TITLE" --comment "$RUNNER_TEMP/api-comment.md" > "$RUNNER_TEMP/api-diff.json"
           echo "status=$?" >> "$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/api-diff.json"
-      - if: github.event.pull_request.head.repo.full_name == github.repository
-        env:
+      - env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}

@@ -4,11 +4,15 @@
 // check reads the PR title, but the squash message can be edited at merge:
 // `feat!: remove size` merged as `fix: remove size` would ship a breaking
 // change as a patch. The release job runs this before semantic-release.
-// With no release tag there is no published API to break, so it passes.
+// It asks @semantic-release/commit-analyzer for the release type, so a
+// reverted breaking commit does not count. With no release tag there is no
+// published API to break, so it passes.
 import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { diffApi, isBreakingCommit } from './release-lib.ts'
+import { analyzeCommits } from '@semantic-release/commit-analyzer'
+import { diffApi } from './release-lib.ts'
 
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const report = 'api/component-library-1701.api.md'
 const git = (args: string[]) => spawnSync('git', args, { encoding: 'utf8' })
 
@@ -21,13 +25,30 @@ const from = tag.stdout.trim()
 const old = git(['show', `${from}:${report}`])
 const diff = diffApi(old.status === 0 ? old.stdout : '', readFileSync(report, 'utf8'))
 
-const log = git(['log', '--no-merges', '--format=%B%x00', `${from}..HEAD`])
+const log = git(['log', '--no-merges', '--format=%H%x1f%B%x00', `${from}..HEAD`])
 if (log.status !== 0) {
   console.error(log.stderr)
   process.exit(1)
 }
-const marked = log.stdout.split('\0').some((m) => isBreakingCommit(m.trim()))
+const commits = log.stdout
+  .split('\0')
+  .map((c) => c.replace(/^\n/, ''))
+  .filter((c) => c.includes('\x1f'))
+  .map((c) => {
+    const [hash = '', message = ''] = c.split('\x1f')
+    return { hash, message: message.trim() }
+  })
+
+// Ask the analyzer that semantic-release runs, with the same config, so
+// reverted commits and the preset's rules count as they will at release.
+const config: unknown = (await import('../release.config.js')).default
+const plugins = isRecord(config) && Array.isArray(config['plugins']) ? config['plugins'] : []
+const entry: unknown = plugins.find((p: unknown) => (Array.isArray(p) ? p[0] : p) === '@semantic-release/commit-analyzer')
+const pluginConfig: unknown = Array.isArray(entry) ? entry[1] : {}
+const quiet = { log: () => undefined, error: () => undefined, warn: () => undefined, success: () => undefined }
+const releaseType = await analyzeCommits(pluginConfig, { commits, logger: quiet, cwd: process.cwd(), options: {} })
+const marked = releaseType === 'major'
 const ok = !diff.breaking || marked
-console.log(JSON.stringify({ ok, tag: from, breaking: diff.breaking, marked, removed: diff.removed, addedRequired: diff.addedRequired }))
-if (!ok) console.error(`The public API broke since ${from}, but no commit has '!' or a BREAKING CHANGE footer, so semantic-release would not make a major version. Push a commit with a BREAKING CHANGE footer that names the migration.`)
+console.log(JSON.stringify({ ok, tag: from, breaking: diff.breaking, releaseType, removed: diff.removed, addedRequired: diff.addedRequired }))
+if (!ok) console.error(`The public API broke since ${from}, but semantic-release would make a ${String(releaseType)} release, not a major one. Push a commit with a BREAKING CHANGE footer that names the migration.`)
 process.exit(ok ? 0 : 1)

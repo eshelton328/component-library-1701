@@ -22,10 +22,17 @@ Repository scripts that are not part of the package.
 - `check-api.ts` (`pnpm check:api`, `pnpm api:update`) builds the
   declarations of `src/index.ts` with `tsconfig.api.json` and compares
   them with `api/` through API Extractor (`api-extractor.json`).
-- `check-api-diff.ts` compares the API report with a base ref and finds
-  removed or changed lines; the `api-report` workflow runs it on PRs.
+- `check-api-diff.ts` compares two API reports by declaration and member,
+  and finds removed or changed items and new required members. The
+  `api-report` workflow runs the base branch's copy of it and reads the
+  PR's report as data, so a change to this file takes effect only after
+  it merges.
 - `check-commits.ts` checks every commit header since the last release
   tag; the release job runs it before semantic-release.
+- `check-release-api.ts` (`pnpm check:release-api`) compares the API with
+  the last release tag. When it broke, a commit in the range must have
+  `!` or a `BREAKING CHANGE:` footer. The release job runs it, because a
+  squash message can drop the `!` that the PR title had.
 - `check-pack.ts` (`pnpm check:pack`) builds the package with
   `pnpm build:lib` and checks the exports and the packed files.
 - `release-lib.ts` holds the pure functions of these checks, and

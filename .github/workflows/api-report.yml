@@ -1,11 +1,17 @@
 name: api-report
 
 # Warns on a PR that changes the public API (brain decision d-063). It
-# compares api/component-library-1701.api.md with the base branch. A
-# removed or changed line adds the breaking-change label and a comment,
-# and fails when the PR title has no `!`. An addition adds the api-change
-# label. This job has write access to labels and comments, so it runs no
-# package scripts: only git and one dependency-free Node script.
+# compares api/component-library-1701.api.md at the PR head with the same
+# file at the merge base. A removed or changed item, or a new required
+# member, adds the breaking-change label and a comment, and fails when the
+# PR title has no `!`. An addition adds the api-change label.
+#
+# This job can write labels and comments, so it runs no code from the PR.
+# It checks out the base commit, runs the compare script from there, and
+# reads the PR's report only as data with `git show`. A PR that changes
+# scripts/ runs the base version of them here. A PR from a fork gets a
+# read-only token, so it skips the labels and the comment; the check
+# itself still runs and can fail.
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
@@ -24,34 +30,47 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - id: diff
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
           TITLE: ${{ github.event.pull_request.title }}
         run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$HEAD"
+          report=api/component-library-1701.api.md
+          git show "$HEAD:$report" > "$RUNNER_TEMP/after.api.md"
+          # No report at the merge base means no API before: an empty file.
+          git show "$(git merge-base "$BASE" "$HEAD"):$report" > "$RUNNER_TEMP/before.api.md" 2>/dev/null || : > "$RUNNER_TEMP/before.api.md"
           set +e
-          node scripts/check-api-diff.ts --base "$BASE" --title "$TITLE" --comment api-comment.md > api-diff.json
+          node scripts/check-api-diff.ts --before "$RUNNER_TEMP/before.api.md" --after "$RUNNER_TEMP/after.api.md" \
+            --title "$TITLE" --comment "$RUNNER_TEMP/api-comment.md" > "$RUNNER_TEMP/api-diff.json"
           echo "status=$?" >> "$GITHUB_OUTPUT"
-          cat api-diff.json
-      - env:
+          cat "$RUNNER_TEMP/api-diff.json"
+      - if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          json="$RUNNER_TEMP/api-diff.json"
           gh label create breaking-change --color B60205 --description "Removes or changes public API" --force
           gh label create api-change --color FBCA04 --description "Adds public API" --force
-          if grep -q '"breaking":true' api-diff.json; then
+          if jq -e '.breaking' "$json" > /dev/null; then
             gh pr edit "$PR" --add-label breaking-change
-          elif grep -q '"added":\[\]' api-diff.json; then
+          elif jq -e '.added | length == 0' "$json" > /dev/null; then
             exit 0
           else
             gh pr edit "$PR" --add-label api-change
           fi
-          gh pr comment "$PR" --body-file api-comment.md --edit-last --create-if-none
+          gh pr comment "$PR" --body-file "$RUNNER_TEMP/api-comment.md" --edit-last --create-if-none
       - if: steps.diff.outputs.status != '0'
         run: |
-          echo "::error::The PR removes or changes public API, and its title has no '!'. Add '!' and a BREAKING CHANGE footer, or deprecate first."
+          echo "::error::The PR breaks the public API, and its title has no '!'. Add '!' and a BREAKING CHANGE footer, or deprecate first."
           exit 1

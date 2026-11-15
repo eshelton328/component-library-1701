@@ -1,6 +1,7 @@
 // Pure functions for the release checks, so release.test.ts can test them
-// without git or a build: the commit header format, and the API report
-// diff that finds a breaking change (brain decision d-063).
+// without git or a build: the commit header format, the breaking-change
+// markers, and the API report diff that finds a breaking change (brain
+// decision d-063).
 
 /** The Conventional Commits header that the pr-title job in ci.yml checks. */
 const header = /^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [a-z].*[^.]$/
@@ -11,8 +12,19 @@ export const isConventionalHeader = (subject: string): boolean => header.test(su
 export const hasBreakingMarker = (title: string): boolean => /^[a-z]+(\([a-z0-9-]+\))?!: /.test(title)
 
 /**
+ * True when one full commit message makes semantic-release cut a major
+ * version: a `!` header, or a `BREAKING CHANGE:` or `BREAKING-CHANGE:`
+ * footer line.
+ */
+export const isBreakingCommit = (message: string): boolean => {
+  const [subject = '', ...body] = message.split(/\r?\n/)
+  return hasBreakingMarker(subject.trim()) || body.some((l) => /^BREAKING[ -]CHANGE: \S/.test(l))
+}
+
+/**
  * The declaration lines of an API Extractor report: the lines of its
- * TypeScript block, without blank lines and comments.
+ * TypeScript block, without blank lines, comments and imports. Each line
+ * keeps its indent, because the indent shows which declaration owns it.
  */
 export function apiLines(report: string): string[] {
   const lines = report.split(/\r?\n/)
@@ -21,28 +33,102 @@ export function apiLines(report: string): string[] {
   const end = lines.indexOf('```', start + 1)
   return lines
     .slice(start + 1, end === -1 ? undefined : end)
-    .map((l) => l.trim())
-    .filter((l) => l !== '' && !l.startsWith('//') && !l.startsWith('import '))
+    .map((l) => l.trimEnd())
+    .filter((l) => {
+      const t = l.trim()
+      return t !== '' && !t.startsWith('//') && !t.startsWith('import ')
+    })
 }
 
-export type ApiDiff = { removed: string[]; added: string[]; breaking: boolean }
+/** One declaration or member of the public API. */
+export type ApiItem = {
+  /** `Name` for a declaration, `Name.member` for a member. */
+  key: string
+  /** The text of the item, with nested lines joined to it. */
+  text: string
+  /** A member with no `?`: a caller that builds the type must give it. */
+  required: boolean
+}
+
+const declName = /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(?:const|let|var|function|class|interface|type|enum|namespace)\s+([A-Za-z_$][\w$]*)/
+const memberName = /^(?:readonly\s+)?(?:static\s+)?(?:readonly\s+)?(?:["']([^"']+)["']|([A-Za-z_$][\w$]*))(\?)?\s*[:(<]/
+const isClosing = (t: string) => /^[}\])>;,\s]+$/.test(t)
+const braces = (t: string) => (t.match(/[{]/g)?.length ?? 0) - (t.match(/[}]/g)?.length ?? 0)
 
 /**
- * Compares two reports line by line, counting repeats. A removed or changed
- * line (a removed export, a renamed or retyped prop) counts as breaking; a
- * line that is only added does not.
+ * Splits a report into declarations and members. A line with no indent
+ * that starts with `export` or `declare` opens a declaration. A line one
+ * brace level inside it is a member, keyed by the declaration name. Deeper
+ * lines and continuation lines are joined to the item they belong to, so a
+ * change inside a nested type changes that item's text. A repeated key, as
+ * for an overloaded function, gets a `#2` suffix.
+ */
+export function apiItems(report: string): ApiItem[] {
+  const items: ApiItem[] = []
+  const seen = new Map<string, number>()
+  const unique = (key: string) => {
+    const n = (seen.get(key) ?? 0) + 1
+    seen.set(key, n)
+    return n === 1 ? key : `${key}#${String(n)}`
+  }
+  let depth = 0
+  let decl: ApiItem | undefined
+  let last: ApiItem | undefined
+  for (const line of apiLines(report)) {
+    const t = line.trim()
+    if (depth === 0 && /^(export|declare)\b/.test(line)) {
+      decl = { key: unique(declName.exec(t)?.[1] ?? t), text: t, required: false }
+      items.push(decl)
+      last = decl
+    } else if (depth === 1 && decl && !isClosing(t)) {
+      const m = memberName.exec(t)
+      const name = m ? (m[1] ?? m[2] ?? t) : t
+      last = { key: unique(`${decl.key}.${name}`), text: t, required: !!m && !m[3] }
+      items.push(last)
+    } else if (last && !isClosing(t)) {
+      last.text += ` ${t}`
+    }
+    depth = Math.max(0, depth + braces(t))
+  }
+  return items
+}
+
+export type ApiDiff = {
+  /** Items that are gone or whose text changed (the old text). */
+  removed: string[]
+  /** Items that are new or whose text changed (the new text). */
+  added: string[]
+  /** New members that a caller must give, by key. */
+  addedRequired: string[]
+  breaking: boolean
+}
+
+/**
+ * Compares two reports by declaration and member. A removed or changed
+ * item is breaking: a removed export, or a prop that is removed, renamed,
+ * retyped or moved to another declaration. A new member with no `?` is
+ * breaking too, because the exported interfaces are props and a caller
+ * that does not give it fails to compile. A new declaration or a new
+ * optional member is not breaking.
  */
 export function diffApi(before: string, after: string): ApiDiff {
-  const count = (lines: string[]) => {
-    const m = new Map<string, number>()
-    for (const l of lines) m.set(l, (m.get(l) ?? 0) + 1)
-    return m
-  }
-  const a = count(apiLines(before))
-  const b = count(apiLines(after))
+  const a = new Map(apiItems(before).map((i) => [i.key, i]))
+  const b = new Map(apiItems(after).map((i) => [i.key, i]))
   const removed: string[] = []
   const added: string[] = []
-  for (const [line, n] of a) for (let i = b.get(line) ?? 0; i < n; i++) removed.push(line)
-  for (const [line, n] of b) for (let i = a.get(line) ?? 0; i < n; i++) added.push(line)
-  return { removed, added, breaking: removed.length > 0 }
+  const addedRequired: string[] = []
+  for (const [key, item] of a) {
+    const now = b.get(key)
+    if (!now || now.text !== item.text) removed.push(item.text)
+  }
+  for (const [key, item] of b) {
+    const old = a.get(key)
+    if (old && old.text === item.text) continue
+    added.push(item.text)
+    // A new member of a declaration that existed before; a new declaration
+    // breaks no caller, so its members do not count.
+    const owner = key.includes('.') ? key.slice(0, key.indexOf('.')) : undefined
+    if (!old && owner && a.has(owner) && item.required) addedRequired.push(key)
+  }
+  return { removed, added, addedRequired, breaking: removed.length > 0 || addedRequired.length > 0 }
 }

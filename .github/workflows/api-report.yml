@@ -1,0 +1,57 @@
+name: api-report
+
+# Warns on a PR that changes the public API (brain decision d-063). It
+# compares api/component-library-1701.api.md with the base branch. A
+# removed or changed line adds the breaking-change label and a comment,
+# and fails when the PR title has no `!`. An addition adds the api-change
+# label. This job has write access to labels and comments, so it runs no
+# package scripts: only git and one dependency-free Node script.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths: [api/**]
+
+permissions:
+  contents: read
+
+jobs:
+  warn:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write # create the labels
+      pull-requests: write # label and comment
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set +e
+          node scripts/check-api-diff.ts --base "$BASE" --title "$TITLE" --comment api-comment.md > api-diff.json
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat api-diff.json
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh label create breaking-change --color B60205 --description "Removes or changes public API" --force
+          gh label create api-change --color FBCA04 --description "Adds public API" --force
+          if grep -q '"breaking":true' api-diff.json; then
+            gh pr edit "$PR" --add-label breaking-change
+          elif grep -q '"added":\[\]' api-diff.json; then
+            exit 0
+          else
+            gh pr edit "$PR" --add-label api-change
+          fi
+          gh pr comment "$PR" --body-file api-comment.md --edit-last --create-if-none
+      - if: steps.diff.outputs.status != '0'
+        run: |
+          echo "::error::The PR removes or changes public API, and its title has no '!'. Add '!' and a BREAKING CHANGE footer, or deprecate first."
+          exit 1

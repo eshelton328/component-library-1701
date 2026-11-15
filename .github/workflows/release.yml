@@ -1,0 +1,41 @@
+name: release
+
+# A push to a release branch runs every CI check on that commit, then
+# semantic-release. `beta` always releases (1.0.0-beta.N). `main` releases
+# only when the repository variable RELEASE_MAIN is 'true', so the first
+# feat on main cannot publish 1.0.0 before Erik decides the contract is
+# stable (toolkit rule releases.md).
+on:
+  push:
+    branches: [main, beta]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    if: github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true'
+    runs-on: ubuntu-24.04
+    # One release at a time across branches, and never cancel a publisher.
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    permissions:
+      contents: write # tags and GitHub releases
+      packages: write # GitHub Packages
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      # A PR title check cannot catch an edited squash message, so check
+      # every commit since the last release tag.
+      - run: pnpm check:commits
+      - run: pnpm exec semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}

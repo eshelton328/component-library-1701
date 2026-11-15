@@ -19,3 +19,8 @@ the Panda preset.
   `contrast.json` the contrast pairs. Agents change these three only in a
   session started with `LIB_ALLOW_CHECK_EDITS=1`. A new check gets a case
   in `test.ts`.
+
+## Folders
+
+- [figma/AGENTS.md](figma/AGENTS.md): read before changing the Figma
+  export or running the Figma token sync.

@@ -21,6 +21,6 @@ export default [
   })),
   ...scriptConfig({
     tsconfigRootDir: import.meta.dirname,
-    files: ['scripts/**/*.ts', 'tokens/*.ts'],
+    files: ['scripts/**/*.ts', 'tokens/**/*.ts'],
   }),
 ]

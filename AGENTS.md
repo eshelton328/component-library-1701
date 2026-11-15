@@ -55,21 +55,24 @@ and type guards are allowed.
   `checks/fixtures/` that fails when that one check is off, and
   `pnpm checks` fails when a tracked TypeScript file is outside the lint
   rules.
-- `tsc` does not check the `.mjs` scripts in `scripts/`, `tokens/` and
-  `checks/` yet.
+- The scripts in `scripts/` and `tokens/` are TypeScript, run by Node
+  without a build step, so `tsc` and the same type rules check them. Use
+  only syntax Node can strip (`erasableSyntaxOnly`): no `enum`, no
+  `namespace`, no parameter properties. Import local files with their
+  `.ts` extension.
 
 ## Hooks
 
 `.claude/settings.json` wires three Claude Code hooks from
 `scripts/agent-hooks/`:
 
-- `guard-checks.mjs` (PreToolUse) blocks edits to tests, baselines and
+- `guard-checks.ts` (PreToolUse) blocks edits to tests, baselines and
   check config, and blocks snapshot update flags. A session that must
   change tests or checks starts with `LIB_ALLOW_CHECK_EDITS=1`; baselines
   stay blocked.
-- `lint-edit.mjs` (PostToolUse) runs ESLint on each edited file in `src/`
+- `lint-edit.ts` (PostToolUse) runs ESLint on each edited file in `src/`
   or `.storybook/` and returns the errors.
-- `verify-stop.mjs` (Stop) runs `pnpm verify` when the tree has changes
+- `verify-stop.ts` (Stop) runs `pnpm verify` when the tree has changes
   and blocks the stop once on failure.
 
 Codex has no matching hooks, so CI carries the same checks.

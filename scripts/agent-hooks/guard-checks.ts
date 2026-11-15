@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // PreToolUse hook: blocks edits to tests, baselines and check config, and
-// blocks screenshot update flags. See lib.mjs for the file list.
-import { readInput, repoPath, guarded, baselines, updateFlags } from './lib.mjs'
+// blocks screenshot update flags. See lib.ts for the file list.
+import { readInput, repoPath, guarded, baselines, updateFlags } from './lib.ts'
 
 const input = readInput()
 const tool = input.tool_name

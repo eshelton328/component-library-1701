@@ -4,41 +4,49 @@
 // or `// expect: eslint <rule>`; each story in checks/stories/ is preceded
 // by `// expect: pass` or `// expect: fail`. Prints one JSON object and
 // exits 1 if any expectation does not hold.
-//   node checks/run.mjs           all checks
-//   node checks/run.mjs --static  skip the browser story checks
+//   node scripts/check-fixtures.ts           all checks
+//   node scripts/check-fixtures.ts --static  skip the browser story checks
 import { execFileSync, spawnSync } from 'node:child_process'
 import { readFileSync, readdirSync, mkdtempSync } from 'node:fs'
 import { join, basename } from 'node:path'
 import { tmpdir } from 'node:os'
 
 const root = new URL('..', import.meta.url).pathname
-const bin = (name) => join(root, 'node_modules/.bin', name)
-const run = (cmd, args) => spawnSync(bin(cmd), args, { cwd: root, encoding: 'utf8' })
-const results = []
+const bin = (name: string) => join(root, 'node_modules/.bin', name)
+const run = (cmd: string, args: string[]) => spawnSync(bin(cmd), args, { cwd: root, encoding: 'utf8' })
+type Result = { check: string; expect: string; ok: boolean; tsc?: string[]; eslint?: string[]; got?: string; unscoped?: string[] }
+const results: Result[] = []
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : [])
+const str = (v: unknown) => (typeof v === 'string' ? v : '')
 
 execFileSync(bin('panda'), ['codegen', '--config', 'checks/panda.config.ts', '--log-level', 'silent'], { cwd: root })
 
 const tsc = run('tsc', ['-p', 'checks/tsconfig.json', '--pretty', 'false'])
-const tscErrors = {}
+const tscErrors: Record<string, string[]> = {}
 for (const line of tsc.stdout.split('\n')) {
   const m = line.match(/fixtures\/([^(]+)\(\d+,\d+\): error (TS\d+)/)
-  if (m) (tscErrors[m[1]] ??= []).push(m[2])
+  const [, file, code] = m ?? []
+  if (file && code) (tscErrors[file] ??= []).push(code)
 }
 const eslint = run('eslint', ['-c', 'checks/eslint.config.js', '-f', 'json', 'checks/fixtures'])
-const eslintRules = {}
-for (const file of JSON.parse(eslint.stdout)) {
-  eslintRules[basename(file.filePath)] = file.messages.map((m) => m.ruleId ?? 'eslint')
+// ESLint's JSON report: an array of { filePath, messages: [{ ruleId }] }.
+const eslintRules: Record<string, string[]> = {}
+const eslintReport: unknown = JSON.parse(eslint.stdout)
+for (const file of list(eslintReport)) {
+  if (!isRecord(file)) continue
+  eslintRules[basename(str(file['filePath']))] = list(file['messages']).map((m) => (isRecord(m) && typeof m['ruleId'] === 'string' ? m['ruleId'] : 'eslint'))
 }
 
 for (const name of readdirSync(join(root, 'checks/fixtures')).sort()) {
-  const head = readFileSync(join(root, 'checks/fixtures', name), 'utf8').split('\n')[0]
+  const head = readFileSync(join(root, 'checks/fixtures', name), 'utf8').split('\n')[0] ?? ''
   const [, tool, want] = head.match(/^\/\/ expect: (clean|tsc|eslint) ?(\S*)/) ?? []
   const gotTsc = tscErrors[name] ?? []
   const gotLint = eslintRules[name] ?? []
-  let ok
+  let ok: boolean
   if (tool === 'clean') ok = gotTsc.length === 0 && gotLint.length === 0
-  else if (tool === 'tsc') ok = gotTsc.includes(want)
-  else if (tool === 'eslint') ok = gotLint.includes(want)
+  else if (tool === 'tsc' && want) ok = gotTsc.includes(want)
+  else if (tool === 'eslint' && want) ok = gotLint.includes(want)
   else ok = false
   results.push({ check: `fixtures/${name}`, expect: head.slice(3), ok, tsc: gotTsc, eslint: gotLint })
 }
@@ -46,9 +54,14 @@ for (const name of readdirSync(join(root, 'checks/fixtures')).sort()) {
 if (!process.argv.includes('--static')) {
   const out = join(mkdtempSync(join(tmpdir(), 'checks-')), 'vitest.json')
   run('vitest', ['run', '--project=checks', '--reporter=json', `--outputFile=${out}`])
-  const report = JSON.parse(readFileSync(out, 'utf8'))
-  const status = {}
-  for (const file of report.testResults) for (const a of file.assertionResults) status[a.title] = a.status
+  // Vitest's JSON report: { testResults: [{ assertionResults: [{ title, status }] }] }.
+  const report: unknown = JSON.parse(readFileSync(out, 'utf8'))
+  const status: Record<string, string> = {}
+  for (const file of list(isRecord(report) ? report['testResults'] : [])) {
+    for (const a of list(isRecord(file) ? file['assertionResults'] : [])) {
+      if (isRecord(a)) status[str(a['title'])] = str(a['status'])
+    }
+  }
   for (const name of readdirSync(join(root, 'checks/stories'))) {
     const lines = readFileSync(join(root, 'checks/stories', name), 'utf8').split('\n')
     lines.forEach((line, i) => {
@@ -67,11 +80,14 @@ if (!process.argv.includes('--static')) {
 const { ESLint } = await import('eslint')
 const linter = new ESLint({ cwd: root })
 const tracked = execFileSync('git', ['ls-files', '*.ts', '*.tsx'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean)
-const unscoped = []
+const unscoped: string[] = []
 for (const file of tracked.filter((f) => !/^(checks|tokens\/generated)\//.test(f))) {
-  const config = (await linter.isPathIgnored(file)) ? undefined : await linter.calculateConfigForFile(file)
-  const rule = config?.rules?.['@typescript-eslint/no-unsafe-type-assertion']
-  if (!rule || [rule].flat()[0] !== 2) unscoped.push(file)
+  // calculateConfigForFile returns `any`; read only the one rule setting.
+  const config: unknown = (await linter.isPathIgnored(file)) ? undefined : await linter.calculateConfigForFile(file)
+  const rules = isRecord(config) ? config['rules'] : undefined
+  const rule = isRecord(rules) ? rules['@typescript-eslint/no-unsafe-type-assertion'] : undefined
+  const severity: unknown = Array.isArray(rule) ? rule[0] : rule
+  if (severity !== 2 && severity !== 'error') unscoped.push(file)
 }
 results.push({ check: 'scope: type rules on every tracked .ts and .tsx file', expect: 'none unscoped', ok: unscoped.length === 0, unscoped })
 

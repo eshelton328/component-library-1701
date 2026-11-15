@@ -1,6 +1,6 @@
 # checks
 
-Proof that the library's checks catch what they must. `run.mjs` runs
+Proof that the library's checks catch what they must. `../scripts/check-fixtures.ts` runs
 `tsc` and ESLint on each file in `fixtures/` and the story tests on
 `stories/`, then compares each result with the file's `// expect:` line.
 

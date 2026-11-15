@@ -27,6 +27,13 @@ const restricted = [
       'Opacity modifiers ("token/37", "token/disabled") make new colours outside the token set. Use the semantic token for that role, such as a subtle or faint variant.',
   })),
   {
+    // A definite-assignment assertion (`value!: string`, `let value!: T`)
+    // tells tsc a value is set when nothing checks that it is.
+    selector: 'PropertyDefinition[definite=true], VariableDeclarator[definite=true]',
+    message:
+      'A definite-assignment assertion ("!:") claims a value is set without a check. Initialise it, or type it as "T | undefined" and check before use.',
+  },
+  {
     selector: "JSXAttribute[name.name='style']",
     message: 'Inline styles skip the token set. Use the component recipe variants.',
   },
@@ -60,6 +67,19 @@ export async function libraryConfig({ pandaConfig, tsconfigRootDir, files }) {
           { 'ts-expect-error': true, 'ts-ignore': true, 'ts-nocheck': true },
         ],
         '@typescript-eslint/no-explicit-any': 'error',
+        // Type safety (omni rule type-safety.md, TypeScript profile): no
+        // unchecked narrowing, no object literal cast to a full type, and
+        // every member of a closed union handled in a switch.
+        '@typescript-eslint/no-unsafe-type-assertion': 'error',
+        '@typescript-eslint/no-non-null-assertion': 'error',
+        '@typescript-eslint/consistent-type-assertions': [
+          'error',
+          { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
+        ],
+        '@typescript-eslint/switch-exhaustiveness-check': [
+          'error',
+          { considerDefaultExhaustiveForUnions: false },
+        ],
         'no-restricted-syntax': ['error', ...restricted],
         '@pandacss/prefer-token': 'error',
         '@pandacss/no-primitive-token': 'error',

@@ -10,11 +10,13 @@ export default [
       'node_modules/',
       'eslint.*.js',
       'postcss.config.js',
+      'tokens/generated/',
     ],
   },
   ...(await libraryConfig({
     pandaConfig: './panda.config.ts',
     tsconfigRootDir: import.meta.dirname,
-    files: ['src/**/*.{ts,tsx}', '.storybook/**/*.{ts,tsx}'],
+    // Every hand-written TypeScript file; scripts/check-fixtures checks the scope.
+    files: ['src/**/*.{ts,tsx}', '.storybook/**/*.{ts,tsx}', '*.ts'],
   })),
 ]

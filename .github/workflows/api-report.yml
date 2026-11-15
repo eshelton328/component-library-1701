@@ -1,13 +1,20 @@
 name: api-report
 
 # Warns on a PR that changes the public API (brain decision d-063). It
-# compares api/component-library-1701.api.md with the base branch. A
-# removed or changed line adds the breaking-change label and a comment,
-# and fails when the PR title has no `!`. An addition adds the api-change
-# label. This job has write access to labels and comments, so it runs no
-# package scripts: only git and one dependency-free Node script.
+# compares api/component-library-1701.api.md at the PR head with the same
+# file at the merge base. A removed or changed item, or a new required
+# member, adds the breaking-change label and a comment, and fails when the
+# PR title has no `!`. An addition adds the api-change label.
+#
+# This job can write labels and comments, so it runs no code from the PR.
+# pull_request_target runs this file as it is on the base branch, so a PR
+# cannot change these steps; a pull_request job would run the PR's copy.
+# The PR head is checked out into pr/ only to read its report as data,
+# with no saved credentials and only api/ on disk. Nothing in pr/ runs:
+# no install, no script, no action. A PR that changes scripts/ or this
+# file takes effect only after it merges.
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, edited]
     paths: [api/**]
 
@@ -24,34 +31,58 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      # Data only: the PR's history, for its report and the merge base.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
           fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: api
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - id: diff
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
           TITLE: ${{ github.event.pull_request.title }}
         run: |
+          set -euo pipefail
+          report=api/component-library-1701.api.md
+          git -C pr show "$HEAD:$report" > "$RUNNER_TEMP/after.api.md"
+          # A missing merge base stops the job; only a merge base with no
+          # report file means no API before (an empty file).
+          base=$(git -C pr merge-base "$BASE" "$HEAD")
+          if git -C pr cat-file -e "$base:$report" 2>/dev/null; then
+            git -C pr show "$base:$report" > "$RUNNER_TEMP/before.api.md"
+          else
+            : > "$RUNNER_TEMP/before.api.md"
+          fi
           set +e
-          node scripts/check-api-diff.ts --base "$BASE" --title "$TITLE" --comment api-comment.md > api-diff.json
+          node scripts/check-api-diff.ts --before "$RUNNER_TEMP/before.api.md" --after "$RUNNER_TEMP/after.api.md" \
+            --title "$TITLE" --comment "$RUNNER_TEMP/api-comment.md" > "$RUNNER_TEMP/api-diff.json"
           echo "status=$?" >> "$GITHUB_OUTPUT"
-          cat api-diff.json
+          cat "$RUNNER_TEMP/api-diff.json"
       - env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
         run: |
+          json="$RUNNER_TEMP/api-diff.json"
           gh label create breaking-change --color B60205 --description "Removes or changes public API" --force
           gh label create api-change --color FBCA04 --description "Adds public API" --force
-          if grep -q '"breaking":true' api-diff.json; then
+          if jq -e '.breaking' "$json" > /dev/null; then
             gh pr edit "$PR" --add-label breaking-change
-          elif grep -q '"added":\[\]' api-diff.json; then
+          elif jq -e '.added | length == 0' "$json" > /dev/null; then
             exit 0
           else
             gh pr edit "$PR" --add-label api-change
           fi
-          gh pr comment "$PR" --body-file api-comment.md --edit-last --create-if-none
+          gh pr comment "$PR" --body-file "$RUNNER_TEMP/api-comment.md" --edit-last --create-if-none
       - if: steps.diff.outputs.status != '0'
         run: |
-          echo "::error::The PR removes or changes public API, and its title has no '!'. Add '!' and a BREAKING CHANGE footer, or deprecate first."
+          echo "::error::The PR breaks the public API, and its title has no '!'. Add '!' and a BREAKING CHANGE footer, or deprecate first."
           exit 1

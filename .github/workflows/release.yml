@@ -35,6 +35,10 @@ jobs:
       # A PR title check cannot catch an edited squash message, so check
       # every commit since the last release tag.
       - run: pnpm check:commits
+      # The squash message can drop the `!` that the PR title had, so
+      # compare the API with the last release and require a breaking
+      # marker when it broke.
+      - run: pnpm check:release-api
       - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -9,6 +9,9 @@ Proof that the library's checks catch what they must. `../scripts/check-fixtures
   scripts has `// scope: scripts too` as its second line; the runner then
   lints it with `eslint.scripts.config.js` as well. A story is preceded by `// expect: pass` or
   `// expect: fail`.
+- Fixtures may sit in folders. `fixtures/src/<folder>/` stands for
+  `src/<folder>/`, so the tier, theme and story title rules apply to it
+  as they do in `src/`.
 - `panda.config.ts` is the library config plus two test tokens (`cyan.500`
   and `accent`). They exist only for the fixtures.
 - When a new lint rule or check is added, add a fixture that it must

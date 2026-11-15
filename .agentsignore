@@ -15,3 +15,6 @@ checks/stories/
 
 # Foundation stories and docs; src/AGENTS.md covers them
 src/foundations/
+
+# Recipe files; src/theme/AGENTS.md covers them
+src/theme/recipes/

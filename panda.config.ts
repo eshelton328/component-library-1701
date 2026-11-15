@@ -1,5 +1,6 @@
 import { defineConfig } from '@pandacss/dev'
 import tokens from './tokens/generated/preset'
+import { recipes, slotRecipes } from './src/theme/recipes'
 
 // Tokens come from tokens/*.json through `pnpm tokens`, never from here.
 // preset-base gives utilities and conditions (`.dark &` for dark mode);
@@ -17,6 +18,8 @@ export default defineConfig({
   jsxStyleProps: 'none',
   strictTokens: true,
   strictPropertyValues: true,
+  // Component styles are config recipes in src/theme/recipes (d-067).
+  theme: { extend: { recipes, slotRecipes } },
   globalCss: {
     body: { bg: 'bg.canvas', color: 'fg.default', fontFamily: 'sans', textStyle: 'body' },
   },

@@ -6,5 +6,6 @@ export default [
     pandaConfig: './checks/panda.config.ts',
     tsconfigRootDir: import.meta.dirname,
     files: ['checks/fixtures/**/*.tsx'],
+    srcDir: 'checks/fixtures/src',
   })),
 ]

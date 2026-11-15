@@ -9,11 +9,11 @@
  * or a Figma page; the groups below do.
  */
 export const tiers = {
-  foundations: { mayImport: [] },
+  foundations: { mayImport: ['foundations'] },
   controls: { mayImport: ['foundations', 'controls'] },
   parts: { mayImport: ['foundations', 'controls', 'parts'] },
   // Shell takes Parts as children through slots, never by import.
-  shell: { mayImport: ['foundations', 'controls'] },
+  shell: { mayImport: ['foundations', 'controls', 'shell'] },
   pages: { mayImport: ['foundations', 'controls', 'parts', 'shell', 'pages'] },
 } as const satisfies Record<string, { mayImport: readonly string[] }>
 

@@ -58,6 +58,8 @@ const all = await figma.variables.getLocalVariablesAsync('STRING');
 const fontVars = new Map(all.map(v => [v.name, v]));
 const styles = await figma.getLocalTextStylesAsync();
 const byName = new Map(styles.map(s => [s.name, s]));
+const twins = styles.filter(s => styles.some(o => o !== s && o.name === s.name) && DATA.some(d => d.name === s.name));
+if (twins.length) throw new Error('Text styles with the same name: ' + twins.map(s => s.name + ' ' + s.id).join(', '));
 const weight = { 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold' };
 let created = 0, updated = 0;
 for (const d of DATA) {
@@ -73,6 +75,7 @@ for (const d of DATA) {
   s.fontSize = d.fontSize;
   s.lineHeight = { unit: 'PERCENT', value: d.lineHeightPercent };
   s.letterSpacing = { unit: 'PIXELS', value: d.letterSpacingPx };
+  s.textCase = d.textCase;
   s.description = d.description || '';
   s.setBoundVariable('fontFamily', fv);
 }
@@ -98,6 +101,10 @@ for (const v of all) {
 }
 for (const s of await figma.getLocalTextStylesAsync()) {
   const b = s.boundVariables?.fontFamily;
-  out['style|' + s.name] = fnv([s.fontName.style, f4(s.fontSize), s.lineHeight.unit, s.lineHeight.value.toFixed(2), f4(s.letterSpacing.value), b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
+  const lh = s.lineHeight.unit === 'AUTO' ? 'AUTO|' : s.lineHeight.unit + '|' + s.lineHeight.value.toFixed(2);
+  const key = 'style|' + s.name;
+  // A second style with the same name gets its own key, so the compare
+  // reports it as extra, with its ID.
+  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
 }
 return out;`

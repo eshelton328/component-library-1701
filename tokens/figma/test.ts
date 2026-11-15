@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { runInNewContext } from 'node:vm'
 import { colourScopes, compareHashes, escapeHtml, expectedHashes, exportTokens, fnv, renderScripts } from './lib.ts'
 import type { FigmaTokens } from './lib.ts'
 
@@ -109,4 +110,87 @@ void test('a changed value changes its hash', () => {
   const before = expectedHashes(d)[`var|Layout|${v.name}`]
   v.values['Value'] = 999
   assert.notEqual(expectedHashes(d)[`var|Layout|${v.name}`], before)
+})
+
+// A stub of the Figma plugin API with only what the text-style and
+// fingerprint scripts call, so a test can run the rendered code.
+type StubStyle = Record<string, unknown> & { id: string; name: string }
+function stubFigma(styles: StubStyle[]) {
+  const font = { id: 'V:font', name: 'font/sans', resolvedType: 'STRING', variableCollectionId: 'C:theme', scopes: ['FONT_FAMILY'], codeSyntax: {}, hiddenFromPublishing: false, description: '', valuesByMode: { m: 'Geist' } }
+  return {
+    styles,
+    variables: {
+      getLocalVariablesAsync: () => Promise.resolve([font]),
+      getLocalVariableCollectionsAsync: () => Promise.resolve([{ id: 'C:theme', name: 'Theme', modes: [{ modeId: 'm', name: 'Viewscreen' }] }]),
+    },
+    getLocalTextStylesAsync: () => Promise.resolve(styles),
+    loadFontAsync: () => Promise.resolve(),
+    createTextStyle: () => {
+      const s: StubStyle = { id: `S:${String(styles.length)}`, name: '', setBoundVariable: (_: string, v: { id: string }) => (s['boundVariables'] = { fontFamily: { id: v.id } }) }
+      styles.push(s)
+      return s
+    },
+  }
+}
+// use_figma runs a script as the body of an async function with figma in scope.
+const run = async (code: string, figma: unknown): Promise<unknown> => {
+  const result: unknown = runInNewContext(`(async () => {\n${code}\n})()`, { figma })
+  return await result
+}
+const textScript = (d: FigmaTokens) => renderScripts(d).find((s) => s.file === 'text-styles.js')?.code ?? ''
+const fingerprint = (d: FigmaTokens) => renderScripts(d).find((s) => s.file === 'fingerprint.js')?.code ?? ''
+const sansOnly = (): FigmaTokens => ({ ...doc, collections: [], textStyles: doc.textStyles.filter((t) => t.fontFamilyVariable === 'font/sans') })
+const record = (x: unknown): Record<string, unknown> => (typeof x === 'object' && x !== null ? Object.fromEntries(Object.entries(x)) : {})
+// The stub has one font variable that sansOnly() does not export, so these tests compare the styles only.
+const stylesOf = (x: unknown) => Object.fromEntries(Object.entries(record(x)).filter(([k]) => k.startsWith('style|')))
+
+void test('exports the uppercase transform as the UPPER text case (Codex review of #14)', () => {
+  assert.equal(doc.textStyles.find((t) => t.name === 'text/eyebrow')?.textCase, 'UPPER')
+  assert.ok(doc.textStyles.filter((t) => t.name !== 'text/eyebrow').every((t) => t.textCase === 'ORIGINAL'))
+})
+
+void test('the written text styles match their expected hashes, text case included', async () => {
+  const d = sansOnly()
+  const figma = stubFigma([])
+  assert.deepEqual(record(await run(textScript(d), figma)), { created: d.textStyles.length, updated: 0, total: d.textStyles.length })
+  const expected = expectedHashes(d)
+  const got = stylesOf(await run(fingerprint(d), figma))
+  assert.deepEqual(compareHashes(expected, got), [])
+  const first = figma.styles[0]
+  assert.ok(first)
+  first['textCase'] = first['textCase'] === 'UPPER' ? 'ORIGINAL' : 'UPPER'
+  assert.deepEqual(compareHashes(expected, stylesOf(await run(fingerprint(d), figma))), [`changed style|${first.name}`])
+})
+
+void test('the fingerprint sees the letter-spacing unit and survives an AUTO line height', async () => {
+  const d = sansOnly()
+  const figma = stubFigma([])
+  await run(textScript(d), figma)
+  const expected = expectedHashes(d)
+  const [a, b] = figma.styles
+  assert.ok(a && b)
+  a['letterSpacing'] = { ...record(a['letterSpacing']), unit: 'PERCENT' }
+  b['lineHeight'] = { unit: 'AUTO' }
+  assert.deepEqual(compareHashes(expected, stylesOf(await run(fingerprint(d), figma))).sort(), [`changed style|${a.name}`, `changed style|${b.name}`].sort())
+})
+
+void test('a second text style with the same name is extra in the fingerprint and stops the write', async () => {
+  const d = sansOnly()
+  const figma = stubFigma([])
+  await run(textScript(d), figma)
+  const first = figma.styles[0]
+  assert.ok(first)
+  figma.styles.push({ ...first, id: 'S:twin', fontSize: 99 })
+  assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))), [`extra style|${first.name}|duplicate|S:twin`])
+  await assert.rejects(run(textScript(d), figma), /same name: .*S:twin/)
+})
+
+void test('rejects a text style that differs between themes', () => {
+  const theme = themes[0]?.json
+  const second = structuredClone(theme)
+  const text = record(record(second)['text'])
+  const heading = record(text['eyebrow'])
+  heading['$value'] = { ...record(heading['$value']), fontSize: { value: 32, unit: 'px' } }
+  text['eyebrow'] = heading
+  assert.throws(() => exportTokens({ themes: [{ name: 'a', json: theme }, { name: 'b', json: { ...record(second), text } }], layout: {}, commit: '', tokensSha256: '' }), /text\/eyebrow differs between themes/)
 })

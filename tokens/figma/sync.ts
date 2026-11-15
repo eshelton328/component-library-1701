@@ -3,6 +3,8 @@
 //   node tokens/figma/sync.ts render [--out <dir>]
 //     Writes <dir>/figma-tokens.json and <dir>/scripts/*.js, the use_figma
 //     scripts in the order they must run. The default <dir> is .figma-sync/.
+//     It prints the Figma file key from target.json and the font families
+//     that the text styles need.
 //   node tokens/figma/sync.ts compare <fingerprint.json> [--out <dir>]
 //     Compares the reply of fingerprint.js with <dir>/figma-tokens.json.
 //     Exit 0 when every variable and text style matches.
@@ -43,7 +45,16 @@ if (command === 'render') {
   const scripts = renderScripts(doc)
   for (const s of scripts) writeFileSync(join(out, 'scripts', s.file), s.code)
   const counts = Object.fromEntries(doc.collections.map((c) => [c.name, c.variables.length]))
-  console.log(JSON.stringify({ ok: true, commit: commit.slice(0, 7), out, counts, textStyles: doc.textStyles.length, scripts: scripts.map((s) => ({ file: s.file, bytes: s.code.length })) }))
+  // The Figma library file to sync, and the font families its text styles
+  // need, so the agent takes both from here and not from a prompt.
+  const target = readJson(join(tokens, 'figma', 'target.json'))
+  const fileKey = isRecord(target) && typeof target['fileKey'] === 'string' ? target['fileKey'] : undefined
+  if (fileKey === undefined) {
+    console.error('tokens/figma/target.json has no fileKey')
+    process.exit(2)
+  }
+  const fonts = [...new Set(doc.collections.flatMap((c) => c.variables.filter((v) => v.type === 'STRING').flatMap((v) => Object.values(v.values ?? {}))))]
+  console.log(JSON.stringify({ ok: true, commit: commit.slice(0, 7), fileKey, fonts, out, counts, textStyles: doc.textStyles.length, scripts: scripts.map((s) => ({ file: s.file, bytes: s.code.length })) }))
 } else if (command === 'compare') {
   const fingerprint = args[1]
   if (!fingerprint || fingerprint.startsWith('--')) {

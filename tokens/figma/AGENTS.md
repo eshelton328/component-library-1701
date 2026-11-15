@@ -10,6 +10,8 @@ scripts that the Figma MCP tool `use_figma` runs. It never calls Figma.
   `fingerprint.js` reads. Each write script creates what is missing and
   updates the rest by name, so a rerun is safe. It reports a Figma
   variable with no token in `extraInFigma` and never deletes it.
+- `target.json` holds the key of the Figma library file (d-070); the
+  render prints it with the font families the text styles need.
 - Save the reply of `fingerprint.js` as JSON, then run
   `pnpm tokens:figma:compare <file>`. Exit 0 means every variable and text
   style in the file matches the tokens. It fails when the tokens changed

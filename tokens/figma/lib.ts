@@ -32,7 +32,11 @@ export type TextStyle = {
   fontWeight: number
   lineHeightPercent: number
   letterSpacingPx: number
+  textCase: TextCase
 }
+export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
+/** The CSS text-transform values a token may set, as Figma text cases. */
+const textCases: Record<string, TextCase> = { none: 'ORIGINAL', uppercase: 'UPPER', lowercase: 'LOWER', capitalize: 'TITLE' }
 export type FigmaTokens = {
   source: { repo: string; commit: string; tokensSha256: string }
   collections: Collection[]
@@ -161,7 +165,11 @@ export function exportTokens(src: TokenSources): FigmaTokens {
       if (!isRecord(val)) return fail(`${name} is not a typography value`)
       const ref = typeof val['fontFamily'] === 'string' ? /^\{font\.family\.(\w+)\}$/.exec(val['fontFamily'])?.[1] : undefined
       if (ref === undefined) return fail(`${name} does not reference a font family`)
-      textStyles.set(path.join('/'), {
+      const ext = tok['$extensions']
+      const transform = isRecord(ext) ? ext['com.eshelton328.textTransform'] : undefined
+      const textCase = transform === undefined ? 'ORIGINAL' : typeof transform === 'string' ? textCases[transform] : undefined
+      if (textCase === undefined) return fail(`${name} has a text transform Figma cannot show: ${String(transform)}`)
+      const style: TextStyle = {
         name,
         description: description(tok),
         fontFamilyVariable: `font/${ref}`,
@@ -169,7 +177,16 @@ export function exportTokens(src: TokenSources): FigmaTokens {
         fontWeight: num(val['fontWeight'], name),
         lineHeightPercent: Math.round(num(val['lineHeight'], name) * 100 * 100) / 100,
         letterSpacingPx: px(val['letterSpacing'], name),
-      })
+        textCase,
+      }
+      // One Figma text style serves every theme, and only its font family
+      // is bound to a Theme variable. A theme with another size, weight,
+      // line height, spacing or case would overwrite the first theme's.
+      const before = textStyles.get(path.join('/'))
+      if (before !== undefined && JSON.stringify(before) !== JSON.stringify(style)) {
+        return fail(`${name} differs between themes; a Figma text style can hold only one value for each property`)
+      }
+      textStyles.set(path.join('/'), style)
     }
   }
   if (!isRecord(src.layout)) return fail('layout is not an object')
@@ -258,7 +275,7 @@ export function expectedHashes(doc: FigmaTokens): Record<string, string> {
   }
   for (const t of doc.textStyles) {
     const style = fontStyle[t.fontWeight] ?? fail(`${t.name}: no font style for weight ${String(t.fontWeight)}`)
-    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), f4(t.letterSpacingPx), t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
+    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
   }
   return out
 }

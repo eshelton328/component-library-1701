@@ -16,7 +16,10 @@ Repository scripts that are not part of the package.
   `if:` on the job or the step.
 - `check-cycles.ts` (`pnpm check:cycles`) fails when files in `src/`
   import each other in a cycle; type-only imports do not count, and an
-  `import.meta.glob` counts as an import of each file it matches.
+  `import.meta.glob` counts as an import of each file it matches, even
+  when only its keys are used. It also fails on an import it cannot
+  follow: a dynamic import of a computed name, or a glob with a computed
+  pattern or an option other than `eager`.
   `cycles-lib.ts` holds its pure functions, and `cycles.test.ts`
   (`pnpm test:cycles`) tests them.
 - `check-agents-md.ts` runs in `pnpm verify`. It fails when a folder has

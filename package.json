@@ -16,13 +16,14 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test && pnpm check:ci",
     "test:hooks": "node scripts/agent-hooks/test.ts",
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
     "test:tokens": "node tokens/test.ts",
     "check:agents-md": "node scripts/check-agents-md.ts",
-    "check:worktree": "node scripts/check-worktree.ts"
+    "check:worktree": "node scripts/check-worktree.ts",
+    "check:ci": "node scripts/check-ci.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -62,6 +63,7 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.2",
     "vite": "8.3.8",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "yaml": "2.9.1"
   }
 }

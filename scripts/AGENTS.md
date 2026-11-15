@@ -11,6 +11,9 @@ Repository scripts that are not part of the package.
   catch the fixtures in `../checks/`.
 - `check-worktree.ts` runs `pnpm verify` in a fresh git worktree. CI
   runs it; never add it to `pnpm verify`, which it runs.
+- `check-ci.ts` fails when a step of `pnpm verify` does not run on every
+  pull request: it must be a `run: pnpm <step>` in a CI job, with no
+  `if:` on the job or the step.
 - `check-agents-md.ts` runs in `pnpm verify`. It fails when a folder has
   no `AGENTS.md`, a `CLAUDE.md` is not the one-line shim `@AGENTS.md`, or a
   parent `AGENTS.md` does not link a child's. Exempt a folder in

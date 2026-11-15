@@ -121,15 +121,17 @@ const lum = ([r, g, b]: Rgb) => 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722
 const ratio = (a: Rgb, b: Rgb) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
 // contrast.json is data from outside the code, so parse it before use.
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null
+const isName = (s: unknown): s is string => typeof s === 'string' && s.trim() !== ''
 const isPair = (v: unknown): v is Pair =>
-  isRecord(v) && typeof v['fg'] === 'string' && typeof v['min'] === 'number' &&
-  Array.isArray(v['on']) && v['on'].every((s) => typeof s === 'string')
+  isRecord(v) && isName(v['fg']) && typeof v['min'] === 'number' &&
+  Array.isArray(v['on']) && v['on'].length > 0 &&
+  v['on'].every((s) => typeof s === 'string' && s.split('@').every(isName))
 const parsePairs = (text: string): Pair[] => {
   const data: unknown = JSON.parse(text)
   if (!isRecord(data) || !Array.isArray(data['pairs'])) throw new Error('contrast.json needs a "pairs" array')
   const found: unknown[] = data['pairs']
   const bad = found.findIndex((p) => !isPair(p))
-  if (bad >= 0) throw new Error(`contrast.json pair ${String(bad)} needs fg (string), on (string[]) and min (number)`)
+  if (bad >= 0) throw new Error(`contrast.json pair ${String(bad)} needs fg (a token name), on (a non-empty list of token names or stacks) and min (number)`)
   return found.filter(isPair)
 }
 const pairs = parsePairs(readFileSync(join(dir, 'contrast.json'), 'utf8'))
@@ -142,7 +144,7 @@ for (const [key, set] of Object.entries(sets)) {
   for (const p of pairs) for (const bg of p.on) {
     const ids = [p.fg, ...bg.split('@')]
     const missing = ids.find((id) => !colourOf(set, id))
-    if (missing) { fail('contrast', `${key}: contrast.json names color.${missing}, which is not a colour token`); continue }
+    if (missing !== undefined) { fail('contrast', `${key}: contrast.json names color.${missing}, which is not a colour token`); continue }
     let back = canvas
     for (const id of bg.split('@').reverse()) {
       const c = colourOf(set, id)
@@ -195,7 +197,10 @@ const category = (id: string): [string, string] => {
   if (!hit) throw new Error(`no Panda category for ${id}`)
   return [hit[1], id.slice(hit[0].length)]
 }
-const isLeaf = (node: Tree | Leaf): node is Leaf => 'value' in node
+// A group may hold a child named "value", so a leaf is known by where it
+// came from, not by its shape: leaf() records each one it makes.
+const leaves = new WeakSet<object>()
+const isLeaf = (node: Tree | Leaf): node is Leaf => leaves.has(node)
 const branch = (tree: Tree, key: string): Tree => {
   const node = tree[key] ?? {}
   if (isLeaf(node)) throw new Error(`token path ${key} is both a token and a group`)
@@ -210,7 +215,11 @@ const put = (tree: Tree, path: string, leaf: Leaf) => {
   for (const p of parts) node = branch(node, p)
   node[last] = leaf
 }
-const leaf = (value: unknown, description: string | undefined): Leaf => (description ? { value, description } : { value })
+const leaf = (value: unknown, description: string | undefined): Leaf => {
+  const node: Leaf = description ? { value, description } : { value }
+  leaves.add(node)
+  return node
+}
 const modal = (light: string, dark: string) => (light === dark ? dark : { base: light, _dark: dark })
 
 const tokens: Tree = {}

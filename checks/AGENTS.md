@@ -5,7 +5,9 @@ Proof that the library's checks catch what they must. `../scripts/check-fixtures
 `stories/`, then compares each result with the file's `// expect:` line.
 
 - A fixture starts with `// expect: clean`, `// expect: tsc <code>` or
-  `// expect: eslint <rule>`. A story is preceded by `// expect: pass` or
+  `// expect: eslint <rule>`. A type fixture whose rule also applies to the
+  scripts has `// scope: scripts too` as its second line; the runner then
+  lints it with `eslint.scripts.config.js` as well. A story is preceded by `// expect: pass` or
   `// expect: fail`.
 - `panda.config.ts` is the library config plus two test tokens (`cyan.500`
   and `accent`). They exist only for the fixtures.

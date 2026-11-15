@@ -29,17 +29,21 @@ for (const line of tsc.stdout.split('\n')) {
   const [, file, code] = m ?? []
   if (file && code) (tscErrors[file] ??= []).push(code)
 }
-const eslint = run('eslint', ['-c', 'checks/eslint.config.js', '-f', 'json', 'checks/fixtures'])
 // ESLint's JSON report: an array of { filePath, messages: [{ ruleId }] }.
-const eslintRules: Record<string, string[]> = {}
-const eslintReport: unknown = JSON.parse(eslint.stdout)
-for (const file of list(eslintReport)) {
-  if (!isRecord(file)) continue
-  eslintRules[basename(str(file['filePath']))] = list(file['messages']).map((m) => (isRecord(m) && typeof m['ruleId'] === 'string' ? m['ruleId'] : 'eslint'))
+const lintWith = (config: string): Record<string, string[]> => {
+  const report: unknown = JSON.parse(run('eslint', ['-c', config, '-f', 'json', 'checks/fixtures']).stdout)
+  const rules: Record<string, string[]> = {}
+  for (const file of list(report)) {
+    if (!isRecord(file)) continue
+    rules[basename(str(file['filePath']))] = list(file['messages']).map((m) => (isRecord(m) && typeof m['ruleId'] === 'string' ? m['ruleId'] : 'eslint'))
+  }
+  return rules
 }
+const eslintRules = lintWith('checks/eslint.config.js')
+const scriptRules = lintWith('checks/eslint.scripts.config.js')
 
 for (const name of readdirSync(join(root, 'checks/fixtures')).sort()) {
-  const head = readFileSync(join(root, 'checks/fixtures', name), 'utf8').split('\n')[0] ?? ''
+  const [head = '', second = ''] = readFileSync(join(root, 'checks/fixtures', name), 'utf8').split('\n')
   const [, tool, want] = head.match(/^\/\/ expect: (clean|tsc|eslint) ?(\S*)/) ?? []
   const gotTsc = tscErrors[name] ?? []
   const gotLint = eslintRules[name] ?? []
@@ -49,6 +53,11 @@ for (const name of readdirSync(join(root, 'checks/fixtures')).sort()) {
   else if (tool === 'eslint' && want) ok = gotLint.includes(want)
   else ok = false
   results.push({ check: `fixtures/${name}`, expect: head.slice(3), ok, tsc: gotTsc, eslint: gotLint })
+  if (second.trim() === '// scope: scripts too' && (tool === 'eslint' || tool === 'clean')) {
+    const gotScript = scriptRules[name] ?? []
+    const okScript = tool === 'clean' ? gotScript.length === 0 : want !== undefined && gotScript.includes(want)
+    results.push({ check: `fixtures/${name} (scripts config)`, expect: head.slice(3), ok: okScript, eslint: gotScript })
+  }
 }
 
 if (!process.argv.includes('--static')) {

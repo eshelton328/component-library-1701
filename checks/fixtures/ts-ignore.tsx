@@ -1,4 +1,5 @@
 // expect: eslint @typescript-eslint/ban-ts-comment
+// scope: scripts too
 import { css } from '../styled-system/css'
 
 // @ts-expect-error a raw value

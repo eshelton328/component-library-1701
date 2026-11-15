@@ -1,4 +1,5 @@
 // expect: eslint @typescript-eslint/switch-exhaustiveness-check
+// scope: scripts too
 type Mode = 'dark' | 'light' | 'system'
 export function label(mode: Mode): string {
   switch (mode) {

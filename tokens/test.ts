@@ -96,6 +96,14 @@ const cases: [string, Mutate, (r: Result) => boolean][] = [
     ok((r) => r.docs.includes('subtitle={"Text labelled \\"primary\\" {x}."}'))],
   ['a wrong shadow colour hex fails', (e) => { e(theme, (d) => { set(d, 'dark.shadow.overlay.$value.color.hex', '#ffffff') }) },
     has('hex', 'shadow.overlay shadow layer 0')],
+  ['an empty contrast reference fails', (e) => { e('contrast.json', (c) => {
+    const pairs = c['pairs']
+    if (!Array.isArray(pairs)) throw new Error('contrast.json has no pairs')
+    pairs.push({ fg: '', on: ['bg.canvas'], min: 4.5 })
+  }) }, (r) => r.problems.some((p) => p.check === 'crash' && p.detail.includes('needs fg (a token name)'))],
+  ['a token group named value is emitted', (e) => { e(theme, (d) => {
+    set(d, 'radius.value', { sm: { $type: 'dimension', $value: { value: 3, unit: 'px' }, $description: 'Test radius inside a group named value.' } })
+  }) }, ok((r) => /"value": \{\s*"sm": \{\s*"value": "3px"/.test(r.preset))],
   ['a missing light token fails', (e) => { e(theme, (d) => { remove(d, 'light.color.kind.hook') }) }, has('complete', 'color.kind.hook')],
   ['a missing description fails', (e) => { e(theme, (d) => { remove(d, 'radius.md.$description') }) }, has('described', 'radius.md')],
 ]

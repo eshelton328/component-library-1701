@@ -14,16 +14,13 @@ inventory before adding a token or a component.
 
 ## Verify
 
-Run `pnpm verify` before you finish. It runs the token checks, Panda codegen, `tsc`,
-ESLint, the hook tests, the check fixtures (`checks/`) and the Storybook
-story tests in Chromium. CI runs the same command and builds Storybook.
+Run `pnpm verify` before you finish. It runs the token checks and their
+tests, Panda codegen, `tsc`, ESLint, the hook tests, the check fixtures
+(`checks/`), the `AGENTS.md` check and the Storybook story tests in
+Chromium. CI runs the same command and builds Storybook.
 
 ## Rules
 
-- Style only with tokens. `strictTokens` makes a raw value such as
-  `color: 'red'` a type error, and ESLint rejects arbitrary values
-  (`'[red]'`), opacity modifiers (`'accent/37'`), primitive tokens where a
-  semantic token exists, and inline `style` props.
 - If a design needs a value that no token has, stop and name the missing
   token in your reply. Do not use the nearest token or a raw value
   (decision d-050).
@@ -33,29 +30,6 @@ story tests in Chromium. CI runs the same command and builds Storybook.
   screenshot baseline, to make a check pass. Baselines change only through
   a CI workflow Erik starts.
 - Panda v2 builds a library with `panda lib`, not `panda ship`.
-- Components arrive in phase 4.
-
-## Tokens
-
-The source is DTCG JSON in `tokens/`: `layout.json` (spacing and sizes,
-the same in every theme), one file per theme in `themes/` (a `dark` and a
-`light` group of colours and shadows, plus type, radii, border widths,
-blur and opacity) and `modes/`, which picks the dark or light group.
-`resolver.json` lists the themes and modes. `pnpm tokens` checks the tokens
-and writes `tokens/generated/preset.ts` and
-`src/foundations/colours.mdx`; never edit those two by hand.
-
-- The checks, in `tokens/build.mjs`: every theme and mode has the same
-  tokens, every token has a `$description` saying where to use it, each
-  colour's `hex` matches its `components`, and each pair in
-  `tokens/contrast.json` meets its minimum in every theme and mode.
-- A theme changes colours, shadows, type size, family and weight, radii,
-  border widths, blur and opacity. It never changes spacing or sizes.
-- Use a text style (`textStyle: 'body'`), not `fontSize` alone.
-- `fg.subtle` is allowed only on the surfaces its description names. On
-  `surface.raised` or `surface.selected`, use `fg.muted`.
-- A new token needs a reason and a description, and Erik's approval: the
-  token set changes only through a decision (d-050).
 
 ## Hooks
 
@@ -79,7 +53,20 @@ Conventional Commits. A PR title becomes the squash commit, and CI checks
 its format. Changed baseline images need Erik's `baselines-approved`
 label.
 
+In the same PR as the change, update the `AGENTS.md` of each folder whose
+rules, commands or layout the change alters, and the README when its
+status, prerequisites or quick start change. A new folder gets its own
+`AGENTS.md`, `CLAUDE.md` shim and a link from its parent, or a line in
+`.agentsignore`. The PR description names each context file it changes,
+or says none needed a change.
+
 ## Folders
 
+- [src/AGENTS.md](src/AGENTS.md): read before writing a component, a
+  recipe or a story.
+- [tokens/AGENTS.md](tokens/AGENTS.md): read before adding or changing a
+  token, a theme or the token build.
 - [checks/AGENTS.md](checks/AGENTS.md): read before changing a check
   fixture or the check runner.
+- [scripts/AGENTS.md](scripts/AGENTS.md): read before changing a
+  repository script or a Claude Code hook.

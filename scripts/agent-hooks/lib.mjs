@@ -27,7 +27,7 @@ export const guarded = [
   /^panda\.config\.ts$/,
   /^tsconfig\.json$/,
   /^vitest\.config\.ts$/,
-  /^tokens\/(build\.mjs|contrast\.json|resolver\.json)$/,
+  /^tokens\/(build\.mjs|test\.mjs|contrast\.json|resolver\.json)$/,
   /^tokens\/generated\//,
 ]
 

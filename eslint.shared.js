@@ -15,11 +15,17 @@ const restricted = [
     message:
       'Arbitrary values ("[...]") skip the token set. Use a semantic token; if none fits, stop and name the missing token.',
   },
-  {
-    selector: "Property[value.type='Literal'][value.value=/^[a-zA-Z][\\w.-]*\\/\\d+(\\.\\d+)?$/]",
+  ...[
+    // Opacity modifiers, numeric ("accent/37") or named ("fg.default/disabled"),
+    // inside any style call. Strings outside style calls, such as a story
+    // title "Foundations/Surfaces", are not styles.
+    "CallExpression[callee.name=/^(css|cva|sva|defineRecipe|defineSlotRecipe|defineStyles|styled)$/]",
+    "CallExpression[callee.object.name='styled']",
+  ].map((call) => ({
+    selector: `${call} Property[value.type='Literal'][value.value=/^[a-zA-Z][\\w.-]*\\/[\\w.]+$/]`,
     message:
-      'Opacity modifiers ("token/37") make new colours outside the token set. Use the semantic token for that role, such as a subtle or strong variant.',
-  },
+      'Opacity modifiers ("token/37", "token/disabled") make new colours outside the token set. Use the semantic token for that role, such as a subtle or faint variant.',
+  })),
   {
     selector: "JSXAttribute[name.name='style']",
     message: 'Inline styles skip the token set. Use the component recipe variants.',

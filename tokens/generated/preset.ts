@@ -367,7 +367,7 @@ export default definePreset({
             "subtle": {
               "value": {
                 "base": "#5d6886",
-                "_dark": "#7682a3"
+                "_dark": "#7986a6"
               },
               "description": "Third-level text: counts, placeholders, section labels, ages. Only on bg.canvas, surface.pane, surface.chrome, surface.overlay, surface.inset or surface.well."
             }
@@ -618,6 +618,56 @@ export default definePreset({
           "sans": {
             "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
             "description": "Text font for every style except mono, code and eyebrow."
+          },
+          "text": {
+            "badge": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
+            },
+            "body": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the body text style. Use textStyle: 'body', not this token."
+            },
+            "code": {
+              "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
+              "description": "Part of the code text style. Use textStyle: 'code', not this token."
+            },
+            "eyebrow": {
+              "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
+              "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
+            },
+            "heading": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "label": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "mono": {
+              "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
+              "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "navLabel": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "paneTitle": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "small": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "subtitle": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
+            },
+            "title": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the title text style. Use textStyle: 'title', not this token."
+            }
           }
         },
         "opacity": {
@@ -688,203 +738,211 @@ export default definePreset({
           }
         },
         "fontSizes": {
-          "badge": {
-            "value": "10px",
-            "description": "The badge text style. The digit in a needs-you badge."
-          },
-          "body": {
-            "value": "14px",
-            "description": "The body text style. Descriptions, messages and the prompt."
-          },
-          "code": {
-            "value": "14px",
-            "description": "The code text style. Code in rendered Markdown."
-          },
-          "eyebrow": {
-            "value": "11px",
-            "description": "The eyebrow text style. Group headers and section labels, in capitals."
-          },
-          "heading": {
-            "value": "28px",
-            "description": "The heading text style. Page titles on tablet and phone, and the toolkit item title."
-          },
-          "label": {
-            "value": "14px",
-            "description": "The label text style. Buttons, tabs, chips and row titles."
-          },
-          "mono": {
-            "value": "12px",
-            "description": "The mono text style. Meta, paths, counts, code lines and axis labels."
-          },
-          "navLabel": {
-            "value": "10px",
-            "description": "The navLabel text style. Rail and tab bar labels."
-          },
-          "paneTitle": {
-            "value": "15px",
-            "description": "The paneTitle text style. Pane and panel titles."
-          },
-          "small": {
-            "value": "12px",
-            "description": "The small text style. Captions, helper text and diff lines."
-          },
-          "subtitle": {
-            "value": "17px",
-            "description": "The subtitle text style. Dialog and sheet titles."
-          },
-          "title": {
-            "value": "20px",
-            "description": "The title text style. The desktop page title, the drawer header and KPI values."
+          "text": {
+            "badge": {
+              "value": "10px",
+              "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
+            },
+            "body": {
+              "value": "14px",
+              "description": "Part of the body text style. Use textStyle: 'body', not this token."
+            },
+            "code": {
+              "value": "14px",
+              "description": "Part of the code text style. Use textStyle: 'code', not this token."
+            },
+            "eyebrow": {
+              "value": "11px",
+              "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
+            },
+            "heading": {
+              "value": "28px",
+              "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "label": {
+              "value": "14px",
+              "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "mono": {
+              "value": "12px",
+              "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "navLabel": {
+              "value": "10px",
+              "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "paneTitle": {
+              "value": "15px",
+              "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "small": {
+              "value": "12px",
+              "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "subtitle": {
+              "value": "17px",
+              "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
+            },
+            "title": {
+              "value": "20px",
+              "description": "Part of the title text style. Use textStyle: 'title', not this token."
+            }
           }
         },
         "lineHeights": {
-          "badge": {
-            "value": "1.2",
-            "description": "The badge text style. The digit in a needs-you badge."
-          },
-          "body": {
-            "value": "1.4286",
-            "description": "The body text style. Descriptions, messages and the prompt."
-          },
-          "code": {
-            "value": "1.4286",
-            "description": "The code text style. Code in rendered Markdown."
-          },
-          "eyebrow": {
-            "value": "1.3636",
-            "description": "The eyebrow text style. Group headers and section labels, in capitals."
-          },
-          "heading": {
-            "value": "1.4643",
-            "description": "The heading text style. Page titles on tablet and phone, and the toolkit item title."
-          },
-          "label": {
-            "value": "1.4286",
-            "description": "The label text style. Buttons, tabs, chips and row titles."
-          },
-          "mono": {
-            "value": "1.4167",
-            "description": "The mono text style. Meta, paths, counts, code lines and axis labels."
-          },
-          "navLabel": {
-            "value": "1.2",
-            "description": "The navLabel text style. Rail and tab bar labels."
-          },
-          "paneTitle": {
-            "value": "1.3333",
-            "description": "The paneTitle text style. Pane and panel titles."
-          },
-          "small": {
-            "value": "1.4167",
-            "description": "The small text style. Captions, helper text and diff lines."
-          },
-          "subtitle": {
-            "value": "1.4118",
-            "description": "The subtitle text style. Dialog and sheet titles."
-          },
-          "title": {
-            "value": "1.45",
-            "description": "The title text style. The desktop page title, the drawer header and KPI values."
+          "text": {
+            "badge": {
+              "value": "1.2",
+              "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
+            },
+            "body": {
+              "value": "1.4286",
+              "description": "Part of the body text style. Use textStyle: 'body', not this token."
+            },
+            "code": {
+              "value": "1.4286",
+              "description": "Part of the code text style. Use textStyle: 'code', not this token."
+            },
+            "eyebrow": {
+              "value": "1.3636",
+              "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
+            },
+            "heading": {
+              "value": "1.4643",
+              "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "label": {
+              "value": "1.4286",
+              "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "mono": {
+              "value": "1.4167",
+              "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "navLabel": {
+              "value": "1.2",
+              "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "paneTitle": {
+              "value": "1.3333",
+              "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "small": {
+              "value": "1.4167",
+              "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "subtitle": {
+              "value": "1.4118",
+              "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
+            },
+            "title": {
+              "value": "1.45",
+              "description": "Part of the title text style. Use textStyle: 'title', not this token."
+            }
           }
         },
         "fontWeights": {
-          "badge": {
-            "value": "600",
-            "description": "The badge text style. The digit in a needs-you badge."
-          },
-          "body": {
-            "value": "400",
-            "description": "The body text style. Descriptions, messages and the prompt."
-          },
-          "code": {
-            "value": "400",
-            "description": "The code text style. Code in rendered Markdown."
-          },
-          "eyebrow": {
-            "value": "400",
-            "description": "The eyebrow text style. Group headers and section labels, in capitals."
-          },
-          "heading": {
-            "value": "600",
-            "description": "The heading text style. Page titles on tablet and phone, and the toolkit item title."
-          },
-          "label": {
-            "value": "500",
-            "description": "The label text style. Buttons, tabs, chips and row titles."
-          },
-          "mono": {
-            "value": "400",
-            "description": "The mono text style. Meta, paths, counts, code lines and axis labels."
-          },
-          "navLabel": {
-            "value": "500",
-            "description": "The navLabel text style. Rail and tab bar labels."
-          },
-          "paneTitle": {
-            "value": "600",
-            "description": "The paneTitle text style. Pane and panel titles."
-          },
-          "small": {
-            "value": "400",
-            "description": "The small text style. Captions, helper text and diff lines."
-          },
-          "subtitle": {
-            "value": "600",
-            "description": "The subtitle text style. Dialog and sheet titles."
-          },
-          "title": {
-            "value": "600",
-            "description": "The title text style. The desktop page title, the drawer header and KPI values."
+          "text": {
+            "badge": {
+              "value": "600",
+              "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
+            },
+            "body": {
+              "value": "400",
+              "description": "Part of the body text style. Use textStyle: 'body', not this token."
+            },
+            "code": {
+              "value": "400",
+              "description": "Part of the code text style. Use textStyle: 'code', not this token."
+            },
+            "eyebrow": {
+              "value": "400",
+              "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
+            },
+            "heading": {
+              "value": "600",
+              "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "label": {
+              "value": "500",
+              "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "mono": {
+              "value": "400",
+              "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "navLabel": {
+              "value": "500",
+              "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "paneTitle": {
+              "value": "600",
+              "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "small": {
+              "value": "400",
+              "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "subtitle": {
+              "value": "600",
+              "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
+            },
+            "title": {
+              "value": "600",
+              "description": "Part of the title text style. Use textStyle: 'title', not this token."
+            }
           }
         },
         "letterSpacings": {
-          "badge": {
-            "value": "0px",
-            "description": "The badge text style. The digit in a needs-you badge."
-          },
-          "body": {
-            "value": "0px",
-            "description": "The body text style. Descriptions, messages and the prompt."
-          },
-          "code": {
-            "value": "0px",
-            "description": "The code text style. Code in rendered Markdown."
-          },
-          "eyebrow": {
-            "value": "0.44px",
-            "description": "The eyebrow text style. Group headers and section labels, in capitals."
-          },
-          "heading": {
-            "value": "0px",
-            "description": "The heading text style. Page titles on tablet and phone, and the toolkit item title."
-          },
-          "label": {
-            "value": "0px",
-            "description": "The label text style. Buttons, tabs, chips and row titles."
-          },
-          "mono": {
-            "value": "0px",
-            "description": "The mono text style. Meta, paths, counts, code lines and axis labels."
-          },
-          "navLabel": {
-            "value": "0px",
-            "description": "The navLabel text style. Rail and tab bar labels."
-          },
-          "paneTitle": {
-            "value": "0px",
-            "description": "The paneTitle text style. Pane and panel titles."
-          },
-          "small": {
-            "value": "0px",
-            "description": "The small text style. Captions, helper text and diff lines."
-          },
-          "subtitle": {
-            "value": "0px",
-            "description": "The subtitle text style. Dialog and sheet titles."
-          },
-          "title": {
-            "value": "0px",
-            "description": "The title text style. The desktop page title, the drawer header and KPI values."
+          "text": {
+            "badge": {
+              "value": "0px",
+              "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
+            },
+            "body": {
+              "value": "0px",
+              "description": "Part of the body text style. Use textStyle: 'body', not this token."
+            },
+            "code": {
+              "value": "0px",
+              "description": "Part of the code text style. Use textStyle: 'code', not this token."
+            },
+            "eyebrow": {
+              "value": "0.44px",
+              "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
+            },
+            "heading": {
+              "value": "0px",
+              "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "label": {
+              "value": "0px",
+              "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "mono": {
+              "value": "0px",
+              "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "navLabel": {
+              "value": "0px",
+              "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "paneTitle": {
+              "value": "0px",
+              "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "small": {
+              "value": "0px",
+              "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "subtitle": {
+              "value": "0px",
+              "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
+            },
+            "title": {
+              "value": "0px",
+              "description": "Part of the title text style. Use textStyle: 'title', not this token."
+            }
           }
         }
       },
@@ -892,122 +950,122 @@ export default definePreset({
         "badge": {
           "description": "The digit in a needs-you badge.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "badge",
-            "lineHeight": "badge",
-            "fontWeight": "badge",
-            "letterSpacing": "badge"
+            "fontFamily": "text.badge",
+            "fontSize": "text.badge",
+            "lineHeight": "text.badge",
+            "fontWeight": "text.badge",
+            "letterSpacing": "text.badge"
           }
         },
         "body": {
           "description": "Descriptions, messages and the prompt.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "body",
-            "lineHeight": "body",
-            "fontWeight": "body",
-            "letterSpacing": "body"
+            "fontFamily": "text.body",
+            "fontSize": "text.body",
+            "lineHeight": "text.body",
+            "fontWeight": "text.body",
+            "letterSpacing": "text.body"
           }
         },
         "code": {
           "description": "Code in rendered Markdown.",
           "value": {
-            "fontFamily": "mono",
-            "fontSize": "code",
-            "lineHeight": "code",
-            "fontWeight": "code",
-            "letterSpacing": "code"
+            "fontFamily": "text.code",
+            "fontSize": "text.code",
+            "lineHeight": "text.code",
+            "fontWeight": "text.code",
+            "letterSpacing": "text.code"
           }
         },
         "eyebrow": {
           "description": "Group headers and section labels, in capitals.",
           "value": {
-            "fontFamily": "mono",
-            "fontSize": "eyebrow",
-            "lineHeight": "eyebrow",
-            "fontWeight": "eyebrow",
-            "letterSpacing": "eyebrow",
+            "fontFamily": "text.eyebrow",
+            "fontSize": "text.eyebrow",
+            "lineHeight": "text.eyebrow",
+            "fontWeight": "text.eyebrow",
+            "letterSpacing": "text.eyebrow",
             "textTransform": "uppercase"
           }
         },
         "heading": {
           "description": "Page titles on tablet and phone, and the toolkit item title.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "heading",
-            "lineHeight": "heading",
-            "fontWeight": "heading",
-            "letterSpacing": "heading"
+            "fontFamily": "text.heading",
+            "fontSize": "text.heading",
+            "lineHeight": "text.heading",
+            "fontWeight": "text.heading",
+            "letterSpacing": "text.heading"
           }
         },
         "label": {
           "description": "Buttons, tabs, chips and row titles.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "label",
-            "lineHeight": "label",
-            "fontWeight": "label",
-            "letterSpacing": "label"
+            "fontFamily": "text.label",
+            "fontSize": "text.label",
+            "lineHeight": "text.label",
+            "fontWeight": "text.label",
+            "letterSpacing": "text.label"
           }
         },
         "mono": {
           "description": "Meta, paths, counts, code lines and axis labels.",
           "value": {
-            "fontFamily": "mono",
-            "fontSize": "mono",
-            "lineHeight": "mono",
-            "fontWeight": "mono",
-            "letterSpacing": "mono"
+            "fontFamily": "text.mono",
+            "fontSize": "text.mono",
+            "lineHeight": "text.mono",
+            "fontWeight": "text.mono",
+            "letterSpacing": "text.mono"
           }
         },
         "navLabel": {
           "description": "Rail and tab bar labels.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "navLabel",
-            "lineHeight": "navLabel",
-            "fontWeight": "navLabel",
-            "letterSpacing": "navLabel"
+            "fontFamily": "text.navLabel",
+            "fontSize": "text.navLabel",
+            "lineHeight": "text.navLabel",
+            "fontWeight": "text.navLabel",
+            "letterSpacing": "text.navLabel"
           }
         },
         "paneTitle": {
           "description": "Pane and panel titles.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "paneTitle",
-            "lineHeight": "paneTitle",
-            "fontWeight": "paneTitle",
-            "letterSpacing": "paneTitle"
+            "fontFamily": "text.paneTitle",
+            "fontSize": "text.paneTitle",
+            "lineHeight": "text.paneTitle",
+            "fontWeight": "text.paneTitle",
+            "letterSpacing": "text.paneTitle"
           }
         },
         "small": {
           "description": "Captions, helper text and diff lines.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "small",
-            "lineHeight": "small",
-            "fontWeight": "small",
-            "letterSpacing": "small"
+            "fontFamily": "text.small",
+            "fontSize": "text.small",
+            "lineHeight": "text.small",
+            "fontWeight": "text.small",
+            "letterSpacing": "text.small"
           }
         },
         "subtitle": {
           "description": "Dialog and sheet titles.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "subtitle",
-            "lineHeight": "subtitle",
-            "fontWeight": "subtitle",
-            "letterSpacing": "subtitle"
+            "fontFamily": "text.subtitle",
+            "fontSize": "text.subtitle",
+            "lineHeight": "text.subtitle",
+            "fontWeight": "text.subtitle",
+            "letterSpacing": "text.subtitle"
           }
         },
         "title": {
           "description": "The desktop page title, the drawer header and KPI values.",
           "value": {
-            "fontFamily": "sans",
-            "fontSize": "title",
-            "lineHeight": "title",
-            "fontWeight": "title",
-            "letterSpacing": "title"
+            "fontFamily": "text.title",
+            "fontSize": "text.title",
+            "lineHeight": "text.title",
+            "fontWeight": "text.title",
+            "letterSpacing": "text.title"
           }
         }
       }

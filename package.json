@@ -16,10 +16,12 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test",
     "test:hooks": "node scripts/agent-hooks/test.mjs",
     "tokens": "node tokens/build.mjs",
-    "tokens:check": "node tokens/build.mjs --check"
+    "tokens:check": "node tokens/build.mjs --check",
+    "test:tokens": "node tokens/test.mjs",
+    "check:agents-md": "node scripts/check-agents-md.mjs"
   },
   "peerDependencies": {
     "react": "^19.0.0",

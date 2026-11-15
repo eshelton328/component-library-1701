@@ -1,27 +1,35 @@
 #!/usr/bin/env node
 // Builds the Panda preset from the DTCG tokens and checks them.
-//   node tokens/build.mjs          check, then write tokens/generated/preset.ts
-//   node tokens/build.mjs --check  check, and fail if the preset is out of date
+//   node tokens/build.mjs              check, then write the outputs
+//   node tokens/build.mjs --check      check, and fail if an output is out of date
+//   node tokens/build.mjs --dir <path> use the tokens in <path> and write the
+//                                      outputs to <path>/generated (for tests)
 // Prints one JSON object. Exits 1 if a check fails.
 //
 // Checks, for every theme and mode the resolver lists:
-//   complete     every theme and mode has the same tokens, with the same types
-//   described    every token has a $description (in the default theme and mode)
-//   hex          a colour's hex matches its components
-//   contrast     each pair in tokens/contrast.json meets its minimum
+//   complete    every theme and mode has the same tokens, with the same types
+//   layout      spacing and sizes have the same value in every theme and mode
+//   described   every token has a $description (in the default theme and mode)
+//   colorspace  every colour, also inside a shadow, is in srgb
+//   hex         a colour's hex matches its components, also inside a shadow
+//   canvas      color.bg.canvas is opaque, since contrast is measured on it
+//   contrast    each pair in contrast.json meets its minimum
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { parse, defineConfig, Logger } from '@terrazzo/parser'
 
-const dir = new URL('.', import.meta.url).pathname
-const out = join(dir, 'generated/preset.ts')
-const check = process.argv.includes('--check')
+const args = process.argv.slice(2)
+const check = args.includes('--check')
+const custom = args.includes('--dir') ? resolve(args[args.indexOf('--dir') + 1]) : null
+const dir = custom ?? new URL('.', import.meta.url).pathname.replace(/\/$/, '')
+const presetOut = join(dir, 'generated/preset.ts')
+const docsOut = custom ? join(dir, 'generated/colours.mdx') : join(dir, '../src/foundations/colours.mdx')
 const problems = []
 const fail = (check, detail) => problems.push({ check, detail })
 
-const config = defineConfig({ lint: { rules: {} } }, { cwd: new URL(`file://${dir}`) })
+const config = defineConfig({ lint: { rules: {} } }, { cwd: new URL(`file://${dir}/`) })
 const src = readFileSync(join(dir, 'resolver.json'), 'utf8')
-const { resolver } = await parse([{ src, filename: new URL(`file://${dir}resolver.json`) }], { config, logger: new Logger({ level: 'error' }) })
+const { resolver } = await parse([{ src, filename: new URL(`file://${dir}/resolver.json`) }], { config, logger: new Logger({ level: 'error' }) })
 const modifiers = resolver.source.modifiers
 const themes = Object.keys(modifiers.theme.contexts)
 const modes = Object.keys(modifiers.mode.contexts)
@@ -37,27 +45,35 @@ for (const theme of themes) for (const mode of modes) {
   sets[`${theme}/${mode}`] = Object.fromEntries(Object.entries(all).filter(([id]) => !isRaw(id)))
 }
 const base = sets[`${defaultTheme}/${defaultMode}`]
+const isLayout = (id) => id.startsWith('spacing.') || id.startsWith('size.')
 
-// complete
+// complete, layout
 for (const [key, set] of Object.entries(sets)) {
   for (const id of Object.keys(base)) {
     if (!set[id]) fail('complete', `${key} has no ${id}`)
     else if (set[id].$type !== base[id].$type) fail('complete', `${key} ${id} is ${set[id].$type}, not ${base[id].$type}`)
+    else if (isLayout(id) && JSON.stringify(set[id].$value) !== JSON.stringify(base[id].$value)) {
+      fail('layout', `${key} changes ${id}; spacing and sizes are the same in every theme and mode (d-035)`)
+    }
   }
   for (const id of Object.keys(set)) if (!base[id]) fail('complete', `${key} has ${id}, which ${defaultTheme}/${defaultMode} lacks`)
 }
 // described
 for (const [id, t] of Object.entries(base)) if (!t.$description?.trim()) fail('described', `${id} has no $description`)
-// hex
+// colorspace, hex: every colour value, including the colour of each shadow layer
 const toHex = (c) => '#' + c.components.map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join('')
+const coloursOf = (t) => (t.$type === 'color' ? [['', t.$value]] : t.$type === 'shadow' ? [t.$value].flat().map((s, i) => [` shadow layer ${i}`, s.color]) : [])
 for (const [key, set] of Object.entries(sets)) for (const [id, t] of Object.entries(set)) {
-  if (t.$type === 'color' && t.$value.hex && toHex(t.$value) !== t.$value.hex.toLowerCase()) {
-    fail('hex', `${key} ${id}: hex ${t.$value.hex} but components give ${toHex(t.$value)}`)
+  for (const [where, c] of coloursOf(t)) {
+    if (c.colorSpace !== 'srgb') fail('colorspace', `${key} ${id}${where} is in ${c.colorSpace}; use srgb`)
+    else if (c.hex && toHex(c) !== c.hex.toLowerCase()) fail('hex', `${key} ${id}${where}: hex ${c.hex} but components give ${toHex(c)}`)
   }
 }
-// contrast
+// canvas, contrast
 const rgb = (t) => ({ c: t.$value.components, a: t.$value.alpha ?? 1 })
-const over = (top, bottom) => top.c.map((v, i) => v * top.a + bottom[i] * (1 - top.a))
+// A browser stores each blended colour as 8-bit channels, so round the same
+// way; otherwise the build can pass a pair that axe fails by 0.01.
+const over = (top, bottom) => top.c.map((v, i) => Math.round((v * top.a + bottom[i] * (1 - top.a)) * 255) / 255)
 const lum = (c) => {
   const [r, g, b] = c.map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -66,7 +82,10 @@ const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lu
 const { pairs } = JSON.parse(readFileSync(join(dir, 'contrast.json'), 'utf8'))
 let measured = 0
 for (const [key, set] of Object.entries(sets)) {
-  const canvas = set['color.bg.canvas'].$value.components
+  const canvasToken = set['color.bg.canvas']
+  if (!canvasToken) { fail('canvas', `${key} has no color.bg.canvas`); continue }
+  if ((canvasToken.$value.alpha ?? 1) !== 1) { fail('canvas', `${key} color.bg.canvas has alpha ${canvasToken.$value.alpha}; it must be opaque`); continue }
+  const canvas = canvasToken.$value.components
   const layer = (spec) => spec.split('@').reverse().reduce((below, id) => over(rgb(set[`color.${id}`]), below), canvas)
   for (const p of pairs) for (const bg of p.on) {
     const missing = [p.fg, ...bg.split('@')].find((id) => !set[`color.${id}`])
@@ -78,11 +97,11 @@ for (const [key, set] of Object.entries(sets)) {
   }
 }
 
-const report = (extra = {}) => {
-  console.log(JSON.stringify({ ok: problems.length === 0, themes, modes, tokens: Object.keys(base).length, contrastPairs: measured, problems, ...extra }, null, 1))
+const report = () => {
+  console.log(JSON.stringify({ ok: problems.length === 0, themes, modes, tokens: Object.keys(base).length, contrastPairs: measured, problems }, null, 1))
   process.exit(problems.length ? 1 : 0)
 }
-// The preset is built only from tokens that passed every check.
+// The outputs are built only from tokens that passed every check.
 if (problems.length) report()
 
 // emit
@@ -90,27 +109,19 @@ const css = {
   color: (v) => {
     const [r, g, b] = v.components.map((x) => Math.round(x * 255))
     const a = v.alpha ?? 1
-    return a === 1 ? (v.hex ?? toHex(v)) : `rgba(${r}, ${g}, ${b}, ${a})`
+    return a === 1 ? toHex(v) : `rgba(${r}, ${g}, ${b}, ${a})`
   },
   dimension: (v) => `${v.value}${v.unit}`,
   number: (v) => String(v),
-  fontFamily: (v) => v.map((f) => (/\s/.test(f) ? `"${f}"` : f)).join(', '),
-  shadow: (v) => [v].flat().map((s) => `${css.dimension(s.offsetX)} ${css.dimension(s.offsetY)} ${css.dimension(s.blur)} ${css.dimension(s.spread)} ${css.color(s.color)}`).join(', '),
+  fontFamily: (v) => [v].flat().map((f) => (/\s/.test(f) ? `"${f}"` : f)).join(', '),
+  shadow: (v) => [v].flat().map((s) => `${s.inset ? 'inset ' : ''}${css.dimension(s.offsetX)} ${css.dimension(s.offsetY)} ${css.dimension(s.blur)} ${css.dimension(s.spread)} ${css.color(s.color)}`).join(', '),
 }
-const category = (id, type) => {
-  if (id.startsWith('color.')) return ['colors', id.slice(6)]
-  if (id.startsWith('shadow.')) return ['shadows', id.slice(7)]
-  if (id.startsWith('radius.')) return ['radii', id.slice(7)]
-  if (id.startsWith('borderWidth.')) return ['borderWidths', id.slice(12)]
-  if (id.startsWith('blur.')) return ['blurs', id.slice(5)]
-  if (id.startsWith('opacity.')) return ['opacity', id.slice(8)]
-  if (id.startsWith('font.family.')) return ['fonts', id.slice(12)]
-  if (id.startsWith('text.')) return ['text', id.slice(5)]
-  if (id.startsWith('spacing.')) return ['spacing', id.slice(8)]
-  if (id.startsWith('size.')) return ['sizes', id.slice(5)]
-  throw new Error(`no Panda category for ${id} (${type})`)
+const category = (id) => {
+  const map = [['color.', 'colors'], ['shadow.', 'shadows'], ['radius.', 'radii'], ['borderWidth.', 'borderWidths'], ['blur.', 'blurs'], ['opacity.', 'opacity'], ['font.family.', 'fonts'], ['text.', 'text'], ['spacing.', 'spacing'], ['size.', 'sizes']]
+  const hit = map.find(([prefix]) => id.startsWith(prefix))
+  if (!hit) throw new Error(`no Panda category for ${id}`)
+  return [hit[1], id.slice(hit[0].length)]
 }
-const layout = new Set(['spacing', 'sizes'])
 const put = (tree, path, leaf) => {
   const parts = path.split('.')
   const last = parts.pop()
@@ -118,6 +129,7 @@ const put = (tree, path, leaf) => {
   tree[last] = leaf
 }
 const leaf = (value, description) => (description ? { value, description } : { value })
+const modal = (light, dark) => (light === dark ? dark : { base: light, _dark: dark })
 
 const tokens = {}
 const textStyles = {}
@@ -126,44 +138,46 @@ const semantic = (theme) => {
   const dark = sets[`${theme}/dark`]
   const light = sets[`${theme}/light`]
   for (const [id, t] of Object.entries(base)) {
-    const [cat, name] = category(id, t.$type)
-    if (layout.has(cat)) continue
+    const [cat, name] = category(id)
+    if (cat === 'spacing' || cat === 'sizes') continue
     const desc = t.$description
     if (cat === 'text') {
+      // Each part of a text style is its own semantic token, so a theme or
+      // mode can change any part, the font family included.
       const d = dark[id].$value
       const l = light[id].$value
-      const fam = (dark[id].partialAliasOf?.fontFamily ?? '').replace('font.family.', '')
       const parts = {
+        fonts: [css.fontFamily(l.fontFamily), css.fontFamily(d.fontFamily)],
         fontSizes: [css.dimension(l.fontSize), css.dimension(d.fontSize)],
         lineHeights: [String(l.lineHeight), String(d.lineHeight)],
         fontWeights: [String(l.fontWeight), String(d.fontWeight)],
         letterSpacings: [css.dimension(l.letterSpacing), css.dimension(d.letterSpacing)],
       }
-      for (const [c, [lv, dv]] of Object.entries(parts)) put(tree[c] ??= {}, name, leaf(lv === dv ? dv : { base: lv, _dark: dv }, `The ${name} text style. ${desc}`))
-      if (theme === defaultTheme) {
-        const transform = base[id].$extensions?.['com.eshelton328.textTransform']
-        textStyles[name] = {
-          description: desc,
-          value: { fontFamily: fam, fontSize: name, lineHeight: name, fontWeight: name, letterSpacing: name, ...(transform ? { textTransform: transform } : {}) },
-        }
+      for (const [c, [lv, dv]] of Object.entries(parts)) put(tree[c] ??= {}, `text.${name}`, leaf(modal(lv, dv), `Part of the ${name} text style. Use textStyle: '${name}', not this token.`))
+      const transform = base[id].$extensions?.['com.eshelton328.textTransform']
+      textStyles[name] = {
+        description: desc,
+        value: { fontFamily: `text.${name}`, fontSize: `text.${name}`, lineHeight: `text.${name}`, fontWeight: `text.${name}`, letterSpacing: `text.${name}`, ...(transform ? { textTransform: transform } : {}) },
       }
       continue
     }
     const fmt = css[t.$type]
-    const lv = fmt(light[id].$value)
-    const dv = fmt(dark[id].$value)
-    put(tree[cat] ??= {}, name, leaf(lv === dv ? dv : { base: lv, _dark: dv }, desc))
+    put(tree[cat] ??= {}, name, leaf(modal(fmt(light[id].$value), fmt(dark[id].$value)), desc))
   }
   return tree
 }
 for (const [id, t] of Object.entries(base)) {
-  const [cat, name] = category(id, t.$type)
-  if (layout.has(cat)) put(tokens[cat] ??= {}, name, leaf(css[t.$type](t.$value), t.$description))
+  const [cat, name] = category(id)
+  if (cat === 'spacing' || cat === 'sizes') put(tokens[cat] ??= {}, name, leaf(css[t.$type](t.$value), t.$description))
 }
+const otherThemes = themes.filter((t) => t !== defaultTheme)
 const preset = {
   name: 'component-library-1701',
   theme: { extend: { tokens, semanticTokens: semantic(defaultTheme), textStyles } },
-  themes: Object.fromEntries(themes.filter((t) => t !== defaultTheme).map((t) => [t, { semanticTokens: semantic(t) }])),
+  themes: Object.fromEntries(otherThemes.map((t) => [t, { semanticTokens: semantic(t) }])),
+  // Panda writes a theme's CSS only when staticCss lists it; then
+  // data-panda-theme="<name>" on the root switches to it.
+  ...(otherThemes.length ? { staticCss: { themes: otherThemes } } : {}),
 }
 const text = `// Generated by tokens/build.mjs from tokens/*.json. Do not edit; change the
 // JSON and run \`pnpm tokens\`.
@@ -171,8 +185,8 @@ import { definePreset } from '@pandacss/dev'
 
 export default definePreset(${JSON.stringify(preset, null, 2)})
 `
-// A docs page with each colour token's dark and light value, for review.
-const docsOut = join(dir, '../src/foundations/colours.mdx')
+
+// A docs page with each colour token's value in each mode, for review.
 const groups = {}
 for (const [id, t] of Object.entries(base)) {
   if (t.$type !== 'color') continue
@@ -180,7 +194,8 @@ for (const [id, t] of Object.entries(base)) {
   const values = Object.fromEntries(modes.flatMap((m) => themes.map((th) => [themes.length > 1 ? `${th} ${m}` : m, css.color(sets[`${th}/${m}`][id].$value)])))
   ;(groups[name.split('.')[0]] ??= []).push({ name, desc: t.$description, values })
 }
-const esc = (s) => s.replace(/[{}<>]/g, (c) => `&#${c.charCodeAt(0)};`)
+// JSX expressions with JSON strings, so quotes and braces in a description
+// cannot break the MDX.
 const docs = `{/* Generated by tokens/build.mjs. Do not edit; change tokens/*.json and run \`pnpm tokens\`. */}
 import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks'
 
@@ -194,16 +209,16 @@ these names, for example \`css({ color: 'fg.muted' })\`.
 ${Object.entries(groups).map(([g, items]) => `## ${g}
 
 <ColorPalette>
-${items.map((i) => `  <ColorItem title="${i.name}" subtitle="${esc(i.desc)}" colors={${JSON.stringify(i.values)}} />`).join('\n')}
+${items.map((i) => `  <ColorItem title={${JSON.stringify(i.name)}} subtitle={${JSON.stringify(i.desc)}} colors={${JSON.stringify(i.values)}} />`).join('\n')}
 </ColorPalette>
 `).join('\n')}`
 
-const outputs = [[out, text], [docsOut, docs]]
+const outputs = [[presetOut, text], [docsOut, docs]]
 if (check) {
   for (const [file, body] of outputs) {
-    if (!existsSync(file) || readFileSync(file, 'utf8') !== body) fail('generated', `${file.replace(join(dir, '..'), '').slice(1)} is out of date; run pnpm tokens`)
+    if (!existsSync(file) || readFileSync(file, 'utf8') !== body) fail('generated', `${file} is out of date; run pnpm tokens`)
   }
-} else if (!problems.length) {
+} else {
   mkdirSync(join(dir, 'generated'), { recursive: true })
   for (const [file, body] of outputs) writeFileSync(file, body)
 }

@@ -1,5 +1,5 @@
 {
- "$comment": "Contrast pairs checked in every theme and mode. A background 'a@b' is a laid over b; every background is laid over bg.canvas.",
+ "$comment": "Contrast pairs checked in every theme and mode. A background 'a@b' is a laid over b; every background is laid over bg.canvas. Insets and wells are also checked on the pane or overlay they sit in.",
  "pairs": [
   {
    "fg": "fg.default",
@@ -11,7 +11,10 @@
     "surface.raised",
     "surface.inset",
     "surface.well",
-    "surface.selected"
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane"
    ],
    "min": 4.5,
    "why": "Body text (WCAG 1.4.3)."
@@ -26,7 +29,10 @@
     "surface.raised",
     "surface.inset",
     "surface.well",
-    "surface.selected"
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane"
    ],
    "min": 4.5,
    "why": "Secondary text."
@@ -39,7 +45,10 @@
     "surface.pane",
     "surface.overlay",
     "surface.inset",
-    "surface.well"
+    "surface.well",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane"
    ],
    "min": 4.5,
    "why": "Third-level text, only on these surfaces."
@@ -52,7 +61,10 @@
     "surface.overlay",
     "surface.raised",
     "surface.inset",
-    "surface.selected"
+    "surface.selected",
+    "surface.inset@surface.pane",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.pane"
    ],
    "min": 4.5,
    "why": "Links and selected labels."

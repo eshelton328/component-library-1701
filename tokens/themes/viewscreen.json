@@ -110,9 +110,9 @@
           "$type": "color",
           "$value": {
             "colorSpace": "srgb",
-            "components": [0.4627, 0.5098, 0.6392],
+            "components": [0.4745, 0.5255, 0.651],
             "alpha": 1,
-            "hex": "#7682a3"
+            "hex": "#7986a6"
           },
           "$description": "Third-level text: counts, placeholders, section labels, ages. Only on bg.canvas, surface.pane, surface.chrome, surface.overlay, surface.inset or surface.well."
         },

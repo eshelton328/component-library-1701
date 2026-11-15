@@ -22,9 +22,40 @@ const surfaces = [
   { token: 'surface.selected', className: css({ bg: 'surface.selected', borderColor: 'border.selected' }), subtle: false },
 ]
 
+// Insets and wells sit inside a pane or an overlay, so text on them is
+// checked on that stack too.
+const nestedPane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', display: 'grid', gap: '8' })
+const nestedOverlay = css({ bg: 'surface.overlay', p: '16', borderRadius: 'xl', display: 'grid', gap: '8' })
+const inset = css({ bg: 'surface.inset', px: '12', py: '8', borderRadius: 'md', display: 'grid', gap: '2' })
+const well = css({ bg: 'surface.well', px: '12', py: '8', borderRadius: 'md', display: 'grid', gap: '2' })
+
+function Nested() {
+  return (
+    <>
+      {[
+        { token: 'surface.pane', className: nestedPane },
+        { token: 'surface.overlay', className: nestedOverlay },
+      ].map((parent) => (
+        <section key={parent.token} className={parent.className}>
+          <span className={name}>{`inset and well on ${parent.token}`}</span>
+          <div className={inset}>
+            <span className={body}>Search the inbox</span>
+            <span className={subtle}>12 results</span>
+          </div>
+          <div className={well}>
+            <span className={body}>pnpm verify</span>
+            <span className={subtle}>2 min ago</span>
+          </div>
+        </section>
+      ))}
+    </>
+  )
+}
+
 function Surfaces() {
   return (
     <main className={page}>
+      <Nested />
       {surfaces.map((s) => (
         <section key={s.token} className={`${box} ${s.className}`}>
           <span className={name}>{s.token}</span>

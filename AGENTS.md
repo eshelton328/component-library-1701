@@ -17,7 +17,10 @@ inventory before adding a token or a component.
 Run `pnpm verify` before you finish. It runs the token checks and their
 tests, Panda codegen, `tsc`, ESLint, the hook tests, the check fixtures
 (`checks/`), the `AGENTS.md` check and the Storybook story tests in
-Chromium. CI runs the same command and builds Storybook.
+Chromium. CI runs the same steps as separate jobs (typecheck, lint,
+tokens, checks, test, build, worktree), so a PR shows which one failed.
+A new step in `verify` needs a `run: pnpm <step>` line in
+`.github/workflows/ci.yml`; `pnpm check:ci` fails without it.
 
 ## Rules
 

@@ -567,6 +567,58 @@
           "$description": "Mark and tile colour for a toolkit hook."
         }
       },
+      "kindTint": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3686, 0.8824, 1.0],
+            "alpha": 0.14,
+            "hex": "#5ee1ff"
+          },
+          "$description": "Tint behind a toolkit skill mark, as on a kind tile or kind badge."
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6196, 0.5608, 1.0],
+            "alpha": 0.14,
+            "hex": "#9e8fff"
+          },
+          "$description": "Tint behind a toolkit agent mark, as on a kind tile or kind badge."
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.7216, 0.4196],
+            "alpha": 0.14,
+            "hex": "#ffb86b"
+          },
+          "$description": "Tint behind a toolkit rule mark, as on a kind tile or kind badge."
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4314, 0.9059, 0.6588],
+            "alpha": 0.14,
+            "hex": "#6ee7a8"
+          },
+          "$description": "Tint behind a toolkit workflow mark, as on a kind tile or kind badge."
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.6039, 0.6706],
+            "alpha": 0.14,
+            "hex": "#ff9aab"
+          },
+          "$description": "Tint behind a toolkit hook mark, as on a kind tile or kind badge."
+        }
+      },
       "agent": {
         "claude": {
           "$type": "color",
@@ -1166,6 +1218,53 @@
           }
         }
       },
+      "kindTint": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0549, 0.4157, 0.5216],
+            "alpha": 0.14,
+            "hex": "#0e6a85"
+          }
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.2941, 0.8392],
+            "alpha": 0.14,
+            "hex": "#5b4bd6"
+          }
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6039, 0.2902, 0.0235],
+            "alpha": 0.14,
+            "hex": "#9a4a06"
+          }
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0863, 0.451, 0.2471],
+            "alpha": 0.14,
+            "hex": "#16733f"
+          }
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6902, 0.1294, 0.2235],
+            "alpha": 0.14,
+            "hex": "#b02139"
+          }
+        }
+      },
       "agent": {
         "claude": {
           "$type": "color",
@@ -1325,6 +1424,17 @@
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Buttons, tabs, chips and row titles."
+    },
+    "labelLg": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 16, "unit": "px" },
+        "fontWeight": 500,
+        "lineHeight": 1.5,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Touch rows and back buttons on phone and tablet: drawer items, back row labels."
     },
     "body": {
       "$type": "typography",

@@ -128,6 +128,18 @@
         "$description": "A kind tile in a header."
       }
     },
+    "grabber": {
+      "width": {
+        "$type": "dimension",
+        "$value": { "value": 36, "unit": "px" },
+        "$description": "Width of the grabber bar at the top of a bottom sheet or drawer."
+      },
+      "height": {
+        "$type": "dimension",
+        "$value": { "value": 5, "unit": "px" },
+        "$description": "Height of the grabber bar at the top of a bottom sheet or drawer."
+      }
+    },
     "shell": {
       "rail": {
         "$type": "dimension",

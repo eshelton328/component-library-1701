@@ -26,6 +26,16 @@ export default definePreset({
               "description": "Sheet rows and full-width phone buttons."
             }
           },
+          "grabber": {
+            "height": {
+              "value": "5px",
+              "description": "Height of the grabber bar at the top of a bottom sheet or drawer."
+            },
+            "width": {
+              "value": "36px",
+              "description": "Width of the grabber bar at the top of a bottom sheet or drawer."
+            }
+          },
           "icon": {
             "12": {
               "value": "12px",
@@ -416,6 +426,43 @@ export default definePreset({
               "description": "Mark and tile colour for a toolkit workflow."
             }
           },
+          "kindTint": {
+            "agent": {
+              "value": {
+                "base": "rgba(91, 75, 214, 0.14)",
+                "_dark": "rgba(158, 143, 255, 0.14)"
+              },
+              "description": "Tint behind a toolkit agent mark, as on a kind tile or kind badge."
+            },
+            "hook": {
+              "value": {
+                "base": "rgba(176, 33, 57, 0.14)",
+                "_dark": "rgba(255, 154, 171, 0.14)"
+              },
+              "description": "Tint behind a toolkit hook mark, as on a kind tile or kind badge."
+            },
+            "rule": {
+              "value": {
+                "base": "rgba(154, 74, 6, 0.14)",
+                "_dark": "rgba(255, 184, 107, 0.14)"
+              },
+              "description": "Tint behind a toolkit rule mark, as on a kind tile or kind badge."
+            },
+            "skill": {
+              "value": {
+                "base": "rgba(14, 106, 133, 0.14)",
+                "_dark": "rgba(94, 225, 255, 0.14)"
+              },
+              "description": "Tint behind a toolkit skill mark, as on a kind tile or kind badge."
+            },
+            "workflow": {
+              "value": {
+                "base": "rgba(22, 115, 63, 0.14)",
+                "_dark": "rgba(110, 231, 168, 0.14)"
+              },
+              "description": "Tint behind a toolkit workflow mark, as on a kind tile or kind badge."
+            }
+          },
           "overlay": {
             "scrim": {
               "value": {
@@ -651,6 +698,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
+            "labelLg": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
+            },
             "mono": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -774,6 +825,10 @@ export default definePreset({
               "value": "14px",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
+            "labelLg": {
+              "value": "16px",
+              "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
+            },
             "mono": {
               "value": "12px",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -829,6 +884,10 @@ export default definePreset({
             "label": {
               "value": "1.4286",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "labelLg": {
+              "value": "1.5",
+              "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
             "mono": {
               "value": "1.4167",
@@ -886,6 +945,10 @@ export default definePreset({
               "value": "500",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
+            "labelLg": {
+              "value": "500",
+              "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
+            },
             "mono": {
               "value": "400",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -941,6 +1004,10 @@ export default definePreset({
             "label": {
               "value": "0px",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
+            },
+            "labelLg": {
+              "value": "0px",
+              "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
             "mono": {
               "value": "0px",
@@ -1033,6 +1100,16 @@ export default definePreset({
             "lineHeight": "text.label",
             "fontWeight": "text.label",
             "letterSpacing": "text.label"
+          }
+        },
+        "labelLg": {
+          "description": "Touch rows and back buttons on phone and tablet: drawer items, back row labels.",
+          "value": {
+            "fontFamily": "text.labelLg",
+            "fontSize": "text.labelLg",
+            "lineHeight": "text.labelLg",
+            "fontWeight": "text.labelLg",
+            "letterSpacing": "text.labelLg"
           }
         },
         "mono": {

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet, BottomSheetClose } from './bottom-sheet'
@@ -8,7 +9,6 @@ import { Stack } from './layout'
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 // Swatches of the expected tokens, so the play functions compare resolved colours.
 const scrimSwatch = css({ bg: 'overlay.scrim' })
-const grabberSwatch = css({ bg: 'border.default' })
 const surfaceSwatch = css({ bg: 'surface.overlay' })
 
 const sorts = ['Newest first', 'Oldest first', 'Name']
@@ -37,7 +37,6 @@ function OpenSheet() {
     <main className={page}>
       <SortSheet open />
       <span hidden data-swatch="scrim" className={scrimSwatch} />
-      <span hidden data-swatch="grabber" className={grabberSwatch} />
       <span hidden data-swatch="surface" className={surfaceSwatch} />
     </main>
   )
@@ -71,17 +70,6 @@ const meta = {
     await expect(style.paddingBottom).toBe('34px')
     await expect(style.boxShadow).not.toBe('none')
     await expect(style.backgroundColor).toBe(swatch('surface'))
-    // The grabber: centred, 40 by 6, on the hair radius, in the border colour.
-    const grabber = sheet.querySelector('.bottom-sheet__grabber')
-    if (!(grabber instanceof HTMLElement)) throw new Error('no grabber')
-    const g = grabber.getBoundingClientRect()
-    await expect(g.width).toBe(40)
-    await expect(g.height).toBe(6)
-    await expect(Math.round(g.left + g.width / 2)).toBe(Math.round(box.left + box.width / 2))
-    await expect(Math.round(g.top - box.top)).toBe(9)
-    await expect(getComputedStyle(grabber).borderTopLeftRadius).toBe('2px')
-    await expect(getComputedStyle(grabber).backgroundColor).toBe(swatch('grabber'))
-    await expect(grabber).toHaveAttribute('aria-hidden', 'true')
     const title = within(sheet).getByText('Sort by')
     await expect(getComputedStyle(title).fontSize).toBe('17px')
     await expect(within(sheet).queryByRole('button', { name: 'Close' })).toBeNull()
@@ -100,7 +88,7 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 const untitledPlay = async () => {
   const body = within(document.body)
   const sheet = await body.findByRole('dialog', { name: 'Chat actions' })
-  // No title row: the content follows the grabber.
+  // No title row.
   await expect(sheet.querySelector('.bottom-sheet__header')).toBeNull()
   await expect(within(sheet).getByRole('button', { name: 'Rename' })).toBeInTheDocument()
 }
@@ -123,6 +111,39 @@ export const UntitledDark: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
 }
 export const UntitledLight: StoryObj<typeof meta> = { ...UntitledDark, globals: { mode: 'light' } }
+
+// A sheet that opens with a label and gets its title later, as when its data arrives.
+function LateTitle() {
+  const [title, setTitle] = useState<string | undefined>(undefined)
+  return (
+    <BottomSheet {...(title === undefined ? { label: 'Chat actions' } : { title })} open>
+      <Button
+        onClick={() => {
+          setTitle('drift check')
+        }}
+      >
+        Load
+      </Button>
+    </BottomSheet>
+  )
+}
+
+/** A sheet keeps an accessible name when a title replaces its label while it is open. */
+export const LateTitleDark: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <LateTitle />
+    </main>
+  ),
+  play: async () => {
+    const body = within(document.body)
+    const sheet = await body.findByRole('dialog', { name: 'Chat actions' })
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Load' }))
+    await waitFor(() => expect(within(sheet).getByText('drift check')).toBeInTheDocument())
+    await expect(sheet).toHaveAccessibleName('drift check')
+  },
+  globals: { mode: 'dark' },
+}
 
 const onOpenChange = fn<(open: boolean) => void>()
 

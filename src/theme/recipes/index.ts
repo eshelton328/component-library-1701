@@ -6,6 +6,7 @@ import type { Config } from '@pandacss/dev'
 import { bottomSheet } from './bottom-sheet'
 import { backRow } from './back-row'
 import { button } from './button'
+import { card } from './card'
 import { checkbox } from './checkbox'
 import { contextMeter } from './context-meter'
 import { dialog } from './dialog'
@@ -34,4 +35,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, layoutStack, layoutInline, layoutGrid, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, listRow, menu, metaChip, metaLine, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, listRow, menu, metaChip, metaLine, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }

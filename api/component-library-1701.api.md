@@ -68,6 +68,27 @@ export type BackRowProps = {
     children?: ReactNode;
 };
 
+// @public (undocumented)
+export type BarGroup = {
+    label: string;
+    values: readonly number[];
+};
+
+// @public (undocumented)
+export type BarRow = {
+    label: string;
+    value: number;
+};
+
+// @public (undocumented)
+export type BarSeries = {
+    name: string;
+    tone?: BarTone | undefined;
+};
+
+// @public
+export type BarTone = 'accent' | 'muted' | 'running' | 'needsYou' | 'done' | 'danger';
+
 // @public
 export function BottomSheet(input: BottomSheetProps): JSX.Element;
 
@@ -363,6 +384,18 @@ export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
 export function GripIcon(props: IconProps): JSX.Element;
 
 // @public
+export function GroupedBarChart(input: GroupedBarChartProps): JSX.Element;
+
+// @public (undocumented)
+export type GroupedBarChartProps = {
+    label: string;
+    series: readonly BarSeries[];
+    groups: readonly BarGroup[];
+    max?: number | undefined;
+    formatValue?: ((value: number) => string) | undefined;
+};
+
+// @public
 export function GroupHeader(input: GroupHeaderProps): JSX.Element;
 
 // @public (undocumented)
@@ -381,6 +414,18 @@ export function HomeIcon(props: IconProps): JSX.Element;
 
 // @public
 export function HookIcon(props: IconProps): JSX.Element;
+
+// @public
+export function HorizontalBarChart(input: HorizontalBarChartProps): JSX.Element;
+
+// @public (undocumented)
+export type HorizontalBarChartProps = {
+    label: string;
+    rows: readonly BarRow[];
+    max?: number | undefined;
+    tone?: BarTone | undefined;
+    formatValue?: ((value: number) => string) | undefined;
+};
 
 // @public (undocumented)
 export type IconProps = {

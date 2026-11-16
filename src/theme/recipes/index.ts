@@ -19,6 +19,7 @@ import { itemTabs } from './item-tabs'
 import { kpiTile } from './kpi-tile'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from './map-graph'
 import { chatPath, flowDiagram } from './flow-diagram'
+import { groupedBarChart, horizontalBarChart } from './bar-chart'
 import { listRow } from './list-row'
 import { markdownView } from './markdown-view'
 import { codeLines } from './code-lines'
@@ -53,4 +54,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, tagsLine, textField, toolLine, treeView, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, tagsLine, textField, toolLine, treeView, viewSwitch }

@@ -1,51 +1,26 @@
 import { icon } from '../../styled-system/recipes'
+import { FileIcon, FolderIcon } from '../foundations/icons'
 import { TreeView, type TreeViewNode, type TreeViewProps } from '../controls/tree-view'
 
-// The icon set has no folder, file or code icon yet. These three are drawn
-// here from Toolkit D6 (432:2154, 432:2144, 432:2214) on the 24 grid, with
-// Figma's 1.8 stroke at 13 px scaled to 24, until they move to
+// The icon set has no code icon yet, so the `< >` of Toolkit D6 (432:2214)
+// is drawn here on the 24 grid, in the set's stroke of 2, until it moves to
 // foundations/icons.tsx.
-function Glyph({ children }: { children: React.ReactNode }) {
+function CodeGlyph() {
   return (
     <svg
       viewBox="0 0 24 24"
       className={icon({ size: '14' })}
       fill="none"
       stroke="currentColor"
-      strokeWidth="3.2"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
     >
-      {children}
-    </svg>
-  )
-}
-
-function FolderGlyph() {
-  return (
-    <Glyph>
-      <path d="M3 7.5C3 6.1 4.1 5 5.5 5H9.5L12 7.5H18.5C19.9 7.5 21 8.6 21 10V17.5C21 18.9 19.9 20 18.5 20H5.5C4.1 20 3 18.9 3 17.5V7.5Z" />
-    </Glyph>
-  )
-}
-
-function FileGlyph() {
-  return (
-    <Glyph>
-      <path d="M14 3H7C5.9 3 5 3.9 5 5V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V8L14 3Z" />
-      <path d="M14 3V8H19" />
-    </Glyph>
-  )
-}
-
-function CodeGlyph() {
-  return (
-    <Glyph>
       <path d="M8.5 7L3.5 12L8.5 17" />
       <path d="M15.5 7L20.5 12L15.5 17" />
-    </Glyph>
+    </svg>
   )
 }
 
@@ -73,7 +48,7 @@ export type FileTreeProps = Omit<TreeViewProps, 'nodes' | 'label'> & {
 
 function toTreeNode(node: FileTreeNode): TreeViewNode {
   const type = node.type ?? 'file'
-  const glyph = type === 'folder' ? <FolderGlyph /> : type === 'code' ? <CodeGlyph /> : <FileGlyph />
+  const glyph = type === 'folder' ? <FolderIcon size="14" /> : type === 'code' ? <CodeGlyph /> : <FileIcon size="14" />
   return {
     value: node.path,
     label: node.name,

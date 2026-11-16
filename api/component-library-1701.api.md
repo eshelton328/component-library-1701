@@ -22,6 +22,7 @@ import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
 import { PageHeaderVariantProps } from '../../styled-system/recipes';
 import { PanelVariantProps } from '../../styled-system/recipes';
+import { ProposalBlockVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
@@ -496,6 +497,62 @@ export type PopoverSectionProps = {
 
 // @public
 export function ProjectsIcon(props: IconProps): JSX.Element;
+
+// @public
+export type ProposalAction = {
+    label: string;
+    onClick: () => void;
+    variant?: ButtonProps['variant'];
+    icon?: ReactNode;
+    disabled?: boolean | undefined;
+};
+
+// @public
+export function ProposalBlock(input: ProposalBlockProps): JSX.Element;
+
+// @public (undocumented)
+export type ProposalBlockProps = Scalar<ProposalBlockVariantProps> & {
+    label: string;
+    title?: string | undefined;
+    children?: ReactNode;
+    note?: string | undefined;
+    actions: readonly ProposalAction[];
+};
+
+// @public
+export function ProposalCommand(input: ProposalCommandProps): JSX.Element;
+
+// @public (undocumented)
+export type ProposalCommandProps = {
+    children: string;
+};
+
+// @public
+export function ProposalDiff(input: ProposalDiffProps): JSX.Element;
+
+// @public
+export type ProposalDiffLine = {
+    change: 'removed' | 'added';
+    text: string;
+};
+
+// @public (undocumented)
+export type ProposalDiffProps = {
+    label?: string | undefined;
+    lines: readonly ProposalDiffLine[];
+};
+
+// @public
+export function ProposalSection(input: ProposalSectionProps): JSX.Element;
+
+// @public (undocumented)
+export type ProposalSectionProps = {
+    label: string;
+    children: ReactNode;
+};
+
+// @public
+export type ProposalTone = NonNullable<ProposalBlockProps['tone']>;
 
 // @public
 export function QuestionIcon(props: IconProps): JSX.Element;

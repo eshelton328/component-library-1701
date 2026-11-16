@@ -77,3 +77,13 @@ export { ModelChip } from './parts/model-chip'
 export type { ModelChipOption, ModelChipProps } from './parts/model-chip'
 export { ToolLine } from './parts/tool-line'
 export type { ToolLineProps, ToolLineState } from './parts/tool-line'
+export { ProposalBlock, ProposalCommand, ProposalDiff, ProposalSection } from './parts/proposal-block'
+export type {
+  ProposalAction,
+  ProposalBlockProps,
+  ProposalCommandProps,
+  ProposalDiffLine,
+  ProposalDiffProps,
+  ProposalSectionProps,
+  ProposalTone,
+} from './parts/proposal-block'

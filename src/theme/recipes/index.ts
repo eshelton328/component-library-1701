@@ -29,6 +29,8 @@ import { pageHeader } from './page-header'
 import { groupHeader } from './group-header'
 import { modelChip } from './model-chip'
 import { popover } from './popover'
+import { proposalBlock } from './proposal-block'
+import { proposalSection } from './proposal-section'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
 import { textField } from './text-field'
@@ -40,4 +42,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, toolLine, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }

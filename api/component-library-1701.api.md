@@ -293,18 +293,16 @@ export type KindMarkSize = NonNullable<KindMarkProps['size']>;
 // @public
 export function KindTile(input: KindTileProps): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Props" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-export type KindTileKind = NonNullable<Props['kind']>;
+export type KindTileKind = NonNullable<KindTileProps['kind']>;
 
 // @public (undocumented)
-export type KindTileProps = Props & {
+export type KindTileProps = Scalar<KindTileVariantProps> & {
     title?: string | undefined;
 };
 
 // @public (undocumented)
-export type KindTileSize = NonNullable<Props['size']>;
+export type KindTileSize = NonNullable<KindTileProps['size']>;
 
 // @public
 export function KpiTile(input: KpiTileProps): JSX.Element;

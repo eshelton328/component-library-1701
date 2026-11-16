@@ -17,11 +17,7 @@ import type { Scalar } from '../controls/scalar'
 
 const Tile = styled('span', kindTile)
 
-type Props = Scalar<KindTileVariantProps>
-export type KindTileKind = NonNullable<Props['kind']>
-export type KindTileSize = NonNullable<Props['size']>
-
-export type KindTileProps = Props & {
+export type KindTileProps = Scalar<KindTileVariantProps> & {
   /**
    * A name for a tile that stands alone, such as "Approval". Without one
    * the tile is hidden from assistive technology, because the row's text
@@ -29,6 +25,9 @@ export type KindTileProps = Props & {
    */
   title?: string | undefined
 }
+
+export type KindTileKind = NonNullable<KindTileProps['kind']>
+export type KindTileSize = NonNullable<KindTileProps['size']>
 
 const icons: Record<KindTileKind, (props: IconProps) => React.JSX.Element> = {
   approval: ApproveIcon,

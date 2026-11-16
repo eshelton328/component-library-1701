@@ -116,6 +116,23 @@ export type CardProps = {
 export function ChatIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ChatPath(input: ChatPathProps): JSX.Element;
+
+// @public (undocumented)
+export type ChatPathProps = {
+    title: string;
+    description?: string | undefined;
+    steps: readonly ChatPathStep[];
+};
+
+// @public (undocumented)
+export type ChatPathStep = {
+    number: string;
+    label: string;
+    note?: string | undefined;
+};
+
+// @public
 export function Checkbox(input: CheckboxProps): JSX.Element;
 
 // @public
@@ -264,6 +281,34 @@ export type FilterChipsProps = {
     multiple?: boolean | undefined;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function FlowDiagram(input: FlowDiagramProps): JSX.Element;
+
+// @public (undocumented)
+export type FlowDiagramProps = {
+    label: string;
+    steps: readonly FlowStep[];
+};
+
+// @public (undocumented)
+export type FlowStep = {
+    id?: string | undefined;
+    title: string;
+    description?: string | undefined;
+    uses?: readonly FlowUse[] | undefined;
+    loop?: string | undefined;
+};
+
+// @public (undocumented)
+export type FlowUse = {
+    label: string;
+    kind?: FlowUseKind | undefined;
+    icon?: ReactNode;
+};
+
+// @public
+export type FlowUseKind = 'file' | 'code' | ToolkitKind;
 
 // @public
 export function FolderIcon(props: IconProps): JSX.Element;

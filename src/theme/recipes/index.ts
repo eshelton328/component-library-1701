@@ -9,10 +9,11 @@ import { itemTabs } from './item-tabs'
 import { menu } from './menu'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
+import { textField } from './text-field'
 import { viewSwitch } from './view-switch'
 
 type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, itemTabs, menu, searchField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, itemTabs, menu, searchField, textField, viewSwitch }

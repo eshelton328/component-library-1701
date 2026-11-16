@@ -14,6 +14,7 @@ import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import type { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
+import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
 // @public
@@ -149,6 +150,25 @@ export function Stack(props: StackProps): JSX.Element;
 
 // @public
 export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>;
+
+// @public
+export function TextArea(input: TextAreaProps): JSX.Element;
+
+// Warning: (ae-forgotten-export) The symbol "FieldProps" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export type TextAreaProps = FieldProps & {
+    autoresize?: boolean | undefined;
+    rows?: number | undefined;
+};
+
+// @public
+export function TextField(input: TextFieldProps): JSX.Element;
+
+// @public (undocumented)
+export type TextFieldProps = FieldProps & Scalar<TextFieldVariantProps> & {
+    type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined;
+};
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

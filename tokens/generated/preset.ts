@@ -279,6 +279,13 @@ export default definePreset({
               },
               "description": "The border of an open menu trigger, a drop target or a lifted row."
             },
+            "control": {
+              "value": {
+                "base": "rgba(74, 86, 117, 0.7)",
+                "_dark": "rgba(138, 151, 184, 0.7)"
+              },
+              "description": "The border of an unchecked checkbox or other small control. Not for pane or card borders, which use border.default."
+            },
             "default": {
               "value": {
                 "base": "#d3d9e6",

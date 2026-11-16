@@ -2,8 +2,8 @@ import { checkboxAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 
 // The filter checks of Inbox (D4, T14) and Artifacts (D3): a checkbox with
-// a label, checked or not, in groups. The box border is `fg.muted`, the
-// checked box `accent.default` (inventory: `#8a97b8` and `#5ee1ff`).
+// a label, checked or not, in groups. The box border is `border.control`, the
+// checked box `accent.default` (inventory: `#8a97b8` at 0.7 and `#5ee1ff`).
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
@@ -29,7 +29,7 @@ export const checkbox = defineSlotRecipe({
       borderRadius: 'xs',
       borderWidth: 'strong',
       borderStyle: 'solid',
-      borderColor: 'fg.muted',
+      borderColor: 'border.control',
       color: 'fg.onAccent',
       '& svg': { w: 'icon.12', h: 'icon.12' },
       _checked: { bg: 'accent.default', borderColor: 'accent.default' },

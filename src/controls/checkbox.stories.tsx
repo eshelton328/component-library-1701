@@ -48,6 +48,8 @@ const meta = {
       return control
     }
     await expect(box('Checked').getBoundingClientRect().width).toBe(16)
+    // An unchecked box border is the muted text colour at 0.7 (border.control).
+    await expect(getComputedStyle(box('Unchecked')).borderTopColor).toMatch(/^rgba\(\d+, \d+, \d+, 0\.7\)$/)
     await expect(getComputedStyle(box('Checked')).backgroundColor).not.toBe(getComputedStyle(box('Unchecked')).backgroundColor)
     const group = canvas.getByRole('group', { name: 'Kind' })
     await expect(within(group).getByRole('checkbox', { name: 'Tasks' })).toBeChecked()

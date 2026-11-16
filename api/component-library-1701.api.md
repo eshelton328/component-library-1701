@@ -414,7 +414,91 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
 export function LockIcon(props: IconProps): JSX.Element;
 
 // @public
+export function MapGraph(input: MapGraphProps): JSX.Element;
+
+// @public (undocumented)
+export type MapGraphColumn = {
+    label: string;
+    x: number;
+    y: number;
+};
+
+// @public (undocumented)
+export type MapGraphEdge = {
+    from: string;
+    to: string;
+};
+
+// @public (undocumented)
+export type MapGraphNode = {
+    id: string;
+    label: string;
+    kind: ToolkitKind;
+    meta?: string | undefined;
+    x: number;
+    y: number;
+};
+
+// @public (undocumented)
+export type MapGraphProps = {
+    label: string;
+    width: number;
+    height: number;
+    nodes: readonly MapGraphNode[];
+    edges?: readonly MapGraphEdge[] | undefined;
+    columns?: readonly MapGraphColumn[] | undefined;
+    nodeSize?: {
+        width: number;
+        height: number;
+    } | undefined;
+    selectedId?: string | null | undefined;
+    onSelect?: ((id: string | null) => void) | undefined;
+    legend?: ReactNode;
+    card?: ReactNode;
+};
+
+// @public
 export function MapIcon(props: IconProps): JSX.Element;
+
+// @public
+export function MapLegend(input: MapLegendProps): JSX.Element;
+
+// @public (undocumented)
+export type MapLegendProps = {
+    kinds?: readonly ToolkitKind[] | undefined;
+    hint?: string | undefined;
+};
+
+// @public
+export function MapNode(input: MapNodeProps): JSX.Element;
+
+// @public (undocumented)
+export type MapNodeProps = {
+    label: string;
+    kind: ToolkitKind;
+    meta?: string | undefined;
+    state?: MapNodeState | undefined;
+    onClick?: (() => void) | undefined;
+    onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
+};
+
+// @public
+export type MapNodeState = 'lit' | 'dim' | 'selected';
+
+// @public
+export function MapSelectionCard(input: MapSelectionCardProps): JSX.Element;
+
+// @public (undocumented)
+export type MapSelectionCardProps = {
+    name: string;
+    kind: ToolkitKind;
+    description?: string | undefined;
+    linksTo?: number | undefined;
+    linkedFrom?: number | undefined;
+    actionLabel?: string | undefined;
+    onAction?: (() => void) | undefined;
+    onClose?: (() => void) | undefined;
+};
 
 // @public
 export function MaximizeIcon(props: IconProps): JSX.Element;

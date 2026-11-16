@@ -12,6 +12,12 @@ import {
 } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 
+// React renders nothing for null, undefined, booleans and the empty string,
+// so a slot or item holding one of them is left out with its gap and separator.
+function present(node: ReactNode): boolean {
+  return node !== null && node !== undefined && typeof node !== 'boolean' && node !== ''
+}
+
 const line = createSlotRecipeContext(metaLine)
 const LineRoot = line.withProvider('span', 'root')
 const LineLeading = line.withContext('span', 'leading')
@@ -20,7 +26,7 @@ const LineSeparator = line.withContext('span', 'separator')
 const LineTrailing = line.withContext('span', 'trailing')
 
 export type MetaLineProps = Scalar<MetaLineVariantProps> & {
-  /** The items, in order, such as the project and the source. A "·" goes between them. */
+  /** The items, in order, such as the project and the source. A "·" goes between them; empty items (null, false, '') are left out. */
   items: readonly ReactNode[]
   /** A mark before the items, such as a kind mark. `icon="md"` draws it at 14 px, as on a card. */
   leading?: ReactNode
@@ -33,16 +39,17 @@ export type MetaLineProps = Scalar<MetaLineVariantProps> & {
  * between the items. Each item truncates when the line is too narrow.
  */
 export function MetaLine({ items, leading, trailing, icon }: MetaLineProps) {
+  const shown = items.filter(present)
   return (
     <LineRoot icon={icon}>
-      {leading === undefined ? null : <LineLeading>{leading}</LineLeading>}
-      {items.map((item, i) => (
+      {present(leading) ? <LineLeading>{leading}</LineLeading> : null}
+      {shown.map((item, i) => (
         <Fragment key={i}>
           {i > 0 ? <LineSeparator>·</LineSeparator> : null}
           <LineItem>{item}</LineItem>
         </Fragment>
       ))}
-      {trailing === undefined ? null : <LineTrailing>{trailing}</LineTrailing>}
+      {present(trailing) ? <LineTrailing>{trailing}</LineTrailing> : null}
     </LineRoot>
   )
 }
@@ -67,7 +74,7 @@ export type MetaChipProps = Scalar<MetaChipVariantProps> & {
 export function MetaChip({ label, icon, size, tone }: MetaChipProps) {
   return (
     <ChipRoot size={size} tone={tone} title={label}>
-      {icon === undefined ? null : <ChipIcon>{icon}</ChipIcon>}
+      {present(icon) ? <ChipIcon>{icon}</ChipIcon> : null}
       <ChipLabel>{label}</ChipLabel>
     </ChipRoot>
   )
@@ -92,9 +99,9 @@ export type PathBadgeProps = {
 export function PathBadge({ path: value, icon, trailing }: PathBadgeProps) {
   return (
     <PathRoot>
-      {icon === undefined ? null : <PathIcon>{icon}</PathIcon>}
+      {present(icon) ? <PathIcon>{icon}</PathIcon> : null}
       <PathText title={value}>{value}</PathText>
-      {trailing === undefined ? null : <PathTrailing>{trailing}</PathTrailing>}
+      {present(trailing) ? <PathTrailing>{trailing}</PathTrailing> : null}
     </PathRoot>
   )
 }
@@ -121,7 +128,7 @@ export type KindBadgeProps = {
 export function KindBadge({ kind, label = kindLabels[kind], icon }: KindBadgeProps) {
   return (
     <KindRoot kind={kind}>
-      {icon === undefined ? null : <KindIcon>{icon}</KindIcon>}
+      {present(icon) ? <KindIcon>{icon}</KindIcon> : null}
       {label}
     </KindRoot>
   )
@@ -149,7 +156,7 @@ export function TagsLine({ tags: list, icon, label = 'Tags' }: TagsLineProps) {
     <TagsRoot aria-label={label}>
       {list.map((tag, i) => (
         <Tag key={`${String(i)}:${tag}`}>
-          {i === 0 && icon !== undefined ? <TagsIcon aria-hidden="true">{icon}</TagsIcon> : null}
+          {i === 0 && present(icon) ? <TagsIcon aria-hidden="true">{icon}</TagsIcon> : null}
           {i > 0 ? <TagsSeparator aria-hidden="true">·</TagsSeparator> : null}
           {tag}
         </Tag>

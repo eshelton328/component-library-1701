@@ -101,6 +101,13 @@ function Family({ onCopy = () => undefined }: { onCopy?: () => void }) {
           <Stack gap="8">
             <MetaLine items={['a-very-long-project-name-that-does-not-fit', 'source']} trailing="4m" />
             <MetaChip label="a-very-long-project-name-that-does-not-fit-either" />
+            <Inline gap="6" data-testid="chip-row">
+              <MetaChip icon={<Glyph />} label="another-long-project-name-in-a-row" />
+              <MetaChip icon={null} label="a-second-long-project-name-in-a-row" />
+            </Inline>
+            <span data-testid="line-gaps">
+              <MetaLine items={['ncc-1701', false, '', null, 'Claude']} leading={false} trailing={null} />
+            </span>
           </Stack>
         </div>
       </Stack>
@@ -228,6 +235,22 @@ export const Behaviour: StoryObj<typeof meta> = {
     if (!(age instanceof HTMLElement)) throw new Error('no age')
     await expect(age.scrollWidth).toBe(age.clientWidth)
     await expect(age.getBoundingClientRect().right).toBe(lineEl.getBoundingClientRect().right)
+    // Two long chips in one row shrink to share the box.
+    const chipRow = canvas.getByTestId('chip-row')
+    for (const c of Array.from(chipRow.children)) {
+      await expect(c.getBoundingClientRect().right).toBeLessThanOrEqual(width)
+    }
+    // A chip with icon={null} has no empty icon box, so its label starts at the padding.
+    const bare = chipRow.children[1]
+    const bareLabel = bare?.querySelector('.meta-chip__label')
+    if (!(bare instanceof HTMLElement) || !(bareLabel instanceof HTMLElement)) throw new Error('no bare chip')
+    await expect(bare.querySelector('.meta-chip__icon')).toBeNull()
+    await expect(bareLabel.getBoundingClientRect().left - bare.getBoundingClientRect().left).toBe(11)
+    // Empty items, leading and trailing are left out with their separators.
+    const gaps = canvas.getByTestId('line-gaps')
+    await expect(gaps).toHaveTextContent(/^ncc-1701·Claude$/)
+    await expect(gaps.querySelectorAll('.meta-line__item')).toHaveLength(2)
+    await expect(gaps.querySelector('.meta-line__leading, .meta-line__trailing')).toBeNull()
     // The full chip text is in its title.
     await expect(chipEl).toHaveAttribute('title', 'a-very-long-project-name-that-does-not-fit-either')
     await userEvent.click(canvas.getByRole('button', { name: 'Copy path' }))

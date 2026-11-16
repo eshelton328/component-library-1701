@@ -17,7 +17,6 @@ export const metaChip = defineSlotRecipe({
       gap: '6',
       minW: '0',
       maxW: 'full',
-      flexShrink: '0',
       bg: 'surface.inset',
       borderWidth: 'default',
       borderStyle: 'solid',

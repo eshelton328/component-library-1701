@@ -51,6 +51,12 @@ function Content({ onLineSelect }: { onLineSelect?: (line: number) => void }) {
               </ul>
             </li>
           </ol>
+          <ol data-testid="loose">
+            <li>
+              <p>A loose item.</p>
+              <p>Its second paragraph.</p>
+            </li>
+          </ol>
           <pre>toolkit/skills/writer/SKILL.md</pre>
         </MarkdownView>
       </div>
@@ -151,6 +157,13 @@ const meta = {
     if (first === undefined || second === undefined) throw new Error('no items')
     await expect(box(second).top - box(first).bottom).toBe(10)
     await expect(font(first)).toEqual(['14px', 20, '400'])
+    await expect(getComputedStyle(first).color).toBe(swatch(canvasElement, 'muted'))
+    // A loose item's first paragraph stays on the marker's 20 px line; the next is 10 below it.
+    const loose = pick(canvas.getByTestId('loose'), 'li')
+    const [para1, para2] = all(loose, 'p')
+    if (para1 === undefined || para2 === undefined) throw new Error('no loose paragraphs')
+    await expect(Math.abs(box(para1).top - box(loose).top)).toBeLessThanOrEqual(1)
+    await expect(box(para2).top - box(loose).top).toBe(30)
     await expect(getComputedStyle(pick(ol, 'ul')).listStyleType).toBe('disc')
     // Inline code and the path line use `code` (Mono 14/20); links the accent.
     const code = pick(p, 'code')
@@ -182,7 +195,14 @@ const meta = {
     await expect(getComputedStyle(firstNumber).color).toBe(swatch(canvasElement, 'muted'))
     await expect(firstNumber.getAttribute('aria-hidden')).toBe('true')
     await expect(getComputedStyle(firstNumber).userSelect).toBe('none')
-    await expect(firstText.textContent).toBe('#!/usr/bin/env bash')
+    await expect(firstText.textContent).toBe('#!/usr/bin/env bash\n')
+    await expect(box(firstText).height).toBe(17)
+    // Copying the code keeps blank lines and leaves out the numbers.
+    const selection = window.getSelection()
+    if (selection === null) throw new Error('no selection')
+    selection.selectAllChildren(lines)
+    await expect(selection.toString().replace(/\n$/, '')).toBe(script.join('\n'))
+    selection.removeAllRanges()
 
     // Script explanation (440:1423): padding 20, sections 16 apart.
     const explain = pick(canvas.getByTestId('explain'), '.script-explanation__root')

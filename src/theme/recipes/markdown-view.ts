@@ -31,6 +31,10 @@ export const markdownView = defineRecipe({
     '& ul': { listStyleType: 'disc' },
     '& ol': { listStyleType: 'decimal' },
     '& :where(li) > :where(ul, ol)': { mt: '10', ps: '16' },
+    // A loose list wraps each item in a paragraph. The first one stays on
+    // the marker's line; later ones are blocks 10 below.
+    '& :where(li) > p:first-child': { display: 'inline' },
+    '& :where(li) > p:not(:first-child)': { mt: '10' },
     '& strong': { fontWeight: 'semibold', color: 'fg.default' },
     // Inline code and code blocks are not drawn; they take the `code` style
     // of the path line, with no fill.

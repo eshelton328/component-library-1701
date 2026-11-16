@@ -35,7 +35,8 @@ function LineRow({ number, text }: { number: number; text: string }) {
       <LineNumber aria-hidden="true" data-line={number}>
         {number}
       </LineNumber>
-      <LineText>{text}</LineText>
+      {/* The line break keeps blank lines when the code is copied; at the end of the cell it draws no extra line. */}
+      <LineText>{`${text}\n`}</LineText>
     </>
   )
 }

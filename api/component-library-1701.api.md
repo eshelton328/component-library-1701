@@ -14,8 +14,6 @@ import { LayoutStackVariantProps } from '../../styled-system/recipes';
 // @public
 export function Button(input: ButtonProps): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Scalar" needs to be exported by the entry point index.d.ts
-//
 // @public
 export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>;
 
@@ -30,6 +28,13 @@ export function Inline(props: InlineProps): JSX.Element;
 
 // @public
 export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProps>;
+
+// @public
+export type Scalar<T> = {
+    [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
+        readonly [key: string]: unknown;
+    }>;
+};
 
 // @public
 export function Stack(props: StackProps): JSX.Element;

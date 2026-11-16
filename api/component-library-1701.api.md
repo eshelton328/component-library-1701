@@ -79,6 +79,21 @@ export function Button(input: ButtonProps): JSX.Element;
 export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>;
 
 // @public
+export function Card(input: CardProps): JSX.Element;
+
+// @public (undocumented)
+export type CardProps = {
+    title: string;
+    media?: ReactNode;
+    leading?: ReactNode;
+    badge?: ReactNode;
+    subtitle?: string | undefined;
+    description?: string | undefined;
+    meta?: ReactNode;
+    onSelect?: (() => void) | undefined;
+};
+
+// @public
 export function Checkbox(input: CheckboxProps): JSX.Element;
 
 // @public

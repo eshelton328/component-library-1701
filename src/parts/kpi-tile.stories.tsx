@@ -4,7 +4,8 @@ import { css } from '../../styled-system/css'
 import { Grid } from '../controls/layout'
 import { KpiTile } from './kpi-tile'
 
-const page = css({ bg: 'bg.canvas', p: '24' })
+// The tile row and the narrow tile stack 24 apart, so their borders never touch.
+const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
 const narrow = css({ w: 'shell.popoverSm' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {

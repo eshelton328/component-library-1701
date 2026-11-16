@@ -65,6 +65,7 @@ function Update({ onApply = noop, onDiscard = noop }: { onApply?: () => void; on
           { change: 'removed', text: 'Link each ticket to its requirement IDs and leave them in Backlog' },
           { change: 'added', text: 'Link each ticket to its requirement IDs and to its Figma frame from pages.md, and leave them in Backlog' },
           { change: 'added', text: 'Before writing, check that each frame exists, and list any that do not.' },
+          { change: 'added', text: '  - indented  twice' },
         ]}
       />
     </ProposalBlock>
@@ -104,6 +105,11 @@ function Blocks() {
             ]}
           >
             <ProposalCommand>git mv notes/research/old.md archive/</ProposalCommand>
+            <ProposalSection label="Why">
+              <ul>
+                <li>old.md has not changed since March.</li>
+              </ul>
+            </ProposalSection>
           </ProposalBlock>
         </div>
       </Stack>
@@ -135,7 +141,10 @@ const meta = {
     // The diff: label in fg.subtle, lines 4 apart, radius 6, padding 6 by 8, sign 6 before the text.
     await expect(getComputedStyle(first(update, '.proposal-section__label')).color).toBe(s('subtle'))
     const lines = update.querySelectorAll('li')
-    await expect(lines).toHaveLength(3)
+    await expect(lines).toHaveLength(4)
+    // Spaces and indentation in a line are kept.
+    const indented = within(update).getByText((_, el) => el?.tagName === 'INS' && el.textContent === '  - indented  twice')
+    await expect(getComputedStyle(indented).whiteSpace).toBe('pre-wrap')
     const [a, b] = [lines[0], lines[1]]
     if (a === undefined || b === undefined) throw new Error('no lines')
     await expect(b.getBoundingClientRect().top - a.getBoundingClientRect().bottom).toBe(4)
@@ -161,7 +170,8 @@ const meta = {
     await expect(apply.querySelector('svg')).not.toBeNull()
     // Remove: a red border and label, the title struck through in fg.muted, the reason and the note.
     const removeRoot = getComputedStyle(canvas.getByRole('group', { name: 'Proposed · Remove this task' }))
-    await expect(removeRoot.borderTopColor).toBe(s('dangerBorder'))
+    await expect([removeRoot.backgroundColor, removeRoot.borderTopWidth, removeRoot.borderTopColor]).toEqual([s('inset'), '1px', s('dangerBorder')])
+    await expect([removeRoot.borderTopLeftRadius, removeRoot.paddingTop, removeRoot.paddingLeft, removeRoot.rowGap]).toEqual(['12px', '12px', '12px', '12px'])
     await expect(getComputedStyle(first(remove, '.proposal-block__label')).color).toBe(s('danger'))
     const title = getComputedStyle(within(remove).getByText('Write the tickets for increment one'))
     await expect([title.color, title.textDecorationLine, title.fontSize, title.fontWeight]).toEqual([s('muted'), 'line-through', '14px', '500'])
@@ -172,7 +182,13 @@ const meta = {
     // Approval: the amber tint and border, radius 10, gap 8; the command in surface.well, radius 6, padding 8, Mono 12.
     const approvalRoot = getComputedStyle(canvas.getByRole('group', { name: 'Approval needed' }))
     await expect([approvalRoot.backgroundColor, approvalRoot.borderTopColor]).toEqual([s('amberBg'), s('amberBorder')])
-    await expect([approvalRoot.borderTopLeftRadius, approvalRoot.rowGap]).toEqual(['10px', '8px'])
+    await expect([approvalRoot.borderTopLeftRadius, approvalRoot.paddingTop, approvalRoot.paddingLeft, approvalRoot.rowGap]).toEqual(['10px', '12px', '12px', '8px'])
+    // A section label on the amber tint is fg.muted; section text may hold a list, inside the section.
+    const why = within(approval).getByText('Why')
+    await expect(getComputedStyle(why).color).toBe(s('muted'))
+    const list = approval.querySelector('ul')
+    // A div, not a p: HTML parsing would move a list out of a p on a server render.
+    await expect(list?.closest('.proposal-section__text')?.tagName).toBe('DIV')
     await expect(getComputedStyle(first(approval, '.proposal-block__label')).color).toBe(s('amber'))
     const command = getComputedStyle(first(approval, 'pre'))
     await expect([command.backgroundColor, command.borderTopLeftRadius, command.paddingTop, command.fontSize, command.color]).toEqual([s('well'), '6px', '8px', '12px', s('default')])

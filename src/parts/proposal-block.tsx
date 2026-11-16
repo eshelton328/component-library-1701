@@ -15,7 +15,7 @@ const Actions = block.withContext('div', 'actions')
 const section = createSlotRecipeContext(proposalSection)
 const SectionRoot = section.withProvider('div', 'root')
 const SectionLabel = section.withContext('p', 'label')
-const SectionText = section.withContext('p', 'text')
+const SectionText = section.withContext('div', 'text')
 const Lines = section.withContext('ul', 'lines')
 const Line = section.withContext('li', 'line')
 const Sign = section.withContext('span', 'sign')
@@ -110,7 +110,11 @@ export type ProposalSectionProps = {
   children: ReactNode
 }
 
-/** A labelled section of a proposal block, such as the reason for a removal. */
+/**
+ * A labelled section of a proposal block, such as the reason for a removal.
+ * A diff belongs in an `update` or `remove` block: on the amber tint of an
+ * `approval` block the diff colours fall under 4.5:1 in light mode.
+ */
 export function ProposalSection({ label, children }: ProposalSectionProps) {
   return (
     <SectionRoot>

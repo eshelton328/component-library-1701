@@ -47,7 +47,8 @@ export const proposalBlock = defineSlotRecipe({
       approval: {
         root: { gap: '8', borderRadius: 'lg', bg: 'status.needsYou.bg', borderColor: 'status.needsYou.border' },
         label: { color: 'status.needsYou.fg' },
-        body: { gap: '8' },
+        // fg.subtle is not allowed on the amber tint, so a section label here is fg.muted.
+        body: { gap: '8', '& .proposal-section__label': { color: 'fg.muted' } },
       },
     },
   },

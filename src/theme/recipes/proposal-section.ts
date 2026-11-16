@@ -42,6 +42,8 @@ export const proposalSection = defineSlotRecipe({
       minW: '0',
       textStyle: 'small',
       textDecoration: 'none',
+      // Keep spaces and indentation, so a change in whitespace shows.
+      whiteSpace: 'pre-wrap',
       overflowWrap: 'anywhere',
       '[data-change=removed] > &': { color: 'diff.removed.fg', textDecoration: 'line-through' },
       '[data-change=added] > &': { color: 'diff.added.fg' },

@@ -24,6 +24,7 @@ function Checks() {
       <div className={popover}>
         <CheckboxGroup label="Kind" items={kinds} defaultValue={['task', 'skill']} />
       </div>
+      <CheckboxGroup label="Disabled kind" items={[{ value: 'task', label: 'Open tasks', disabled: false }]} disabled />
     </main>
   )
 }
@@ -52,6 +53,8 @@ const meta = {
     await expect(within(group).getByRole('checkbox', { name: 'Tasks' })).toBeChecked()
     await expect(within(group).getByRole('checkbox', { name: 'Artifacts' })).not.toBeChecked()
     await expect(within(group).getByRole('checkbox', { name: 'Agents' })).toBeDisabled()
+    // An item's `disabled: false` does not clear a disabled group.
+    await expect(canvas.getByRole('checkbox', { name: 'Open tasks' })).toBeDisabled()
   },
 } satisfies Meta<typeof Checks>
 export default meta

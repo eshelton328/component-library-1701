@@ -100,7 +100,8 @@ export function CheckboxGroup({ label, items, value, defaultValue, onValueChange
     >
       <GroupLabel id={labelId}>{label}</GroupLabel>
       {items.map((item) => (
-        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled} />
+        // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
+        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} />
       ))}
     </Group>
   )

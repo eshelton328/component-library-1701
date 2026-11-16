@@ -16,6 +16,7 @@ const found = css({ textStyle: 'mono', color: 'fg.muted' })
 const swatches = {
   default: css({ color: 'fg.default' }),
   muted: css({ color: 'fg.muted' }),
+  subtle: css({ color: 'fg.subtle' }),
 }
 
 const views = [
@@ -88,7 +89,7 @@ const meta = {
       await expect(parseFloat(t.lineHeight)).toBeCloseTo(line, 0)
       await expect(t.color).toBe(swatch('default'))
     }
-    // The count: mono 12 in a pane, body 14 on a page, both fg.muted.
+    // The count: mono 12 in fg.subtle in a pane (Figma #4a5675), body 14 in fg.muted on a page.
     const paneCount = getComputedStyle(part('pane', 'count'))
     await expect(paneCount.fontSize).toBe('12px')
     await expect(paneCount.fontFamily).toMatch(/mono/i)
@@ -96,7 +97,7 @@ const meta = {
     await expect([pageCount.fontSize, pageCount.fontWeight]).toEqual(['14px', '400'])
     await expect(pageCount.fontFamily).not.toMatch(/mono/i)
     await expect(pageCount.color).toBe(swatch('muted'))
-    await expect(paneCount.color).toBe(swatch('muted'))
+    await expect(paneCount.color).toBe(swatch('subtle'))
     // Title, count and actions sit 8 apart; the actions end at the right edge of the row.
     const title = part('toolkit', 'title').getBoundingClientRect()
     const count = part('toolkit', 'count').getBoundingClientRect()

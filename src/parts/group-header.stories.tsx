@@ -23,6 +23,7 @@ const more = css({
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {
   muted: css({ bg: 'fg.muted' }),
+  subtle: css({ bg: 'fg.subtle' }),
   needsYou: css({ bg: 'status.needsYou.fg' }),
   working: css({ bg: 'status.working.fg' }),
 }
@@ -140,7 +141,8 @@ const meta = {
     const label = getComputedStyle(one(listRoot, '.group-header__label'))
     await expect([label.fontSize, label.letterSpacing, label.textTransform, label.color]).toEqual(['11px', '0.44px', 'uppercase', swatch('muted')])
     await expect(label.fontFamily).toContain('Geist Mono')
-    await expect(getComputedStyle(one(listRoot, '.group-header__count')).color).toBe(swatch('muted'))
+    // The count is #4a5675 in Figma (346:193): fg.subtle.
+    await expect(getComputedStyle(one(listRoot, '.group-header__count')).color).toBe(swatch('subtle'))
     await expect(width(one(listRoot, '.group-header__chevron'))).toBe(12)
     // The dot: 6 px, in the status colour the caller names.
     const dot = one(listRoot, '.group-header__dot')

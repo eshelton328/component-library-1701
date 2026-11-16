@@ -14,6 +14,7 @@ const swatches = {
   border: css({ bg: 'border.default' }),
   text: css({ bg: 'fg.default' }),
   muted: css({ bg: 'fg.muted' }),
+  subtle: css({ bg: 'fg.subtle' }),
 }
 
 const plus = (
@@ -101,7 +102,8 @@ const meta = {
       await expect([title.fontSize, title.fontWeight, title.color]).toEqual(['15px', '600', swatch('text')])
     }
     const count = getComputedStyle(part(list, 'meta'))
-    await expect([count.fontSize, count.color]).toEqual(['12px', swatch('muted')])
+    // The list count is #4a5675 in Figma (346:149): fg.subtle.
+    await expect([count.fontSize, count.color]).toEqual(['12px', swatch('subtle')])
     await expect(count.fontFamily).toContain('Mono')
     // The section panel is as tall as its content, though its Grid row is 440 px tall.
     await expect(Math.round(section.getBoundingClientRect().height)).toBeLessThan(Math.round(list.getBoundingClientRect().height))

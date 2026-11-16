@@ -23,6 +23,41 @@ export function Button(input: ButtonProps): JSX.Element;
 export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>;
 
 // @public
+export function Checkbox(input: CheckboxProps): JSX.Element;
+
+// @public
+export function CheckboxGroup(input: CheckboxGroupProps): JSX.Element;
+
+// @public
+export type CheckboxGroupItem = {
+    value: string;
+    label: string;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type CheckboxGroupProps = {
+    label: string;
+    items: readonly CheckboxGroupItem[];
+    value?: readonly string[] | undefined;
+    defaultValue?: readonly string[] | undefined;
+    onValueChange?: ((value: string[]) => void) | undefined;
+    disabled?: boolean | undefined;
+    name?: string | undefined;
+};
+
+// @public (undocumented)
+export type CheckboxProps = {
+    label: string;
+    checked?: boolean | 'indeterminate' | undefined;
+    defaultChecked?: boolean | undefined;
+    onCheckedChange?: ((checked: boolean) => void) | undefined;
+    disabled?: boolean | undefined;
+    value?: string | undefined;
+    name?: string | undefined;
+};
+
+// @public
 export function Grid(props: GridProps): JSX.Element;
 
 // @public

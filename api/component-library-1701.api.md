@@ -12,6 +12,7 @@ import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
+import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
@@ -273,6 +274,20 @@ export type KindBadgeProps = {
     label?: string | undefined;
     icon?: ReactNode;
 };
+
+// @public
+export function KindMark(input: KindMarkProps): JSX.Element;
+
+// @public (undocumented)
+export type KindMarkKind = NonNullable<KindMarkProps['kind']>;
+
+// @public (undocumented)
+export type KindMarkProps = Scalar<KindMarkVariantProps> & {
+    title?: string | undefined;
+};
+
+// @public (undocumented)
+export type KindMarkSize = NonNullable<KindMarkProps['size']>;
 
 // @public
 export function KpiTile(input: KpiTileProps): JSX.Element;

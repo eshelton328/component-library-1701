@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { FilterChips, type FilterChip } from './filter-chips'
 
@@ -78,6 +78,9 @@ function Controlled() {
         }}
       />
       <FilterChips label="Filter by state" items={states} defaultValue={['all']} multiple={false} onValueChange={onState} />
+      <div className={narrow}>
+        <FilterChips label="Kinds on a phone" items={kinds} />
+      </div>
     </main>
   )
 }
@@ -89,17 +92,32 @@ export const Behaviour: StoryObj<typeof meta> = {
     onKinds.mockClear()
     onState.mockClear()
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByRole('button', { name: /Agents/ }))
+    const kindRow = within(canvas.getByRole('group', { name: 'Filter by kind' }))
+    await userEvent.click(kindRow.getByRole('button', { name: /Agents/ }))
     await expect(onKinds).toHaveBeenLastCalledWith(['skill', 'agent'])
-    await userEvent.click(canvas.getByRole('button', { name: /Skills/ }))
+    await userEvent.click(kindRow.getByRole('button', { name: /Skills/ }))
     await expect(onKinds).toHaveBeenLastCalledWith(['agent'])
     await userEvent.keyboard('{Enter}')
     await expect(onKinds).toHaveBeenLastCalledWith(['agent', 'skill'])
-    await userEvent.click(canvas.getByRole('button', { name: /Hooks/ }))
+    await userEvent.click(kindRow.getByRole('button', { name: /Hooks/ }))
     await expect(onKinds).toHaveBeenCalledTimes(3)
     // One-choice chips are a radio group.
     await userEvent.click(canvas.getByRole('radio', { name: /Needs you/ }))
     await expect(onState).toHaveBeenLastCalledWith(['needs'])
     await expect(canvas.getByRole('radio', { name: /^All/ })).not.toBeChecked()
+    // The chosen chip cannot be turned off, and the arrow keys move the choice.
+    await userEvent.click(canvas.getByRole('radio', { name: /Needs you/ }))
+    await expect(canvas.getByRole('radio', { name: /Needs you/ })).toBeChecked()
+    await expect(onState).toHaveBeenCalledTimes(1)
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() => expect(onState).toHaveBeenLastCalledWith(['done']))
+    await expect(canvas.getByRole('radio', { name: /Done/ })).toBeChecked()
+    // In a narrow row, End moves the focus to the last enabled chip and scrolls it into view.
+    const phone = canvas.getByRole('group', { name: 'Kinds on a phone' })
+    within(phone).getByRole('button', { name: /Skills/ }).focus()
+    await userEvent.keyboard('{End}')
+    const last = within(phone).getByRole('button', { name: /Workflows/ })
+    await waitFor(() => expect(last).toHaveFocus())
+    await waitFor(() => expect(last.getBoundingClientRect().right).toBeLessThanOrEqual(phone.getBoundingClientRect().right + 1))
   },
 }

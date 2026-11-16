@@ -204,3 +204,47 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(value).toHaveTextContent('oldest')
   },
 }
+
+const onFormChange = fn<(value: string) => void>()
+
+/** In a form the radios submit the item's own value; values with spaces keep their names and descriptions; a reset clears the choice. */
+export const InForm: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <form className={sheet} aria-label="Sort form">
+        <OptionList
+          label="Sort by"
+          name="sort"
+          items={[
+            { value: 'Last modified', label: 'Last modified', description: 'Most recently changed at the top' },
+            { value: 'Default order', label: 'Default order', description: 'As the server sends them' },
+          ]}
+          onValueChange={onFormChange}
+        />
+        <button type="reset">Reset</button>
+      </form>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onFormChange.mockClear()
+    const canvas = within(canvasElement)
+    const form = canvas.getByRole('form', { name: 'Sort form' })
+    if (!(form instanceof HTMLFormElement)) throw new Error('no form')
+    const modified = canvas.getByRole('radio', { name: 'Last modified' })
+    await expect(modified).toHaveAccessibleDescription('Most recently changed at the top')
+    await expect(canvas.getByRole('radio', { name: 'Default order' })).toHaveAccessibleDescription('As the server sends them')
+    await expect(new FormData(form).get('sort')).toBeNull()
+    await userEvent.click(canvas.getByText('Last modified'))
+    await expect(onFormChange).toHaveBeenLastCalledWith('Last modified')
+    await expect(new FormData(form).get('sort')).toBe('Last modified')
+    await userEvent.click(canvas.getByText('Default order'))
+    await expect(onFormChange).toHaveBeenLastCalledWith('Default order')
+    await expect(new FormData(form).get('sort')).toBe('Default order')
+    // A reset clears the choice without calling onValueChange with no value.
+    onFormChange.mockClear()
+    await userEvent.click(canvas.getByRole('button', { name: 'Reset' }))
+    await waitFor(() => expect(canvas.getByRole('radio', { name: 'Default order' })).not.toBeChecked())
+    await expect(onFormChange).not.toHaveBeenCalled()
+    await expect(new FormData(form).get('sort')).toBeNull()
+  },
+}

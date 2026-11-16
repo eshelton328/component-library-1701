@@ -12,13 +12,10 @@ const ItemText = withContext(ArkRadioGroup.ItemText, 'itemText')
 const ItemDescription = withContext('span', 'itemDescription')
 const ItemControl = withContext(ArkRadioGroup.ItemControl, 'itemControl')
 
-// Ark treats an empty string as no value, so every item value gets a prefix.
-const prefix = 'option:'
-const toArk = (value: string) => `${prefix}${value}`
-const fromArk = (value: string) => (value.startsWith(prefix) ? value.slice(prefix.length) : value)
 
 /** One choice in an `OptionList`. */
 export type OptionListItem = {
+  /** A non-empty string, unique in the list: Ark treats an empty string as no value. A form gets it as the field value. */
   value: string
   label: string
   /** A line under the label that says what the choice does. */
@@ -52,6 +49,15 @@ export type OptionListProps = {
  */
 export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name }: OptionListProps) {
   const baseId = useId()
+  // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
+  // These ids use the item's position instead.
+  const position = (itemValue: string) => String(items.findIndex((item) => item.value === itemValue))
+  const ids = {
+    item: (itemValue: string) => `${baseId}-item-${position(itemValue)}`,
+    itemLabel: (itemValue: string) => `${baseId}-label-${position(itemValue)}`,
+    itemControl: (itemValue: string) => `${baseId}-control-${position(itemValue)}`,
+    itemHiddenInput: (itemValue: string) => `${baseId}-input-${position(itemValue)}`,
+  }
   // A radio input that an arrow key checks also gets a click; that one is not a pick.
   const arrowKey = useRef(false)
 
@@ -73,7 +79,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
   const onClick = (event: MouseEvent<HTMLDivElement>) => {
     const target = event.target
     if (!(target instanceof HTMLInputElement) || target.type !== 'radio' || arrowKey.current) return
-    onItemSelect?.(fromArk(target.value))
+    onItemSelect?.(target.value)
   }
 
   return (
@@ -81,21 +87,24 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       aria-label={label}
       aria-labelledby={undefined}
       disabled={disabled === true ? true : undefined}
-      {...(value === undefined ? {} : { value: value === null ? null : toArk(value) })}
-      {...(defaultValue === undefined || defaultValue === null ? {} : { defaultValue: toArk(defaultValue) })}
+      ids={ids}
+      {...(value === undefined ? {} : { value })}
+      {...(defaultValue === undefined ? {} : { defaultValue })}
       {...(name === undefined ? {} : { name })}
       onValueChange={(details) => {
-        if (details.value !== null) onValueChange?.(fromArk(details.value))
+        // A form reset can give no value.
+        const next: unknown = details.value
+        if (typeof next === 'string' && next !== '') onValueChange?.(next)
       }}
       onKeyDownCapture={onKeyDownCapture}
       onKeyDown={onKeyDown}
       onClick={onClick}
     >
-      {items.map((item) => {
-        const descriptionId = `${baseId}-${item.value}-description`
+      {items.map((item, index) => {
+        const descriptionId = `${baseId}-${String(index)}-description`
         return (
           // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-          <Item key={item.value} value={toArk(item.value)} disabled={item.disabled === true ? true : undefined}>
+          <Item key={item.value} value={item.value} disabled={item.disabled === true ? true : undefined}>
             <ItemBody>
               <ItemText>{item.label}</ItemText>
               {item.description === undefined ? null : <ItemDescription id={descriptionId}>{item.description}</ItemDescription>}

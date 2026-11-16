@@ -285,3 +285,301 @@ export function ArrowUpIcon(props: IconProps) {
     </Svg>
   )
 }
+
+// The icons below come from the Inbox, Workbench, Toolkit and Artifacts
+// screens. Each keeps the set's stroke on the 24 grid: 2, or 1.8 for the
+// navigation icons. Figma draws most of them as instances resized without
+// scaling the stroke (2 or 1.8 at every size); the others scale to 2.
+
+/** A spark: a four-point star. Figma node 402:15455, drawn at 10 px and scaled to 24. */
+export function SparkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 3L13.8 8.2L19 10L13.8 11.8L12 17L10.2 11.8L5 10L10.2 8.2L12 3Z" />
+    </Svg>
+  )
+}
+
+/** A sparkle: a tall four-point star. Figma node 105:2956, drawn at 18 px and scaled to 24. */
+export function SparkleIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 3L13.9 8.8L20 10.7L14.2 12.6L12 18.5L10.1 12.6L4 10.7L10.1 8.8L12 3Z" />
+    </Svg>
+  )
+}
+
+/** Edit: a pencil. Figma node 346:366, drawn at 14 px and scaled to 24. */
+export function EditIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 20H8L19 9L15 5L4 16V20Z" />
+    </Svg>
+  )
+}
+
+/** Delete: a bin. Figma node 405:424, drawn at 16 px and scaled to 24. */
+export function TrashIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M3 6H21M8 6V4H16V6M19 6L18 20H6L5 6" />
+    </Svg>
+  )
+}
+
+/** Copy: two overlapping squares. Figma node 346:2262, drawn at 12 px and scaled to 24. */
+export function CopyIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M20 8H10C8.895 8 8 8.895 8 10V20C8 21.105 8.895 22 10 22H20C21.105 22 22 21.105 22 20V10C22 8.895 21.105 8 20 8Z" />
+      <path d="M4 16C2.9 16 2 15.1 2 14V4C2 2.9 2.9 2 4 2H14C15.1 2 16 2.9 16 4" />
+    </Svg>
+  )
+}
+
+/** Snooze: a clock. Figma node 346:205, drawn at 12 px and scaled to 24. */
+export function SnoozeIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 20.5C16.694 20.5 20.5 16.694 20.5 12C20.5 7.306 16.694 3.5 12 3.5C7.306 3.5 3.5 7.306 3.5 12C3.5 16.694 7.306 20.5 12 20.5Z" />
+      <path d="M12 7.5V12L15 14" />
+    </Svg>
+  )
+}
+
+/** A link: two chain links. Figma node 346:412, drawn at 13 px and scaled to 24. */
+export function LinkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M10 14L14 10" />
+      <path d="M8.5 11.5L6.5 13.5C5.837 14.163 5.464 15.062 5.464 16C5.464 16.938 5.837 17.837 6.5 18.5C7.163 19.163 8.062 19.535 9 19.535C9.938 19.535 10.837 19.163 11.5 18.5L13.5 16.5" />
+      <path d="M15.5 12.5L17.5 10.5C18.163 9.837 18.536 8.938 18.536 8C18.536 7.062 18.163 6.163 17.5 5.5C16.837 4.837 15.938 4.464 15 4.464C14.062 4.464 13.163 4.837 12.5 5.5L10.5 7.5" />
+    </Svg>
+  )
+}
+
+/** A folder with a rounded tab. Figma node 128:332, drawn at 18 px and scaled to 24. */
+export function FolderIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 20H20C20.53 20 21.039 19.789 21.414 19.414C21.789 19.039 22 18.53 22 18V8C22 7.47 21.789 6.961 21.414 6.586C21.039 6.211 20.53 6 20 6H12.07C11.741 5.998 11.417 5.915 11.127 5.758C10.838 5.601 10.591 5.375 10.41 5.1L9.59 3.9C9.409 3.625 9.162 3.399 8.873 3.242C8.583 3.085 8.259 3.002 7.93 3H4C3.47 3 2.961 3.211 2.586 3.586C2.211 3.961 2 4.47 2 5V18C2 19.1 2.9 20 4 20Z" />
+    </Svg>
+  )
+}
+
+/** A tag. Figma node 346:344, drawn at 12 px and scaled to 24. */
+export function TagIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M3.5 12.5V4.5H11.5L20 13L13 20L3.5 12.5Z" />
+      <path d="M8 8.2V8.4" />
+    </Svg>
+  )
+}
+
+/** Play or run: a triangle. Filled, not stroked. Figma node 346:397, drawn at 14 px and scaled to 24. */
+export function PlayIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5.5L18 12L8 18.5V5.5Z" />
+    </Svg>
+  )
+}
+
+/** Locked or read-only: a padlock. Figma node 425:13, drawn at 13 px and scaled to 24. */
+export function LockIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M17 11H7C5.896 11 5 11.895 5 13V19C5 20.105 5.896 21 7 21H17C18.105 21 19 20.105 19 19V13C19 11.895 18.105 11 17 11Z" />
+      <path d="M8 11V7C8 5.939 8.422 4.922 9.172 4.172C9.922 3.421 10.939 3 12 3C13.061 3 14.078 3.421 14.829 4.172C15.579 4.922 16 5.939 16 7V11" />
+    </Svg>
+  )
+}
+
+/** Add: a plus. Figma node 346:1265, drawn at 16 px and scaled to 24. */
+export function PlusIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 5V19M5 12H19" />
+    </Svg>
+  )
+}
+
+/** A drag handle: two columns of dots. Figma node 105:624, drawn at 14 px and scaled to 24. */
+export function GripIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M9 7C9.552 7 10 6.552 10 6C10 5.448 9.552 5 9 5C8.448 5 8 5.448 8 6C8 6.552 8.448 7 9 7Z" />
+      <path d="M9 13C9.552 13 10 12.552 10 12C10 11.448 9.552 11 9 11C8.448 11 8 11.448 8 12C8 12.552 8.448 13 9 13Z" />
+      <path d="M9 19C9.552 19 10 18.552 10 18C10 17.448 9.552 17 9 17C8.448 17 8 17.448 8 18C8 18.552 8.448 19 9 19Z" />
+      <path d="M15 7C15.552 7 16 6.552 16 6C16 5.448 15.552 5 15 5C14.448 5 14 5.448 14 6C14 6.552 14.448 7 15 7Z" />
+      <path d="M15 13C15.552 13 16 12.552 16 12C16 11.448 15.552 11 15 11C14.448 11 14 11.448 14 12C14 12.552 14.448 13 15 13Z" />
+      <path d="M15 19C15.552 19 16 18.552 16 18C16 17.448 15.552 17 15 17C14.448 17 14 17.448 14 18C14 18.552 14.448 19 15 19Z" />
+    </Svg>
+  )
+}
+
+/** Back: a chevron that points left. Figma node 105:1812, drawn at 20 px and scaled to 24. */
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M15 18L9 12L15 6" />
+    </Svg>
+  )
+}
+
+/** Maximize: two arrows that point apart. Figma node 105:199, drawn at 13 px and scaled to 24. */
+export function MaximizeIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M15 3H21V9" />
+      <path d="M9 21H3V15" />
+      <path d="M21 3L14 10" />
+      <path d="M3 21L10 14" />
+    </Svg>
+  )
+}
+
+/** A side panel: a square with a bar on the left. Figma node 158:3, drawn at 16 px and scaled to 24. */
+export function PanelIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M19 3H5C3.895 3 3 3.895 3 5V19C3 20.105 3.895 21 5 21H19C20.105 21 21 20.105 21 19V5C21 3.895 20.105 3 19 3Z" />
+      <path d="M9 3V21" />
+    </Svg>
+  )
+}
+
+/** Split view: a square in two columns. Figma node 158:541, drawn at 12 px and scaled to 24. */
+export function SplitIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M19 3H5C3.895 3 3 3.895 3 5V19C3 20.105 3.895 21 5 21H19C20.105 21 21 20.105 21 19V5C21 3.895 20.105 3 19 3Z" />
+      <path d="M12 3V21" />
+    </Svg>
+  )
+}
+
+/** A grid view: four squares. Figma node 105:2963, drawn at 18 px and scaled to 24. */
+export function GridIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M9 3H4C3.448 3 3 3.448 3 4V9C3 9.552 3.448 10 4 10H9C9.552 10 10 9.552 10 9V4C10 3.448 9.552 3 9 3Z" />
+      <path d="M20 3H15C14.448 3 14 3.448 14 4V9C14 9.552 14.448 10 15 10H20C20.552 10 21 9.552 21 9V4C21 3.448 20.552 3 20 3Z" />
+      <path d="M20 14H15C14.448 14 14 14.448 14 15V20C14 20.552 14.448 21 15 21H20C20.552 21 21 20.552 21 20V15C21 14.448 20.552 14 20 14Z" />
+      <path d="M9 14H4C3.448 14 3 14.448 3 15V20C3 20.552 3.448 21 4 21H9C9.552 21 10 20.552 10 20V15C10 14.448 9.552 14 9 14Z" />
+    </Svg>
+  )
+}
+
+/** A chat or message: a speech box. Figma names it chat and msg. Figma node 105:1918, drawn at 18 px and scaled to 24. */
+export function ChatIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21 15C21 15.53 20.789 16.039 20.414 16.414C20.039 16.789 19.53 17 19 17H7L3 21V5C3 4.47 3.211 3.961 3.586 3.586C3.961 3.211 4.47 3 5 3H19C19.53 3 20.039 3.211 20.414 3.586C20.789 3.961 21 4.47 21 5V15Z" />
+    </Svg>
+  )
+}
+
+/** A comment: a square speech bubble. Figma node 403:950, drawn at 16 px and scaled to 24. */
+export function BubbleIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M3.75 4.5H20.25V15.75H10.95L6.75 19.5V15.75H3.75V4.5Z" />
+    </Svg>
+  )
+}
+
+/** Move: two arrows that point opposite ways. Figma node 105:2975, drawn at 18 px and scaled to 24. */
+export function MoveIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M8 3L4 7L8 11" />
+      <path d="M4 7H20" />
+      <path d="M16 21L20 17L16 13" />
+      <path d="M20 17H4" />
+    </Svg>
+  )
+}
+
+/** A git branch. Figma node 105:2938, drawn at 18 px and scaled to 24. */
+export function BranchIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M6 9C7.657 9 9 7.657 9 6C9 4.343 7.657 3 6 3C4.343 3 3 4.343 3 6C3 7.657 4.343 9 6 9Z" />
+      <path d="M6 21C7.657 21 9 19.657 9 18C9 16.343 7.657 15 6 15C4.343 15 3 16.343 3 18C3 19.657 4.343 21 6 21Z" />
+      <path d="M18 9C19.657 9 21 7.657 21 6C21 4.343 19.657 3 18 3C16.343 3 15 4.343 15 6C15 7.657 16.343 9 18 9Z" />
+      <path d="M6 9V15" />
+      <path d="M18 9C18 11.387 17.052 13.676 15.364 15.364C13.676 17.052 11.387 18 9 18" />
+    </Svg>
+  )
+}
+
+/** A file: a page with a folded corner. Figma node 435:215, drawn at 16 px and scaled to 24. */
+export function FileIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M14 2.001H6C5.47 2.001 4.961 2.212 4.586 2.587C4.211 2.962 4 3.471 4 4.001V20.001C4 20.531 4.211 21.04 4.586 21.415C4.961 21.79 5.47 22.001 6 22.001H18C18.53 22.001 19.039 21.79 19.414 21.415C19.789 21.04 20 20.531 20 20.001V8.001L14 2.001Z" />
+      <path d="M14 2.001V8.001H20" />
+    </Svg>
+  )
+}
+
+/** A map of linked parts: three joined circles. Figma node 425:24, drawn at 15 px and scaled to 24. */
+export function MapIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M5 8C6.105 8 7 7.105 7 6C7 4.895 6.105 4 5 4C3.895 4 3 4.895 3 6C3 7.105 3.895 8 5 8Z" />
+      <path d="M19 8C20.105 8 21 7.105 21 6C21 4.895 20.105 4 19 4C17.895 4 17 4.895 17 6C17 7.105 17.895 8 19 8Z" />
+      <path d="M12 20C13.105 20 14 19.105 14 18C14 16.895 13.105 16 12 16C10.895 16 10 16.895 10 18C10 19.105 10.895 20 12 20Z" />
+      <path d="M7 6H17M6 8L11 16M18 8L13 16" />
+    </Svg>
+  )
+}
+
+/** Reset: an arrow that turns back. Figma node 346:360, drawn at 14 px and scaled to 24. */
+export function ResetIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4.5 12C4.502 13.717 5.093 15.381 6.175 16.714C7.256 18.048 8.762 18.97 10.442 19.327C12.121 19.683 13.872 19.453 15.402 18.674C16.932 17.895 18.149 16.615 18.849 15.048C19.548 13.48 19.689 11.719 19.247 10.06C18.806 8.401 17.808 6.944 16.421 5.932C15.035 4.92 13.343 4.414 11.628 4.499C9.913 4.585 8.28 5.255 7 6.4" />
+      <path d="M4 3.5V8H8.5" />
+    </Svg>
+  )
+}
+
+/** A Linear issue: a check in a circle. Figma node 346:338, drawn at 12 px and scaled to 24. */
+export function LinearIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 20.5C16.694 20.5 20.5 16.694 20.5 12C20.5 7.306 16.694 3.5 12 3.5C7.306 3.5 3.5 7.306 3.5 12C3.5 16.694 7.306 20.5 12 20.5Z" />
+      <path d="M8 12L11 15L16 9" />
+    </Svg>
+  )
+}
+
+/** A feature: a hexagon. Figma node 346:333, drawn at 12 px and scaled to 24. */
+export function FeatureIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 3L20 7.5V16.5L12 21L4 16.5V7.5L12 3Z" />
+    </Svg>
+  )
+}
+
+/** Toolkit, in the navigation: a wrench. Figma node 425:7, drawn at 20 px and scaled to 24. */
+export function ToolkitIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="1.8">
+      <path d="M14.7 6.3C14.517 6.487 14.414 6.738 14.414 7C14.414 7.262 14.517 7.513 14.7 7.7L16.3 9.3C16.487 9.483 16.738 9.586 17 9.586C17.262 9.586 17.513 9.483 17.7 9.3L21.47 5.53C21.973 6.641 22.125 7.879 21.906 9.079C21.688 10.279 21.109 11.384 20.246 12.246C19.384 13.109 18.279 13.688 17.079 13.906C15.879 14.125 14.641 13.973 13.53 13.47L6.62 20.38C6.222 20.778 5.683 21.001 5.12 21.001C4.557 21.001 4.018 20.778 3.62 20.38C3.222 19.982 2.999 19.443 2.999 18.88C2.999 18.317 3.222 17.778 3.62 17.38L10.53 10.47C10.027 9.359 9.875 8.121 10.094 6.921C10.312 5.721 10.891 4.616 11.754 3.754C12.616 2.891 13.721 2.312 14.921 2.094C16.121 1.875 17.359 2.027 18.47 2.53L14.71 6.29L14.7 6.3Z" />
+    </Svg>
+  )
+}
+
+/** Artifacts, in the navigation: three stacked layers. Figma node 424:3896, drawn at 22 px and scaled to 24. */
+export function ArtifactsIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="1.8">
+      <path d="M2 17L12 22L22 17M2 12L12 17L22 12M12 2L2 7L12 12L22 7L12 2Z" />
+    </Svg>
+  )
+}

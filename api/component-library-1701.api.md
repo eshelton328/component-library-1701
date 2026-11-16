@@ -4,6 +4,16 @@
 
 ```ts
 
+import { ButtonVariantProps } from '../../styled-system/recipes';
+import type { ComponentProps } from 'react';
+import { JSX } from 'react';
+
+// @public
+export function Button(input: ButtonProps): JSX.Element;
+
+// @public
+export type ButtonProps = ComponentProps<'button'> & ButtonVariantProps;
+
 // (No @packageDocumentation comment for this package)
 
 ```

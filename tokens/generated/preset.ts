@@ -422,21 +422,21 @@ export default definePreset({
             "danger": {
               "bg": {
                 "value": {
-                  "base": "rgba(192, 40, 63, 0.12)",
+                  "base": "rgba(188, 39, 62, 0.12)",
                   "_dark": "rgba(255, 107, 128, 0.14)"
                 },
                 "description": "Tint behind this status, as on a pill. Failed, denied or destructive."
               },
               "border": {
                 "value": {
-                  "base": "rgba(192, 40, 63, 0.5)",
+                  "base": "rgba(188, 39, 62, 0.5)",
                   "_dark": "rgba(255, 107, 128, 0.5)"
                 },
                 "description": "Border for this status. Failed, denied or destructive."
               },
               "fg": {
                 "value": {
-                  "base": "#c0283f",
+                  "base": "#bc273e",
                   "_dark": "#ff6b80"
                 },
                 "description": "Text, icons and solid fills for this status. Failed, denied or destructive."

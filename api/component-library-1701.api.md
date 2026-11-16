@@ -18,6 +18,7 @@ import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
+import { MessageVariantProps } from '../../styled-system/recipes';
 import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
 import { PageHeaderVariantProps } from '../../styled-system/recipes';
@@ -362,6 +363,22 @@ export type MenuProps = {
 // @public
 export type MenuSeparator = {
     type: 'separator';
+};
+
+// @public
+export function Message(input: MessageProps): JSX.Element;
+
+// @public
+export type MessageFrom = NonNullable<MessageProps['from']>;
+
+// @public (undocumented)
+export type MessageProps = Scalar<MessageVariantProps> & {
+    name?: string | undefined;
+    kind?: KindMarkKind | undefined;
+    time?: string | undefined;
+    dateTime?: string | undefined;
+    children: ReactNode;
+    actions?: ReactNode;
 };
 
 // @public

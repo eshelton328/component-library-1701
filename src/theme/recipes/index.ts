@@ -18,6 +18,7 @@ import { kpiTile } from './kpi-tile'
 import { listRow } from './list-row'
 import { kindMark } from './kind-mark'
 import { menu } from './menu'
+import { message } from './message'
 import { moreDrawer } from './more-drawer'
 import { panel } from './panel'
 import { kindBadge } from './kind-badge'
@@ -42,4 +43,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, message, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }

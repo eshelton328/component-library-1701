@@ -5,6 +5,7 @@ import { Backdrop } from './backdrop'
 
 const frame = css({ h: 'shell.dialogLg' })
 const label = css({ textStyle: 'body', color: 'fg.default', p: '24' })
+const tallText = css({ textStyle: 'body', color: 'fg.default', px: '24', py: '8' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {
   canvas: css({ bg: 'bg.canvas' }),
@@ -83,11 +84,13 @@ const meta = {
     await expect(glow).toContain(`${swatch(canvasElement, 'glowEdge')} 50%`)
     await expect(glow).toContain('rgba(0, 0, 0, 0) 100%')
     // The first star is D1 346:6: 1.5 px at (79.97 %, 83.54 %) in backdrop.star.
-    await expect(all[0]).toBe(`radial-gradient(circle at 79.97% 83.54%, ${swatch(canvasElement, 'star')} 0.75px, rgba(0, 0, 0, 0) 1.25px)`)
+    await expect(all[0]).toBe(`radial-gradient(circle at 79.97% 83.54%, ${swatch(canvasElement, 'star')} 0.5px, rgba(0, 0, 0, 0) 1px)`)
     // It fills the height of its parent.
     const parent = el.parentElement
     if (parent === null) throw new Error('no parent')
     await expect(Math.round(el.getBoundingClientRect().height)).toBe(Math.round(parent.getBoundingClientRect().height))
+    // The first star stays inside its 1.5 px circle, give or take the half-pixel edge.
+    await expect(s.backgroundImage).toContain('0.5px, rgba(0, 0, 0, 0) 1px)')
     await expect(within(el).getByText(/desktop backdrop/)).toBeVisible()
   },
 } satisfies Meta<typeof Page>
@@ -97,6 +100,33 @@ export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
 const sizes = css({ display: 'grid', gridTemplateColumns: '3fr 2fr 1fr', gap: '12', h: 'shell.dialogLg' })
+
+const many = Array.from({ length: 80 }, (_, i) => `Line ${String(i + 1)}`)
+
+/** Content taller than the parent scrolls inside the backdrop, which keeps its parent's height. The content needs something focusable, or Safari users cannot scroll it with the keyboard. */
+export const Scrolls: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={frame}>
+      <Backdrop>
+        {many.map((l) => (
+          <p key={l} className={tallText}>
+            <a href={`#${l}`}>{l}</a>
+          </p>
+        ))}
+      </Backdrop>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const el = backdropOf(canvasElement)
+    const parent = el.parentElement
+    if (parent === null) throw new Error('no parent')
+    await expect(Math.round(el.getBoundingClientRect().height)).toBe(Math.round(parent.getBoundingClientRect().height))
+    await expect(el.scrollHeight).toBeGreaterThan(el.clientHeight)
+    el.scrollTop = 200
+    await expect(el.scrollTop).toBe(200)
+  },
+}
 
 /** Each size draws its own star field: 99 on desktop, 58 on tablet and 22 on phone. */
 export const Sizes: StoryObj<typeof meta> = {

@@ -15,7 +15,9 @@ export type BackdropProps = Scalar<BackdropVariantProps> & {
  * page, with stars. `size` picks the star field drawn for that frame size:
  * `desktop` (99 stars, the default), `tablet` (58) or `phone` (22). The
  * glow and stars come from the theme's `backdrop.*` colours, so a theme or
- * mode can turn them off. It is at least as tall as its parent.
+ * mode can turn them off. It takes the height of its parent, which must
+ * have a definite height (such as `100dvh`); taller content scrolls inside
+ * it while the glow and stars stay put.
  */
 export function Backdrop({ size, children }: BackdropProps) {
   return <Root size={size}>{children}</Root>

@@ -11,13 +11,15 @@ import { desktopStars, phoneStars, tabletStars, type Star } from './backdrop-sta
 // centred ellipse is half the width and half the height.
 // The stars come from the theme too: backdrop.star, which the light mode
 // sets to alpha 0, as it sets glowEdge, so a theme can drop them (d-035).
-// Each star is one hard-edged radial gradient layer at its Figma centre.
+// Each star is one radial gradient layer at its Figma centre. Its 0.5 px
+// anti-aliased edge is centred on the radius (solid to r - 0.25, clear at
+// r + 0.25), so the star covers the area of its Figma circle.
 
 const glow =
   'radial-gradient(ellipse closest-side at 50% 50%, token(colors.backdrop.glow) 0%, token(colors.backdrop.glowEdge) 50%, transparent 100%)'
 
 const star = ([x, y, d]: Star) =>
-  `radial-gradient(circle at ${String(x)}% ${String(y)}%, token(colors.backdrop.star) ${String(d / 2)}px, transparent ${String(d / 2 + 0.5)}px)`
+  `radial-gradient(circle at ${String(x)}% ${String(y)}%, token(colors.backdrop.star) ${String(d / 2 - 0.25)}px, transparent ${String(d / 2 + 0.25)}px)`
 
 // Stars first: the first layer paints on top.
 const sky = (stars: readonly Star[]) => [...stars.map(star), glow].join(', ')
@@ -32,7 +34,11 @@ export const backdrop = defineRecipe({
     display: 'flex',
     flexDirection: 'column',
     minW: '0',
-    minH: '100%',
+    // The height of its parent, which must have a definite height (such as
+    // 100dvh): taller content scrolls here, and the glow and stars stay put.
+    h: '100%',
+    minH: '0',
+    overflowY: 'auto',
     bg: 'bg.canvas',
     color: 'fg.default',
     backgroundRepeat: 'no-repeat',

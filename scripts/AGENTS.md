@@ -55,6 +55,11 @@ Repository scripts that are not part of the package.
   read the package, or when the last release tag has no package and
   `@semantic-release/commit-analyzer` finds no release in the commits
   after it. `semantic-release.d.ts` types the analyzer and the config.
+- `build-components.ts` (`pnpm build:components`, part of
+  `pnpm build:lib`) builds the components into `dist/components/` with
+  `vite.lib.config.ts` and rolls up their types with API Extractor. It
+  fails when the build holds a copy of `styled-system` or the types still
+  import a `styled-system` path.
 - `release-lib.ts` holds the pure functions of these checks, and
   `release.test.ts` (`pnpm test:release`) tests them.
 

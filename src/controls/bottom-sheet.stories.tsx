@@ -219,6 +219,13 @@ export const Behaviour: StoryObj<typeof meta> = {
     const chat = await body.findByRole('dialog', { name: 'Side chat' })
     // The sheet opens with the focus on its first element, the close button.
     await waitFor(() => expect(within(chat).getByRole('button', { name: 'Close' })).toHaveFocus())
+    // The close icon is the icon set's CloseIcon (24 grid) at 18 px, in the button's colour.
+    const closeButton = within(chat).getByRole('button', { name: 'Close' })
+    const x = closeButton.querySelector('svg')
+    if (x === null) throw new Error('no close icon')
+    await expect(x.getAttribute('viewBox')).toBe('0 0 24 24')
+    await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([18, 18])
+    await expect(getComputedStyle(x).stroke).toBe(getComputedStyle(closeButton).color)
     await userEvent.click(within(chat).getByRole('button', { name: 'Close' }))
     await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Side chat' })).toHaveFocus())

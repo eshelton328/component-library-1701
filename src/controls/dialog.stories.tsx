@@ -107,7 +107,14 @@ const formPlay = async () => {
   const box = await body.findByRole('dialog', { name: 'New chat' })
   await expect(box.getBoundingClientRect().width).toBe(540)
   await expect(getComputedStyle(within(box).getByText('New chat')).fontSize).toBe('20px')
-  await expect(within(box).getByRole('button', { name: 'Close' })).toBeInTheDocument()
+  const close = within(box).getByRole('button', { name: 'Close' })
+  // The close icon is the icon set's CloseIcon (24 grid) at 18 px, in the button's colour.
+  const x = close.querySelector('svg')
+  if (x === null) throw new Error('no close icon')
+  await expect(x.getAttribute('viewBox')).toBe('0 0 24 24')
+  await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([18, 18])
+  await expect(getComputedStyle(x).stroke).toBe(getComputedStyle(close).color)
+  await expect(x).toHaveAttribute('aria-hidden', 'true')
   await expect(within(box).getByRole('textbox', { name: 'Name' })).toBeInTheDocument()
 }
 

@@ -104,7 +104,8 @@ export function MoreDrawer({ groups, selected, onSelect, title = 'More', trigger
       onOpenChange={onOpenChange}
     >
       {groups.map((group, i) => (
-        <DrawerGroup key={group.label ?? `group-${String(i)}`} group={group} selected={selected} onSelect={onSelect} />
+        // Labels need not be unique, so the position is the key; the items inside have their values as keys.
+        <DrawerGroup key={`group-${String(i)}`} group={group} selected={selected} onSelect={onSelect} />
       ))}
     </SizedBottomSheet>
   )

@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
 import { Portal } from '@ark-ui/react/portal'
-import type { ReactElement, ReactNode } from 'react'
+import { useId, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
@@ -89,5 +89,11 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
 
 /** An element that closes the sheet it is in, such as a Cancel button or a row that picks a value. Wrap it in this. */
 export function BottomSheetClose({ children }: { children: ReactElement }) {
-  return <ArkDialog.CloseTrigger asChild>{children}</ArkDialog.CloseTrigger>
+  // Ark gives every close trigger of a dialog the same id; each one gets its own.
+  const id = useId()
+  return (
+    <ArkDialog.CloseTrigger asChild id={id}>
+      {children}
+    </ArkDialog.CloseTrigger>
+  )
 }

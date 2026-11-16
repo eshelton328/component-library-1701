@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
@@ -102,6 +103,9 @@ const meta = {
     const toolkit = item(drawer, /^Toolkit/)
     await expect(toolkit).not.toHaveAttribute('aria-current')
     await expect(getComputedStyle(toolkit).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    // Every element in the drawer has its own id.
+    const ids = Array.from(drawer.querySelectorAll('[id]'), (el) => el.id)
+    await expect(new Set(ids).size).toBe(ids.length)
     // A later item: disabled, dimmed, with the inset tile and no count or chevron.
     const brain = item(drawer, /^Brain/)
     await expect(brain).toBeDisabled()
@@ -124,6 +128,39 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// Two groups with the same label; the first is removed, as when a page ships.
+function Regroup() {
+  const [first, setFirst] = useState(true)
+  const later = (value: string, label: string): MoreDrawerGroup => ({ label: 'Later', items: [{ value, label, icon: <Glyph />, disabled: true }] })
+  const current: MoreDrawerGroup = { items: [{ value: 'artifacts', label: 'Artifacts', icon: <Glyph /> }] }
+  return (
+    <main className={page}>
+      <Button
+        onClick={() => {
+          setFirst(false)
+        }}
+      >
+        Ship Brain
+      </Button>
+      <MoreDrawer groups={first ? [later('brain', 'Brain'), later('workflows', 'Workflows'), current] : [current, later('workflows', 'Workflows')]} open />
+    </main>
+  )
+}
+
+/** A removed group goes away even when another group has the same label. */
+export const Regrouped: StoryObj<typeof meta> = {
+  render: () => <Regroup />,
+  play: async ({ canvasElement }) => {
+    const body = within(document.body)
+    const drawer = await body.findByRole('dialog', { name: 'More' })
+    await expect(within(drawer).getAllByRole('button').map((b) => b.textContent)).toEqual(['Brain', 'Workflows', 'Artifacts'])
+    // The drawer is modal, so the button behind it takes a click only through the DOM.
+    within(canvasElement).getByRole('button', { name: 'Ship Brain', hidden: true }).click()
+    await waitFor(() => expect(within(drawer).getAllByRole('button').map((b) => b.textContent)).toEqual(['Artifacts', 'Workflows']))
+  },
+  globals: { mode: 'dark' },
+}
 
 const onSelect = fn<(value: string) => void>()
 const onOpenChange = fn<(open: boolean) => void>()

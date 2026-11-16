@@ -449,3 +449,26 @@ export const HighlightedSingleChild: StoryObj<typeof meta> = {
     await expect(pick(plain, 'p').textContent).toBe('Plain text.')
   },
 }
+
+/** Bold text uses the `heading` weight token (600) in `fg.default`, not the browser's default bold. */
+export const Strong: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <div className={panel}>
+        <MarkdownView>
+          <p>
+            Plain, then <strong>bold</strong>.
+          </p>
+        </MarkdownView>
+      </div>
+      <span hidden data-swatch="default" className={css({ color: 'fg.default' })} />
+    </main>
+  ),
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const strong = pick(canvasElement, '.markdown-view strong')
+    const ref = pick(canvasElement, '[data-swatch="default"]')
+    await expect(getComputedStyle(strong).fontWeight).toBe('600')
+    await expect(getComputedStyle(strong).color).toBe(getComputedStyle(ref).color)
+  },
+}

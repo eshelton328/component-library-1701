@@ -30,8 +30,14 @@ export type ButtonProps = ComponentProps<'button'> &
 export function Button({ type = 'button', pressed, indicator = false, children, ...props }: ButtonProps) {
   return (
     <StyledButton type={type} aria-pressed={pressed} {...props}>
-      {children}
-      {indicator ? <span className="button__indicator" aria-hidden="true" /> : null}
+      {indicator ? (
+        <>
+          {children}
+          <span className="button__indicator" aria-hidden="true" />
+        </>
+      ) : (
+        children
+      )}
     </StyledButton>
   )
 }

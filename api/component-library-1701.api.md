@@ -195,6 +195,15 @@ export function ClipIcon(props: IconProps): JSX.Element;
 export function CloseIcon(props: IconProps): JSX.Element;
 
 // @public
+export function CodeLines(input: CodeLinesProps): JSX.Element;
+
+// @public (undocumented)
+export type CodeLinesProps = {
+    lines: readonly string[];
+    start?: number | undefined;
+};
+
+// @public
 export function Composer(input: ComposerProps): JSX.Element;
 
 // @public
@@ -575,6 +584,14 @@ export type MapSelectionCardProps = {
 };
 
 // @public
+export function MarkdownView(input: MarkdownViewProps): JSX.Element;
+
+// @public (undocumented)
+export type MarkdownViewProps = {
+    children: ReactNode;
+};
+
+// @public
 export function MaximizeIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -886,6 +903,32 @@ export type Scalar<T> = {
     [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
         readonly [key: string]: unknown;
     }>;
+};
+
+// @public
+export function ScriptExplanation(input: ScriptExplanationProps): JSX.Element;
+
+// @public (undocumented)
+export type ScriptExplanationProps = {
+    summary: string;
+    facts?: readonly ScriptFact[] | undefined;
+    steps: readonly ScriptStep[];
+    note?: string | undefined;
+    summaryLabel?: string | undefined;
+    stepsLabel?: string | undefined;
+    onLineSelect?: ((line: number) => void) | undefined;
+};
+
+// @public
+export type ScriptFact = {
+    key: string;
+    value: string;
+};
+
+// @public
+export type ScriptStep = {
+    text: ReactNode;
+    line?: number | undefined;
 };
 
 // @public

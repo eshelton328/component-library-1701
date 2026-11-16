@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Grid } from './layout'
-import { styleOf } from './layout-test'
+import { Grid, Stack } from './layout'
+import { columns, styleOf } from './layout-test'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const card = css({ bg: 'surface.pane', p: '16', borderRadius: 'lg', textStyle: 'body', color: 'fg.default' })
@@ -10,6 +10,7 @@ const card = css({ bg: 'surface.pane', p: '16', borderRadius: 'lg', textStyle: '
 function Grids() {
   return (
     <main className={page}>
+      <Stack gap="24">
       <Grid columns="3" gap="12" data-testid="three">
         {['Inbox', 'Artifacts', 'Toolkit', 'Workbench', 'Settings'].map((n) => (
           <div key={n} className={card}>
@@ -17,6 +18,12 @@ function Grids() {
           </div>
         ))}
       </Grid>
+      {columns.map((c) => (
+        <Grid key={c} columns={c} data-testid={`all-columns-${c}`}>
+          <span />
+        </Grid>
+      ))}
+      </Stack>
     </main>
   )
 }
@@ -28,6 +35,7 @@ const meta = {
     const style = styleOf(canvasElement, 'three')
     await expect(style.gridTemplateColumns.split(' ')).toHaveLength(3)
     await expect(style.rowGap).toBe('12px')
+    for (const c of columns) await expect(styleOf(canvasElement, `all-columns-${c}`).gridTemplateColumns.split(' ')).toHaveLength(Number(c))
   },
 } satisfies Meta<typeof Grids>
 export default meta

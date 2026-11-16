@@ -3,7 +3,7 @@ import { expect } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Stack } from './layout'
-import { styleOf } from './layout-test'
+import { aligns, gaps, styleOf } from './layout-test'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 
@@ -19,6 +19,12 @@ function Stacks() {
           <Button variant="primary">Start</Button>
           <Button>Aligned to the start</Button>
         </Stack>
+        {gaps.map((g) => (
+          <Stack key={g} gap={g} data-testid={`all-gap-${g}`} />
+        ))}
+        {aligns.map(([a]) => (
+          <Stack key={a} align={a} data-testid={`all-align-${a}`} />
+        ))}
       </Stack>
     </main>
   )
@@ -32,6 +38,8 @@ const meta = {
     await expect(styleOf(canvasElement, 'gap-4').rowGap).toBe('4px')
     await expect(styleOf(canvasElement, 'gap-40').rowGap).toBe('40px')
     await expect(styleOf(canvasElement, 'gap-40').alignItems).toBe('start')
+    for (const g of gaps) await expect(styleOf(canvasElement, `all-gap-${g}`).rowGap).toBe(`${g}px`)
+    for (const [a, css] of aligns) await expect(styleOf(canvasElement, `all-align-${a}`).alignItems).toBe(css)
   },
 } satisfies Meta<typeof Stacks>
 export default meta

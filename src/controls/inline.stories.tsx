@@ -3,7 +3,7 @@ import { expect } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Grid, Inline, Stack } from './layout'
-import { styleOf } from './layout-test'
+import { justifies, styleOf } from './layout-test'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 
@@ -29,6 +29,10 @@ function Inlines() {
             ))}
           </Inline>
         </Grid>
+        {justifies.map(([j]) => (
+          <Inline key={j} justify={j} data-testid={`all-justify-${j}`} />
+        ))}
+        <Inline align="baseline" data-testid="baseline" />
       </Stack>
     </main>
   )
@@ -42,6 +46,8 @@ const meta = {
     await expect(styleOf(canvasElement, 'between').justifyContent).toBe('space-between')
     await expect(styleOf(canvasElement, 'wrap').flexWrap).toBe('wrap')
     await expect(styleOf(canvasElement, 'wrap').columnGap).toBe('6px')
+    for (const [j, css] of justifies) await expect(styleOf(canvasElement, `all-justify-${j}`).justifyContent).toBe(css)
+    await expect(styleOf(canvasElement, 'baseline').alignItems).toBe('baseline')
   },
 } satisfies Meta<typeof Inlines>
 export default meta

@@ -14,6 +14,7 @@ import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import type { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
+import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
 // @public
@@ -149,6 +150,38 @@ export function Stack(props: StackProps): JSX.Element;
 
 // @public
 export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>;
+
+// @public
+export function TextArea(input: TextAreaProps): JSX.Element;
+
+// @public (undocumented)
+export type TextAreaProps = TextFieldBaseProps & {
+    autoresize?: boolean | undefined;
+    rows?: number | undefined;
+};
+
+// @public
+export function TextField(input: TextFieldProps): JSX.Element;
+
+// @public
+export type TextFieldBaseProps = {
+    label: string;
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    placeholder?: string | undefined;
+    helperText?: string | undefined;
+    error?: string | undefined;
+    disabled?: boolean | undefined;
+    readOnly?: boolean | undefined;
+    required?: boolean | undefined;
+    name?: string | undefined;
+};
+
+// @public (undocumented)
+export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> & {
+    type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined;
+};
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

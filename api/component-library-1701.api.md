@@ -7,6 +7,7 @@
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
+import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
@@ -177,6 +178,20 @@ export function Grid(props: GridProps): JSX.Element;
 
 // @public
 export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
+
+// @public
+export function GroupHeader(input: GroupHeaderProps): JSX.Element;
+
+// @public (undocumented)
+export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
+    label: string;
+    count?: number | undefined;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    contentId?: string | undefined;
+    leading?: ReactNode;
+    actions?: ReactNode;
+};
 
 // @public
 export function HomeIcon(props: IconProps): JSX.Element;

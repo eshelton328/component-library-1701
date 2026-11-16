@@ -14,3 +14,8 @@ Layout, Navigation or Overlays (d-065, d-066).
   and recipe skins (d-035).
 - Nav items come in as props; the shell does not read settings (d-038,
   d-068).
+- `AppShell` is the App frame and the Pane layout in one component: it
+  sits on the `Backdrop` and places the rail, list, detail, side and tab
+  bar slots. The library has no breakpoint tokens, so the shell and
+  `Container` take a `size` prop (`desktop`, `tablet`, `phone`) that the
+  app picks; they never measure the window.

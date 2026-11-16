@@ -4,6 +4,7 @@
 
 ```ts
 
+import { AppShellVariantProps } from '../../styled-system/recipes';
 import { BackdropVariantProps } from '../../styled-system/recipes';
 import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
@@ -17,6 +18,7 @@ import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { KindTileVariantProps } from '../../styled-system/recipes';
+import { LayoutContainerVariantProps } from '../../styled-system/recipes';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
@@ -44,6 +46,19 @@ export function AgentIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ApproveIcon(props: IconProps): JSX.Element;
+
+// @public
+export function AppShell(input: AppShellProps): JSX.Element;
+
+// @public (undocumented)
+export type AppShellProps = Scalar<AppShellVariantProps> & {
+    rail?: ReactNode;
+    list?: ReactNode;
+    detail?: ReactNode;
+    side?: ReactNode;
+    tabBar?: ReactNode;
+    view?: 'list' | 'detail' | undefined;
+};
 
 // @public
 export function ArrowUpIcon(props: IconProps): JSX.Element;
@@ -260,6 +275,12 @@ export type ComposerProps = {
     model?: ReactNode;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function Container(props: ContainerProps): JSX.Element;
+
+// @public
+export type ContainerProps = ComponentProps<'div'> & Scalar<LayoutContainerVariantProps>;
 
 // @public
 export function ContextMeter(input: ContextMeterProps): JSX.Element;

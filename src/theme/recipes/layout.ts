@@ -62,3 +62,29 @@ export const layoutGrid = defineRecipe({
   },
   defaultVariants: { gap: '16', columns: '1' },
 })
+
+/**
+ * The padding of a page's content, per frame size. The library has no
+ * breakpoint tokens, so the page passes `size` (desktop, tablet, phone).
+ * - desktop: the Inbox task, D1 346:306: 24 top, 28 bottom, 36 sides.
+ *   The inventory merges 28 and 36 into 32 or 40; ties take the larger
+ *   token (d-072), so 32 and 40.
+ * - tablet: Inbox T1 content 346:5414: 12 top, 20 bottom, 22 sides (24, d-072).
+ * - phone: Inbox M1 content 346:9007: 4 top, 12 bottom, 12 sides.
+ * No max width: the drawn content widths (820, 748, 948) have no token.
+ */
+export const layoutContainer = defineRecipe({
+  className: 'container',
+  jsx: ['Container'],
+  staticCss: ['*'],
+  base: { display: 'flex', flexDirection: 'column', minWidth: '0', w: '100%' },
+  variants: {
+    size: {
+      desktop: { pt: '24', pb: '32', px: '40' },
+      tablet: { pt: '12', pb: '20', px: '24' },
+      phone: { pt: '4', pb: '12', px: '12' },
+    },
+    gap,
+  },
+  defaultVariants: { size: 'desktop', gap: '0' },
+})

@@ -3,6 +3,7 @@
 // typed recipe function and variant props for each one in
 // styled-system/recipes. Add a recipe as its own file and list it below.
 import type { Config } from '@pandacss/dev'
+import { appShell } from './app-shell'
 import { backdrop } from './backdrop'
 import { bottomSheet } from './bottom-sheet'
 import { backRow } from './back-row'
@@ -42,7 +43,7 @@ import { modelChip } from './model-chip'
 import { popover } from './popover'
 import { proposalBlock } from './proposal-block'
 import { proposalSection } from './proposal-section'
-import { layoutGrid, layoutInline, layoutStack } from './layout'
+import { layoutContainer, layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
 import { splitter } from './splitter'
 import { textField } from './text-field'
@@ -59,6 +60,6 @@ import { workspaceTabs } from './workspace-tabs'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch, workbench, workspaceTabs }

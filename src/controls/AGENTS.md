@@ -11,13 +11,14 @@ under their purpose group, never under "Controls" (d-065).
   from `styled-system/jsx`. A one-element component uses
   `styled(element, recipe)`. No `css()`, `cva()` or `sva()` here; the
   styles live in `../theme/recipes/` (d-067).
-- The layout components (`layout.tsx`: Stack, Inline and Grid) are
+- The layout components (`layout.tsx`: Container, Stack, Inline and Grid) are
   config recipes like every other component, not Panda's layout
   patterns: a pattern writes CSS only for the prop values it finds in
   the source, so a value that an app passes would get none. The lint
   still lets this tier import the layout patterns in `../structure.ts`;
   do not use them. No file uses `Box`, `Spacer` or the other free-form
-  patterns. Container waits for its width tokens and the breakpoints.
+  patterns. The library has no breakpoint tokens, so Container takes a
+  `size` prop (desktop, tablet, phone) and has no max width yet.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

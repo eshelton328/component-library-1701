@@ -259,3 +259,61 @@ const search: StoryObj<typeof meta> = {
 }
 export const SearchDark: StoryObj<typeof meta> = { ...search, globals: { mode: 'dark' } }
 export const SearchLight: StoryObj<typeof meta> = { ...search, globals: { mode: 'light' } }
+
+const onNested = fn<(id: string) => void>()
+
+/** A subtask's chat under the chat that started it, and one more step in (Workbench D18 417:1204). */
+function Nested() {
+  return (
+    <main className={page}>
+      <div className={sidebar}>
+        <Stack gap="4">
+          <ListRow variant="sidebar" title="bridge themes" meta="Opus 5.5" leading={<span className={dot} />} selected onSelect={() => { onNested('parent') }} />
+          <ListRow variant="sidebar" level={1} title="theme tokens" meta="Opus 5.5" leading={<span className={dot} />} running onSelect={() => { onNested('child') }} />
+          <ListRow variant="sidebar" level={2} title="token names" meta="Opus 5.5" leading={<span className={dot} />} onSelect={() => { onNested('grandchild') }} />
+        </Stack>
+      </div>
+      <span hidden data-swatch="muted" className={css({ color: 'fg.muted' })} />
+    </main>
+  )
+}
+
+// The ↳ is fg.muted in `body` (14), 10 before the kind mark; level 2 moves it 24 further in.
+const nestedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onNested.mockClear()
+  const canvas = within(canvasElement)
+  const muted = getComputedStyle(canvasElement.querySelector('[data-swatch="muted"]') ?? canvasElement).color
+  const rowOf = (name: string) => {
+    const row = canvas.getByRole('button', { name }).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const leftOf = (row: HTMLElement, selector: string) => {
+    const el = row.querySelector(selector)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${selector}`)
+    return el.getBoundingClientRect().left
+  }
+  const [parent, child, grandchild] = [rowOf('bridge themes'), rowOf('theme tokens'), rowOf('token names')]
+  await expect(parent.querySelector('.list-row__nest')).toBeNull()
+  const nest = child.querySelector('.list-row__nest')
+  if (!(nest instanceof HTMLElement)) throw new Error('no nest')
+  await expect(nest).toHaveAttribute('aria-hidden', 'true')
+  await expect([getComputedStyle(nest).color, getComputedStyle(nest).fontSize]).toEqual([muted, '14px'])
+  // The ↳ takes the kind mark's place; the kind mark moves in by the ↳ and the 10 gap.
+  await expect(leftOf(child, '.list-row__nest')).toBe(leftOf(parent, '.list-row__leading'))
+  await expect(leftOf(child, '.list-row__leading') - nest.getBoundingClientRect().right).toBe(10)
+  await expect(leftOf(grandchild, '.list-row__nest') - leftOf(child, '.list-row__nest')).toBe(24)
+  // The selected and running colours span the whole row width, as at level 0.
+  await expect(child.getBoundingClientRect().width).toBe(parent.getBoundingClientRect().width)
+  // A nested row selects from a click or the keyboard like any other.
+  await userEvent.click(canvas.getByText('theme tokens'))
+  await expect(onNested).toHaveBeenCalledWith('child')
+  canvas.getByRole('button', { name: 'token names' }).focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(onNested).toHaveBeenCalledWith('grandchild')
+  // The ↳ is not part of the row's name.
+  await expect(canvas.getByRole('button', { name: 'theme tokens' })).toBeInTheDocument()
+}
+
+export const NestedDark: StoryObj<typeof meta> = { render: () => <Nested />, globals: { mode: 'dark' }, play: nestedPlay }
+export const NestedLight: StoryObj<typeof meta> = { render: () => <Nested />, globals: { mode: 'light' }, play: nestedPlay }

@@ -34,7 +34,7 @@ function present(node: ReactNode): boolean {
   })
 }
 
-/** The tone of a proposal block: `update`, `remove` or `approval`. */
+/** The tone of a proposal block: `update`, `create`, `remove` or `approval`. */
 export type ProposalTone = NonNullable<ProposalBlockProps['tone']>
 
 /** One button of a proposal block. */
@@ -69,7 +69,8 @@ export type ProposalBlockProps = Scalar<ProposalBlockVariantProps> & {
 
 /**
  * The block where an agent proposes a change and the user approves or
- * denies it. `tone` is `update` (the default, violet), `remove` (red; the
+ * denies it. `tone` is `update` (the default, violet), `create` (violet,
+ * new tasks to make, often a `Checkbox` for each), `remove` (red; the
  * title is struck through) or `approval` (amber, a request to run a
  * command). Each button calls its own `onClick`; the block changes nothing
  * itself (d-068, d-069).

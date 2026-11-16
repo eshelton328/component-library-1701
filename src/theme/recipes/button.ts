@@ -30,15 +30,48 @@ export const button = defineRecipe({
     // border sets this again, because the variant's border wins over base.
     _expanded: { borderColor: 'border.active' },
     _disabled: { opacity: 'disabled', cursor: 'not-allowed' },
+    // A toggle that is on (aria-pressed), such as Sort or Filter while a sort or
+    // filter applies: Inbox D13 359:735, M15 346:12154, Artifacts D3 403:6453.
+    // Fill #14263f (surface.selected), 1 px rgba(94,225,255,0.7)
+    // (border.active), label #e6ecff (fg.default). It is a toggle of the
+    // secondary button: primary and danger keep their own fill, so a pressed
+    // button never looks like primary. `secondary` sets it again, because its
+    // own fill and border would win over base.
+    _pressed: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.active' },
     '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0' },
+    // The active dot (`indicator`): a 6 px ellipse in #5ee1ff (accent.default)
+    // after the label, 6 apart (403:6841). The button is the dot's anchor when
+    // it holds only an icon.
+    '& > .button__indicator': { flexShrink: '0', w: '6', h: '6', borderRadius: 'full', bg: 'accent.default' },
+    '&:has(> .button__indicator)': { position: 'relative' },
   },
   variants: {
     variant: {
       primary: { bg: 'accent.default', color: 'fg.onAccent' },
-      secondary: { bg: 'surface.raised', color: 'fg.default', borderColor: 'border.default', _expanded: { borderColor: 'border.active' } },
+      secondary: {
+        bg: 'surface.raised',
+        color: 'fg.default',
+        borderColor: 'border.default',
+        _expanded: { borderColor: 'border.active' },
+        _pressed: { bg: 'surface.selected', borderColor: 'border.active' },
+      },
       danger: { bg: 'status.danger.fg', color: 'fg.onAccent' },
       dangerSoft: { bg: 'status.danger.bg', color: 'status.danger.fg', borderColor: 'status.danger.border', _expanded: { borderColor: 'border.active' } },
       dangerText: { color: 'status.danger.fg' },
+      // The action in a sheet header, such as Done, Clear, Cancel or Add:
+      // Inbox T8 346:7178 (Geist Medium 15), Inbox M7 346:10490, Artifacts M7
+      // 408:707 (Regular 14) and 408:711 (SemiBold 15), all #5ee1ff (fg.accent)
+      // with no fill and no border. The three label styles merge into
+      // `labelLg` (Medium 16): 15 lies between `label` (14) and `labelLg` (16),
+      // and the larger wins a tie (d-072). The size variant keeps the height and
+      // padding, so the hit area stays a full control. Hover tints the box in
+      // accent.faint, as option and menu rows do.
+      text: {
+        color: 'fg.accent',
+        textStyle: 'labelLg',
+        _hover: { bg: 'accent.faint' },
+        _disabled: { _hover: { bg: 'transparent' } },
+      },
     },
     size: {
       sm: { h: 'control.sm', px: '8', gap: '4' },
@@ -46,9 +79,11 @@ export const button = defineRecipe({
       lg: { h: 'control.lg', px: '16' },
       xl: { h: 'control.xl', px: '20' },
     },
-    // A square button that holds only an icon; give it an aria-label.
+    // A square button that holds only an icon; give it an aria-label. Its
+    // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
+    // y 2 in a 35 wide button, so 4 from the end and 2 from the top.
     iconOnly: {
-      true: { px: '0' },
+      true: { px: '0', '& > .button__indicator': { position: 'absolute', top: '2', insetEnd: '4' } },
       false: {},
     },
   },

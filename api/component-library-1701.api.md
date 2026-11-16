@@ -167,7 +167,10 @@ export function BubbleIcon(props: IconProps): JSX.Element;
 export function Button(input: ButtonProps): JSX.Element;
 
 // @public
-export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>;
+export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps> & {
+    pressed?: boolean | undefined;
+    indicator?: boolean | undefined;
+};
 
 // @public
 export function Card(input: CardProps): JSX.Element;
@@ -654,6 +657,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     selected?: boolean | undefined;
     running?: boolean | undefined;
     snoozed?: boolean | undefined;
+    level?: 0 | 1 | 2 | undefined;
     onSelect?: (() => void) | undefined;
 };
 
@@ -1512,6 +1516,8 @@ export type WorkspaceTab = {
     value: string;
     label: string;
     count?: number | undefined;
+    needsYou?: boolean | undefined;
+    draggable?: boolean | undefined;
     content: ReactNode;
 };
 

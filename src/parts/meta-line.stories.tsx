@@ -22,6 +22,11 @@ const swatches = {
   rule: css({ bg: 'kind.rule' }),
   workflow: css({ bg: 'kind.workflow' }),
   hook: css({ bg: 'kind.hook' }),
+  'tint-skill': css({ bg: 'kindTint.skill' }),
+  'tint-agent': css({ bg: 'kindTint.agent' }),
+  'tint-rule': css({ bg: 'kindTint.rule' }),
+  'tint-workflow': css({ bg: 'kindTint.workflow' }),
+  'tint-hook': css({ bg: 'kindTint.hook' }),
 }
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
@@ -183,11 +188,12 @@ const meta = {
     await expect(pathStyle.fontFamily).toContain('Geist Mono')
     await expect(canvas.getByRole('button', { name: 'Copy path' })).toBeVisible()
 
-    // Kind badge: a pill in the kind colour, labelled with the kind's name.
+    // Kind badge: a pill in the kind colour on the kind's tint (d-074), labelled with the kind's name.
     for (const k of kinds) {
       const el = first(`kind-${k}`)
       const s = getComputedStyle(el)
       await expect(s.color).toBe(swatch(k))
+      await expect(s.backgroundColor).toBe(swatch(`tint-${k}`))
       await expect([s.borderTopLeftRadius, s.paddingTop, s.paddingLeft, s.fontSize]).toEqual(['999px', '4px', '10px', '12px'])
     }
     await expect(first('kind-skill')).toHaveTextContent('Skill')

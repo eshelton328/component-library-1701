@@ -13,8 +13,8 @@ const kinds = ['claude', 'codex', 'shell'] as const satisfies readonly KindMarkK
 const sizes = ['14', '16', '20'] as const satisfies readonly KindMarkSize[]
 const swatches: Record<KindMarkKind, string> = {
   claude: css({ color: 'agent.claude' }),
-  codex: css({ color: 'fg.default' }),
-  shell: css({ color: 'fg.muted' }),
+  codex: css({ color: 'agent.codex' }),
+  shell: css({ color: 'agent.shell' }),
 }
 
 function Marks() {
@@ -38,6 +38,10 @@ function Marks() {
           <span data-testid="blank-title">
             <KindMark kind="codex" title=" " />
           </span>
+        </div>
+        <div className={row} data-testid="agent-probe">
+          <KindMark kind="codex" />
+          <KindMark kind="shell" />
         </div>
       </div>
       <div hidden>
@@ -88,6 +92,19 @@ const meta = {
     const blank = canvas.getByTestId('blank-title').querySelector('svg')
     await expect(blank?.getAttribute('aria-hidden')).toBe('true')
     await expect(blank?.getAttribute('role')).toBeNull()
+    // Codex and shell take their own agent tokens: change only agent.codex
+    // and agent.shell and the marks follow (fg.default and fg.muted do not).
+    const probe = canvas.getByTestId('agent-probe')
+    probe.style.setProperty('--colors-agent-codex', 'rgb(1, 2, 3)')
+    probe.style.setProperty('--colors-agent-shell', 'rgb(4, 5, 6)')
+    const probed = (k: KindMarkKind) => {
+      const svg = probe.querySelector(`[data-kind="${k}"]`)
+      if (!(svg instanceof SVGSVGElement)) throw new Error(`no ${k} probe`)
+      return getComputedStyle(svg).stroke
+    }
+    await expect([probed('codex'), probed('shell')]).toEqual(['rgb(1, 2, 3)', 'rgb(4, 5, 6)'])
+    probe.style.removeProperty('--colors-agent-codex')
+    probe.style.removeProperty('--colors-agent-shell')
   },
 } satisfies Meta<typeof Marks>
 export default meta

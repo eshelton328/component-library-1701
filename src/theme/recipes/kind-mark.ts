@@ -15,8 +15,8 @@ export const kindMark = defineRecipe({
   variants: {
     kind: {
       claude: { color: 'agent.claude' },
-      codex: { color: 'fg.default' },
-      shell: { color: 'fg.muted' },
+      codex: { color: 'agent.codex' },
+      shell: { color: 'agent.shell' },
     },
     size: {
       '14': { w: 'icon.14', h: 'icon.14' },

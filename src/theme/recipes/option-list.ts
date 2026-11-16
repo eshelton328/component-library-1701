@@ -7,11 +7,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 16 px check in #5ee1ff on the chosen row only. The other rows keep the
 // check's space empty. Tokens: `label`, `small` (the inventory merges
 // Regular 11 into it), `fg.default`, `fg.muted`, `fg.accent`, `radius.md`.
+// An option's badge (Inbox D2 346:792): the label and the pill in a row, 8
+// apart and centred on each other; the caller passes the pill (346:794).
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
   staticCss: ['*'],
-  slots: [...radioGroupAnatomy.keys(), 'itemBody', 'itemDescription'],
+  slots: [...radioGroupAnatomy.keys(), 'itemBody', 'itemHeading', 'itemBadge', 'itemDescription'],
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '2', w: '100%' },
     item: {
@@ -28,7 +30,9 @@ export const optionList = defineSlotRecipe({
       _disabled: { cursor: 'not-allowed', opacity: 'disabled', _hover: { bg: 'transparent' } },
     },
     itemBody: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
+    itemHeading: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
     itemText: { textStyle: 'label', color: 'fg.default' },
+    itemBadge: { display: 'inline-flex', flexShrink: '0' },
     itemDescription: { textStyle: 'small', color: 'fg.muted' },
     itemControl: {
       display: 'inline-flex',

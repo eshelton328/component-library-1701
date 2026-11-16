@@ -853,6 +853,7 @@ export type OptionListItem = {
 };
 
 // @public (undocumented)
+    badge?: ReactNode;
 export type OptionListProps = {
     label: string;
     items: readonly OptionListItem[];

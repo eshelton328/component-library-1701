@@ -1,5 +1,5 @@
 import { RadioGroup as ArkRadioGroup } from '@ark-ui/react/radio-group'
-import { useId, useRef, type KeyboardEvent, type MouseEvent } from 'react'
+import { useId, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { CheckIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { optionList } from '../../styled-system/recipes'
@@ -8,7 +8,9 @@ const { withProvider, withContext } = createSlotRecipeContext(optionList)
 const Root = withProvider(ArkRadioGroup.Root, 'root')
 const Item = withContext(ArkRadioGroup.Item, 'item')
 const ItemBody = withContext('span', 'itemBody')
+const ItemHeading = withContext('span', 'itemHeading')
 const ItemText = withContext(ArkRadioGroup.ItemText, 'itemText')
+const ItemBadge = withContext('span', 'itemBadge')
 const ItemDescription = withContext('span', 'itemDescription')
 const ItemControl = withContext(ArkRadioGroup.ItemControl, 'itemControl')
 
@@ -20,6 +22,11 @@ export type OptionListItem = {
   label: string
   /** A line under the label that says what the choice does. */
   description?: string | undefined
+  /**
+   * A pill after the label, such as `<Badge label="Recommended" tone="working" />` on the option a question
+   * recommends. It describes the radio for assistive technology, before the description.
+   */
+  badge?: ReactNode
   disabled?: boolean | undefined
 }
 
@@ -44,7 +51,8 @@ export type OptionListProps = {
 
 /**
  * A list of choices of which one is chosen, each with a label, an optional
- * description and a check on the chosen row: the sort sheet of Artifacts M4.
+ * badge, an optional description and a check on the chosen row: the sort
+ * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
 export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name }: OptionListProps) {
@@ -102,17 +110,27 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
     >
       {items.map((item, index) => {
         const descriptionId = `${baseId}-${String(index)}-description`
+        const badgeId = `${baseId}-${String(index)}-badge`
+        const hasBadge = item.badge !== undefined && item.badge !== null && item.badge !== false
+        const describedBy = [hasBadge ? badgeId : null, item.description === undefined ? null : descriptionId].filter((id) => id !== null).join(' ')
         return (
           // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
           <Item key={item.value} value={item.value} disabled={item.disabled === true ? true : undefined}>
             <ItemBody>
-              <ItemText>{item.label}</ItemText>
+              {hasBadge ? (
+                <ItemHeading>
+                  <ItemText>{item.label}</ItemText>
+                  <ItemBadge id={badgeId}>{item.badge}</ItemBadge>
+                </ItemHeading>
+              ) : (
+                <ItemText>{item.label}</ItemText>
+              )}
               {item.description === undefined ? null : <ItemDescription id={descriptionId}>{item.description}</ItemDescription>}
             </ItemBody>
             <ItemControl>
               <CheckIcon size="16" />
             </ItemControl>
-            <ArkRadioGroup.ItemHiddenInput {...(item.description === undefined ? {} : { 'aria-describedby': descriptionId })} />
+            <ArkRadioGroup.ItemHiddenInput {...(describedBy === '' ? {} : { 'aria-describedby': describedBy })} />
           </Item>
         )
       })}

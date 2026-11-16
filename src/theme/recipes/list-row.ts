@@ -24,9 +24,9 @@ export const listRow = defineSlotRecipe({
       '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
       // A selected or running row is not dimmed: its text must keep 4.5:1 on the selected colour.
       '&[data-snoozed]:not([data-selected]):not([data-running])': { opacity: 'snoozed' },
-      // Figma draws the age in #4a5675 (fg.subtle). On surface.selected fg.subtle is not allowed, and on a
-      // snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
-      '&:is([data-selected], [data-running], [data-snoozed]) .list-row__trailing': { color: 'fg.muted' },
+      // Figma draws the age and tags in #4a5675 (fg.subtle). On surface.selected fg.subtle is not allowed,
+      // and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
+      '&:is([data-selected], [data-running], [data-snoozed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },
     },
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },

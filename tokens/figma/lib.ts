@@ -96,21 +96,33 @@ const px = (v: unknown, where: string): number => {
   return num(v['value'], where)
 }
 
-/** The Figma pickers where a colour of this group may appear. */
+/**
+ * The Figma pickers where a colour may appear. Icons and kind marks draw
+ * strokes with fg, kind, agent and status fg colours, so those include
+ * STROKE_COLOR.
+ */
 export function colourScopes(path: readonly string[]): string[] {
   const group = path[0]
   const last = path[path.length - 1]
   const fill = ['FRAME_FILL', 'SHAPE_FILL']
-  if (group === 'fg') return ['TEXT_FILL', 'SHAPE_FILL']
-  if (group === 'border') return ['STROKE_COLOR']
+  const name = path.join('/')
+  // Single colours that a component uses outside their group's pickers.
+  const extra: Record<string, string> = {
+    'status/danger/fg': 'FRAME_FILL', // the danger button's fill
+    'border/default': 'SHAPE_FILL', // the empty ContextMeter segment
+    'accent/discuss': 'TEXT_FILL', // the issue MetaChip's text
+  }
+  const plus = (scopes: string[]) => (extra[name] === undefined ? scopes : [...scopes, extra[name]])
+  if (group === 'fg') return ['TEXT_FILL', 'SHAPE_FILL', 'STROKE_COLOR']
+  if (group === 'border') return plus(['STROKE_COLOR'])
   if (group === 'status' || group === 'diff') {
-    if (last === 'fg') return ['TEXT_FILL', 'SHAPE_FILL']
+    if (last === 'fg') return plus(group === 'status' ? ['TEXT_FILL', 'SHAPE_FILL', 'STROKE_COLOR'] : ['TEXT_FILL', 'SHAPE_FILL'])
     if (last === 'bg') return fill
     if (last === 'border') return ['STROKE_COLOR']
-    return fail(`no scopes for color/${path.join('/')}`)
+    return fail(`no scopes for color/${name}`)
   }
-  if (group === 'accent') return [...fill, 'STROKE_COLOR']
-  if (group === 'kind' || group === 'agent') return [...fill, 'TEXT_FILL']
+  if (group === 'accent') return plus([...fill, 'STROKE_COLOR'])
+  if (group === 'kind' || group === 'agent') return [...fill, 'TEXT_FILL', 'STROKE_COLOR']
   return fill // bg, surface, overlay, backdrop
 }
 

@@ -30,7 +30,7 @@ export const button = defineRecipe({
     // border sets this again, because the variant's border wins over base.
     _expanded: { borderColor: 'border.active' },
     _disabled: { opacity: 'disabled', cursor: 'not-allowed' },
-    '& svg': { width: 'icon.16', height: 'icon.16', flexShrink: '0' },
+    '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0' },
   },
   variants: {
     variant: {

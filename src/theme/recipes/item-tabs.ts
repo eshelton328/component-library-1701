@@ -37,7 +37,7 @@ export const itemTabs = defineSlotRecipe({
       color: 'fg.muted',
       bg: 'transparent',
       cursor: 'pointer',
-      '& svg': { width: 'icon.16', height: 'icon.16', flexShrink: '0' },
+      '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0' },
       _selected: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.selected' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },

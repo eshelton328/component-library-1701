@@ -43,7 +43,7 @@ export const moreDrawer = defineSlotRecipe({
       h: 'kindTile.lg',
       borderRadius: 'md',
       bg: 'accent.subtle',
-      '& svg': { w: 'icon.20', h: 'icon.20' },
+      '& svg': { w: 'icon.20!', h: 'icon.20!' },
     },
     body: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     // Figma's Medium 15 (415:320) merges into `labelLg` (d-074).

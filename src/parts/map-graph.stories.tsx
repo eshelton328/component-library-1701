@@ -49,8 +49,8 @@ const columns = [
   { label: 'Workflows', x: 1124, y: 30 },
 ]
 
-function Map({ onSelect, onOpen }: { onSelect: (id: string | null) => void; onOpen: () => void }) {
-  const [selected, setSelected] = useState<string | null>(null)
+function Map({ onSelect, onOpen, initial = null }: { onSelect: (id: string | null) => void; onOpen: () => void; initial?: string | null }) {
+  const [selected, setSelected] = useState<string | null>(initial)
   const select = (id: string | null) => {
     setSelected(id)
     onSelect(id)
@@ -129,6 +129,10 @@ const meta = {
     await expect(getComputedStyle(label).fontFamily).toContain('Geist Mono')
     await expect(getComputedStyle(within(writing).getByText('every session')).color).toBe(swatch('rule'))
     await expect(writer).toHaveAttribute('aria-pressed', 'false')
+    // Each node's description names its links and their direction; a node with none has no description.
+    await expect(writer).toHaveAccessibleDescription('Links to writing, ste100, writing-reviewer, audit-slop. Linked from writing-reviewer.')
+    await expect(node('ste100')).toHaveAccessibleDescription('Linked from writer, commit-msg.')
+    await expect(node('ambitious')).not.toHaveAttribute('aria-describedby')
     // Column headings are mono capitals in muted; the edge to an unknown id is not drawn.
     const heading = Array.from(map.querySelectorAll('text')).find((t) => t.textContent === 'Skills')
     if (heading === undefined) throw new Error('no heading')
@@ -169,7 +173,9 @@ const meta = {
     const ambitious = node('ambitious')
     await expect(ambitious).toHaveAttribute('data-state', 'dim')
     await expect(getComputedStyle(ambitious).borderTopColor).toBe(swatch('border'))
-    await expect(getComputedStyle(within(ambitious).getByText('ambitious')).opacity).toBe('0.45')
+    // A dim node mutes its text, which keeps 4.5:1 contrast, and fades its icon.
+    await expect(getComputedStyle(within(ambitious).getByText('ambitious')).color).toBe(swatch('muted'))
+    await expect(getComputedStyle(ambitious.firstElementChild ?? ambitious).opacity).toBe('0.45')
     // The selection card: name, kind in its colour, counts, open and close.
     const card = within(map).getByRole('region', { name: 'writer' })
     const c = getComputedStyle(card)
@@ -196,3 +202,12 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The map with writer selected, so the accessibility check runs on dim nodes.
+const selectedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const map = within(canvasElement).getByRole('group', { name: 'Toolkit map' })
+  await expect(within(map).getByRole('button', { name: 'writer' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(within(map).getByRole('button', { name: 'ambitious' })).toHaveAttribute('data-state', 'dim')
+}
+export const SelectedDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, args: { initial: 'writer' }, play: selectedPlay }
+export const SelectedLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, args: { initial: 'writer' }, play: selectedPlay }

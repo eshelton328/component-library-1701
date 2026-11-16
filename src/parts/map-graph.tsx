@@ -1,4 +1,4 @@
-import type { KeyboardEvent, ReactNode } from 'react'
+import { type KeyboardEvent, type ReactNode, useId } from 'react'
 import { AgentIcon, ChevronRightIcon, CloseIcon, HookIcon, type IconProps, RuleIcon, SkillIcon, WorkflowIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
@@ -37,6 +37,8 @@ export type MapNodeProps = {
   onClick?: (() => void) | undefined
   /** Called on a key press, before the button handles it. */
   onKeyDown?: ((event: KeyboardEvent<HTMLButtonElement>) => void) | undefined
+  /** The id of an element that describes the node, such as its links. */
+  describedBy?: string | undefined
 }
 
 /**
@@ -44,10 +46,10 @@ export type MapNodeProps = {
  * an optional meta text. It fills the box it is placed in. `aria-pressed`
  * tells assistive technology whether it is the selected item.
  */
-export function MapNode({ label, kind, meta, state = 'lit', onClick, onKeyDown }: MapNodeProps) {
+export function MapNode({ label, kind, meta, state = 'lit', onClick, onKeyDown, describedBy }: MapNodeProps) {
   const Icon = kindIcons[kind]
   return (
-    <NodeRoot type="button" kind={kind} aria-pressed={state === 'selected'} data-state={state} onClick={onClick} onKeyDown={onKeyDown}>
+    <NodeRoot type="button" kind={kind} aria-pressed={state === 'selected'} aria-describedby={describedBy} data-state={state} onClick={onClick} onKeyDown={onKeyDown}>
       <NodeIcon>
         <Icon size="16" />
       </NodeIcon>
@@ -165,6 +167,7 @@ const ColumnLabel = graph.withContext('text', 'columnLabel')
 const Edge = graph.withContext('path', 'edge')
 const EdgeEnd = graph.withContext('circle', 'edgeEnd')
 const NodeBox = graph.withContext('foreignObject', 'node')
+const Links = graph.withContext('span', 'links')
 const Legend = graph.withContext('div', 'legend')
 const Card = graph.withContext('div', 'card')
 
@@ -259,6 +262,14 @@ function linkPath(a: Box, b: Box): { d: string; end: { x: number; y: number } } 
  * clears the selection. The map does no layout: the caller places nodes.
  */
 export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, selectedId = null, onSelect, legend, card }: MapGraphProps) {
+  const idBase = useId()
+  const names = new Map(nodes.map((n) => [n.id, n.label]))
+  // The links of a node as a sentence, so a screen reader hears their direction.
+  const linksOf = (id: string) => {
+    const out = edges.filter((e) => e.from === id && e.to !== id).flatMap((e) => names.get(e.to) ?? [])
+    const into = edges.filter((e) => e.to === id && e.from !== id).flatMap((e) => names.get(e.from) ?? [])
+    return [out.length > 0 ? `Links to ${out.join(', ')}.` : '', into.length > 0 ? `Linked from ${into.join(', ')}.` : ''].filter((t) => t !== '').join(' ')
+  }
   const boxes = new Map(nodes.map((n) => [n.id, { x: n.x, y: n.y, width: nodeSize.width, height: nodeSize.height }]))
   const selected = selectedId !== null && boxes.has(selectedId) ? selectedId : null
   const linked = new Set<string>()
@@ -302,11 +313,24 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
               </g>
             ))}
           </g>
-          {nodes.map((n) => (
-            <NodeBox key={n.id} x={n.x} y={n.y} width={nodeSize.width} height={nodeSize.height}>
-              <MapNode label={n.label} kind={n.kind} meta={n.meta} state={stateOf(n.id)} onClick={() => onSelect?.(n.id)} onKeyDown={onKeyDown} />
-            </NodeBox>
-          ))}
+          {nodes.map((n, i) => {
+            const links = linksOf(n.id)
+            const linksId = `${idBase}-links-${String(i)}`
+            return (
+              <NodeBox key={n.id} x={n.x} y={n.y} width={nodeSize.width} height={nodeSize.height}>
+                <MapNode
+                  label={n.label}
+                  kind={n.kind}
+                  meta={n.meta}
+                  state={stateOf(n.id)}
+                  onClick={() => onSelect?.(n.id)}
+                  onKeyDown={onKeyDown}
+                  describedBy={links === '' ? undefined : linksId}
+                />
+                {links === '' ? null : <Links id={linksId}>{links}</Links>}
+              </NodeBox>
+            )
+          })}
         </Svg>
       </Scroller>
       {legend === undefined || legend === null ? null : <Legend>{legend}</Legend>}

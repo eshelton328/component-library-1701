@@ -11,7 +11,7 @@ import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
-import type { KeyboardEvent as KeyboardEvent_2 } from 'react';
+import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { KindTileVariantProps } from '../../styled-system/recipes';
@@ -480,6 +480,7 @@ export type MapNodeProps = {
     state?: MapNodeState | undefined;
     onClick?: (() => void) | undefined;
     onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
+    describedBy?: string | undefined;
 };
 
 // @public

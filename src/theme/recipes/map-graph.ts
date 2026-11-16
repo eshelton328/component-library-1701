@@ -9,7 +9,7 @@ const kindColour = Object.fromEntries(kinds.map((k) => [`&[data-kind=${k}]`, { c
 // its kind colour on surface.raised (writing 426:464), radius 8, 10 px
 // side padding and an 8 px gap. Label and meta are mono 12. A selected node
 // (writer 426:512) has a 2 px cyan border on surface.selected and a cyan
-// label; a dim node (ambitious 426:544) fades its icon and text.
+// label; a dim node (ambitious 426:544) fades its icon and mutes its text.
 export const mapNode = defineSlotRecipe({
   className: 'map-node',
   jsx: ['MapNode', 'MapGraph'],
@@ -40,10 +40,11 @@ export const mapNode = defineSlotRecipe({
       overflowX: 'hidden',
       whiteSpace: 'nowrap',
       textOverflow: 'ellipsis',
-      '[data-state=dim] > &': { opacity: 'disabled' },
+      // Figma fades a dim label to 0.42; muted text keeps 4.5:1 contrast.
+      '[data-state=dim] > &': { color: 'fg.muted' },
       '[data-state=selected] > &': { color: 'fg.accent' },
     },
-    meta: { textStyle: 'mono', ms: 'auto', flexShrink: '0', whiteSpace: 'nowrap', '[data-state=dim] > &': { opacity: 'disabled' } },
+    meta: { textStyle: 'mono', ms: 'auto', flexShrink: '0', whiteSpace: 'nowrap' },
   },
   variants: {
     kind: Object.fromEntries(
@@ -53,7 +54,7 @@ export const mapNode = defineSlotRecipe({
           // A variant wins over base, so the state border colours are set here.
           root: { borderColor: `kind.${k}`, '&[data-state=dim]': { borderColor: 'border.default' }, '&[data-state=selected]': { borderColor: 'accent.default' } },
           icon: { color: `kind.${k}` },
-          meta: { color: `kind.${k}` },
+          meta: { color: `kind.${k}`, '[data-state=dim] > &': { color: 'fg.muted' } },
         },
       ]),
     ),
@@ -71,7 +72,7 @@ export const mapGraph = defineSlotRecipe({
   className: 'map-graph',
   jsx: ['MapGraph'],
   staticCss: ['*'],
-  slots: ['root', 'scroller', 'svg', 'columnLabel', 'edge', 'edgeEnd', 'node', 'legend', 'card'],
+  slots: ['root', 'scroller', 'svg', 'columnLabel', 'edge', 'edgeEnd', 'node', 'links', 'legend', 'card'],
   base: {
     root: {
       position: 'relative',
@@ -93,6 +94,8 @@ export const mapGraph = defineSlotRecipe({
     },
     edgeEnd: { fill: 'fg.muted', '&[data-lit]': { fill: 'accent.default' } },
     node: { overflow: 'visible' },
+    // The links of each node, read by assistive technology and hidden from view.
+    links: { srOnly: true },
     legend: { position: 'absolute', left: '24', bottom: '24' },
     // Figma's card is 300 px wide; shell.popover (320) is the nearest size token.
     card: { position: 'absolute', right: '24', bottom: '24', w: 'shell.popover' },

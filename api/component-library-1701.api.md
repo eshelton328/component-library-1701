@@ -184,6 +184,30 @@ export type MenuSeparator = {
 };
 
 // @public
+export function Popover(input: PopoverProps): JSX.Element;
+
+// @public (undocumented)
+export type PopoverProps = {
+    trigger: ReactElement;
+    label: string;
+    children: ReactNode;
+    note?: ReactNode;
+    actions?: ReactNode;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+};
+
+// @public
+export function PopoverSection(input: PopoverSectionProps): JSX.Element;
+
+// @public (undocumented)
+export type PopoverSectionProps = {
+    label: string;
+    children: ReactNode;
+};
+
+// @public
 export function RadioMenu(input: RadioMenuProps): JSX.Element;
 
 // @public

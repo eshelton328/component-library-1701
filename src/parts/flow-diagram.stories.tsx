@@ -7,6 +7,7 @@ import { ChatPath, FlowDiagram, type FlowStep } from './flow-diagram'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const column = css({ w: 'shell.listPane' })
+const narrow = css({ w: 'shell.popoverSm' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {
   raised: css({ bg: 'surface.raised' }),
@@ -62,6 +63,15 @@ function Flow() {
           />
         </div>
         <FlowDiagram label="One step" steps={[{ title: 'Only step' }]} />
+        <div className={narrow} data-testid="narrow">
+          <Stack gap="12">
+            <FlowDiagram
+              label="Long names"
+              steps={[{ title: 'checkReleaseRegistryAuthenticationConfiguration', uses: [{ label: 'checkReleaseRegistryAuthenticationConfiguration', kind: 'rule', icon: <RuleIcon /> }] }]}
+            />
+            <ChatPath title="Long" steps={[{ number: '1', label: 'checkReleaseRegistryAuthenticationConfiguration', note: '--form=checkReleaseRegistryAuthentication' }]} />
+          </Stack>
+        </div>
       </Stack>
       <div hidden>
         {Object.entries(swatches).map(([name, className]) => (
@@ -152,11 +162,27 @@ const meta = {
     await expect([style(loop).color, style(loop).backgroundColor, style(loop).borderTopLeftRadius]).toEqual([swatch('amber'), swatch('amberTint'), '6px'])
     await expect(style(card).borderTopColor).toBe(swatch('border'))
 
+    // Long names break inside a 240 px column instead of overflowing it, and a chip icon is 12 px whatever its size prop.
+    const narrowBox = box(canvas.getByTestId('narrow'))
+    const longFlow = canvas.getByRole('list', { name: 'Long names' })
+    for (const el of Array.from(canvas.getByTestId('narrow').querySelectorAll('li, h4, span'))) {
+      await expect(box(el).right).toBeLessThanOrEqual(narrowBox.right + 0.5)
+      // No text runs out of its own box either.
+      await expect(el.scrollWidth).toBeLessThanOrEqual(el.clientWidth + 1)
+    }
+    const longIcon = within(longFlow).getByRole('list', { name: 'Uses' }).querySelector('svg')
+    if (longIcon === null) throw new Error('no icon')
+    await expect([box(longIcon).width, box(longIcon).height]).toEqual([12, 12])
+    // Each list keeps role="list", so Safari keeps it a list without bullets.
+    await expect(flow).toHaveAttribute('role', 'list')
+    await expect(within(html(second)).getByRole('list', { name: 'Uses' })).toHaveAttribute('role', 'list')
+
     // The chat path: a named region with its steps as pills in an ordered list.
     const chat = canvas.getByRole('region', { name: 'A chat answer takes a shorter path' })
     const r = style(chat)
     await expect([r.backgroundColor, r.borderTopColor, r.borderTopLeftRadius, r.paddingTop, r.paddingLeft, r.rowGap]).toEqual([swatch('raised'), swatch('border'), '10px', '16px', '16px', '10px'])
     await expect(style(within(chat).getByRole('heading')).textTransform).toBe('uppercase')
+    await expect(within(chat).getByRole('list')).toHaveAttribute('role', 'list')
     const pills = within(within(chat).getByRole('list')).getAllByRole('listitem')
     await expect(pills.map((p) => p.textContent)).toEqual(['1Name the reader', '3List the claims', '6Run the lint--form chat', '→Send the textunchanged'])
     const pill = html(pills[0]?.firstElementChild)

@@ -53,8 +53,8 @@ export const flowDiagram = defineSlotRecipe({
       fontVariantNumeric: 'tabular-nums',
     },
     body: { display: 'flex', flexDirection: 'column', gap: '4', minW: '0' },
-    title: { textStyle: 'label', color: 'fg.default', m: '0' },
-    description: { textStyle: 'small', color: 'fg.muted', m: '0' },
+    title: { textStyle: 'label', color: 'fg.default', m: '0', overflowWrap: 'anywhere' },
+    description: { textStyle: 'small', color: 'fg.muted', m: '0', overflowWrap: 'anywhere' },
     uses: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6', listStyle: 'none', m: '0', p: '0', pt: '4' },
     chip: {
       display: 'inline-flex',
@@ -68,9 +68,14 @@ export const flowDiagram = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
       borderRadius: 'sm',
+      // A long name breaks inside the chip rather than overflow the card.
+      maxW: '100%',
+      minW: '0',
+      overflowWrap: 'anywhere',
       ...usesTones,
     },
-    chipIcon: { display: 'inline-flex', flexShrink: '0' },
+    // The icon is drawn at 12 px, whatever size it was given.
+    chipIcon: { display: 'inline-flex', flexShrink: '0', '& svg': { w: 'icon.12!', h: 'icon.12!' } },
     loop: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -119,7 +124,7 @@ export const chatPath = defineSlotRecipe({
     title: { textStyle: 'mono', color: 'fg.muted', textTransform: 'uppercase', m: '0' },
     description: { textStyle: 'small', color: 'fg.muted', m: '0' },
     steps: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8', listStyle: 'none', m: '0', p: '0' },
-    step: { display: 'inline-flex', alignItems: 'center', gap: '8' },
+    step: { display: 'inline-flex', alignItems: 'center', gap: '8', maxW: '100%', minW: '0' },
     pill: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -131,6 +136,7 @@ export const chatPath = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'accent.default',
       borderRadius: 'md',
+      minW: '0',
     },
     number: {
       flexShrink: '0',
@@ -144,8 +150,8 @@ export const chatPath = defineSlotRecipe({
       borderColor: 'border.active',
       borderRadius: 'md',
     },
-    label: { textStyle: 'label', color: 'fg.default' },
-    note: { textStyle: 'small', color: 'fg.muted' },
+    label: { textStyle: 'label', color: 'fg.default', minW: '0', overflowWrap: 'anywhere' },
+    note: { textStyle: 'small', color: 'fg.muted', minW: '0', overflowWrap: 'anywhere' },
     // An arrow pointing right (501:70): the up arrow turned a quarter.
     arrow: { display: 'inline-flex', color: 'fg.muted', '& svg': { transform: 'rotate(90deg)' } },
   },

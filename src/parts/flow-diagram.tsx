@@ -57,24 +57,24 @@ function present(text: string | undefined): text is string {
 /**
  * The steps of a skill or workflow, top to bottom: a numbered card for
  * each step with what it uses, an arrow to the next, and a loop marker on
- * a step that repeats. An ordered list, so a screen reader reads the
- * order; the arrows are hidden from it.
+ * a step that repeats. An ordered list with `role="list"`, so Safari keeps
+ * the list without bullets; the arrows are hidden from assistive technology.
  */
 export function FlowDiagram({ label, steps }: FlowDiagramProps) {
   return (
-    <Root aria-label={label}>
+    <Root role="list" aria-label={label}>
       {steps.map((step, i) => {
         const uses = step.uses ?? []
         const loop = present(step.loop)
         return (
           <Step key={step.id ?? String(i)}>
             <Card data-loop={loop ? '' : undefined}>
-              <StepNumber aria-hidden="true">{i + 1}</StepNumber>
+              <StepNumber>{i + 1}</StepNumber>
               <Body>
                 <Title>{step.title}</Title>
                 {present(step.description) ? <Description>{step.description}</Description> : null}
                 {uses.length > 0 || loop ? (
-                  <Uses aria-label="Uses">
+                  <Uses role="list" aria-label="Uses">
                     {uses.map((use, u) => (
                       <Chip key={`${String(u)}:${use.label}`} data-kind={use.kind ?? 'file'}>
                         {use.icon === undefined || use.icon === null ? null : <ChipIcon>{use.icon}</ChipIcon>}
@@ -134,7 +134,7 @@ export function ChatPath({ title, description, steps }: ChatPathProps) {
     <ChatRoot aria-label={title}>
       <ChatTitle>{title}</ChatTitle>
       {present(description) ? <ChatDescription>{description}</ChatDescription> : null}
-      <ChatSteps>
+      <ChatSteps role="list">
         {steps.map((step, i) => (
           <ChatStep key={`${String(i)}:${step.label}`}>
             <Pill>

@@ -54,7 +54,7 @@ void test('every text style names a font variable', () => {
 })
 
 void test('scopes colours by group, and fails on an unknown status part', () => {
-  assert.deepEqual(colourScopes(['fg', 'default']), ['TEXT_FILL', 'SHAPE_FILL'])
+  assert.deepEqual(colourScopes(['fg', 'default']), ['TEXT_FILL', 'SHAPE_FILL', 'STROKE_COLOR'])
   assert.deepEqual(colourScopes(['status', 'error', 'border']), ['STROKE_COLOR'])
   assert.deepEqual(colourScopes(['surface', 'pane']), ['FRAME_FILL', 'SHAPE_FILL'])
   assert.throws(() => colourScopes(['status', 'error', 'glow']))
@@ -419,4 +419,15 @@ void test('the fingerprint hashes an effect style with a noise effect, which has
   await run(textScript(d), figma)
   figma.effects.push({ id: 'E:noise', name: 'other/noise', description: '', effects: [{ type: 'NOISE', noiseType: 'MONOTONE', noiseSize: 1, density: 0.5, visible: true, blendMode: 'NORMAL', color: { r: 0, g: 0, b: 0, a: 1 } }] })
   assert.deepEqual(compareHashes(expectedHashes(d), effectsOf(await run(fingerprint(d), figma))), ['extra effect|other/noise'])
+})
+
+void test('scopes the colours that components bind outside their group (batch 1-4 prep)', () => {
+  const scopes = (name: string) => collection(doc, 'Color')?.variables.find((v) => v.name === `color/${name}`)?.scopes ?? []
+  for (const name of ['fg/default', 'fg/muted', 'kind/skill', 'agent/claude', 'status/working/fg', 'status/danger/fg']) assert.ok(scopes(name).includes('STROKE_COLOR'), name)
+  assert.ok(scopes('status/danger/fg').includes('FRAME_FILL'))
+  assert.ok(!scopes('status/working/fg').includes('FRAME_FILL'))
+  assert.deepEqual(scopes('border/default'), ['STROKE_COLOR', 'SHAPE_FILL'])
+  assert.deepEqual(scopes('border/focus'), ['STROKE_COLOR'])
+  assert.deepEqual(scopes('accent/discuss'), ['FRAME_FILL', 'SHAPE_FILL', 'STROKE_COLOR', 'TEXT_FILL'])
+  assert.deepEqual(scopes('diff/added/fg'), ['TEXT_FILL', 'SHAPE_FILL'])
 })

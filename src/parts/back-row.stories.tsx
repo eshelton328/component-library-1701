@@ -82,6 +82,11 @@ const meta = {
     await expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await expect(style.borderTopWidth).toBe('0px')
     await expect(back.getBoundingClientRect().height).toBeGreaterThanOrEqual(28)
+    // The button starts at the chevron and ends 6 px after the label, so the focus ring is as far from the
+    // label as from the chevron's stroke (6.67 px inside its box).
+    await expect([style.paddingLeft, style.paddingRight]).toEqual(['0px', '6px'])
+    await expect(back.getBoundingClientRect().left).toBe(icon.left)
+    await expect(back.getBoundingClientRect().right - label.getBoundingClientRect().right).toBe(6)
     // The actions end at the right edge of the row, 8 px apart; no actions render no slot.
     const root = part('inbox', 'root').getBoundingClientRect()
     const actions = part('inbox', 'actions')
@@ -129,6 +134,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     const ring = canvasElement.querySelector('[data-swatch="focus"]')
     await expect(focus.outlineStyle).toBe('solid')
     await expect(focus.outlineColor).toBe(ring === null ? '' : getComputedStyle(ring).color)
+    // The ring is 2 px outside the button, so it is 8 px from the end of the label.
+    await expect([focus.outlineOffset, focus.paddingRight]).toEqual(['2px', '6px'])
     await userEvent.keyboard('{Enter}')
     await userEvent.keyboard(' ')
     await expect(onBack).toHaveBeenCalledTimes(3)

@@ -836,7 +836,7 @@ export default definePreset({
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
             "pill": {
-              "value": "14px",
+              "value": "1.2727",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "small": {

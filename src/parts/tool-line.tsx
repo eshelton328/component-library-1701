@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react'
+import { Children, Fragment, isValidElement, useId, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { toolLine, type ToolLineVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -33,9 +33,15 @@ export type ToolLineProps = Scalar<ToolLineVariantProps> & {
   children?: ReactNode
 }
 
-// React renders nothing for null, undefined, booleans and the empty string.
+// Whether the output renders anything. React renders nothing for null,
+// undefined, booleans and the empty string, nor for an array or a fragment
+// that holds only those, such as `lines.map(...)` over no lines.
 function present(node: ReactNode): boolean {
-  return node !== null && node !== undefined && typeof node !== 'boolean' && node !== ''
+  return Children.toArray(node).some((child) => {
+    if (typeof child === 'string') return child !== ''
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) return present(child.props.children)
+    return true
+  })
 }
 
 /**

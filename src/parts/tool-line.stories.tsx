@@ -51,6 +51,13 @@ function Lines() {
         <div data-testid="failed">
           <ToolLine name="Bash" target="pnpm verify" state="failed" stateLabel="Failed with exit code 1" />
         </div>
+        <div data-testid="empty">
+          <ToolLine name="Grep" target="TODO" onOpenChange={() => undefined}>
+            {[]}
+            {[false, null]}
+            <></>
+          </ToolLine>
+        </div>
         <div data-testid="open">
           <ToolLine name="Bash" target="git status --short" open onOpenChange={() => undefined}>
             {'M AGENTS.md\n?? toolkit/rules/diagrams.md'}
@@ -93,6 +100,9 @@ const meta = {
     await expect(canvas.getByRole('img', { name: 'Failed with exit code 1' })).toBeInTheDocument()
     // A line without output is not a button.
     await expect(within(canvas.getByTestId('done')).queryByRole('button')).toBeNull()
+    // Output that renders nothing (empty arrays, null, false, an empty fragment) makes no button and no card.
+    await expect(within(canvas.getByTestId('empty')).queryByRole('button')).toBeNull()
+    await expect(canvas.getByTestId('empty').querySelector('.tool-line__output')).toBeNull()
     // The open output sits 6 px under the line in the transcript card: surface.well, padding 10, radius 8, Mono 12 in fg.default.
     const toggle = within(canvas.getByTestId('open')).getByRole('button')
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')

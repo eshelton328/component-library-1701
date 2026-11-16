@@ -14,6 +14,7 @@ import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import type { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
+import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
@@ -176,6 +177,15 @@ export function Stack(props: StackProps): JSX.Element;
 
 // @public
 export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>;
+
+// @public
+export function StatusPill(input: StatusPillProps): JSX.Element;
+
+// @public (undocumented)
+export type StatusPillProps = Scalar<StatusPillVariantProps> & {
+    label: string;
+    dot?: boolean | undefined;
+};
 
 // @public
 export function TextArea(input: TextAreaProps): JSX.Element;

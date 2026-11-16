@@ -379,7 +379,7 @@ export default definePreset({
                 "base": "#ffffff",
                 "_dark": "#070b14"
               },
-              "description": "Text and icons on accent.default or a solid status.danger fill."
+              "description": "Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg."
             },
             "subtle": {
               "value": {
@@ -718,6 +718,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
+            "railLabel": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
+            },
             "small": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -845,6 +849,10 @@ export default definePreset({
               "value": "11px",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
+            "railLabel": {
+              "value": "9px",
+              "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
+            },
             "small": {
               "value": "12px",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -904,6 +912,10 @@ export default definePreset({
             "pill": {
               "value": "1.2727",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
+            },
+            "railLabel": {
+              "value": "1.3334",
+              "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
             "small": {
               "value": "1.4167",
@@ -965,6 +977,10 @@ export default definePreset({
               "value": "500",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
+            "railLabel": {
+              "value": "500",
+              "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
+            },
             "small": {
               "value": "400",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -1024,6 +1040,10 @@ export default definePreset({
             "pill": {
               "value": "0px",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
+            },
+            "railLabel": {
+              "value": "0px",
+              "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
             "small": {
               "value": "0px",
@@ -1150,6 +1170,16 @@ export default definePreset({
             "lineHeight": "text.pill",
             "fontWeight": "text.pill",
             "letterSpacing": "text.pill"
+          }
+        },
+        "railLabel": {
+          "description": "Labels under the icons of the desktop nav rail, as Figma draws them at 9 px.",
+          "value": {
+            "fontFamily": "text.railLabel",
+            "fontSize": "text.railLabel",
+            "lineHeight": "text.railLabel",
+            "fontWeight": "text.railLabel",
+            "letterSpacing": "text.railLabel"
           }
         },
         "small": {

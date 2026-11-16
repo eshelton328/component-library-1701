@@ -265,6 +265,7 @@ const fontStyle: Record<number, string> = { 400: 'Regular', 500: 'Medium', 600: 
 export function expectedHashes(doc: FigmaTokens): Record<string, string> {
   const out: Record<string, string> = {}
   for (const c of doc.collections) {
+    out[`col|${c.name}`] = fnv([[...c.modes].sort().join(','), '0'].join('|'))
     for (const v of c.variables) {
       const vals: Record<string, string> = {}
       for (const [m, x] of Object.entries(v.values ?? {})) vals[m] = show(x)
@@ -275,7 +276,7 @@ export function expectedHashes(doc: FigmaTokens): Record<string, string> {
   }
   for (const t of doc.textStyles) {
     const style = fontStyle[t.fontWeight] ?? fail(`${t.name}: no font style for weight ${String(t.fontWeight)}`)
-    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, 'NONE', f4(0), f4(0), f4(0), 'NONE', '0', '0', t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
+    out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, 'NONE', f4(0), f4(0), f4(0), 'NONE', '0', '0', 'AUTO', 'fontFamily', t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
   }
   return out
 }

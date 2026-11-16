@@ -127,7 +127,13 @@ function stubFigma(styles: StubStyle[]) {
     getLocalTextStylesAsync: () => Promise.resolve(styles),
     loadFontAsync: () => Promise.resolve(),
     createTextStyle: () => {
-      const s: StubStyle = { id: `S:${String(styles.length)}`, name: '', setBoundVariable: (_: string, v: { id: string }) => (s['boundVariables'] = { fontFamily: { id: v.id } }) }
+      const s: StubStyle = {
+        id: `S:${String(styles.length)}`, name: '', boundVariables: {},
+        setBoundVariable: (k: string, v: { id: string } | null) => {
+          const rest = Object.entries(record(s['boundVariables'])).filter(([key]) => key !== k)
+          s['boundVariables'] = Object.fromEntries(v ? [...rest, [k, { id: v.id }]] : rest)
+        },
+      }
       styles.push(s)
       return s
     },
@@ -213,7 +219,8 @@ void test('a text decoration or paragraph spacing left in Figma changes the hash
 // one mode, holding the variables a test gives it.
 type StubVar = { id: string; name: string; resolvedType: string; variableCollectionId: string; codeSyntax: Record<string, string>; [k: string]: unknown }
 function stubVariables(name: string, mode: string, vars: { name: string; type: string; web?: string }[]) {
-  const col = { id: 'C:1', name, modes: [{ modeId: 'm1', name: mode }], renamed: false, renameMode: () => (col.renamed = true), addMode: () => 'm2' }
+  const col = { id: 'C:1', name, modes: [{ modeId: 'm1', name: mode }], hiddenFromPublishing: false, renamed: false, renameMode: () => (col.renamed = true), addMode: () => 'm2' }
+  const cols: (typeof col)[] = [col]
   const all: StubVar[] = vars.map((v, i) => ({
     id: `V:${String(i)}`, name: v.name, resolvedType: v.type, variableCollectionId: col.id, scopes: [], description: '', hiddenFromPublishing: false,
     valuesByMode: {}, codeSyntax: v.web === undefined ? {} : { WEB: v.web },
@@ -226,8 +233,9 @@ function stubVariables(name: string, mode: string, vars: { name: string; type: s
   return {
     all,
     col,
+    cols,
     variables: {
-      getLocalVariableCollectionsAsync: () => Promise.resolve([col]),
+      getLocalVariableCollectionsAsync: () => Promise.resolve(cols),
       getLocalVariablesAsync: () => Promise.resolve(all),
       createVariableCollection: () => col,
       createVariable: () => fail('the stub creates no variables'),
@@ -262,4 +270,37 @@ void test('the upsert removes a WEB code syntax that the tokens do not set', asy
     const web = themeVars[i]?.web
     assert.deepEqual(v.codeSyntax, web === undefined ? {} : { WEB: web }, v.name)
   }
+})
+
+void test('the upsert stops before any change when two collections share a name (Codex round 3)', async () => {
+  const figma = stubVariables('Layout', 'Mode 1', layoutVars.map((v) => ({ name: v.name, type: v.type })))
+  figma.cols.push({ ...figma.col, id: 'C:2' })
+  await assert.rejects(run(layoutScript, figma), /Collections with the same name: Layout C:1, Layout C:2/)
+  assert.equal(figma.col.renamed, false)
+  assert.ok('col|Layout|duplicate|C:2' in record(await run(fingerprint(doc), figma)))
+})
+
+void test('a collection hidden from publishing changes the hash, and the upsert shows it again (Codex round 3)', async () => {
+  const figma = stubVariables('Layout', 'Value', layoutVars.map((v) => ({ name: v.name, type: v.type })))
+  const want = expectedHashes(doc)['col|Layout']
+  assert.equal(record(await run(fingerprint(doc), figma))['col|Layout'], want)
+  figma.col.hiddenFromPublishing = true
+  assert.notEqual(record(await run(fingerprint(doc), figma))['col|Layout'], want)
+  await run(layoutScript, figma)
+  assert.equal(figma.col.hiddenFromPublishing, false)
+})
+
+void test('a text wrap style or an extra variable binding changes the hash, and a rerun resets both (Codex round 3)', async () => {
+  const d = sansOnly()
+  const figma = stubFigma([])
+  await run(textScript(d), figma)
+  const [a, b] = figma.styles
+  assert.ok(a && b)
+  a['textWrapStyle'] = 'BALANCE'
+  b['boundVariables'] = { ...record(b['boundVariables']), fontSize: { id: 'V:size' } }
+  assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))).sort(), [`changed style|${a.name}`, `changed style|${b.name}`].sort())
+  await run(textScript(d), figma)
+  assert.equal(a['textWrapStyle'], 'AUTO')
+  assert.deepEqual(Object.keys(record(b['boundVariables'])), ['fontFamily'])
+  assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))), [])
 })

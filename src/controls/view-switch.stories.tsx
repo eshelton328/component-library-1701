@@ -62,6 +62,11 @@ const meta = {
     const code = within(canvasElement).getByRole('radio', { name: 'Code' })
     await expect(code).toBeDisabled()
     await expect(getComputedStyle(code.closest('label') ?? code).opacity).toBe('0.45')
+    // A disabled group dims each item once, not the group and its items.
+    const group = within(canvasElement).getByRole('radiogroup', { name: 'Disabled view' })
+    const item = within(group).getByRole('radio', { name: 'Map' })
+    await expect(getComputedStyle(group).opacity).toBe('1')
+    await expect(getComputedStyle(item.closest('label') ?? item).opacity).toBe('0.45')
   },
 } satisfies Meta<typeof Switches>
 export default meta
@@ -101,5 +106,27 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{ArrowRight}')
     await expect(onValueChange).toHaveBeenLastCalledWith('activity')
     await expect(canvas.getByRole('radio', { name: 'Activity' })).toBeChecked()
+  },
+}
+
+const onFormChange = fn<(value: string) => void>()
+
+/** A form reset with no default reports nothing, because no view is picked. */
+export const FormReset: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <form>
+        <ViewSwitch label="Artifact view" items={gridList} onValueChange={onFormChange} />
+        <button type="reset">Reset</button>
+      </form>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onFormChange.mockClear()
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByText('Grid'))
+    await expect(onFormChange).toHaveBeenLastCalledWith('grid')
+    await userEvent.click(canvas.getByRole('button', { name: 'Reset' }))
+    await expect(onFormChange).toHaveBeenCalledTimes(1)
   },
 }

@@ -44,7 +44,8 @@ export function ViewSwitch({ label, items, value, defaultValue, onValueChange, d
       {...(value === undefined ? {} : { value })}
       {...(defaultValue === undefined ? {} : { defaultValue })}
       onValueChange={(details) => {
-        if (details.value !== null) onValueChange?.(details.value)
+        // A form reset with no default can restore no value; report only a picked view.
+        if (typeof details.value === 'string') onValueChange?.(details.value)
       }}
     >
       <Indicator />

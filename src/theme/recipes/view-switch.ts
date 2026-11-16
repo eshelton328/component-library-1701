@@ -20,7 +20,8 @@ export const viewSwitch = defineSlotRecipe({
       borderWidth: 'default',
       borderStyle: 'solid',
       borderColor: 'border.default',
-      _disabled: { opacity: 'disabled' },
+      // Ark disables each item too, and the items carry the opacity, so it is not applied twice.
+      _disabled: { cursor: 'not-allowed' },
     },
     // Each item shows its own checked state, so the moving indicator is not drawn.
     indicator: { display: 'none' },

@@ -54,6 +54,20 @@ const meta = {
     await expect(getComputedStyle(hooks).opacity).toBe('0.45')
     const phone = canvas.getByRole('group', { name: 'Kinds on a phone' })
     await expect(phone.scrollWidth).toBeGreaterThan(phone.clientWidth)
+    // A row that scrolls fades out at each edge with more chips past it; a row that fits has no fade.
+    const wide = canvas.getByRole('group', { name: 'Filter by kind' })
+    await expect(wide).not.toHaveAttribute('data-overflow-start')
+    await expect(wide).not.toHaveAttribute('data-overflow-end')
+    await expect(getComputedStyle(wide).maskImage).toBe('none')
+    await waitFor(() => expect(phone).toHaveAttribute('data-overflow-end'))
+    await expect(phone).not.toHaveAttribute('data-overflow-start')
+    await expect(getComputedStyle(phone).maskImage).toContain('linear-gradient')
+    phone.scrollLeft = phone.scrollWidth
+    await waitFor(() => expect(phone).toHaveAttribute('data-overflow-start'))
+    await waitFor(() => expect(phone).not.toHaveAttribute('data-overflow-end'))
+    phone.scrollLeft = 0
+    await waitFor(() => expect(phone).not.toHaveAttribute('data-overflow-start'))
+    await expect(phone).toHaveAttribute('data-overflow-end')
   },
 } satisfies Meta<typeof Chips>
 export default meta

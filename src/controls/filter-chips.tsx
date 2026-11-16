@@ -36,6 +36,40 @@ export type FilterChipsProps = {
   disabled?: boolean | undefined
 }
 
+type Overflow = { start: boolean; end: boolean }
+
+/**
+ * Which edges of a scrolling row have more chips past them, from its scroll
+ * position. It updates on scroll and when the row or a chip changes size
+ * (a resize, a font load, new items). scrollLeft is negative in a
+ * right-to-left row, so its size is the distance from the start.
+ */
+function useOverflow(items: readonly FilterChip[]) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [overflow, setOverflow] = useState<Overflow>({ start: false, end: false })
+  useLayoutEffect(() => {
+    const row = ref.current
+    if (row === null) return
+    const update = () => {
+      const scrolled = Math.abs(row.scrollLeft)
+      // One pixel of slack: a zoomed page can leave a fractional scroll.
+      const start = scrolled > 1
+      const end = row.scrollWidth - row.clientWidth - scrolled > 1
+      setOverflow((now) => (now.start === start && now.end === end ? now : { start, end }))
+    }
+    update()
+    row.addEventListener('scroll', update, { passive: true })
+    const sizes = new ResizeObserver(update)
+    sizes.observe(row)
+    for (const chip of row.children) sizes.observe(chip)
+    return () => {
+      row.removeEventListener('scroll', update)
+      sizes.disconnect()
+    }
+  }, [items])
+  return [ref, overflow] as const
+}
+
 // Ark treats an empty string as no value, so each value gets a prefix.
 const toArk = (v: string) => `chip:${v}`
 const fromArk = (vs: string[]) => vs.flatMap((v) => (v.startsWith('chip:') ? [v.slice(5)] : []))
@@ -60,8 +94,12 @@ export function FilterChips({ label, items, value, defaultValue, onValueChange, 
     if (value === undefined) setPicked(next)
     onValueChange?.(next)
   }
+  const [rowRef, overflow] = useOverflow(items)
   return (
     <Root
+      ref={rowRef}
+      data-overflow-start={overflow.start ? '' : undefined}
+      data-overflow-end={overflow.end ? '' : undefined}
       aria-label={label}
       multiple={multiple}
       deselectable={multiple}

@@ -1,6 +1,8 @@
 // The package entry: Controls, Parts and Shell, with their props types.
 export { Button } from './controls/button'
 export type { ButtonProps } from './controls/button'
+export { ItemTabs } from './controls/item-tabs'
+export type { ItemTab, ItemTabsProps } from './controls/item-tabs'
 export { Grid, Inline, Stack } from './controls/layout'
 export type { GridProps, InlineProps, StackProps } from './controls/layout'
 export type { Scalar } from './controls/scalar'

@@ -6,6 +6,7 @@
 
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
+import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
@@ -31,6 +32,27 @@ export function Inline(props: InlineProps): JSX.Element;
 
 // @public
 export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProps>;
+
+// @public
+export type ItemTab = {
+    value: string;
+    label: string;
+    icon?: ReactNode;
+    content: ReactNode;
+    disabled?: boolean | undefined;
+};
+
+// @public
+export function ItemTabs(input: ItemTabsProps): JSX.Element;
+
+// @public (undocumented)
+export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
+    label: string;
+    items: readonly ItemTab[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+};
 
 // @public
 export type Scalar<T> = {

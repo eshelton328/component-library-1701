@@ -1,4 +1,4 @@
-// The package entry: Controls, Parts and Shell, with their props types.
+// The package entry: the icons, Controls, Parts and Shell, with their props types.
 export { Button } from './controls/button'
 export type { ButtonProps } from './controls/button'
 export { ItemTabs } from './controls/item-tabs'
@@ -32,3 +32,26 @@ export { Popover, PopoverSection } from './controls/popover'
 export type { PopoverProps, PopoverSectionProps } from './controls/popover'
 export { ListRow } from './parts/list-row'
 export type { ListRowProps } from './parts/list-row'
+export {
+  ActionIcon,
+  AgentIcon,
+  ApproveIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CloseIcon,
+  HomeIcon,
+  HookIcon,
+  InboxIcon,
+  MoreIcon,
+  NextIcon,
+  ProjectsIcon,
+  QuestionIcon,
+  ReviewIcon,
+  RuleIcon,
+  SearchIcon,
+  SkillIcon,
+  WorkflowIcon,
+  WorkspacesIcon,
+} from './foundations/icons'
+export type { IconProps, IconSize } from './foundations/icons'

@@ -19,7 +19,8 @@ export const message = defineSlotRecipe({
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '6', minW: '0', m: '0' },
     author: { display: 'flex', alignItems: 'center', gap: '6', minW: '0' },
-    name: { minW: '0', textStyle: 'label', color: 'fg.default', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long name and shows it whole in a tooltip.
+    name: { minW: '0', textStyle: 'label', color: 'fg.default' },
     time: { flexShrink: '0', textStyle: 'mono', color: 'fg.subtle', fontVariantNumeric: 'tabular-nums' },
     body: { minW: '0', textStyle: 'body', color: 'fg.default', overflowWrap: 'anywhere' },
     actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6', _empty: { display: 'none' } },

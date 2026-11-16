@@ -5,6 +5,7 @@ import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon } from '../foundations/icons
 import { Button } from '../controls/button'
 import { Inline } from '../controls/layout'
 import { TextArea } from '../controls/text-field'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(composer)
 const Root = withProvider('div', 'root')
@@ -103,7 +104,9 @@ export function Composer({
               <AttachmentIcon aria-hidden="true">
                 <ClipIcon size="12" />
               </AttachmentIcon>
-              <AttachmentName>{file.name}</AttachmentName>
+              <AttachmentName>
+                <TruncatedText>{file.name}</TruncatedText>
+              </AttachmentName>
               {onRemoveAttachment === undefined ? null : (
                 <AttachmentRemove
                   type="button"

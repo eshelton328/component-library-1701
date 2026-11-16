@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { pane } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(pane)
 const Root = withProvider('section', 'root')
@@ -15,7 +16,10 @@ const Body = withContext('div', 'body')
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
 export type PaneProps = {
-  /** The pane's title, such as the chat name. It names the pane for assistive technology. */
+  /**
+   * The pane's title, such as the chat name, on one line; a long title ends with an ellipsis and shows in full in a
+   * tooltip. It names the pane for assistive technology.
+   */
   title: string
   /** Before the title, such as the agent's kind mark. */
   leading?: ReactNode
@@ -52,7 +56,9 @@ export function Pane({ title, leading, meta, actions, focused = false, onActivat
     >
       <Header>
         {shown(leading) ? <Leading>{leading}</Leading> : null}
-        <Title id={titleId}>{title}</Title>
+        <Title id={titleId}>
+          <TruncatedText>{title}</TruncatedText>
+        </Title>
         {shown(meta) ? <Meta>{meta}</Meta> : null}
         {shown(actions) ? <Actions>{actions}</Actions> : null}
       </Header>

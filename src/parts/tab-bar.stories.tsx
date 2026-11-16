@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { HomeIcon, InboxIcon, MoreIcon, ProjectsIcon, WorkspacesIcon } from '../foundations/icons'
 import type { NavItem } from './nav-item'
 import { TabBar } from './tab-bar'
+import { expectCutText } from '../controls/tooltip.testing'
 
 // A 360 px phone screen (Figma draws 390) with the bar at the bottom, as the caller places it.
 const page = css({ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', bg: 'bg.canvas', color: 'fg.default', w: 'shell.popoverLg', h: 'shell.popoverLg' })
@@ -157,5 +158,21 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onSelect).toHaveBeenLastCalledWith('more')
     await expect(onSelect).toHaveBeenCalledTimes(2)
+  },
+}
+
+/** A long tab label is cut to one line and shows in full in a tooltip, on hover and on keyboard focus of the tab. */
+export const LongLabel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <TabBar items={[...items.slice(0, 4), { value: 'long', label: 'skill-eval-round-with-held-out-cases-and-a-trigger-set', icon: <MoreIcon /> }]} selected="home" />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const tab = within(canvasElement).getByRole('button', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })
+    const label = tab.querySelector('.tab-bar__label')
+    if (label === null) throw new Error('no label')
+    await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set', tab)
   },
 }

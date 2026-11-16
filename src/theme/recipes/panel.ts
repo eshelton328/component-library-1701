@@ -27,7 +27,8 @@ export const panel = defineSlotRecipe({
       backdropFilter: 'blur(token(blurs.glass))',
     },
     header: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
-    title: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long title and shows it whole in a tooltip.
+    title: { minW: '0' },
     meta: { flexShrink: '0', color: 'fg.muted' },
     actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ml: 'auto' },
     body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto' },

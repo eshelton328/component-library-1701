@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { groupHeader, type GroupHeaderVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 import { ChevronDownIcon, ChevronRightIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(groupHeader)
@@ -53,7 +54,9 @@ export function GroupHeader({ label, count, dot, open = true, onOpenChange, cont
   const body = (
     <>
       {collapsible ? <Chevron>{open ? <ChevronDownIcon size={chevronSize} /> : <ChevronRightIcon size={chevronSize} />}</Chevron> : null}
-      <Label>{label}</Label>
+      <Label>
+        <TruncatedText>{label}</TruncatedText>
+      </Label>
       {count === undefined ? null : <Count>{count}</Count>}
       {dot === undefined ? null : <Dot aria-hidden="true" />}
     </>

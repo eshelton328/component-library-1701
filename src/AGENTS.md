@@ -64,6 +64,10 @@ groups and the bans that the lint reads. Read it before you add a file.
   follows that order.
 - A story that shows colours or text exports a `Dark` and a `Light` story
   (`globals: { mode: 'dark' }`), so the axe test checks both modes.
+- A component that cuts text with `TruncatedText` has a story with a long
+  value whose play function calls `expectCutText` from
+  `controls/tooltip.testing.ts`: the text is cut, and hover and keyboard
+  focus show it whole in the tooltip.
 
 ## Public API
 

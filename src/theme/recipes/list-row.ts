@@ -19,6 +19,8 @@ export const listRow = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'transparent',
       color: 'fg.default',
+      // Cut text in a row with a title button sits above the button's hit area; it keeps the pointer cursor.
+      '&:has(button.list-row__title)': { cursor: 'pointer' },
       // The keyboard focus of the title button rings the whole row.
       '&:has(.list-row__title:focus-visible)': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
@@ -59,7 +61,8 @@ export const listRow = defineSlotRecipe({
         root: { alignItems: 'center', py: '8', ps: '24', pe: '10' },
         // TruncatedText inside cuts a long title and shows it whole in a tooltip.
         title: { minW: '0' },
-        meta: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        // A text meta holds a TruncatedText, which cuts it and shows it whole in a tooltip; any other meta is cut here.
+        meta: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:has(> .truncated-text)': { overflow: 'visible' } },
       },
     },
   },

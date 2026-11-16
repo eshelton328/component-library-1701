@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { listRow, type ListRowVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -46,8 +46,14 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
 export function ListRow({ title, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, onSelect, variant }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   const titleText = variant === 'sidebar' ? <TruncatedText>{title}</TruncatedText> : title
+  // A sidebar row's text meta is one line too, and a cut one shows in full in a tooltip. Other meta is cut as it is.
+  const metaText = variant === 'sidebar' && (typeof meta === 'string' || typeof meta === 'number') ? <TruncatedText>{String(meta)}</TruncatedText> : meta
+  // Cut text with its own tab stop sits above the title button's hit area, so a click on it selects the row here.
+  const selectFromText = (event: MouseEvent<HTMLElement>) => {
+    if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
+  }
   return (
-    <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined}>
+    <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} onClick={onSelect === undefined ? undefined : selectFromText}>
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
         {onSelect === undefined ? (
@@ -57,7 +63,7 @@ export function ListRow({ title, meta, leading, trailing, children, actions, sel
             {titleText}
           </TitleButton>
         )}
-        {meta === undefined ? null : <Meta>{meta}</Meta>}
+        {meta === undefined ? null : <Meta>{metaText}</Meta>}
         {children === undefined ? null : <Lines>{children}</Lines>}
         {actions === undefined ? null : <Actions>{actions}</Actions>}
       </Body>

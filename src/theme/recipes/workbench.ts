@@ -28,7 +28,8 @@ export const workbench = defineSlotRecipe({
       whiteSpace: 'nowrap',
     },
     summary: { color: 'fg.accent', flexShrink: '0' },
-    hint: { color: 'fg.muted', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis' },
+    // TruncatedText inside cuts a long hint and shows it whole in a tooltip.
+    hint: { color: 'fg.muted', minW: '0' },
     alert: { color: 'status.needsYou.fg', ml: 'auto', flexShrink: '0' },
   },
 })

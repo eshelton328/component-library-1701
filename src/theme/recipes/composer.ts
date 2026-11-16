@@ -48,7 +48,8 @@ export const composer = defineSlotRecipe({
     },
     // The clip is fg.default and the remove icon fg.muted, as Figma draws them (105:891, 105:894).
     attachmentIcon: { display: 'inline-flex', flexShrink: '0', color: 'fg.default' },
-    attachmentName: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long file name and shows it whole in a tooltip.
+    attachmentName: { minW: '0' },
     attachmentRemove: {
       display: 'inline-flex',
       flexShrink: '0',

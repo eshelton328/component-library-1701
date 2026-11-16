@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { pageHeader, type PageHeaderVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(pageHeader)
 const Root = withProvider('div', 'root')
@@ -13,7 +14,7 @@ const CountLabel = withContext('span', 'countLabel')
 const Actions = withContext('div', 'actions')
 
 export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
-  /** The page or pane title, such as "Inbox". */
+  /** The page or pane title, such as "Inbox", on one line; a long title ends with an ellipsis and shows in full in a tooltip. */
   title: string
   /** The number shown after the title, such as the number of tasks. */
   count?: number | string | undefined
@@ -37,7 +38,9 @@ export function PageHeader({ title, count, countLabel, level = 1, size, children
   const spoken = countLabel !== undefined && countLabel.trim() !== '' ? countLabel : undefined
   return (
     <Root size={size}>
-      <Title>{title}</Title>
+      <Title>
+        <TruncatedText>{title}</TruncatedText>
+      </Title>
       {hasCount ? <Count aria-hidden={spoken === undefined ? undefined : true}>{count}</Count> : null}
       {hasCount && spoken !== undefined ? <CountLabel>{spoken}</CountLabel> : null}
       {children === undefined || children === null ? null : <Actions>{children}</Actions>}

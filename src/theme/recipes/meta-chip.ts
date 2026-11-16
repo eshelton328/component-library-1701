@@ -30,7 +30,8 @@ export const metaChip = defineSlotRecipe({
       flexShrink: '0',
       '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
-    label: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis' },
+    // TruncatedText inside cuts a long label and shows it whole in a tooltip.
+    label: { minW: '0' },
   },
   variants: {
     size: {

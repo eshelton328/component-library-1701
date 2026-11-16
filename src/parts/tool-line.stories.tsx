@@ -4,6 +4,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { ToolLine } from './tool-line'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'surface.pane', p: '24', w: 'shell.dialogLg' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -176,5 +177,40 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(onOpenChange).toHaveBeenLastCalledWith(true)
     await expect(onOpenChange).toHaveBeenCalledTimes(3)
     await expect(output).toBeVisible()
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+const longTarget = 'src/parts/skill-eval-round-with-held-out-cases-and-a-trigger-set/index.stories.tsx'
+
+/**
+ * A long line is cut to one line and shows in full in a tooltip: on the
+ * line's button when it has output, and as its own tab stop when it has none.
+ */
+export const LongTarget: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Stack gap="8">
+        <div className={narrowBox} data-testid="toggle">
+          <ToolLine name="Read" target={longTarget} onOpenChange={() => undefined}>
+            output
+          </ToolLine>
+        </div>
+        <div className={narrowBox} data-testid="static">
+          <ToolLine name="Edit" target={longTarget} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = within(canvas.getByTestId('toggle')).getByRole('button')
+    const text = toggle.querySelector('.tool-line__text')
+    const staticText = canvas.getByTestId('static').querySelector('.tool-line__text')
+    if (text === null || staticText === null) throw new Error('no text')
+    await expectCutText(text, `Read ${longTarget}`, toggle)
+    await expectCutText(staticText, `Edit ${longTarget}`)
   },
 }

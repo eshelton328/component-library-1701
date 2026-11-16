@@ -46,7 +46,8 @@ export const tabBar = defineSlotRecipe({
       '&[aria-current="page"]': { color: 'fg.accent' },
     },
     icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24!', h: 'icon.24!' } },
-    label: { textStyle: 'navLabel', color: 'inherit', maxW: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long label and shows it whole in a tooltip.
+    label: { textStyle: 'navLabel', color: 'inherit', minW: '0', maxW: '100%' },
     // The badge count for screen readers; the badge itself is hidden from them.
     hint: { srOnly: true },
   },

@@ -1,5 +1,6 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { kpiTile } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(kpiTile)
 const Root = withProvider('dl', 'root')
@@ -18,15 +19,24 @@ export type KpiTileProps = {
 
 /**
  * One key figure: a large value, its label and an optional caption, in a
- * bordered tile. The caller formats the value and places the tiles, for
- * example in a `Grid`.
+ * bordered tile. Each stays on one line; a long one ends with an ellipsis
+ * and shows in full in a tooltip. The caller formats the value and places
+ * the tiles, for example in a `Grid`.
  */
 export function KpiTile({ label, value, caption }: KpiTileProps) {
   return (
     <Root>
-      <Label>{label}</Label>
-      <Value>{value}</Value>
-      {caption === undefined || caption === '' ? null : <Caption>{caption}</Caption>}
+      <Label>
+        <TruncatedText>{label}</TruncatedText>
+      </Label>
+      <Value>
+        <TruncatedText>{value}</TruncatedText>
+      </Value>
+      {caption === undefined || caption === '' ? null : (
+        <Caption>
+          <TruncatedText>{caption}</TruncatedText>
+        </Caption>
+      )}
     </Root>
   )
 }

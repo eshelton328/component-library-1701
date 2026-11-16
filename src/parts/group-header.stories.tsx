@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { MoreIcon } from '../foundations/icons'
 import { GroupHeader } from './group-header'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '12', borderRadius: 'xl', w: 'shell.listPane' })
@@ -211,5 +212,37 @@ export const Behaviour: StoryObj<typeof meta> = {
     // The sidebar header's own toggle does report through the same spy.
     await userEvent.click(canvas.getByRole('button', { name: /omni-brain/i }))
     await expect(args.onOpenChange).toHaveBeenLastCalledWith('sidebar', false)
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/**
+ * A long label is cut to one line and shows in full in a tooltip: on the
+ * toggle button of a collapsible header, and as its own tab stop on a
+ * static one.
+ */
+export const LongLabel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Stack gap="16">
+        <div className={narrowBox} data-testid="toggle">
+          <GroupHeader label="skill-eval-round-with-held-out-cases-and-a-trigger-set" count={3} open onOpenChange={() => undefined} />
+        </div>
+        <div className={narrowBox} data-testid="static">
+          <GroupHeader label="static-skill-eval-round-with-held-out-cases-and-a-trigger-set" count={3} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const toggle = within(canvas.getByTestId('toggle')).getByRole('button')
+    const label = toggle.querySelector('.group-header__label')
+    const staticLabel = canvas.getByTestId('static').querySelector('.group-header__label')
+    if (label === null || staticLabel === null) throw new Error('no label')
+    await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set', toggle)
+    await expectCutText(staticLabel, 'static-skill-eval-round-with-held-out-cases-and-a-trigger-set')
   },
 }

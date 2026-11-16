@@ -26,6 +26,8 @@ export const card = defineSlotRecipe({
       borderWidth: 'default',
       borderStyle: 'solid',
       borderColor: 'border.default',
+      // Cut text in a card with a title button sits above the button's hit area; it keeps the pointer cursor.
+      '&:has(.card__action)': { cursor: 'pointer' },
       '&:has(.card__action:focus-visible)': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     media: { display: 'block', flexShrink: '0', overflow: 'hidden', '& > *': { display: 'block', w: '100%' } },
@@ -51,8 +53,9 @@ export const card = defineSlotRecipe({
       _after: { content: '""', position: 'absolute', inset: '0' },
     },
     badge: { display: 'flex', flexShrink: '0' },
-    subtitle: { textStyle: 'mono', color: 'fg.muted', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    description: { textStyle: 'small', color: 'fg.muted', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long subtitle or description and shows it whole in a tooltip.
+    subtitle: { minW: '0', textStyle: 'mono', color: 'fg.muted' },
+    description: { minW: '0', textStyle: 'small', color: 'fg.muted' },
     meta: { display: 'flex', alignItems: 'center', minW: '0', textStyle: 'mono', color: 'fg.muted' },
   },
   variants: {

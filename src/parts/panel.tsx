@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { panel, type PanelVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(panel)
 const Root = withProvider('section', 'root')
@@ -15,7 +16,10 @@ const Body = withContext('div', 'body')
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
 export type PanelProps = Scalar<PanelVariantProps> & {
-  /** The title in the header. It names the panel for assistive technology. Leave it out for a panel with no header. */
+  /**
+   * The title in the header, on one line; a long title ends with an ellipsis and shows in full in a tooltip. It names
+   * the panel for assistive technology. Leave it out for a panel with no header.
+   */
   title?: string | undefined
   /** Text after the title, such as a count ("7") or a note. `0` shows; `false`, `null` and `''` leave it out. */
   meta?: ReactNode
@@ -42,7 +46,9 @@ export function Panel({ title, meta, actions, children, variant }: PanelProps) {
     <Root variant={variant} {...(hasTitle ? { 'aria-labelledby': titleId } : {})}>
       {hasTitle || hasMeta || hasActions ? (
         <Header>
-          {hasTitle ? <Title id={titleId}>{title}</Title> : null}
+          {hasTitle ? <Title id={titleId}>
+              <TruncatedText>{title}</TruncatedText>
+            </Title> : null}
           {hasMeta ? <Meta>{meta}</Meta> : null}
           {hasActions ? <Actions>{actions}</Actions> : null}
         </Header>

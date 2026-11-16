@@ -656,6 +656,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
+            "pill": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
+            },
             "small": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -775,6 +779,10 @@ export default definePreset({
               "value": "15px",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
+            "pill": {
+              "value": "11px",
+              "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
+            },
             "small": {
               "value": "12px",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -826,6 +834,10 @@ export default definePreset({
             "paneTitle": {
               "value": "1.3333",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "pill": {
+              "value": "14px",
+              "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "small": {
               "value": "1.4167",
@@ -879,6 +891,10 @@ export default definePreset({
               "value": "600",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
+            "pill": {
+              "value": "500",
+              "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
+            },
             "small": {
               "value": "400",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
@@ -930,6 +946,10 @@ export default definePreset({
             "paneTitle": {
               "value": "0px",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
+            },
+            "pill": {
+              "value": "0px",
+              "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "small": {
               "value": "0px",
@@ -1036,6 +1056,16 @@ export default definePreset({
             "lineHeight": "text.paneTitle",
             "fontWeight": "text.paneTitle",
             "letterSpacing": "text.paneTitle"
+          }
+        },
+        "pill": {
+          "description": "Status pill labels. Not for counts or chip labels, which use mono and label.",
+          "value": {
+            "fontFamily": "text.pill",
+            "fontSize": "text.pill",
+            "lineHeight": "text.pill",
+            "fontWeight": "text.pill",
+            "letterSpacing": "text.pill"
           }
         },
         "small": {

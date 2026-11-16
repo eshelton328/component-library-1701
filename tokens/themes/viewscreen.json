@@ -1386,6 +1386,17 @@
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "The digit in a needs-you badge."
+    },
+    "pill": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 11, "unit": "px" },
+        "fontWeight": 500,
+        "lineHeight": { "value": 14, "unit": "px" },
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Status pill labels. Not for counts or chip labels, which use mono and label."
     }
   },
   "radius": {

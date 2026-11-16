@@ -14,7 +14,7 @@ export const statusPill = defineRecipe({
     flexShrink: '0',
     px: '8',
     py: '2',
-    textStyle: 'badge',
+    textStyle: 'pill',
     whiteSpace: 'nowrap',
     borderRadius: 'full',
     borderWidth: 'default',

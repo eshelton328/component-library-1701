@@ -2,13 +2,17 @@ import { Tabs } from '@ark-ui/react/tabs'
 import { useState, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { workspaceTabs } from '../../styled-system/recipes'
+import { GripIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(workspaceTabs)
 const Root = withProvider(Tabs.Root, 'root')
 const Bar = withContext('div', 'bar')
 const List = withContext(Tabs.List, 'list')
 const Trigger = withContext(Tabs.Trigger, 'trigger')
+const Grip = withContext('span', 'grip')
 const Count = withContext('span', 'count')
+const Dot = withContext('span', 'dot')
+const Hint = withContext('span', 'hint')
 const Actions = withContext('div', 'actions')
 const Content = withContext(Tabs.Content, 'content')
 
@@ -18,6 +22,14 @@ export type WorkspaceTab = {
   label: string
   /** The number of chats in the workspace, after the label. */
   count?: number | undefined
+  /** A chat in the workspace needs the user. The tab shows an amber dot, and screen readers hear "needs you". */
+  needsYou?: boolean | undefined
+  /**
+   * Shows a grip handle before the label, for workspaces the user can
+   * reorder. The library draws the handle only; the app adds the drag and
+   * saves the new order.
+   */
+  draggable?: boolean | undefined
   /** What the workspace shows below the tabs, usually its split panes. */
   content: ReactNode
 }
@@ -68,8 +80,19 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
         <List aria-label={label}>
           {items.map((item) => (
             <Trigger key={item.value} value={toArk(item.value)}>
+              {item.draggable === true ? (
+                <Grip>
+                  <GripIcon size="12" />
+                </Grip>
+              ) : null}
               {item.label}
               {item.count === undefined ? null : <Count>{item.count}</Count>}
+              {item.needsYou === true ? (
+                <>
+                  <Dot aria-hidden="true" />
+                  <Hint>, needs you</Hint>
+                </>
+              ) : null}
             </Trigger>
           ))}
         </List>

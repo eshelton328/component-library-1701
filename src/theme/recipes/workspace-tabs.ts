@@ -14,11 +14,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - Count: Geist Mono 11 #4a5675, so `mono` in fg.subtle; on the selected
 //   tab's surface.selected it is fg.muted.
 // - Panes area 402:1618: padding 10.
+// - Grip and needs-you dot, Workbench D1 105:109: icon/grip 12 (icon.12) in
+//   #4a5675 (fg.subtle; fg.muted on the selected tab, as the count) before the
+//   label, and a 6 px #ffb86b dot (status.needsYou.fg) after the count; all
+//   6 apart (the tab gap).
 export const workspaceTabs = defineSlotRecipe({
   className: 'workspace-tabs',
   jsx: ['WorkspaceTabs'],
   staticCss: ['*'],
-  slots: [...tabsAnatomy.keys(), 'bar', 'count', 'actions'],
+  slots: [...tabsAnatomy.keys(), 'bar', 'grip', 'count', 'dot', 'hint', 'actions'],
   base: {
     root: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0', minH: '0' },
     bar: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', minW: '0', pt: '12', pb: '10', px: '16' },
@@ -56,7 +60,11 @@ export const workspaceTabs = defineSlotRecipe({
       _selected: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.active' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
     },
+    grip: { display: 'inline-flex', flexShrink: '0', color: 'fg.subtle', '[data-selected] > &': { color: 'fg.muted' } },
     count: { textStyle: 'mono', color: 'fg.subtle', '[data-selected] > &': { color: 'fg.muted' } },
+    dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full', bg: 'status.needsYou.fg' },
+    // The needs-you dot's words for screen readers.
+    hint: { srOnly: true },
     actions: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0' },
     content: {
       display: 'flex',

@@ -710,9 +710,9 @@ export type MenuAction = {
     icon?: ReactNode;
     tone?: 'danger' | undefined;
     disabled?: boolean | undefined;
+    trailing?: ReactNode;
 };
 
-    trailing?: ReactNode;
 // @public (undocumented)
 export type MenuEntry = MenuAction | MenuSeparator;
 
@@ -724,9 +724,9 @@ export type MenuProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    heading?: string | undefined;
 };
 
-    heading?: string | undefined;
 // @public
 export type MenuSeparator = {
     type: 'separator';
@@ -853,11 +853,11 @@ export type OptionListItem = {
     value: string;
     label: string;
     description?: string | undefined;
+    badge?: ReactNode;
     disabled?: boolean | undefined;
 };
 
 // @public (undocumented)
-    badge?: ReactNode;
 export type OptionListProps = {
     label: string;
     items: readonly OptionListItem[];
@@ -1018,9 +1018,9 @@ export function RadioMenu(input: RadioMenuProps): JSX.Element;
 export type RadioMenuOption = {
     value: string;
     label: string;
+    description?: string | undefined;
     disabled?: boolean | undefined;
 };
-    description?: string | undefined;
 
 // @public (undocumented)
 export type RadioMenuProps = {
@@ -1033,9 +1033,9 @@ export type RadioMenuProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    heading?: string | undefined;
 };
 
-    heading?: string | undefined;
 // @public
 export function ResetIcon(props: IconProps): JSX.Element;
 

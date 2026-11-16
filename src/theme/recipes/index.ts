@@ -27,6 +27,7 @@ import { pathBadge } from './path-badge'
 import { tagsLine } from './tags-line'
 import { pageHeader } from './page-header'
 import { groupHeader } from './group-header'
+import { modelChip } from './model-chip'
 import { popover } from './popover'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
@@ -38,4 +39,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }

@@ -382,6 +382,24 @@ export type MetaLineProps = Scalar<MetaLineVariantProps> & {
 };
 
 // @public
+export function ModelChip(input: ModelChipProps): JSX.Element;
+
+// @public
+export type ModelChipOption = RadioMenuOption;
+
+// @public (undocumented)
+export type ModelChipProps = {
+    model: string;
+    effort?: string | undefined;
+    options?: readonly ModelChipOption[] | undefined;
+    value?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public
 export function MoreDrawer(input: MoreDrawerProps): JSX.Element;
 
 // @public

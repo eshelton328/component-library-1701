@@ -127,6 +127,58 @@ export default meta
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
+// A stand-in for the caller's pill (Inbox D2 346:794): a story in this tier cannot import Badge from parts.
+const pill = css({ display: 'inline-flex', px: '8', py: '2', borderRadius: 'full', bg: 'accent.faint', color: 'fg.accent', textStyle: 'pill' })
+
+// The Choose one list of Inbox D2 (346:787): the first option carries a Recommended pill (346:789).
+const choices: readonly OptionListItem[] = [
+  {
+    value: 'rpc',
+    label: 'Hono RPC client',
+    description: 'One source of types for server and client. Ties the frontend to Hono.',
+    badge: <span className={pill}>Recommended</span>,
+  },
+  { value: 'fetch', label: 'Plain fetch with zod schemas', description: 'Works with any server. The schemas are a second copy of the types.' },
+  { value: 'other', label: 'Something else' },
+]
+
+function Choices() {
+  return (
+    <main className={page}>
+      <div className={sheet}>
+        <OptionList label="Choose one" items={choices} />
+      </div>
+    </main>
+  )
+}
+
+const badgePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rpc = canvas.getByRole('radio', { name: 'Hono RPC client' })
+  // The pill is not part of the name; it describes the radio before the description.
+  await expect(rpc).toHaveAccessibleName('Hono RPC client')
+  await expect(rpc).toHaveAccessibleDescription('Recommended One source of types for server and client. Ties the frontend to Hono.')
+  await expect(canvas.getByRole('radio', { name: 'Something else' })).not.toHaveAttribute('aria-describedby')
+  // The label and the pill sit in one row, 8 apart and centred on each other (346:792).
+  const label = within(rowOf(rpc)).getByText('Hono RPC client')
+  const badge = rowOf(rpc).querySelector('.option-list__itemBadge')
+  if (!(badge instanceof HTMLElement)) throw new Error('no badge')
+  const l = label.getBoundingClientRect()
+  const b = badge.getBoundingClientRect()
+  await expect(b.left - l.right).toBe(8)
+  await expect(Math.abs(b.top + b.height / 2 - (l.top + l.height / 2))).toBeLessThan(1)
+  await expect(getComputedStyle(label).fontWeight).toBe('500')
+  // A row without a pill keeps its height: 8 + 20 + 8.
+  await expect(Math.round(rowOf(canvas.getByRole('radio', { name: 'Something else' })).getBoundingClientRect().height)).toBe(36)
+  // Picking the row with the pill works as any other row.
+  await userEvent.click(label)
+  await expect(rpc).toBeChecked()
+}
+
+/** An option with a pill after its label, such as Recommended (Inbox D2, T3, M5). */
+export const BadgeDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Choices />, play: badgePlay }
+export const BadgeLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Choices />, play: badgePlay }
+
 const onValueChange = fn<(value: string) => void>()
 const onItemSelect = fn<(value: string) => void>()
 

@@ -14,6 +14,8 @@ const Content = withContext(ArkDialog.Content, 'content')
 const Grabber = withContext('div', 'grabber')
 const Header = withContext('div', 'header')
 const Title = withContext(ArkDialog.Title, 'title')
+const HeaderLeading = withContext('div', 'headerLeading')
+const HeaderActions = withContext('div', 'headerActions')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
 
 /**
@@ -31,6 +33,16 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
   onOpenChange?: ((open: boolean) => void) | undefined
   /** Show a close button at the end of the title row, as the tablet side chat does. It needs a `title`. */
   closeButton?: boolean | undefined
+  /**
+   * Buttons at the end of the title row, such as Done, Clear or Add. Wrap one in `BottomSheetClose` to close the
+   * sheet with it. It needs a `title`.
+   */
+  actions?: ReactNode
+  /**
+   * A button at the start of the title row, such as Cancel. With it, the title is centred between the start and
+   * the end of the row, as the Add a link sheet draws it. It needs a `title`.
+   */
+  leading?: ReactNode
   /** The element that gets the focus when the sheet opens. When not set, Ark picks the first element that takes the focus. */
   initialFocus?: (() => HTMLElement | null) | undefined
   /** `md` (the default) has a 17 px title, as the snooze and sort sheets do. `sm` has a 15 px title, as the Workbench chat actions sheet does. */
@@ -55,7 +67,8 @@ export function BottomSheet(input: BottomSheetProps) {
  * `md` are the sheets, `lg` the More drawer, with a larger title. The
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, initialFocus, size }: WithoutSize<BottomSheetProps> & Scalar<BottomSheetVariantProps>) {
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size }: WithoutSize<BottomSheetProps> & Scalar<BottomSheetVariantProps>) {
+  const hasLeading = present(leading)
   return (
     <Root
       size={size}
@@ -76,8 +89,10 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
           <Content aria-label={title ?? label}>
             <Grabber aria-hidden="true" />
             {title === undefined ? null : (
-              <Header>
+              <Header data-leading={hasLeading ? '' : undefined}>
+                {hasLeading ? <HeaderLeading>{leading}</HeaderLeading> : null}
                 <Title>{title}</Title>
+                {present(actions) ? <HeaderActions>{actions}</HeaderActions> : null}
                 {closeButton ? (
                   <CloseTrigger aria-label="Close">
                     <CloseIcon size="18" />
@@ -91,6 +106,10 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       </Portal>
     </Root>
   )
+}
+
+function present(node: ReactNode) {
+  return node !== undefined && node !== null && node !== false
 }
 
 /** An element that closes the sheet it is in, such as a Cancel button or a row that picks a value. Wrap it in this. */

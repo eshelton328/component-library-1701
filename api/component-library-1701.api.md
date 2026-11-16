@@ -143,6 +143,8 @@ export type BottomSheetProps = ({
     defaultOpen?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     closeButton?: boolean | undefined;
+    actions?: ReactNode;
+    leading?: ReactNode;
     initialFocus?: (() => HTMLElement | null) | undefined;
     size?: 'sm' | 'md' | undefined;
 };
@@ -734,6 +736,7 @@ export type MenuAction = {
     icon?: ReactNode;
     tone?: 'danger' | undefined;
     disabled?: boolean | undefined;
+    trailing?: ReactNode;
 };
 
 // @public (undocumented)
@@ -747,6 +750,7 @@ export type MenuProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    heading?: string | undefined;
 };
 
 // @public
@@ -875,6 +879,7 @@ export type OptionListItem = {
     value: string;
     label: string;
     description?: string | undefined;
+    badge?: ReactNode;
     disabled?: boolean | undefined;
 };
 
@@ -1039,6 +1044,7 @@ export function RadioMenu(input: RadioMenuProps): JSX.Element;
 export type RadioMenuOption = {
     value: string;
     label: string;
+    description?: string | undefined;
     disabled?: boolean | undefined;
 };
 
@@ -1053,6 +1059,7 @@ export type RadioMenuProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    heading?: string | undefined;
 };
 
 // @public

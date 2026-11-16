@@ -287,3 +287,112 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(body.queryByRole('dialog', { name: 'Controlled' })).toBeNull()
   },
 }
+
+const onDone = fn<(open: boolean) => void>()
+
+// Inbox T8 (346:7175): Done at the end of the title row. Artifacts M7 (408:706): Cancel at the start, Add at the end.
+function ActionSheets({ which }: { which: 'done' | 'add' }) {
+  const [open, setOpen] = useState(true)
+  const change = (next: boolean) => {
+    setOpen(next)
+    onDone(next)
+  }
+  return (
+    <main className={page}>
+      <Button onClick={() => { change(true) }}>Open</Button>
+      {which === 'done' ? (
+        <BottomSheet
+          title="Suggested prompt"
+          open={open}
+          onOpenChange={change}
+          actions={
+            <BottomSheetClose>
+              <Button size="sm">Done</Button>
+            </BottomSheetClose>
+          }
+        >
+          <p>Read f-005-the-bridge/increment-1.md and write one Linear ticket per screen.</p>
+        </BottomSheet>
+      ) : (
+        <BottomSheet
+          title="Add a link"
+          open={open}
+          onOpenChange={change}
+          leading={
+            <BottomSheetClose>
+              <Button size="sm">Cancel</Button>
+            </BottomSheetClose>
+          }
+          actions={<Button size="sm" variant="primary">Add</Button>}
+        >
+          <p>For an artifact the library did not find</p>
+        </BottomSheet>
+      )}
+    </main>
+  )
+}
+
+function centreY(el: Element) {
+  const box = el.getBoundingClientRect()
+  return box.top + box.height / 2
+}
+
+const donePlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const sheet = await body.findByRole('dialog', { name: 'Suggested prompt' })
+  const title = within(sheet).getByRole('heading', { name: 'Suggested prompt' })
+  const done = within(sheet).getByRole('button', { name: 'Done' })
+  const header = title.parentElement
+  if (header === null) throw new Error('no header')
+  // Done ends the row, 4 in from the header edge (346:7178 ends at 710 of 710 inside px 4), centred on the title.
+  await expect(Math.round(header.getBoundingClientRect().right - done.getBoundingClientRect().right)).toBe(4)
+  await expect(Math.abs(centreY(done) - centreY(title))).toBeLessThan(1)
+  // The title takes the rest of the row, 8 before the actions, and stays at the start.
+  await expect(Math.round(done.getBoundingClientRect().left - title.getBoundingClientRect().right)).toBe(8)
+  await expect(getComputedStyle(title).textAlign).toBe('start')
+}
+
+/** A sheet with Done at the end of its title row (Inbox T8, M7; Artifacts M6). */
+export const HeaderActionsDark: StoryObj<typeof meta> = { render: () => <ActionSheets which="done" />, play: donePlay, globals: { mode: 'dark' } }
+export const HeaderActionsLight: StoryObj<typeof meta> = { render: () => <ActionSheets which="done" />, play: donePlay, globals: { mode: 'light' } }
+
+const addPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const sheet = await body.findByRole('dialog', { name: 'Add a link' })
+  const title = within(sheet).getByRole('heading', { name: 'Add a link' })
+  const cancel = within(sheet).getByRole('button', { name: 'Cancel' })
+  const add = within(sheet).getByRole('button', { name: 'Add' })
+  // Cancel starts the row, Add ends it, and the title is centred between them (408:706).
+  await expect(cancel.getBoundingClientRect().right).toBeLessThan(title.getBoundingClientRect().left)
+  await expect(add.getBoundingClientRect().left).toBeGreaterThan(title.getBoundingClientRect().right)
+  await expect(getComputedStyle(title).textAlign).toBe('center')
+  await expect(Math.abs(centreY(cancel) - centreY(title))).toBeLessThan(1)
+  await expect(Math.abs(centreY(add) - centreY(title))).toBeLessThan(1)
+}
+
+/** A sheet with Cancel at the start and Add at the end of its title row (Artifacts M7). */
+export const HeaderLeadingDark: StoryObj<typeof meta> = { render: () => <ActionSheets which="add" />, play: addPlay, globals: { mode: 'dark' } }
+export const HeaderLeadingLight: StoryObj<typeof meta> = { render: () => <ActionSheets which="add" />, play: addPlay, globals: { mode: 'light' } }
+
+/** Tab reaches the header buttons in order; Done and Cancel close the sheet; the focus stays inside it. */
+export const HeaderActionsBehaviour: StoryObj<typeof meta> = {
+  render: () => <ActionSheets which="add" />,
+  play: async ({ canvasElement }) => {
+    onDone.mockClear()
+    const body = within(document.body)
+    const sheet = await body.findByRole('dialog', { name: 'Add a link' })
+    const cancel = within(sheet).getByRole('button', { name: 'Cancel' })
+    const add = within(sheet).getByRole('button', { name: 'Add' })
+    await waitFor(() => expect(cancel).toHaveFocus())
+    await userEvent.tab()
+    await expect(add).toHaveFocus()
+    // The focus wraps inside the sheet.
+    await userEvent.tab()
+    await expect(cancel).toHaveFocus()
+    await userEvent.keyboard('{Enter}')
+    await expect(onDone).toHaveBeenLastCalledWith(false)
+    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Open' }))
+    await body.findByRole('dialog', { name: 'Add a link' })
+  },
+}

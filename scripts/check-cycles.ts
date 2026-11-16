@@ -7,13 +7,13 @@
 // counts as an import of each file it matches. A dynamic import or a glob
 // that the check cannot follow fails it too.
 //   node scripts/check-cycles.ts [dir]
-import { join, relative } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { findCycles, importGraph, sourceFiles } from './cycles-lib.ts'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-const dir = process.argv[2] ?? join(root, 'src')
+const dir = resolve(process.argv[2] ?? join(root, 'src'))
 const config = ts.getParsedCommandLineOfConfigFile(join(root, 'tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => undefined })
 const { graph, unsupported } = importGraph(sourceFiles(dir), config?.options ?? {}, root)
 const cycles = findCycles(graph).map((c) => c.map((f) => relative(root, f)))

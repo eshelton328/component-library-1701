@@ -75,11 +75,12 @@ void test('lists the imports the check cannot follow (Codex review of #13)', () 
     "const d = import.meta.glob('./d.ts', { base: '/src' })",
     'const e = import.meta.glob(pattern)',
     "const f = import.meta.glob(('./f.ts'), { eager: false })",
+    "const g = import.meta .glob(['./*.ts', '!./@(b).ts'])",
   ].join('\n')
   const found = runtimeImports('x.ts', text)
   assert.deepEqual(found.modules, ['./a'])
   assert.deepEqual(found.globs, [['./f.ts']])
-  assert.deepEqual(found.unsupported.map((u) => u.split(':')[1]), ['2', '3', '4', '5'])
+  assert.deepEqual(found.unsupported.map((u) => u.split(':')[1]), ['2', '3', '4', '5', '7'])
 })
 
 void test('an exclusion applies only to its own glob call (Codex review of #13)', () => {

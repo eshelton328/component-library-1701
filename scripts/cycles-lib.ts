@@ -14,7 +14,7 @@ import ts from 'typescript'
  *
  * An import the check cannot follow is listed in `unsupported`, with its
  * line: a dynamic import of a computed name, or a glob with a computed
- * pattern or with any option but `eager` (`base`, `query`, `import` and
+ * pattern, an extglob such as `@(b)`, or any option but `eager` (`base`, `query`, `import` and
  * the rest change what Vite loads). Each one fails the check.
  */
 export function runtimeImports(fileName: string, text: string): { modules: string[]; globs: string[][]; unsupported: string[] } {
@@ -37,6 +37,11 @@ export function runtimeImports(fileName: string, text: string): { modules: strin
     const n = unwrap(node)
     return ts.isObjectLiteralExpression(n) && n.properties.every((p) => ts.isPropertyAssignment(p) && p.name.getText(source) === 'eager' && (p.initializer.kind === ts.SyntaxKind.TrueKeyword || p.initializer.kind === ts.SyntaxKind.FalseKeyword))
   }
+  // import.meta.glob by its syntax tree, so spaces or comments in the callee do not hide it.
+  const isMetaGlob = (e: ts.Expression): boolean => {
+    const n = unwrap(e)
+    return ts.isPropertyAccessExpression(n) && n.name.text === 'glob' && ts.isMetaProperty(n.expression) && n.expression.keywordToken === ts.SyntaxKind.ImportKeyword && n.expression.name.text === 'meta'
+  }
   const where = (node: ts.Node) => `${fileName}:${String(source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1)}: ${node.getText(source)}`
   const visit = (node: ts.Node) => {
     if (ts.isImportDeclaration(node) && node.importClause?.phaseModifier !== ts.SyntaxKind.TypeKeyword && ts.isStringLiteral(node.moduleSpecifier)) {
@@ -47,9 +52,11 @@ export function runtimeImports(fileName: string, text: string): { modules: strin
       const names = strings(node.arguments[0])
       if (names?.length === 1) modules.push(...names)
       else unsupported.push(where(node))
-    } else if (ts.isCallExpression(node) && node.expression.getText(source) === 'import.meta.glob') {
+    } else if (ts.isCallExpression(node) && isMetaGlob(node.expression)) {
       const patterns = strings(node.arguments[0])
-      if (patterns !== undefined && node.arguments.length <= 2 && onlyEager(node.arguments[1])) globs.push(patterns)
+      // Node's globSync reads extglobs such as @(b) and Vite does not, so such a pattern cannot be followed.
+      const plain = patterns?.every((g) => !/[@!+?*]\(/.test(g.replace(/^!/, '')))
+      if (patterns !== undefined && plain === true && node.arguments.length <= 2 && onlyEager(node.arguments[1])) globs.push(patterns)
       else unsupported.push(where(node))
     }
     ts.forEachChild(node, visit)

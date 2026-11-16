@@ -26,7 +26,7 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test:cycles && pnpm check:cycles && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
     "test:hooks": "node scripts/agent-hooks/test.ts",
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
@@ -41,7 +41,9 @@
     "test:release": "node --test scripts/release.test.ts",
     "check:commits": "node scripts/check-commits.ts",
     "check:release-api": "node scripts/check-release-api.ts",
-    "check:release-registry": "node scripts/check-release-registry.ts"
+    "check:release-registry": "node scripts/check-release-registry.ts",
+    "check:cycles": "node scripts/check-cycles.ts",
+    "test:cycles": "node --test scripts/cycles.test.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",

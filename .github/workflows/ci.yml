@@ -58,6 +58,8 @@ jobs:
       - run: pnpm codegen
       - run: pnpm test:hooks
       - run: pnpm checks
+      - run: pnpm test:cycles
+      - run: pnpm check:cycles
       - run: pnpm check:agents-md
       - run: pnpm check:ci
 

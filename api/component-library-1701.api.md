@@ -12,6 +12,7 @@ import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
+import { ListRowVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
@@ -150,6 +151,23 @@ export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
     value?: string | undefined;
     defaultValue?: string | undefined;
     onValueChange?: ((value: string) => void) | undefined;
+};
+
+// @public
+export function ListRow(input: ListRowProps): JSX.Element;
+
+// @public (undocumented)
+export type ListRowProps = Scalar<ListRowVariantProps> & {
+    title: string;
+    meta?: ReactNode;
+    leading?: ReactNode;
+    trailing?: ReactNode;
+    children?: ReactNode;
+    actions?: ReactNode;
+    selected?: boolean | undefined;
+    running?: boolean | undefined;
+    snoozed?: boolean | undefined;
+    onSelect?: (() => void) | undefined;
 };
 
 // @public

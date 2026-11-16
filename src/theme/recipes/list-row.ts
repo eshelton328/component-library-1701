@@ -4,11 +4,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 346:2205) and of the Workbench sidebar (D2 105:660, selected 105:643). The
 // whole row is the target of its title button: the button's ::after covers
 // the row, and the `actions` slot sits above it.
+// A nested row (`level`), such as a subtask's chat under the chat that
+// started it (Workbench D18 417:1204, D16 417:483): the row keeps its start
+// padding (Figma 27, nearest token 24) and starts with a ↳ in Inter 13
+// #8a97b8 (`body`, fg.muted), 10 before the kind mark (the row gap).
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
   staticCss: ['*'],
-  slots: ['root', 'leading', 'body', 'title', 'meta', 'lines', 'actions', 'trailing'],
+  slots: ['root', 'nest', 'leading', 'body', 'title', 'meta', 'lines', 'actions', 'trailing'],
   base: {
     root: {
       position: 'relative',
@@ -30,6 +34,9 @@ export const listRow = defineSlotRecipe({
       // and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
       '&:is([data-selected], [data-running], [data-snoozed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },
     },
+    // Level 2 has no Figma frame: its ↳ moves one step in, under the kind
+    // mark of a level 1 row (24 + 13 + 10 = 47, so 23 more; nearest token 24).
+    nest: { flexShrink: '0', textStyle: 'body', color: 'fg.muted', '[data-level="2"] > &': { ms: '24' } },
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
     title: {

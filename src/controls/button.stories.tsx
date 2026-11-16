@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { useState } from 'react'
+import { GridIcon, MoveIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -8,7 +10,7 @@ const row = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 
 const label = css({ textStyle: 'eyebrow', color: 'fg.muted' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', display: 'grid', gap: '12' })
 
-const variants = ['primary', 'secondary', 'danger', 'dangerSoft', 'dangerText'] as const
+const variants = ['primary', 'secondary', 'danger', 'dangerSoft', 'dangerText', 'text'] as const
 const sizes = ['sm', 'md', 'lg', 'xl'] as const
 
 function Plus() {
@@ -113,3 +115,135 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(getComputedStyle(save).outlineStyle).toBe('solid')
   },
 }
+
+// Swatches of the expected tokens, so the play function compares resolved colours.
+const swatches = {
+  selected: css({ color: 'surface.selected' }),
+  active: css({ color: 'border.active' }),
+  default: css({ color: 'fg.default' }),
+  accent: css({ color: 'accent.default' }),
+}
+
+function Toggles() {
+  const [sorted, setSorted] = useState(true)
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button>
+          <GridIcon size="16" />
+          Filter
+        </Button>
+        <Button pressed indicator>
+          <GridIcon size="16" />
+          Filter · 1
+        </Button>
+        <Button iconOnly aria-label="Sort by project" pressed={sorted} indicator={sorted} onClick={() => { setSorted(!sorted) }}>
+          <MoveIcon size="16" />
+        </Button>
+        <Button variant="primary">Show 6</Button>
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// A pressed toggle (Inbox D13 359:735, M15 346:12154, Artifacts 403:6453): surface.selected, a
+// border.active border and fg.default, never the primary fill; the dot is 6 px of accent.default.
+const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const off = canvas.getByRole('button', { name: 'Filter' })
+  const on = canvas.getByRole('button', { name: 'Filter · 1' })
+  await expect(off).not.toHaveAttribute('aria-pressed')
+  await expect(on).toHaveAttribute('aria-pressed', 'true')
+  const style = getComputedStyle(on)
+  await expect([style.backgroundColor, style.borderTopColor, style.color]).toEqual([swatch('selected'), swatch('active'), swatch('default')])
+  await expect(style.backgroundColor).not.toBe(getComputedStyle(canvas.getByRole('button', { name: 'Show 6' })).backgroundColor)
+  await expect(style.backgroundColor).not.toBe(getComputedStyle(off).backgroundColor)
+  // The dot after the label: 6 px, round, accent.default, 6 after the label, hidden from screen readers.
+  const dot = on.querySelector('.button__indicator')
+  if (!(dot instanceof HTMLElement)) throw new Error('no dot')
+  await expect(dot).toHaveAttribute('aria-hidden', 'true')
+  const d = getComputedStyle(dot)
+  await expect([d.width, d.height, d.backgroundColor, d.position]).toEqual(['6px', '6px', swatch('accent'), 'static'])
+  await expect(off.querySelector('.button__indicator')).toBeNull()
+  // On an icon-only button the dot sits in the top end corner: 2 from the top, 4 from the end, inside the border.
+  const sort = canvas.getByRole('button', { name: 'Sort by project' })
+  const corner = sort.querySelector('.button__indicator')
+  if (!(corner instanceof HTMLElement)) throw new Error('no corner dot')
+  await expect([corner.offsetTop, sort.clientWidth - corner.offsetLeft - corner.offsetWidth]).toEqual([2, 4])
+  // Click and keyboard toggle it; aria-pressed follows.
+  await userEvent.click(sort)
+  await expect(sort).toHaveAttribute('aria-pressed', 'false')
+  await expect(sort.querySelector('.button__indicator')).toBeNull()
+  await expect(getComputedStyle(sort).backgroundColor).toBe(getComputedStyle(off).backgroundColor)
+  await userEvent.keyboard(' ')
+  await expect(sort).toHaveAttribute('aria-pressed', 'true')
+}
+
+export const PressedDark: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'dark' }, play: pressedPlay }
+export const PressedLight: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'light' }, play: pressedPlay }
+
+const onDone = fn()
+
+// Sheet header actions (Inbox T8 346:7175, M7 346:10487; Artifacts M7 408:706):
+// fg.accent text in labelLg, no fill, no border, the size's full height.
+function SheetHeader() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button variant="text">Cancel</Button>
+          <Button variant="text" size="lg" onClick={() => { onDone() }}>
+            Done
+          </Button>
+          <Button variant="text" disabled>
+            Add
+          </Button>
+        </div>
+      </div>
+      <span hidden data-swatch="accent" className={css({ color: 'fg.accent' })} />
+      <span hidden data-swatch="faint" className={css({ color: 'accent.faint' })} />
+    </main>
+  )
+}
+
+const textPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onDone.mockClear()
+  const canvas = within(canvasElement)
+  const accent = getComputedStyle(canvasElement.querySelector('[data-swatch="accent"]') ?? canvasElement).color
+  const cancel = canvas.getByRole('button', { name: 'Cancel' })
+  const done = canvas.getByRole('button', { name: 'Done' })
+  const style = getComputedStyle(cancel)
+  await expect([style.color, style.fontSize, style.fontWeight]).toEqual([accent, '16px', '500'])
+  await expect([style.backgroundColor, style.borderTopColor]).toEqual(['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)'])
+  // The size variants keep their heights: md 32 (control.md), lg 36 (control.lg).
+  await expect([cancel.getBoundingClientRect().height, done.getBoundingClientRect().height]).toEqual([32, 36])
+  // Hover tints the box in accent.faint. Simulated pointer events set no :hover; Panda's
+  // hover condition also matches [data-hover], so the test sets that.
+  const faint = getComputedStyle(canvasElement.querySelector('[data-swatch="faint"]') ?? canvasElement).color
+  cancel.setAttribute('data-hover', '')
+  await expect(getComputedStyle(cancel).backgroundColor).toBe(faint)
+  cancel.removeAttribute('data-hover')
+  // A disabled one does nothing.
+  const add = canvas.getByRole('button', { name: 'Add' })
+  await expect(add).toBeDisabled()
+  // Keyboard focus draws the focus ring, and Enter presses it.
+  cancel.focus()
+  await userEvent.tab()
+  await expect(done).toHaveFocus()
+  await expect(getComputedStyle(done).outlineStyle).toBe('solid')
+  await userEvent.keyboard('{Enter}')
+  await expect(onDone).toHaveBeenCalledTimes(1)
+}
+
+export const TextDark: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'dark' }, play: textPlay }
+export const TextLight: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'light' }, play: textPlay }

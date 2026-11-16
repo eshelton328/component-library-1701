@@ -7,6 +7,7 @@ import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(listRow)
 const Root = withProvider('div', 'root')
+const Nest = withContext('span', 'nest')
 const Leading = withContext('span', 'leading')
 const Body = withContext('div', 'body')
 const TitleButton = withContext('button', 'title')
@@ -37,6 +38,13 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
   running?: boolean | undefined
   /** A snoozed item. The row is dimmed. */
   snoozed?: boolean | undefined
+  /**
+   * How deep the row is nested: `1` for a subtask's or a fork's chat under
+   * the chat that started it, `2` for one more step. A nested row starts
+   * with a ↳ that screen readers skip; say the parent in `meta` when it
+   * matters. Defaults to `0`, a top-level row.
+   */
+  level?: 0 | 1 | 2 | undefined
   /** Called when the user clicks the row or presses Enter on it. Without it, the row is not a button. */
   onSelect?: (() => void) | undefined
 }
@@ -46,7 +54,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * Workbench sidebar (`sidebar`). With `onSelect`, the title is a button and
  * a click anywhere on the row selects it.
  */
-export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, onSelect, variant }: ListRowProps) {
+export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, level = 0, onSelect, variant }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -64,7 +72,8 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
   }
   return (
-    <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+      {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
         {onSelect === undefined ? (

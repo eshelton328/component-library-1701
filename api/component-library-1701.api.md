@@ -257,6 +257,25 @@ export function FeatureIcon(props: IconProps): JSX.Element;
 export function FileIcon(props: IconProps): JSX.Element;
 
 // @public
+export function FileTree(input: FileTreeProps): JSX.Element;
+
+// @public
+export type FileTreeNode = {
+    path: string;
+    name: string;
+    type?: 'folder' | 'file' | 'code' | undefined;
+    count?: number | string | undefined;
+    caption?: string | undefined;
+    children?: readonly FileTreeNode[] | undefined;
+};
+
+// @public (undocumented)
+export type FileTreeProps = Omit<TreeViewProps, 'nodes' | 'label'> & {
+    label?: string | undefined;
+    nodes: readonly FileTreeNode[];
+};
+
+// @public
 export type FilterChip = {
     value: string;
     label: string;
@@ -984,6 +1003,32 @@ export type ToolLineState = NonNullable<ToolLineProps['state']>;
 
 // @public
 export function TrashIcon(props: IconProps): JSX.Element;
+
+// @public
+export function TreeView(input: TreeViewProps): JSX.Element;
+
+// @public
+export type TreeViewNode = {
+    value: string;
+    label: string;
+    icon?: ReactNode;
+    trailing?: ReactNode;
+    caption?: string | undefined;
+    children?: readonly TreeViewNode[] | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type TreeViewProps = {
+    label: string;
+    nodes: readonly TreeViewNode[];
+    selected?: string | undefined;
+    defaultSelected?: string | undefined;
+    onSelect?: ((value: string) => void) | undefined;
+    expanded?: readonly string[] | undefined;
+    defaultExpanded?: readonly string[] | undefined;
+    onExpandedChange?: ((values: string[]) => void) | undefined;
+};
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

@@ -159,10 +159,13 @@ const meta = {
     await expect(font(first)).toEqual(['14px', 20, '400'])
     await expect(getComputedStyle(first).color).toBe(swatch(canvasElement, 'muted'))
     // A loose item's first paragraph stays on the marker's 20 px line; the next is 10 below it.
+    // An inline box is as tall as the font's content area, which differs by font, so the check
+    // compares its centre with the centre of the first line rather than its top.
     const loose = pick(canvas.getByTestId('loose'), 'li')
     const [para1, para2] = all(loose, 'p')
     if (para1 === undefined || para2 === undefined) throw new Error('no loose paragraphs')
-    await expect(Math.abs(box(para1).top - box(loose).top)).toBeLessThanOrEqual(1)
+    const centre = (box(para1).top + box(para1).bottom) / 2
+    await expect(Math.abs(centre - (box(loose).top + 10))).toBeLessThanOrEqual(1)
     await expect(box(para2).top - box(loose).top).toBe(30)
     await expect(getComputedStyle(pick(ol, 'ul')).listStyleType).toBe('disc')
     // Inline code and the path line use `code` (Mono 14/20); links the accent.

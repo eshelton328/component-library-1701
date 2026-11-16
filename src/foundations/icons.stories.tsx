@@ -109,6 +109,9 @@ function Icons() {
         <h2 className={heading}>With a title</h2>
         <div className={row}>
           <SearchIcon size="20" title="Search" />
+          <span data-testid="blank-title">
+            <CloseIcon size="20" title={' \n '} />
+          </span>
         </div>
       </section>
     </main>
@@ -138,6 +141,17 @@ const meta = {
       // Hidden from assistive technology when it has no title.
       await expect(svg.getAttribute('aria-hidden')).toBe('true')
       await expect(svg.querySelector('title')).toBeNull()
+      // Each path draws something inside the 24 grid.
+      const paths = Array.from(svg.querySelectorAll('path'))
+      await expect(paths.length).toBeGreaterThan(0)
+      for (const path of paths) {
+        await expect(path.getTotalLength()).toBeGreaterThan(0)
+        const box = path.getBBox()
+        await expect(box.x).toBeGreaterThanOrEqual(0)
+        await expect(box.y).toBeGreaterThanOrEqual(0)
+        await expect(box.x + box.width).toBeLessThanOrEqual(24)
+        await expect(box.y + box.height).toBeLessThanOrEqual(24)
+      }
       if (name === 'more') {
         // More is three filled dots, as in Figma 346:5607.
         await expect(style.fill).toBe(getComputedStyle(cellEl).color)
@@ -159,6 +173,10 @@ const meta = {
     const named = canvas.getByRole('img', { name: 'Search' })
     await expect(named.getAttribute('aria-hidden')).toBeNull()
     await expect(named.getBoundingClientRect().width).toBe(20)
+    // A title of only spaces names nothing, so the icon stays hidden.
+    const blank = svgIn(canvas.getByTestId('blank-title'))
+    await expect(blank.getAttribute('aria-hidden')).toBe('true')
+    await expect(blank.getAttribute('role')).toBeNull()
   },
 } satisfies Meta<typeof Icons>
 export default meta

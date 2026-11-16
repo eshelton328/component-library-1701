@@ -14,8 +14,9 @@ export type IconProps = {
   /** The size in px, from the `sizes.icon` tokens. Defaults to `24`. */
   size?: IconSize | undefined
   /**
-   * A name for an icon that stands alone. Without one the icon is hidden
-   * from assistive technology, because the text next to it names it.
+   * A name for an icon that stands alone. Without one (or with only
+   * spaces) the icon is hidden from assistive technology, because the
+   * text next to it names it.
    */
   title?: string | undefined
 }
@@ -23,7 +24,7 @@ export type IconProps = {
 type SvgProps = IconProps & { strokeWidth?: string | undefined; children: ReactNode }
 
 function Svg({ size = '24', title, strokeWidth, children }: SvgProps) {
-  const named = title !== undefined && title !== ''
+  const named = title !== undefined && title.trim() !== ''
   const stroked = strokeWidth !== undefined
   return (
     <svg

@@ -1,10 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Dialog } from './dialog'
 import { Stack } from './layout'
 import { Tooltip, TruncatedText } from './tooltip'
+import { expectCutText } from './tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '40', textStyle: 'body' })
 // A narrow box, so a long text does not fit in it.
@@ -204,6 +206,58 @@ export const TruncatedTextResize: StoryObj<typeof meta> = {
     await userEvent.hover(el)
     await waitFor(() => expect(tooltipOf()).toHaveTextContent(long))
     await userEvent.unhover(el)
+  },
+}
+
+// The box is as wide as the plain text (a hidden copy sets it, plus 2px), so the plain text fits and the text with
+// every word marked in semibold does not. The box's size never changes, so no resize tells the text to measure again.
+const fitBox = css({ display: 'inline-grid', alignSelf: 'flex-start' })
+const fitGhost = css({ gridArea: '1 / 1', visibility: 'hidden', pe: '2', whiteSpace: 'nowrap' })
+const fitText = css({ gridArea: '1 / 1', contain: 'inline-size' })
+const marked = 'skill-eval-round-with-held-out-cases'
+
+function HighlightToggle() {
+  const [query, setQuery] = useState<string | undefined>(undefined)
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Button
+          onClick={() => {
+            setQuery(marked)
+          }}
+        >
+          Search
+        </Button>
+        <div className={fitBox}>
+          <span className={fitGhost} aria-hidden="true">
+            {marked}
+          </span>
+          <div className={fitText} data-testid="marked">
+            <TruncatedText highlight={query}>{marked}</TruncatedText>
+          </div>
+        </div>
+      </Stack>
+    </main>
+  )
+}
+
+/**
+ * A new `highlight` can make the text wider without a change of its box:
+ * TruncatedText measures again, so the marked text that no longer fits is
+ * cut and shows in full in the tooltip.
+ */
+export const TruncatedTextHighlight: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <HighlightToggle />,
+  play: async ({ canvasElement }) => {
+    const el = text(canvasElement, 'marked')
+    // Plain, the text fits: no tab stop.
+    await expect(el.scrollWidth).toBeLessThanOrEqual(el.clientWidth)
+    await expect(el).not.toHaveAttribute('tabindex')
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Search' }))
+    await waitFor(() => expect(el.querySelector('mark')).not.toBeNull())
+    await expect(el.scrollWidth).toBeGreaterThan(el.clientWidth)
+    await expectCutText(el, marked)
   },
 }
 

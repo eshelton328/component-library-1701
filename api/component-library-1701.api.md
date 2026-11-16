@@ -36,6 +36,7 @@ import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ThumbnailVariantProps } from '../../styled-system/recipes';
+import { ToastVariantProps } from '../../styled-system/recipes';
 import { ToolLineVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
@@ -333,6 +334,9 @@ export function CopyIcon(props: IconProps): JSX.Element;
 export function CpuIcon(props: IconProps): JSX.Element;
 
 // @public
+export function createToaster(input?: ToasterOptions): ToasterStore;
+
+// @public
 export type DailyAxisLabels = 'ends' | 'endsAndMiddle' | 'none';
 
 // @public (undocumented)
@@ -511,6 +515,17 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
 };
 
 // @public
+function Highlight_2(input: HighlightProps): ReactNode;
+export { Highlight_2 as Highlight }
+
+// @public (undocumented)
+export type HighlightProps = {
+    text: string;
+    query: string | readonly string[];
+    ignoreCase?: boolean | undefined;
+};
+
+// @public
 export function HomeIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -630,6 +645,7 @@ export function ListRow(input: ListRowProps): JSX.Element;
 // @public (undocumented)
 export type ListRowProps = Scalar<ListRowVariantProps> & {
     title: string;
+    highlight?: string | readonly string[] | undefined;
     meta?: ReactNode;
     leading?: ReactNode;
     trailing?: ReactNode;
@@ -1316,6 +1332,62 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
 export type ThumbnailShape = 'wide' | 'compact' | 'banner';
 
 // @public
+export function Toast(input: ToastProps): JSX.Element;
+
+// @public
+export type ToastAction = {
+    label: string;
+    onClick: () => void;
+};
+
+// @public
+export function Toaster(input: ToasterProps): JSX.Element | null;
+
+// @public
+export type ToasterOptions = {
+    placement?: 'top-start' | 'top' | 'top-end' | 'bottom-start' | 'bottom' | 'bottom-end' | undefined;
+    offsets?: string | Record<'left' | 'right' | 'bottom' | 'top', string> | undefined;
+    duration?: number | undefined;
+    max?: number | undefined;
+};
+
+// @public (undocumented)
+export type ToasterProps = {
+    toaster: ToasterStore;
+    label?: string | undefined;
+    closeLabel?: string | undefined;
+};
+
+// @public
+export type ToasterStore = {
+    show: (options: ToastOptions) => string;
+    dismiss: (id?: string) => void;
+};
+
+// @public
+export type ToastOptions = {
+    text: string;
+    icon?: ReactNode;
+    action?: ToastAction | undefined;
+    closable?: boolean | undefined;
+    tone?: ToastTone | undefined;
+    duration?: number | undefined;
+    id?: string | undefined;
+};
+
+// @public (undocumented)
+export type ToastProps = Scalar<ToastVariantProps> & {
+    children: string;
+    icon?: ReactNode;
+    action?: ToastAction | undefined;
+    onClose?: (() => void) | undefined;
+    closeLabel?: string | undefined;
+};
+
+// @public
+export type ToastTone = NonNullable<Scalar<ToastVariantProps>['tone']>;
+
+// @public
 export function ToolkitIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -1386,6 +1458,7 @@ export function TruncatedText(input: TruncatedTextProps): JSX.Element;
 export type TruncatedTextProps = {
     children: string;
     placement?: TooltipProps['placement'];
+    highlight?: string | readonly string[] | undefined;
 };
 
 // @public

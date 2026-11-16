@@ -216,3 +216,46 @@ export const LongMeta: StoryObj<typeof meta> = {
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }
+
+const accentText = css({ color: 'fg.accent' })
+const longChat = 'Run the skill eval round with held-out cases and a trigger set'
+
+function SearchResults() {
+  return (
+    <main className={page}>
+      <div className={inboxList}>
+        <ListRow title="Read the skill eval results and pick the next round" highlight="eval" meta="ncc-1701 · f-005" trailing="12m" onSelect={() => { onSelect('result') }} />
+      </div>
+      <div className={sidebar}>
+        <ListRow variant="sidebar" title={longChat} highlight={['eval', 'trigger']} meta="opus · 42%" leading={<span className={dot} />} onSelect={() => { onSelect('chat') }} />
+      </div>
+      <span hidden data-swatch="accent" className={accentText} />
+    </main>
+  )
+}
+
+/**
+ * Search results: `highlight` marks the matches of the query in the title
+ * (Inbox D10, Artifacts D4). The title button keeps its whole name, and a
+ * cut sidebar title shows the plain title in its tooltip.
+ */
+const search: StoryObj<typeof meta> = {
+  render: () => <SearchResults />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const accent = getComputedStyle(canvasElement.querySelector('[data-swatch="accent"]') ?? canvasElement).color
+    const result = canvas.getByRole('button', { name: 'Read the skill eval results and pick the next round' })
+    const marks = Array.from(result.querySelectorAll('mark'))
+    await expect(marks.map((mark) => mark.textContent)).toEqual(['eval'])
+    const mark = marks[0]
+    if (mark === undefined) throw new Error('no mark')
+    await expect([getComputedStyle(mark).color, getComputedStyle(mark).fontWeight, getComputedStyle(mark).textDecorationLine]).toEqual([accent, '600', 'underline'])
+    // The sidebar title is still cut by TruncatedText, with its matches marked.
+    const chat = canvas.getByRole('button', { name: longChat })
+    await expect(Array.from(chat.querySelectorAll('mark'), (m) => m.textContent)).toEqual(['eval', 'trigger'])
+    // Cut, and its tooltip shows the whole plain title, with no marks.
+    await expectCutText(chat, longChat, chat)
+  },
+}
+export const SearchDark: StoryObj<typeof meta> = { ...search, globals: { mode: 'dark' } }
+export const SearchLight: StoryObj<typeof meta> = { ...search, globals: { mode: 'light' } }

@@ -213,7 +213,7 @@ void test('a text decoration or paragraph spacing left in Figma changes the hash
 // one mode, holding the variables a test gives it.
 type StubVar = { id: string; name: string; resolvedType: string; variableCollectionId: string; codeSyntax: Record<string, string>; [k: string]: unknown }
 function stubVariables(name: string, mode: string, vars: { name: string; type: string; web?: string }[]) {
-  const col = { id: 'C:1', name, modes: [{ modeId: 'm1', name: mode }], renameMode: () => undefined, addMode: () => 'm2' }
+  const col = { id: 'C:1', name, modes: [{ modeId: 'm1', name: mode }], renamed: false, renameMode: () => (col.renamed = true), addMode: () => 'm2' }
   const all: StubVar[] = vars.map((v, i) => ({
     id: `V:${String(i)}`, name: v.name, resolvedType: v.type, variableCollectionId: col.id, scopes: [], description: '', hiddenFromPublishing: false,
     valuesByMode: {}, codeSyntax: v.web === undefined ? {} : { WEB: v.web },
@@ -225,6 +225,7 @@ function stubVariables(name: string, mode: string, vars: { name: string; type: s
   }
   return {
     all,
+    col,
     variables: {
       getLocalVariableCollectionsAsync: () => Promise.resolve([col]),
       getLocalVariablesAsync: () => Promise.resolve(all),
@@ -243,8 +244,10 @@ const layoutVars = collection(doc, 'Layout')?.variables ?? []
 void test('the upsert stops before any change when two variables share a name (Codex review of #14)', async () => {
   const [first] = layoutVars
   assert.ok(first)
-  const figma = stubVariables('Layout', 'Value', [...layoutVars.map((v) => ({ name: v.name, type: v.type })), { name: first.name, type: first.type }])
+  // The one mode is named Mode 1, so the script would rename it; it must stop first.
+  const figma = stubVariables('Layout', 'Mode 1', [...layoutVars.map((v) => ({ name: v.name, type: v.type })), { name: first.name, type: first.type }])
   await assert.rejects(run(layoutScript, figma), new RegExp(`same name in Layout: ${first.name} V:0`))
+  assert.equal(figma.col.renamed, false)
   const got = record(await run(fingerprint(doc), figma))
   assert.ok(`var|Layout|${first.name}|duplicate|V:${String(layoutVars.length)}` in got)
 })

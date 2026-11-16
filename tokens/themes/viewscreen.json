@@ -573,7 +573,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.3686, 0.8824, 1.0],
-            "alpha": 0.14,
+            "alpha": 0.12,
             "hex": "#5ee1ff"
           },
           "$description": "Tint behind a toolkit skill mark, as on a kind tile or kind badge."
@@ -583,7 +583,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.6196, 0.5608, 1.0],
-            "alpha": 0.14,
+            "alpha": 0.12,
             "hex": "#9e8fff"
           },
           "$description": "Tint behind a toolkit agent mark, as on a kind tile or kind badge."
@@ -593,7 +593,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [1.0, 0.7216, 0.4196],
-            "alpha": 0.14,
+            "alpha": 0.12,
             "hex": "#ffb86b"
           },
           "$description": "Tint behind a toolkit rule mark, as on a kind tile or kind badge."
@@ -603,7 +603,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.4314, 0.9059, 0.6588],
-            "alpha": 0.14,
+            "alpha": 0.12,
             "hex": "#6ee7a8"
           },
           "$description": "Tint behind a toolkit workflow mark, as on a kind tile or kind badge."
@@ -613,7 +613,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [1.0, 0.6039, 0.6706],
-            "alpha": 0.14,
+            "alpha": 0.12,
             "hex": "#ff9aab"
           },
           "$description": "Tint behind a toolkit hook mark, as on a kind tile or kind badge."

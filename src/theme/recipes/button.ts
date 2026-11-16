@@ -58,6 +58,20 @@ export const button = defineRecipe({
       danger: { bg: 'status.danger.fg', color: 'fg.onAccent' },
       dangerSoft: { bg: 'status.danger.bg', color: 'status.danger.fg', borderColor: 'status.danger.border', _expanded: { borderColor: 'border.active' } },
       dangerText: { color: 'status.danger.fg' },
+      // The action in a sheet header, such as Done, Clear, Cancel or Add:
+      // Inbox T8 346:7178 (Geist Medium 15), Inbox M7 346:10490, Artifacts M7
+      // 408:707 (Regular 14) and 408:711 (SemiBold 15), all #5ee1ff (fg.accent)
+      // with no fill and no border. The three label styles merge into
+      // `labelLg` (Medium 16): 15 lies between `label` (14) and `labelLg` (16),
+      // and the larger wins a tie (d-072). The size variant keeps the height and
+      // padding, so the hit area stays a full control. Hover tints the box in
+      // accent.faint, as option and menu rows do.
+      text: {
+        color: 'fg.accent',
+        textStyle: 'labelLg',
+        _hover: { bg: 'accent.faint' },
+        _disabled: { _hover: { bg: 'transparent' } },
+      },
     },
     size: {
       sm: { h: 'control.sm', px: '8', gap: '4' },

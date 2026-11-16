@@ -10,7 +10,7 @@ const row = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 
 const label = css({ textStyle: 'eyebrow', color: 'fg.muted' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', display: 'grid', gap: '12' })
 
-const variants = ['primary', 'secondary', 'danger', 'dangerSoft', 'dangerText'] as const
+const variants = ['primary', 'secondary', 'danger', 'dangerSoft', 'dangerText', 'text'] as const
 const sizes = ['sm', 'md', 'lg', 'xl'] as const
 
 function Plus() {
@@ -191,3 +191,59 @@ const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const PressedDark: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'dark' }, play: pressedPlay }
 export const PressedLight: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'light' }, play: pressedPlay }
+
+const onDone = fn()
+
+// Sheet header actions (Inbox T8 346:7175, M7 346:10487; Artifacts M7 408:706):
+// fg.accent text in labelLg, no fill, no border, the size's full height.
+function SheetHeader() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button variant="text">Cancel</Button>
+          <Button variant="text" size="lg" onClick={() => { onDone() }}>
+            Done
+          </Button>
+          <Button variant="text" disabled>
+            Add
+          </Button>
+        </div>
+      </div>
+      <span hidden data-swatch="accent" className={css({ color: 'fg.accent' })} />
+      <span hidden data-swatch="faint" className={css({ color: 'accent.faint' })} />
+    </main>
+  )
+}
+
+const textPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onDone.mockClear()
+  const canvas = within(canvasElement)
+  const accent = getComputedStyle(canvasElement.querySelector('[data-swatch="accent"]') ?? canvasElement).color
+  const cancel = canvas.getByRole('button', { name: 'Cancel' })
+  const done = canvas.getByRole('button', { name: 'Done' })
+  const style = getComputedStyle(cancel)
+  await expect([style.color, style.fontSize, style.fontWeight]).toEqual([accent, '16px', '500'])
+  await expect([style.backgroundColor, style.borderTopColor]).toEqual(['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0)'])
+  // The size variants keep their heights: md 32 (control.md), lg 36 (control.lg).
+  await expect([cancel.getBoundingClientRect().height, done.getBoundingClientRect().height]).toEqual([32, 36])
+  // Hover tints the box in accent.faint. Simulated pointer events set no :hover; Panda's
+  // hover condition also matches [data-hover], so the test sets that.
+  const faint = getComputedStyle(canvasElement.querySelector('[data-swatch="faint"]') ?? canvasElement).color
+  cancel.setAttribute('data-hover', '')
+  await expect(getComputedStyle(cancel).backgroundColor).toBe(faint)
+  cancel.removeAttribute('data-hover')
+  // A disabled one does nothing.
+  const add = canvas.getByRole('button', { name: 'Add' })
+  await expect(add).toBeDisabled()
+  // Keyboard focus draws the focus ring, and Enter presses it.
+  cancel.focus()
+  await userEvent.tab()
+  await expect(done).toHaveFocus()
+  await expect(getComputedStyle(done).outlineStyle).toBe('solid')
+  await userEvent.keyboard('{Enter}')
+  await expect(onDone).toHaveBeenCalledTimes(1)
+}
+
+export const TextDark: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'dark' }, play: textPlay }
+export const TextLight: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'light' }, play: textPlay }

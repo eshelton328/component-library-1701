@@ -32,6 +32,7 @@ import { popover } from './popover'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
 import { textField } from './text-field'
+import { toolLine } from './tool-line'
 import { statusPill } from './status-pill'
 import { viewSwitch } from './view-switch'
 
@@ -39,4 +40,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, toolLine, viewSwitch }

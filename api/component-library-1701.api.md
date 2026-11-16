@@ -27,6 +27,7 @@ import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
+import { ToolLineVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
 // @public
@@ -616,6 +617,22 @@ export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> 
 
 // @public
 export type ToolkitKind = NonNullable<Scalar<KindBadgeVariantProps>['kind']>;
+
+// @public
+export function ToolLine(input: ToolLineProps): JSX.Element;
+
+// @public (undocumented)
+export type ToolLineProps = Scalar<ToolLineVariantProps> & {
+    name: string;
+    target?: string | undefined;
+    stateLabel?: string | undefined;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    children?: ReactNode;
+};
+
+// @public
+export type ToolLineState = NonNullable<ToolLineProps['state']>;
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

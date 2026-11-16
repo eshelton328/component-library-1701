@@ -28,6 +28,7 @@ import { kindMark } from './kind-mark'
 import { menu } from './menu'
 import { message } from './message'
 import { moreDrawer } from './more-drawer'
+import { pane } from './pane'
 import { panel } from './panel'
 import { badge } from './badge'
 import { kindBadge } from './kind-badge'
@@ -43,6 +44,7 @@ import { proposalBlock } from './proposal-block'
 import { proposalSection } from './proposal-section'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
+import { splitter } from './splitter'
 import { textField } from './text-field'
 import { toolLine } from './tool-line'
 import { treeView } from './tree-view'
@@ -57,4 +59,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch }

@@ -76,6 +76,7 @@ const meta = {
           await expect(path.getTotalLength()).toBeGreaterThan(0)
           const box = path.getBBox()
           await expect(box.x).toBeGreaterThanOrEqual(0)
+          await expect(box.y).toBeGreaterThanOrEqual(0)
           await expect(box.x + box.width).toBeLessThanOrEqual(px)
           await expect(box.y + box.height).toBeLessThanOrEqual(px)
         }

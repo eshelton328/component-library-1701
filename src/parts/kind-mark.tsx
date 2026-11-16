@@ -1,11 +1,7 @@
 import { kindMark, type KindMarkVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 
-type Props = Scalar<KindMarkVariantProps>
-export type KindMarkKind = NonNullable<Props['kind']>
-export type KindMarkSize = NonNullable<Props['size']>
-
-export type KindMarkProps = Props & {
+export type KindMarkProps = Scalar<KindMarkVariantProps> & {
   /**
    * A name for a mark that stands alone, such as "Claude". Without one the
    * mark is hidden from assistive technology, because the text next to it
@@ -13,6 +9,9 @@ export type KindMarkProps = Props & {
    */
   title?: string | undefined
 }
+
+export type KindMarkKind = NonNullable<KindMarkProps['kind']>
+export type KindMarkSize = NonNullable<KindMarkProps['size']>
 
 // The marks from the Figma design file PZoW9BBu43qRgon1KhJcwU, copied path
 // for path at each size, with the 2 px stroke Figma keeps at every size.

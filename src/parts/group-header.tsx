@@ -2,27 +2,18 @@ import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { groupHeader, type GroupHeaderVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { ChevronDownIcon, ChevronRightIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(groupHeader)
 const Root = withProvider('div', 'root')
 const Leading = withContext('span', 'leading')
 const Toggle = withContext('button', 'toggle')
 const Static = withContext('span', 'toggle')
-const Chevron = withContext('svg', 'chevron')
+const Chevron = withContext('span', 'chevron')
 const Label = withContext('span', 'label')
 const Count = withContext('span', 'count')
 const Dot = withContext('span', 'dot')
 const Actions = withContext('span', 'actions')
-
-// The chevron is part of the header, not an icon a caller picks: down when
-// the group is open, right when it is closed.
-function Arrow({ open }: { open: boolean }) {
-  return (
-    <Chevron viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={open ? 'M3 4.5 6 7.5l3-3' : 'M4.5 3 7.5 6l-3 3'} />
-    </Chevron>
-  )
-}
 
 // React renders nothing for null, undefined, booleans and the empty string,
 // so a slot holding one of them is left out with its gap.
@@ -57,9 +48,11 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
  */
 export function GroupHeader({ label, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
   const collapsible = onOpenChange !== undefined
+  // Inbox draws a 12 px chevron (346:189); Workbench a 13 px one (105:631), on the 14 token.
+  const chevronSize = variant === 'sidebar' ? '14' : '12'
   const body = (
     <>
-      {collapsible ? <Arrow open={open} /> : null}
+      {collapsible ? <Chevron>{open ? <ChevronDownIcon size={chevronSize} /> : <ChevronRightIcon size={chevronSize} />}</Chevron> : null}
       <Label>{label}</Label>
       {count === undefined ? null : <Count>{count}</Count>}
       {dot === undefined ? null : <Dot aria-hidden="true" />}

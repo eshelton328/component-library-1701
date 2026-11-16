@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
+import { MoreIcon } from '../foundations/icons'
 import { GroupHeader } from './group-header'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '12', borderRadius: 'xl', w: 'shell.listPane' })
 const row = css({ px: '12', py: '8', textStyle: 'body', color: 'fg.default' })
-// A bare icon button for the actions slot, as the Workbench sidebar draws its more icon.
+// A bare icon button for the actions slot, as the Workbench sidebar draws its more icon (105:637).
+// The icon set has no grip, so the story draws one for the leading slot.
 const more = css({
   display: 'inline-flex',
   p: '0',
@@ -37,16 +39,6 @@ function Grip() {
     </svg>
   )
 }
-function Dots() {
-  return (
-    <svg viewBox="0 0 14 14" fill="currentColor" aria-hidden="true">
-      <circle cx="3" cy="7" r="1.2" />
-      <circle cx="7" cy="7" r="1.2" />
-      <circle cx="11" cy="7" r="1.2" />
-    </svg>
-  )
-}
-
 type Group = { id: string; label: string; rows: string[]; dot?: 'needsYou' | 'working' }
 const groups: Group[] = [
   { id: 'needs', label: 'Needs you', rows: ['drift check wants to run git mv', 'Hono RPC client or plain fetch?'], dot: 'needsYou' },
@@ -99,7 +91,7 @@ function Headers({ onOpenChange = () => undefined, onMenu = () => undefined }: {
             leading={<Grip />}
             actions={
               <button type="button" className={more} aria-label="Workspace actions" onClick={onMenu}>
-                <Dots />
+                <MoreIcon size="14" />
               </button>
             }
           />

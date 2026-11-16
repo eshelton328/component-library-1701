@@ -46,7 +46,7 @@ export const groupHeader = defineSlotRecipe({
       '&:is(button)': { cursor: 'pointer' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
-    chevron: { flexShrink: '0', w: 'icon.12', h: 'icon.12' },
+    chevron: { display: 'inline-flex', flexShrink: '0' },
     label: { minW: '0', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     count: { flexShrink: '0', fontVariantNumeric: 'tabular-nums' },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
@@ -63,7 +63,7 @@ export const groupHeader = defineSlotRecipe({
     // `list` is the Inbox list header; `sidebar` the Workbench sidebar one.
     variant: {
       list: { root: { pt: '16', pr: '4' } },
-      sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' }, chevron: { w: 'icon.14', h: 'icon.14' } },
+      sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' } },
     },
     // The dot takes a status colour: amber on Inbox "Needs you" (346:194) and
     // Workbench (105:635), cyan on Inbox "Next steps" (346:265).

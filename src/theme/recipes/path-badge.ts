@@ -29,7 +29,6 @@ export const pathBadge = defineSlotRecipe({
     icon: {
       display: 'inline-flex',
       flexShrink: '0',
-      color: 'fg.muted',
       '& svg': { w: 'icon.12', h: 'icon.12' },
     },
     path: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', textStyle: 'mono' },

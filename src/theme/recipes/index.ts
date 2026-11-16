@@ -10,6 +10,7 @@ import { dialog } from './dialog'
 import { filterChips } from './filter-chips'
 import { itemTabs } from './item-tabs'
 import { menu } from './menu'
+import { popover } from './popover'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
 import { textField } from './text-field'
@@ -20,4 +21,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, contextMeter, dialog, filterChips, itemTabs, menu, searchField, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { popover, checkbox, contextMeter, dialog, filterChips, itemTabs, menu, searchField, textField, viewSwitch }

@@ -28,7 +28,6 @@ export const panel = defineSlotRecipe({
     },
     header: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
     title: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    // fg.subtle is only for bg.canvas, so the meta is fg.muted.
     meta: { flexShrink: '0', color: 'fg.muted' },
     actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ml: 'auto' },
     body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto' },
@@ -39,7 +38,8 @@ export const panel = defineSlotRecipe({
         root: { h: '100%', py: '16', px: '12', gap: '2' },
         header: { px: '4', pb: '8' },
         title: { textStyle: 'paneTitle' },
-        meta: { textStyle: 'mono' },
+        // The Inbox count (346:149) is #4a5675.
+        meta: { textStyle: 'mono', color: 'fg.subtle' },
         body: { gap: '2' },
       },
       sidebar: {

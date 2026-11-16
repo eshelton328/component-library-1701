@@ -1,8 +1,7 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 
 // The tags line of the Inbox task (346:343): a tag icon, then the tags with
-// a "·" between, 6 apart. Figma draws the tags in #4a5675 (fg.subtle); the
-// line sits on a pane, so it uses fg.muted.
+// a "·" between, 6 apart. Figma draws the tags in #4a5675, so they use fg.subtle.
 export const tagsLine = defineSlotRecipe({
   className: 'tags-line',
   jsx: ['TagsLine'],
@@ -16,7 +15,7 @@ export const tagsLine = defineSlotRecipe({
       gap: '6',
       minW: '0',
       textStyle: 'mono',
-      color: 'fg.muted',
+      color: 'fg.subtle',
       listStyle: 'none',
       m: '0',
       p: '0',

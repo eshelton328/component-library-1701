@@ -5,6 +5,7 @@ import { Button } from '../controls/button'
 import { Stack } from '../controls/layout'
 import { ListRow } from './list-row'
 import { StatusPill } from './status-pill'
+import { TagsLine } from './meta-line'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 const inboxList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
@@ -54,6 +55,19 @@ function Lists() {
             running
             onSelect={() => { onSelect('running') }}
           />
+          {/* Rows with a tags line, which follows the age's colour rule. */}
+          <ListRow title="Tagged" meta="ncc-1701" trailing="1d">
+            <TagsLine tags={['global/planning']} />
+          </ListRow>
+          <ListRow title="Tagged and selected" meta="ncc-1701" trailing="1d" selected>
+            <TagsLine tags={['global/planning']} />
+          </ListRow>
+          <ListRow title="Tagged and snoozed" meta="ncc-1701" trailing="1d" snoozed>
+            <TagsLine tags={['global/planning']} />
+          </ListRow>
+          <ListRow title="Tagged and running" meta="ncc-1701" trailing="1d" running>
+            <TagsLine tags={['global/planning']} />
+          </ListRow>
         </Stack>
       </div>
       <div className={sidebar}>
@@ -64,6 +78,8 @@ function Lists() {
           <ListRow variant="sidebar" title="Current, no select" meta="read only" leading={<span className={dot} />} selected />
         </Stack>
       </div>
+      <span hidden data-swatch="subtle" className={css({ color: 'fg.subtle' })} />
+      <span hidden data-swatch="muted" className={css({ color: 'fg.muted' })} />
     </main>
   )
 }
@@ -97,6 +113,21 @@ const meta = {
     await expect(canvas.getByText('Current, no select')).toHaveAttribute('aria-current', 'true')
     await expect(within(snoozed).getByText('Snoozed until 9:00')).toBeInTheDocument()
     await expect(within(running).getByText('Working')).toBeInTheDocument()
+    // The age is fg.subtle (Figma #4a5675), but fg.muted on a selected or running row (surface.selected)
+    // and on a snoozed row, where the 0.85 opacity would take fg.subtle under 4.5:1.
+    const colourOf = (el: Element | null) => {
+      if (el === null) throw new Error('no element')
+      return getComputedStyle(el).color
+    }
+    const subtle = colourOf(canvasElement.querySelector('[data-swatch="subtle"]'))
+    const muted = colourOf(canvasElement.querySelector('[data-swatch="muted"]'))
+    const age = (row: HTMLElement) => colourOf(row.querySelector('.list-row__trailing'))
+    await expect(age(approval)).toBe(subtle)
+    await expect([age(question), age(running), age(snoozed)]).toEqual([muted, muted, muted])
+    // A tags line in a row follows the same rule.
+    const tags = (title: string) => colourOf(rowOf(title).querySelector('.tags-line__root'))
+    await expect(tags('Tagged')).toBe(subtle)
+    await expect([tags('Tagged and selected'), tags('Tagged and snoozed'), tags('Tagged and running')]).toEqual([muted, muted, muted])
     // A sidebar row has 24 px at the start and one line of title with an ellipsis.
     const chat = rowOf(/^Build the list row/)
     await expect(getComputedStyle(chat).paddingLeft).toBe('24px')

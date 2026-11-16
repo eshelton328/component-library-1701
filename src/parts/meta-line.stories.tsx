@@ -16,6 +16,7 @@ const swatches = {
   border: css({ bg: 'border.default' }),
   default: css({ bg: 'fg.default' }),
   muted: css({ bg: 'fg.muted' }),
+  subtle: css({ bg: 'fg.subtle' }),
   issue: css({ bg: 'accent.discuss' }),
   skill: css({ bg: 'kind.skill' }),
   agent: css({ bg: 'kind.agent' }),
@@ -206,7 +207,8 @@ const meta = {
     const items = within(list).getAllByRole('listitem')
     await expect(items.map((i) => i.textContent)).toEqual(['global/planning', '·project/ncc-1701/the-bridge'])
     await expect(list.querySelector('.tags-line__separator')).toHaveAttribute('aria-hidden', 'true')
-    await expect(getComputedStyle(list).color).toBe(swatch('muted'))
+    // Figma draws the tags in #4a5675 (346:343): fg.subtle.
+    await expect(getComputedStyle(list).color).toBe(swatch('subtle'))
     await expect(canvas.getByTestId('tags-empty')).toBeEmptyDOMElement()
   },
 } satisfies Meta<typeof Family>

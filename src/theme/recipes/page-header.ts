@@ -22,7 +22,8 @@ export const pageHeader = defineSlotRecipe({
   },
   variants: {
     size: {
-      pane: { title: { textStyle: 'paneTitle' }, count: { textStyle: 'mono' } },
+      // The Inbox pane count (346:149) is #4a5675; the page and phone counts (425:31, 429:53) are #8a97b8.
+      pane: { title: { textStyle: 'paneTitle' }, count: { textStyle: 'mono', color: 'fg.subtle' } },
       page: { title: { textStyle: 'title' }, count: { textStyle: 'body' } },
       phone: { title: { textStyle: 'heading' }, count: { textStyle: 'body' } },
     },

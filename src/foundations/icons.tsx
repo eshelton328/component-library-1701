@@ -638,3 +638,129 @@ export function ArrowRightIcon(props: IconProps) {
     </Svg>
   )
 }
+
+// The icons below fill the gaps the screen rebuild found: the list toolbars
+// of Artifacts and Toolkit (sort, filter, refresh, list), the preview footer
+// (external link), the undo toast, the Toolkit item pages (chart, clock,
+// cpu, book) and the More drawer (brain). Each path is the Figma export of
+// its node, scaled to the 24 grid. Content icons take the 2 stroke; Brain is
+// a navigation item and takes 1.8, like Toolkit and Artifacts.
+
+/** Sort: three lines that get shorter. Figma node 425:63, drawn at 15 px and scaled to 24. */
+export function SortIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M3 6H21M6 12H18M10 18H14" />
+    </Svg>
+  )
+}
+
+/**
+ * Filter: three centred lines that narrow like a funnel. Figma names the
+ * layer Frame (402:15414, in the Artifacts Filter button), drawn at 15 px
+ * and scaled to 24. It is close to Sort but narrower at each line.
+ */
+export function FilterIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 6H20M7 12H17M10 18H14" />
+    </Svg>
+  )
+}
+
+/**
+ * Refresh: a circle that turns back on itself, with its arrow head. Figma
+ * node 402:15376, drawn at 13 px and scaled to 24. Figma draws the same
+ * shape as `LoopIcon` (459:617); this one names the action.
+ */
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21 12C21.002 14.061 20.296 16.06 19.001 17.664C17.706 19.267 15.9 20.377 13.885 20.809C11.869 21.24 9.767 20.967 7.929 20.035C6.091 19.102 4.628 17.567 3.786 15.686C2.944 13.805 2.772 11.692 3.301 9.7C3.83 7.708 5.026 5.957 6.69 4.741C8.354 3.525 10.385 2.917 12.444 3.019C14.502 3.121 16.464 3.926 18 5.3L21 8" />
+      <path d="M16 8H21V3" />
+    </Svg>
+  )
+}
+
+/** A list view: three lines, each after a dot. Figma node 402:15424, drawn at 15 px and scaled to 24. */
+export function ListIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M9 6H20M9 12H20M9 18H20M4 6H4.01M4 12H4.01M4 18H4.01" />
+    </Svg>
+  )
+}
+
+/** Open elsewhere: an arrow out of a square. Figma names it ext. Figma node 403:506, drawn at 14 px and scaled to 24. */
+export function ExternalLinkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21 9V3H15M21 3L10 14M18 13V19C18 19.531 17.789 20.039 17.414 20.414C17.039 20.789 16.53 21 16 21H5C4.47 21 3.961 20.789 3.586 20.414C3.211 20.039 3 19.531 3 19V8C3 7.47 3.211 6.961 3.586 6.586C3.961 6.211 4.47 6 5 6H11" />
+    </Svg>
+  )
+}
+
+/** Undo: an arrow that points left and turns back down. Figma node 403:1960, drawn at 14 px and scaled to 24. */
+export function UndoIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M7.5 6L3.75 9.75L7.5 13.5M4.5 9.75H14.25C15.642 9.75 16.978 10.303 17.962 11.288C18.947 12.272 19.5 13.608 19.5 15C19.5 16.392 18.947 17.728 17.962 18.712C16.978 19.697 15.642 20.25 14.25 20.25H10.5" />
+    </Svg>
+  )
+}
+
+/** A chart: three bars on two axes, for the Activity view. Figma node 457:9, drawn at 15 px and scaled to 24. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M3 3V21H21" />
+      <path d="M7 16V12M12 16V8M17 16V9" />
+    </Svg>
+  )
+}
+
+/**
+ * A clock, for when a rule loads. Figma node 427:629, drawn at 16 px and
+ * scaled to 24. Larger in its face than `SnoozeIcon` (346:205).
+ */
+export function ClockIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 21C16.971 21 21 16.971 21 12C21 7.029 16.971 3 12 3C7.029 3 3 7.029 3 12C3 16.971 7.029 21 12 21Z" />
+      <path d="M12 7V12L15 14" />
+    </Svg>
+  )
+}
+
+/** A model or processor: a chip with pins. Figma node 433:531, drawn at 14 px and scaled to 24. */
+export function CpuIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M17 5H7C5.895 5 5 5.895 5 7V17C5 18.104 5.895 19 7 19H17C18.104 19 19 18.104 19 17V7C19 5.895 18.104 5 17 5Z" />
+      <path d="M9 2V5M15 2V5M9 19V22M15 19V22M2 9H5M2 15H5M19 9H22M19 15H22M9 9H15V15H9V9Z" />
+    </Svg>
+  )
+}
+
+/**
+ * A book. Figma node 464:398, drawn at 14 px and scaled to 24. The second
+ * path is rounded to whole numbers on the 24 grid (Figma's 19.502 becomes
+ * 19.5); the change is under 0.003 px.
+ */
+export function BookIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 19.5C4 18.837 4.263 18.201 4.732 17.732C5.201 17.263 5.837 17 6.5 17H20V3H6.5C5.837 3 5.201 3.263 4.732 3.732C4.263 4.201 4 4.837 4 5.5V19.5Z" />
+      <path d="M4 19.5C4 20.163 4.263 20.799 4.732 21.268C5.201 21.737 5.837 22 6.5 22H20V17" />
+    </Svg>
+  )
+}
+
+/** The brain, in the More drawer: two lobes. Figma node 415:341, drawn at 20 px and scaled to 24. */
+export function BrainIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="1.8">
+      <path d="M12 5C12 4.205 11.684 3.442 11.122 2.879C10.559 2.316 9.796 2 9 2C8.205 2 7.442 2.316 6.879 2.879C6.316 3.442 6 4.205 6 5C5.441 5.043 4.905 5.242 4.453 5.573C4.001 5.905 3.651 6.357 3.443 6.878C3.235 7.398 3.177 7.967 3.275 8.519C3.374 9.071 3.625 9.584 4 10C3.625 10.417 3.374 10.93 3.275 11.482C3.177 12.034 3.235 12.603 3.443 13.123C3.651 13.644 4.001 14.096 4.453 14.427C4.905 14.759 5.441 14.958 6 15C6 15.796 6.316 16.559 6.879 17.122C7.442 17.684 8.205 18 9 18C9.796 18 10.559 17.684 11.122 17.122C11.684 16.559 12 15.796 12 15M12 5V15M12 5C12 4.205 12.316 3.442 12.879 2.879C13.442 2.316 14.205 2 15 2C15.796 2 16.559 2.316 17.122 2.879C17.684 3.442 18 4.205 18 5C18.559 5.043 19.095 5.242 19.547 5.573C19.999 5.905 20.349 6.357 20.557 6.878C20.766 7.398 20.824 7.967 20.725 8.519C20.627 9.071 20.376 9.584 20 10C20.376 10.417 20.627 10.93 20.725 11.482C20.824 12.034 20.766 12.603 20.557 13.123C20.349 13.644 19.999 14.096 19.547 14.427C19.095 14.759 18.559 14.958 18 15C18 15.796 17.684 16.559 17.122 17.122C16.559 17.684 15.796 18 15 18C14.205 18 13.442 17.684 12.879 17.122C12.316 16.559 12 15.796 12 15" />
+    </Svg>
+  )
+}

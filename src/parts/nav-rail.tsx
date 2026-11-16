@@ -20,7 +20,10 @@ export type NavRailProps = {
   selected?: string | undefined
   /** Called with the value of the item the user picks. The app does the navigation. */
   onSelect?: ((value: string) => void) | undefined
-  /** The logo at the top, such as a home link; a line separates it from the items. */
+  /**
+   * The logo at the top, such as a home link around `<Logo title="Span" />`
+   * (Figma `logo · Span (home)`); a line separates it from the items.
+   */
   logo?: ReactNode
   /** The accessible name of the navigation landmark; "Main" when not set. */
   label?: string | undefined

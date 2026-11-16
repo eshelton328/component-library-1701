@@ -5,6 +5,7 @@
 ```ts
 
 import { BackdropVariantProps } from '../../styled-system/recipes';
+import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
@@ -66,6 +67,15 @@ export type BackRowProps = {
     backLabel?: string | undefined;
     onBack?: (() => void) | undefined;
     children?: ReactNode;
+};
+
+// @public
+export function Badge(input: BadgeProps): JSX.Element;
+
+// @public (undocumented)
+export type BadgeProps = Scalar<BadgeVariantProps> & {
+    label: string;
+    icon?: ReactNode;
 };
 
 // @public (undocumented)

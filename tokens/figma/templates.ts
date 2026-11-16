@@ -118,13 +118,15 @@ const effects = await figma.getLocalEffectStylesAsync();
 const effectByName = new Map(effects.map(s => [s.name, s]));
 const effectTwins = effects.filter(s => effects.some(o => o !== s && o.name === s.name) && EFFECTS.some(d => d.name === s.name));
 if (effectTwins.length) throw new Error('Effect styles with the same name: ' + effectTwins.map(s => s.name + ' ' + s.id).join(', '));
+// Find every Color variable before the first write, so a missing one changes nothing.
+const missing = EFFECTS.filter(d => !colorVars.has(d.colorVariable)).map(d => d.colorVariable);
+if (missing.length) throw new Error('Missing Color variable ' + missing.join(', '));
 let effectsCreated = 0, effectsUpdated = 0;
 for (const d of EFFECTS) {
   const cv = colorVars.get(d.colorVariable);
-  if (!cv) throw new Error('Missing Color variable ' + d.colorVariable);
   let s = effectByName.get(d.name);
   if (!s) { s = figma.createEffectStyle(); s.name = d.name; effectsCreated++; } else effectsUpdated++;
-  const shadow = { type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 1 }, offset: { x: d.offsetX, y: d.offsetY }, radius: d.radius, spread: d.spread, visible: true, blendMode: 'NORMAL', showShadowBehindNode: false };
+  const shadow = { type: d.type, color: { r: 0, g: 0, b: 0, a: 1 }, offset: { x: d.offsetX, y: d.offsetY }, radius: d.radius, spread: d.spread, visible: true, blendMode: 'NORMAL', showShadowBehindNode: false };
   s.effects = [figma.variables.setBoundVariableForEffect(shadow, 'color', cv)];
   s.description = d.description || '';
 }
@@ -164,11 +166,13 @@ for (const s of await figma.getLocalTextStylesAsync()) {
 }
 for (const s of await figma.getLocalEffectStylesAsync()) {
   // A bound colour is hashed by its variable's name; that variable's values are hashed above.
+  // Blurs, noise and textures have other fields, and some no radius: a missing field hashes as empty.
+  const num = x => typeof x === 'number' ? f4(x) : '';
   const fx = s.effects.map(e => {
     const bound = e.boundVariables || {};
     const shadow = e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW';
-    const colour = !shadow ? '' : bound.color ? '@' + (byId.get(bound.color.id)?.name ?? '?') : [e.color.r, e.color.g, e.color.b, e.color.a].map(f4).join(',');
-    return [e.type, shadow ? f4(e.offset.x) : '', shadow ? f4(e.offset.y) : '', f4(e.radius), shadow ? f4(e.spread || 0) : '', e.visible ? 1 : 0, e.blendMode || '', e.showShadowBehindNode ? 1 : 0, Object.keys(bound).sort().join(','), colour].join('|');
+    const colour = !shadow || !e.color ? '' : bound.color ? '@' + (byId.get(bound.color.id)?.name ?? '?') : [e.color.r, e.color.g, e.color.b, e.color.a].map(f4).join(',');
+    return [e.type, shadow ? num(e.offset?.x) : '', shadow ? num(e.offset?.y) : '', num(e.radius), shadow ? num(e.spread || 0) : '', e.visible ? 1 : 0, e.blendMode || '', e.showShadowBehindNode ? 1 : 0, Object.keys(bound).sort().join(','), colour].join('|');
   });
   const key = 'effect|' + s.name;
   out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.effects.length, ...fx, s.description || ''].join('|'));

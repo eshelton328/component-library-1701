@@ -36,9 +36,10 @@ export type TextStyle = {
   letterSpacingPx: number
   textCase: TextCase
 }
-/** A drop shadow; its colour comes from the Color variable colorVariable. */
+/** A drop or inner shadow; its colour comes from the Color variable colorVariable. */
 export type EffectStyle = {
   name: string
+  type: 'DROP_SHADOW' | 'INNER_SHADOW'
   description: string
   colorVariable: string
   offsetX: number
@@ -162,8 +163,11 @@ export function exportTokens(src: TokenSources): FigmaTokens {
         colourVars.set(cname, c)
         ;(c.aliases ??= {})[capital(scheme)] = name
         // One effect style serves both schemes, so its geometry must match.
+        const inset = val['inset'] ?? false
+        if (typeof inset !== 'boolean') return fail(`${where} has an inset that is not true or false`)
         const style: EffectStyle = {
           name: cname,
+          type: inset ? 'INNER_SHADOW' : 'DROP_SHADOW',
           description: '',
           colorVariable: cname,
           offsetX: px(val['offsetX'], where),
@@ -172,9 +176,9 @@ export function exportTokens(src: TokenSources): FigmaTokens {
           spread: px(val['spread'], where),
         }
         const before = effectStyles.get(cname)
-        const geometry = (e: EffectStyle) => [e.offsetX, e.offsetY, e.radius, e.spread].join(',')
+        const geometry = (e: EffectStyle) => [e.type, e.offsetX, e.offsetY, e.radius, e.spread].join(',')
         if (before !== undefined && geometry(before) !== geometry(style)) {
-          return fail(`${cname} has another offset, blur or spread in ${where}; a Figma effect style binds only its colour to a mode`)
+          return fail(`${cname} has another inset, offset, blur or spread in ${where}; a Figma effect style binds only its colour to a mode`)
         }
         // Only one scheme may describe the token; keep the first description found.
         const text = before?.description || description(tok)
@@ -333,7 +337,7 @@ export function expectedHashes(doc: FigmaTokens): Record<string, string> {
     out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, 'NONE', f4(0), f4(0), f4(0), 'NONE', '0', '0', 'AUTO', 'fontFamily', t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
   }
   for (const e of doc.effectStyles) {
-    out[`effect|${e.name}`] = fnv(['1', 'DROP_SHADOW', f4(e.offsetX), f4(e.offsetY), f4(e.radius), f4(e.spread), '1', 'NORMAL', '0', 'color', `@${e.colorVariable}`, escapeHtml(e.description)].join('|'))
+    out[`effect|${e.name}`] = fnv(['1', e.type, f4(e.offsetX), f4(e.offsetY), f4(e.radius), f4(e.spread), '1', 'NORMAL', '0', 'color', `@${e.colorVariable}`, escapeHtml(e.description)].join('|'))
   }
   return out
 }

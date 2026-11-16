@@ -486,6 +486,26 @@ export type MoreDrawerProps = {
 export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public
+export type NavItem = {
+    value: string;
+    label: string;
+    icon: ReactNode;
+    badge?: number | undefined;
+};
+
+// @public
+export function NavRail(input: NavRailProps): JSX.Element;
+
+// @public (undocumented)
+export type NavRailProps = {
+    items: readonly NavItem[];
+    selected?: string | undefined;
+    onSelect?: ((value: string) => void) | undefined;
+    logo?: ReactNode;
+    label?: string | undefined;
+};
+
+// @public
 export function NextIcon(props: IconProps): JSX.Element;
 
 // @public

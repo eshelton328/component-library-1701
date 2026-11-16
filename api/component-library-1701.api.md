@@ -37,6 +37,17 @@ export function AgentIcon(props: IconProps): JSX.Element;
 export function ApproveIcon(props: IconProps): JSX.Element;
 
 // @public
+export function BackRow(input: BackRowProps): JSX.Element;
+
+// @public (undocumented)
+export type BackRowProps = {
+    label: string;
+    backLabel?: string | undefined;
+    onBack?: (() => void) | undefined;
+    children?: ReactNode;
+};
+
+// @public
 export function BottomSheet(input: BottomSheetProps): JSX.Element;
 
 // @public

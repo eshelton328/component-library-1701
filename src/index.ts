@@ -63,3 +63,5 @@ export { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './parts/meta
 export type { KindBadgeProps, MetaChipProps, MetaLineProps, PathBadgeProps, TagsLineProps, ToolkitKind } from './parts/meta-line'
 export { GroupHeader } from './parts/group-header'
 export type { GroupHeaderProps } from './parts/group-header'
+export { BackRow } from './parts/back-row'
+export type { BackRowProps } from './parts/back-row'

@@ -40,6 +40,7 @@ function Lists() {
           <ListRow title="Review the dialog PR" meta="component-library-1701 · review" leading={<span className={tile} />} trailing="1h" snoozed onSelect={() => { onSelect('review') }}>
             Snoozed until 9:00
           </ListRow>
+          <ListRow title="Open and snoozed" meta="ncc-1701 · review" leading={<span className={tile} />} trailing="5h" selected snoozed onSelect={() => { onSelect('open-snoozed') }} />
           <ListRow
             title="Sync the tokens to Figma"
             meta="ncc-1701 · next step"
@@ -60,6 +61,7 @@ function Lists() {
           <ListRow variant="sidebar" title="Build the list row and its stories for the Data display group" meta="opus · 42%" leading={<span className={dot} />} trailing={<StatusPill tone="running" label="Running" />} onSelect={() => { onSelect('chat-1') }} />
           <ListRow variant="sidebar" title="Figma sync" meta="sonnet · 12%" leading={<span className={dot} />} trailing={<StatusPill tone="idle" label="Idle" />} selected onSelect={() => { onSelect('chat-2') }} />
           <ListRow variant="sidebar" title="A row with no select" meta="read only" leading={<span className={dot} />} />
+          <ListRow variant="sidebar" title="Current, no select" meta="read only" leading={<span className={dot} />} selected />
         </Stack>
       </div>
     </main>
@@ -89,6 +91,10 @@ const meta = {
     await expect(canvas.getByRole('button', { name: 'Which token for the chat row indent?' })).toHaveAttribute('aria-current', 'true')
     await expect(canvas.getByRole('button', { name: 'Sync the tokens to Figma' })).not.toHaveAttribute('aria-current')
     await expect(getComputedStyle(snoozed).opacity).toBe('0.85')
+    // A selected row is not dimmed, also when it is snoozed.
+    await expect(getComputedStyle(rowOf('Open and snoozed')).opacity).toBe('1')
+    // A selected row without onSelect still marks the current item.
+    await expect(canvas.getByText('Current, no select')).toHaveAttribute('aria-current', 'true')
     await expect(within(snoozed).getByText('Snoozed until 9:00')).toBeInTheDocument()
     await expect(within(running).getByText('Working')).toBeInTheDocument()
     // A sidebar row has 24 px at the start and one line of title with an ellipsis.
@@ -125,6 +131,9 @@ export const Behaviour: StoryObj<typeof meta> = {
     // The Approve button sits above it.
     const approve = within(approvalRow).getByRole('button', { name: 'Approve' }).getBoundingClientRect()
     await expect(document.elementFromPoint(approve.left + approve.width / 2, approve.top + approve.height / 2)?.closest('button')?.textContent).toBe('Approve')
+    // The space between Approve and Deny belongs to the row, not to the actions slot.
+    const deny = within(approvalRow).getByRole('button', { name: 'Deny' }).getBoundingClientRect()
+    await expect(document.elementFromPoint((approve.right + deny.left) / 2, approve.top + approve.height / 2)).toBe(approvalTitle)
     // A click on Approve runs the button and does not select the row.
     await userEvent.click(within(approvalRow).getByRole('button', { name: 'Approve' }))
     await expect(onApprove).toHaveBeenCalledTimes(1)

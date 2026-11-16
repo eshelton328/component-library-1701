@@ -22,7 +22,8 @@ export const listRow = defineSlotRecipe({
       // The keyboard focus of the title button rings the whole row.
       '&:has(.list-row__title:focus-visible)': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
-      '&[data-snoozed]': { opacity: 'snoozed' },
+      // A selected or running row is not dimmed: its text must keep 4.5:1 on the selected colour.
+      '&[data-snoozed]:not([data-selected]):not([data-running])': { opacity: 'snoozed' },
     },
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
@@ -42,7 +43,8 @@ export const listRow = defineSlotRecipe({
     meta: { textStyle: 'mono', color: 'fg.muted' },
     lines: { display: 'flex', flexDirection: 'column', gap: '4', textStyle: 'small', color: 'fg.muted' },
     // Buttons in the row, such as Approve. They sit above the title's ::after, so a click reaches them.
-    actions: { position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '6', pt: '4' },
+    // The space between the buttons passes clicks to the title cover; only the buttons take them.
+    actions: { position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '6', pt: '4', pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } },
     trailing: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6', flexShrink: '0', textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap' },
   },
   variants: {

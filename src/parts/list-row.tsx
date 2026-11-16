@@ -48,7 +48,7 @@ export function ListRow({ title, meta, leading, trailing, children, actions, sel
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
         {onSelect === undefined ? (
-          <TitleText>{title}</TitleText>
+          <TitleText aria-current={selected ? 'true' : undefined}>{title}</TitleText>
         ) : (
           <TitleButton type="button" aria-current={selected ? 'true' : undefined} onClick={onSelect}>
             {title}

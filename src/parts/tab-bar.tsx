@@ -1,5 +1,6 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { tabBar } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 import { badgeCount, badgeText, NavBadge, type NavItem } from './nav-item'
 
 const { withProvider, withContext } = createSlotRecipeContext(tabBar)
@@ -47,7 +48,9 @@ export function TabBar({ items, selected, onSelect, label = 'Main' }: TabBarProp
                   {item.icon}
                   {count === undefined ? null : <NavBadge count={count} />}
                 </Icon>
-                <Label>{item.label}</Label>
+                <Label>
+                  <TruncatedText>{item.label}</TruncatedText>
+                </Label>
                 {count === undefined ? null : <Hint>{badgeText(count)}</Hint>}
               </Item>
             </li>

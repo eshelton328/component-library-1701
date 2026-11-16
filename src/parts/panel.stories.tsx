@@ -4,6 +4,7 @@ import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Grid } from '../controls/layout'
 import { Panel } from './panel'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const tall = css({ h: 'shell.dialog', display: 'flex', flexDirection: 'column' })
@@ -192,5 +193,27 @@ export const Behaviour: StoryObj<typeof meta> = {
     body.scrollTop = 200
     await expect(body.scrollTop).toBe(200)
     await expect(header.getBoundingClientRect().top).toBe(top)
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/** A long title is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongTitle: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <Panel variant="list" title="skill-eval-round-with-held-out-cases-and-a-trigger-set" meta="7">
+          <p>Rows</p>
+        </Panel>
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const title = canvasElement.querySelector('.panel__title')
+    if (title === null) throw new Error('no title')
+    await expectCutText(title, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
+    await expect(within(canvasElement).getByRole('region', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }

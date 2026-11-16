@@ -37,7 +37,8 @@ export const backRow = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     icon: { w: 'icon.20', h: 'icon.20', flexShrink: '0' },
-    label: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long label and shows it whole in a tooltip.
+    label: { minW: '0' },
     // Conditional actions that render nothing leave no slot, so no gap.
     actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto', _empty: { display: 'none' } },
   },

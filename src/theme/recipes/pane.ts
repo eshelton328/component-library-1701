@@ -45,7 +45,8 @@ export const pane = defineSlotRecipe({
       borderBottomColor: 'border.default',
     },
     leading: { display: 'inline-flex', flexShrink: '0' },
-    title: { minW: '0', textStyle: 'label', color: 'fg.default', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long title and shows it whole in a tooltip.
+    title: { minW: '0', textStyle: 'label', color: 'fg.default' },
     meta: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0', textStyle: 'mono', color: 'fg.muted' },
     actions: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0', ml: 'auto' },
     body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto' },

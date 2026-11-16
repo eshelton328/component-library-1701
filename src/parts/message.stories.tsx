@@ -4,6 +4,7 @@ import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Stack } from '../controls/layout'
 import { Message } from './message'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'surface.pane', p: '24', w: 'shell.dialogLg' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -167,5 +168,27 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(copy).toHaveFocus()
     await userEvent.keyboard('{Enter}')
     await expect(onCopy).toHaveBeenCalledTimes(2)
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/** A long author name is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongName: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <Message name="skill-eval-round-with-held-out-cases-and-a-trigger-set" time="09:41">
+          Done.
+        </Message>
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const name = canvasElement.querySelector('.message__name')
+    if (name === null) throw new Error('no name')
+    await expectCutText(name, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
+    await expect(within(canvasElement).getByRole('article', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }

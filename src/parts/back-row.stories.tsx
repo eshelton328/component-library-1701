@@ -4,6 +4,7 @@ import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Stack } from '../controls/layout'
 import { BackRow } from './back-row'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const phone = css({ w: 'shell.popoverLg' })
@@ -144,5 +145,25 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onDiscuss).toHaveBeenCalledTimes(1)
     await expect(onBack).toHaveBeenCalledTimes(3)
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/** A long label is cut to one line and shows in full in a tooltip, on hover and on keyboard focus of the back button. */
+export const LongLabel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <BackRow label="skill-eval-round-with-held-out-cases-and-a-trigger-set" />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const back = within(canvasElement).getByRole('button', { name: 'Back to skill-eval-round-with-held-out-cases-and-a-trigger-set' })
+    const label = back.querySelector('.back-row__label')
+    if (label === null) throw new Error('no label')
+    await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set', back)
   },
 }

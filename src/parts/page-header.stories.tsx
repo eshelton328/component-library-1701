@@ -7,6 +7,7 @@ import { Stack } from '../controls/layout'
 import { ViewSwitch } from '../controls/view-switch'
 import { PageHeader } from './page-header'
 import { StatusPill } from './status-pill'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '12', borderRadius: 'xl', w: 'shell.listPane' })
@@ -122,7 +123,10 @@ const meta = {
     await expect(canvas.getByTestId('long').querySelector('.page-header__count')).toBeNull()
     await expect(canvas.getByTestId('long').querySelector('.page-header__actions')).toBeNull()
     const long = part('long', 'title')
-    await expect(getComputedStyle(long).textOverflow).toBe('ellipsis')
+    // The TruncatedText in the title cuts it.
+    const longText = long.querySelector('.truncated-text')
+    if (longText === null) throw new Error('no truncated text')
+    await expect(getComputedStyle(longText).textOverflow).toBe('ellipsis')
     await expect(long.getBoundingClientRect().right).toBeLessThanOrEqual(canvas.getByTestId('long').getBoundingClientRect().right)
   },
 } satisfies Meta<typeof Headers>
@@ -169,5 +173,25 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(canvas.getByRole('button', { name: 'Add' })).toHaveFocus()
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'Done' })).toHaveFocus()
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/** A long title is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongTitle: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <PageHeader title="skill-eval-round-with-held-out-cases-and-a-trigger-set" count={7} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const title = canvasElement.querySelector('.page-header__title')
+    if (title === null) throw new Error('no title')
+    await expectCutText(title, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
+    await expect(within(canvasElement).getByRole('heading', { level: 1, name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }

@@ -14,7 +14,8 @@ export const pageHeader = defineSlotRecipe({
   slots: ['root', 'title', 'count', 'countLabel', 'actions'],
   base: {
     root: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
-    title: { color: 'fg.default', m: '0', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long title and shows it whole in a tooltip.
+    title: { color: 'fg.default', m: '0', minW: '0' },
     count: { color: 'fg.muted', flexShrink: '0', fontVariantNumeric: 'tabular-nums' },
     countLabel: { srOnly: true },
     // Conditional actions that render nothing leave no slot, so no gap.

@@ -47,7 +47,8 @@ export const groupHeader = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     chevron: { display: 'inline-flex', flexShrink: '0' },
-    label: { minW: '0', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    // TruncatedText inside cuts a long label and shows it whole in a tooltip.
+    label: { minW: '0', textTransform: 'uppercase' },
     count: { flexShrink: '0', color: 'fg.subtle', fontVariantNumeric: 'tabular-nums' },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
     actions: {

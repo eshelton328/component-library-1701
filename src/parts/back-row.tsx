@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { backRow } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(backRow)
 const Root = withProvider('div', 'root')
@@ -32,7 +33,9 @@ export function BackRow({ label, backLabel, onBack, children }: BackRowProps) {
         <Icon viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.67" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
           <path d="M12.5 4.17 6.67 10l5.83 5.83" />
         </Icon>
-        <Label>{label}</Label>
+        <Label>
+          <TruncatedText>{label}</TruncatedText>
+        </Label>
       </Back>
       {children === undefined || children === null ? null : <Actions>{children}</Actions>}
     </Root>

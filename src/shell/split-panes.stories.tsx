@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Pane } from './pane'
 import { SplitPanes, type SplitPart } from './split-panes'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const frame = css({ h: 'shell.dialogLg', p: '10', bg: 'bg.canvas' })
 const body = css({ textStyle: 'body', color: 'fg.default', p: '12' })
@@ -268,5 +269,27 @@ export const KeepsState: StoryObj<typeof meta> = {
     await userEvent.click(canvas.getByRole('button', { name: 'Swap' }))
     await expect(canvas.getByRole('textbox', { name: 'Draft in bridge themes' })).toHaveValue('')
     await expect(canvas.getByRole('textbox', { name: 'Draft in brain git' })).toHaveValue('')
+  },
+}
+
+const narrowBox = css({ display: 'flex', w: 'shell.popoverSm', h: 'shell.popoverSm' })
+
+/** A long pane title is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongTitle: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={frame}>
+      <div className={narrowBox}>
+        <Pane title="skill-eval-round-with-held-out-cases-and-a-trigger-set" meta="Opus 5.5" focused>
+          <div className={body}>Chat</div>
+        </Pane>
+      </div>
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const title = canvasElement.querySelector('.pane__title')
+    if (title === null) throw new Error('no title')
+    await expectCutText(title, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
+    await expect(within(canvasElement).getByRole('region', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }

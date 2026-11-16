@@ -2,6 +2,7 @@ import { Children, Fragment, isValidElement, useId, type ReactNode } from 'react
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { message, type MessageVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 import { KindMark, type KindMarkKind } from './kind-mark'
 
 const { withProvider, withContext } = createSlotRecipeContext(message)
@@ -74,7 +75,9 @@ export function Message({ from = 'assistant', name, kind = 'claude', time, dateT
     <Root from="assistant" aria-labelledby={nameId}>
       <Author>
         <KindMark kind={kind} size="14" />
-        <Name id={nameId}>{shown}</Name>
+        <Name id={nameId}>
+          <TruncatedText>{shown}</TruncatedText>
+        </Name>
         {timeNode}
       </Author>
       <Body>{children}</Body>

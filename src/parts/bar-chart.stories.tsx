@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { GroupedBarChart, HorizontalBarChart } from './bar-chart'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const panel = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
@@ -170,7 +171,10 @@ const meta = {
     const longBar = long.querySelector('svg')
     if (longLabel === null || longBar === null) throw new Error('no long row')
     await expect(box(longLabel).width).toBeLessThanOrEqual(box(long).width / 2)
-    await expect(longLabel.scrollWidth).toBeGreaterThan(longLabel.clientWidth)
+    // The TruncatedText in the label cuts it.
+    const longText = longLabel.querySelector('.truncated-text')
+    if (longText === null) throw new Error('no truncated text')
+    await expect(longText.scrollWidth).toBeGreaterThan(longText.clientWidth)
     await expect(box(longBar).width).toBeGreaterThan(20)
     await expect(box(within(long).getAllByText('100,000 calls')[0] ?? long).right).toBeLessThanOrEqual(box(long).right)
     await expect(box(value).right).toBeLessThanOrEqual(box(full).right)
@@ -197,3 +201,22 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/** A long row label is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongLabel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <HorizontalBarChart label="Calls" rows={[{ label: 'skill-eval-round-with-held-out-cases-and-a-trigger-set', value: 12 }, { label: 'writer', value: 4 }]} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const label = within(canvasElement).getAllByRole('listitem')[0]?.firstElementChild
+    if (label === null || label === undefined) throw new Error('no label')
+    await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
+  },
+}

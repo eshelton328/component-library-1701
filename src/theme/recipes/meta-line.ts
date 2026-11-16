@@ -23,7 +23,8 @@ export const metaLine = defineSlotRecipe({
       p: '0',
     },
     leading: { display: 'inline-flex', flexShrink: '0' },
-    item: { minW: '0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    // A text item holds a TruncatedText, which cuts it and shows it whole in a tooltip; any other item is cut here.
+    item: { minW: '0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', '&:has(> .truncated-text)': { overflow: 'visible' } },
     separator: { flexShrink: '0' },
     trailing: { flexShrink: '0', ms: 'auto', whiteSpace: 'nowrap' },
   },

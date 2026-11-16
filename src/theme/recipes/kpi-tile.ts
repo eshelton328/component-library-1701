@@ -23,8 +23,9 @@ export const kpiTile = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
     },
-    value: { order: '1', textStyle: 'title', color: 'fg.default', fontVariantNumeric: 'tabular-nums', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    label: { order: '2', textStyle: 'small', color: 'fg.default', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    caption: { order: '3', textStyle: 'small', color: 'fg.muted', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long value, label or caption and shows it whole in a tooltip.
+    value: { order: '1', minW: '0', textStyle: 'title', color: 'fg.default', fontVariantNumeric: 'tabular-nums' },
+    label: { order: '2', minW: '0', textStyle: 'small', color: 'fg.default' },
+    caption: { order: '3', minW: '0', textStyle: 'small', color: 'fg.muted' },
   },
 })

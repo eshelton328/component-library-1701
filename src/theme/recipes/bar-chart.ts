@@ -53,7 +53,8 @@ export const horizontalBarChart = defineSlotRecipe({
       p: '0',
     },
     row: { display: 'grid', gridColumn: '1 / -1', gridTemplateColumns: 'subgrid', alignItems: 'center' },
-    label: { textStyle: 'small', color: 'fg.default', overflowX: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+    // TruncatedText inside cuts a long row label and shows it whole in a tooltip.
+    label: { minW: '0', textStyle: 'small', color: 'fg.default' },
     track: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
     // A bar with a value above 0 is at least 4 px long.
     svg: { display: 'block', flexShrink: '0', h: '10', overflow: 'visible', '&[data-filled]': { minW: '4' } },

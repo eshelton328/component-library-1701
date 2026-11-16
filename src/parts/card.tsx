@@ -33,9 +33,9 @@ export type CardProps = {
   leading?: ReactNode
   /** An element after the title, such as a `StatusPill` that says New. */
   badge?: ReactNode
-  /** A line under the title, such as a path. */
+  /** A line under the title, such as a path; a long one ends with an ellipsis and shows in full in a tooltip. */
   subtitle?: string | undefined
-  /** One line of description; a long one ends with an ellipsis. */
+  /** One line of description; a long one ends with an ellipsis and shows in full in a tooltip. */
   description?: string | undefined
   /** The meta row at the end, such as a kind, an age or counts. */
   meta?: ReactNode
@@ -60,7 +60,9 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
   const select = (event: MouseEvent<HTMLElement>) => {
     if (onSelect === undefined || !(event.target instanceof Element)) return
     const control = event.target.closest(INTERACTIVE)
-    if (control !== null && control !== event.currentTarget && !control.classList.contains('card__action')) return
+    // Cut text with its own tab stop (a TruncatedText) is no control: a click on it selects the card.
+    const ownControl = control !== null && control !== event.currentTarget && !control.classList.contains('card__action') && !control.classList.contains('truncated-text')
+    if (ownControl) return
     onSelect()
   }
   return (
@@ -82,10 +84,18 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
               </Title>
               {shown(badge) ? <Badge>{badge}</Badge> : null}
             </TitleRow>
-            {subtitle === undefined || subtitle === '' ? null : <Subtitle>{subtitle}</Subtitle>}
+            {subtitle === undefined || subtitle === '' ? null : (
+              <Subtitle>
+                <TruncatedText>{subtitle}</TruncatedText>
+              </Subtitle>
+            )}
           </Heading>
         </Header>
-        {description === undefined || description === '' ? null : <Description>{description}</Description>}
+        {description === undefined || description === '' ? null : (
+          <Description>
+            <TruncatedText>{description}</TruncatedText>
+          </Description>
+        )}
         {shown(meta) ? <Meta>{meta}</Meta> : null}
       </Body>
     </Root>

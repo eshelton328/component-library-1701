@@ -31,7 +31,8 @@ export const pathBadge = defineSlotRecipe({
       flexShrink: '0',
       '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
-    path: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', textStyle: 'mono' },
+    // TruncatedText inside cuts a long path and shows it whole in a tooltip.
+    path: { minW: '0', textStyle: 'mono' },
     trailing: { display: 'inline-flex', flexShrink: '0', '& svg': { w: 'icon.12!', h: 'icon.12!' } },
   },
 })

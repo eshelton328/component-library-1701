@@ -6,6 +6,7 @@ import { Stack } from '../controls/layout'
 import { ListRow } from './list-row'
 import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 const inboxList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
@@ -184,5 +185,34 @@ export const Behaviour: StoryObj<typeof meta> = {
     const row = title.closest('.list-row__root')
     if (!(row instanceof HTMLElement)) throw new Error('no row')
     await expect(getComputedStyle(row).outlineStyle).toBe('solid')
+  },
+}
+
+const longMeta = 'opus 5.5 · high effort · 42% of the context window'
+
+/**
+ * The sidebar meta is cut to one line and shows in full in a tooltip, on
+ * hover and as its own tab stop above the title button's hit area. A click
+ * on the cut meta still selects the row.
+ */
+const onSelectLong = fn()
+export const LongMeta: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={sidebar}>
+        <ListRow variant="sidebar" title="Figma sync" meta={longMeta} onSelect={onSelectLong} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onSelectLong.mockClear()
+    const meta = canvasElement.querySelector('.list-row__meta')
+    if (meta === null) throw new Error('no meta')
+    await expectCutText(meta, longMeta)
+    const text = meta.querySelector('.truncated-text')
+    if (!(text instanceof HTMLElement)) throw new Error('no truncated text')
+    await userEvent.click(text)
+    await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }

@@ -4,6 +4,7 @@ import { css } from '../../styled-system/css'
 import { Grid, Inline } from '../controls/layout'
 import { Card } from './card'
 import { StatusPill } from './status-pill'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const column = css({ w: 'shell.sidebar' })
@@ -234,8 +235,39 @@ export const Behaviour: StoryObj<typeof meta> = {
     // Chromium draws the 1.5 px borderWidths.strong outline at a whole pixel.
     await expect([ring.outlineStyle, ring.outlineColor]).toEqual(['solid', focus])
     await expect(Number.parseFloat(ring.outlineWidth)).toBeGreaterThan(0)
+    // The first card's description is cut, so it is a tab stop of its own (TruncatedText) before the next card.
+    await userEvent.tab()
+    await expect(canvas.getByText('A small Hono server that serves the bridge API to the prototype')).toHaveFocus()
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'agents-md' })).toHaveFocus()
     await expect(getComputedStyle(find(canvasElement, '[data-testid="artifact"] article')).outlineStyle).toBe('none')
+  },
+}
+
+const longSubtitle = 'toolkit/skills/skill-eval-round/references/held-out-cases'
+const longDescription = 'Runs one eval round with held-out cases, a trigger set and planted defects that check the graders'
+
+/**
+ * A long subtitle and description are each cut to one line and show in full
+ * in a tooltip, on hover and as their own tab stop, also in a card whose
+ * title button covers it. A click on the cut text still selects the card.
+ */
+const onSelectLong = fn()
+export const LongText: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={column}>
+        <Card title="skill-eval-round" subtitle={longSubtitle} description={longDescription} onSelect={onSelectLong} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onSelectLong.mockClear()
+    for (const [slot, full] of [['subtitle', longSubtitle], ['description', longDescription]] as const) {
+      await expectCutText(find(canvasElement, `.card__${slot}`), full)
+    }
+    await userEvent.click(hit(find(canvasElement, '.card__description .truncated-text')))
+    await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }

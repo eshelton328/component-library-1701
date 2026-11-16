@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Grid } from '../controls/layout'
 import { KpiTile } from './kpi-tile'
+import { expectCutText } from '../controls/tooltip.testing'
 
 // The tile row and the narrow tile stack 24 apart, so their borders never touch.
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -48,7 +49,9 @@ const meta = {
       return getComputedStyle(el).backgroundColor
     }
     // A definition list: the label is the term and the value its definition.
-    const term = canvas.getByText('calls')
+    // The TruncatedText inside the term holds the text.
+    const term = canvas.getByText('calls').closest('.kpi-tile__label')
+    if (!(term instanceof HTMLElement)) throw new Error('no term')
     await expect(term.tagName).toBe('DT')
     const tile = term.closest('dl')
     if (!(tile instanceof HTMLElement)) throw new Error('no tile')
@@ -92,3 +95,28 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+const longValue = '1,234,567,890,123,456,789,012'
+const longLabel = 'tokens read by every agent in the last thirty days'
+const longCaption = 'counted from the transcripts of every chat and headless run'
+
+/** A long value, label and caption are each cut to one line and show in full in a tooltip, on hover and on focus. */
+export const LongText: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <KpiTile value={longValue} label={longLabel} caption={longCaption} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const [slot, full] of [['value', longValue], ['label', longLabel], ['caption', longCaption]] as const) {
+      const el = canvasElement.querySelector(`.kpi-tile__${slot}`)
+      if (el === null) throw new Error(`no ${slot}`)
+      await expectCutText(el, full)
+    }
+  },
+}

@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline, Stack } from '../controls/layout'
 import { CopyIcon, FolderIcon, HookIcon, SkillIcon, TagIcon } from '../foundations/icons'
 import { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './meta-line'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
@@ -232,8 +233,9 @@ export const Behaviour: StoryObj<typeof meta> = {
     // The line and the chip stay inside the 240 px box, and the long text ends in an ellipsis.
     await expect(lineEl.getBoundingClientRect().right).toBeLessThanOrEqual(width)
     await expect(chipEl.getBoundingClientRect().right).toBeLessThanOrEqual(width)
-    const item = lineEl.querySelector('.meta-line__item')
-    const label = chipEl.querySelector('.meta-chip__label')
+    // The TruncatedText in the item and in the label cuts each.
+    const item = lineEl.querySelector('.meta-line__item .truncated-text')
+    const label = chipEl.querySelector('.meta-chip__label .truncated-text')
     if (!(item instanceof HTMLElement) || !(label instanceof HTMLElement)) throw new Error('no item or label')
     for (const el of [item, label]) {
       await expect(el.scrollWidth).toBeGreaterThan(el.clientWidth)
@@ -260,8 +262,11 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(gaps).toHaveTextContent(/^ncc-1701·Claude$/)
     await expect(gaps.querySelectorAll('.meta-line__item')).toHaveLength(2)
     await expect(gaps.querySelector('.meta-line__leading, .meta-line__trailing')).toBeNull()
-    // The full chip text is in its title.
-    await expect(chipEl).toHaveAttribute('title', 'a-very-long-project-name-that-does-not-fit-either')
+    // The full chip text shows in a tooltip on hover (it was the chip's title attribute before TruncatedText).
+    await userEvent.hover(label)
+    await waitFor(() => expect(within(document.body).queryByRole('tooltip')).toHaveTextContent('a-very-long-project-name-that-does-not-fit-either'))
+    await userEvent.unhover(label)
+    await waitFor(() => expect(within(document.body).queryByRole('tooltip')).toBeNull())
     await userEvent.click(canvas.getByRole('button', { name: 'Copy path' }))
     await expect(args.onCopy).toHaveBeenCalledOnce()
   },
@@ -338,6 +343,42 @@ export const Sizing: StoryObj<typeof meta> = {
     for (const el of Array.from(area.children)) {
       await expect(getComputedStyle(el).maxWidth).toBe('100%')
       await expect(el.getBoundingClientRect().right).toBeLessThanOrEqual(right)
+    }
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+/**
+ * A long meta item, chip label and path are each cut to one line and show
+ * in full in a tooltip, on hover and on keyboard focus.
+ */
+export const LongText: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Stack gap="8">
+        <div className={narrowBox}>
+          <MetaLine items={['item-skill-eval-round-with-held-out-cases-and-a-trigger-set', 'source']} trailing="4m" />
+        </div>
+        <div className={narrowBox}>
+          <MetaChip label="chip-skill-eval-round-with-held-out-cases-and-a-trigger-set" icon={<FolderIcon />} />
+        </div>
+        <div className={narrowBox}>
+          <PathBadge path="toolkit/skills/skill-eval-round-with-held-out-cases-and-a-trigger-set/" icon={<FolderIcon />} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    for (const [selector, full] of [
+      ['.meta-line__item', 'item-skill-eval-round-with-held-out-cases-and-a-trigger-set'],
+      ['.meta-chip__label', 'chip-skill-eval-round-with-held-out-cases-and-a-trigger-set'],
+      ['.path-badge__path', 'toolkit/skills/skill-eval-round-with-held-out-cases-and-a-trigger-set/'],
+    ] as const) {
+      const el = canvasElement.querySelector(selector)
+      if (el === null) throw new Error(`no ${selector}`)
+      await expectCutText(el, full)
     }
   },
 }

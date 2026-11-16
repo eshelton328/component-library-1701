@@ -1,5 +1,6 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { groupedBarChart, horizontalBarChart } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 
 /** The colour of a series or a bar: the accent, grey, or a status colour. */
 export type BarTone = 'accent' | 'muted' | 'running' | 'needsYou' | 'done' | 'danger'
@@ -166,7 +167,9 @@ export function HorizontalBarChart({ label, rows, max, tone = 'accent', formatVa
         const percent = `${String(Math.round(share * 10000) / 100)}%`
         return (
           <Row key={`${String(r)}:${row.label}`}>
-            <RowLabel>{row.label}</RowLabel>
+            <RowLabel>
+              <TruncatedText>{row.label}</TruncatedText>
+            </RowLabel>
             <Track>
               <HorizontalSvg width={percent} data-filled={share > 0 ? '' : undefined} aria-hidden="true" focusable="false">
                 {share > 0 ? <HorizontalBar data-tone={tone} x="0" y="0" width="100%" height="100%" /> : null}

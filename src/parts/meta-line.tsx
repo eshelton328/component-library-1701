@@ -11,6 +11,7 @@ import {
   type MetaLineVariantProps,
 } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 
 // React renders nothing for null, undefined, booleans and the empty string,
 // so a slot or item holding one of them is left out with its gap and separator.
@@ -36,7 +37,8 @@ export type MetaLineProps = Scalar<MetaLineVariantProps> & {
 
 /**
  * The meta line under a row or card title: muted mono text, with a "·"
- * between the items. Each item truncates when the line is too narrow.
+ * between the items. Each item truncates when the line is too narrow; a
+ * text item then shows in full in a tooltip.
  */
 export function MetaLine({ items, leading, trailing, icon }: MetaLineProps) {
   const shown = items.filter(present)
@@ -46,7 +48,7 @@ export function MetaLine({ items, leading, trailing, icon }: MetaLineProps) {
       {shown.map((item, i) => (
         <Fragment key={i}>
           {i > 0 ? <LineSeparator>·</LineSeparator> : null}
-          <LineItem>{item}</LineItem>
+          <LineItem>{typeof item === 'string' || typeof item === 'number' ? <TruncatedText>{String(item)}</TruncatedText> : item}</LineItem>
         </Fragment>
       ))}
       {present(trailing) ? <LineTrailing>{trailing}</LineTrailing> : null}
@@ -73,9 +75,11 @@ export type MetaChipProps = Scalar<MetaChipVariantProps> & {
  */
 export function MetaChip({ label, icon, size, tone }: MetaChipProps) {
   return (
-    <ChipRoot size={size} tone={tone} title={label}>
+    <ChipRoot size={size} tone={tone}>
       {present(icon) ? <ChipIcon>{icon}</ChipIcon> : null}
-      <ChipLabel>{label}</ChipLabel>
+      <ChipLabel>
+        <TruncatedText>{label}</TruncatedText>
+      </ChipLabel>
     </ChipRoot>
   )
 }
@@ -100,7 +104,9 @@ export function PathBadge({ path: value, icon, trailing }: PathBadgeProps) {
   return (
     <PathRoot>
       {present(icon) ? <PathIcon>{icon}</PathIcon> : null}
-      <PathText title={value}>{value}</PathText>
+      <PathText>
+        <TruncatedText>{value}</TruncatedText>
+      </PathText>
       {present(trailing) ? <PathTrailing>{trailing}</PathTrailing> : null}
     </PathRoot>
   )

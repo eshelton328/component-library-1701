@@ -429,35 +429,35 @@ export default definePreset({
           "kindTint": {
             "agent": {
               "value": {
-                "base": "rgba(91, 75, 214, 0.14)",
+                "base": "rgba(91, 75, 214, 0.08)",
                 "_dark": "rgba(158, 143, 255, 0.14)"
               },
               "description": "Tint behind a toolkit agent mark, as on a kind tile or kind badge."
             },
             "hook": {
               "value": {
-                "base": "rgba(176, 33, 57, 0.14)",
+                "base": "rgba(176, 33, 57, 0.08)",
                 "_dark": "rgba(255, 154, 171, 0.14)"
               },
               "description": "Tint behind a toolkit hook mark, as on a kind tile or kind badge."
             },
             "rule": {
               "value": {
-                "base": "rgba(154, 74, 6, 0.14)",
+                "base": "rgba(154, 74, 6, 0.08)",
                 "_dark": "rgba(255, 184, 107, 0.14)"
               },
               "description": "Tint behind a toolkit rule mark, as on a kind tile or kind badge."
             },
             "skill": {
               "value": {
-                "base": "rgba(14, 106, 133, 0.14)",
+                "base": "rgba(14, 106, 133, 0.08)",
                 "_dark": "rgba(94, 225, 255, 0.14)"
               },
               "description": "Tint behind a toolkit skill mark, as on a kind tile or kind badge."
             },
             "workflow": {
               "value": {
-                "base": "rgba(22, 115, 63, 0.14)",
+                "base": "rgba(22, 115, 63, 0.08)",
                 "_dark": "rgba(110, 231, 168, 0.14)"
               },
               "description": "Tint behind a toolkit workflow mark, as on a kind tile or kind badge."

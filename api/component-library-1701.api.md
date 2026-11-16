@@ -251,12 +251,22 @@ export function CloseIcon(props: IconProps): JSX.Element;
 export function CodeIcon(props: IconProps): JSX.Element;
 
 // @public
+export type CodeKind = 'keyword' | 'string' | 'comment' | 'number' | 'function';
+
+// @public
 export function CodeLines(input: CodeLinesProps): JSX.Element;
 
 // @public (undocumented)
 export type CodeLinesProps = {
     lines: readonly string[];
+    segments?: readonly (readonly CodeSegment[] | undefined)[] | undefined;
     start?: number | undefined;
+};
+
+// @public
+export type CodeSegment = {
+    text: string;
+    kind?: CodeKind | undefined;
 };
 
 // @public

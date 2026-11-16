@@ -318,6 +318,43 @@ export default definePreset({
               "description": "The border of a selected or running item."
             }
           },
+          "code": {
+            "comment": {
+              "value": {
+                "base": "#16733f",
+                "_dark": "#6ee7a8"
+              },
+              "description": "Syntax colour for comments and the shebang line in CodeLines (Toolkit D6 432:2307). Only for code text, never for labels or marks."
+            },
+            "function": {
+              "value": {
+                "base": "#0e6a85",
+                "_dark": "#5ee1ff"
+              },
+              "description": "Syntax colour for function and command names in CodeLines. Only for code text, never for labels or marks."
+            },
+            "keyword": {
+              "value": {
+                "base": "#5b4bd6",
+                "_dark": "#9e8fff"
+              },
+              "description": "Syntax colour for keywords in CodeLines (if, return, import). Only for code text, never for labels or marks."
+            },
+            "number": {
+              "value": {
+                "base": "#b02139",
+                "_dark": "#ff9aab"
+              },
+              "description": "Syntax colour for numbers and constants in CodeLines. Only for code text, never for labels or marks."
+            },
+            "string": {
+              "value": {
+                "base": "#9a4a06",
+                "_dark": "#ffb86b"
+              },
+              "description": "Syntax colour for string literals in CodeLines. Only for code text, never for labels or marks."
+            }
+          },
           "diff": {
             "added": {
               "bg": {

@@ -87,3 +87,5 @@ export type {
   ProposalSectionProps,
   ProposalTone,
 } from './parts/proposal-block'
+export { Message } from './parts/message'
+export type { MessageFrom, MessageProps } from './parts/message'

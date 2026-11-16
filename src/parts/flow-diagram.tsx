@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ArrowUpIcon } from '../foundations/icons'
+import { ArrowDownIcon, ArrowRightIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { chatPath, flowDiagram } from '../../styled-system/recipes'
 import type { ToolkitKind } from './meta-line'
@@ -88,7 +88,7 @@ export function FlowDiagram({ label, steps }: FlowDiagramProps) {
             </Card>
             {i < steps.length - 1 ? (
               <Connector aria-hidden="true">
-                <ArrowUpIcon size="12" />
+                <ArrowDownIcon size="12" />
               </Connector>
             ) : null}
           </Step>
@@ -144,7 +144,7 @@ export function ChatPath({ title, description, steps }: ChatPathProps) {
             </Pill>
             {i < steps.length - 1 ? (
               <Arrow aria-hidden="true">
-                <ArrowUpIcon size="12" />
+                <ArrowRightIcon size="12" />
               </Arrow>
             ) : null}
           </ChatStep>

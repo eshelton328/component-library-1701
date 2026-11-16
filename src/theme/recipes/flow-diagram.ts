@@ -93,7 +93,6 @@ export const flowDiagram = defineSlotRecipe({
       alignItems: 'center',
       h: 'icon.14',
       color: 'fg.muted',
-      '& svg': { transform: 'rotate(180deg)' },
     },
   },
 })
@@ -152,7 +151,7 @@ export const chatPath = defineSlotRecipe({
     },
     label: { textStyle: 'label', color: 'fg.default', minW: '0', overflowWrap: 'anywhere' },
     note: { textStyle: 'small', color: 'fg.muted', minW: '0', overflowWrap: 'anywhere' },
-    // An arrow pointing right (501:70): the up arrow turned a quarter.
-    arrow: { display: 'inline-flex', color: 'fg.muted', '& svg': { transform: 'rotate(90deg)' } },
+    // An arrow pointing right (501:70).
+    arrow: { display: 'inline-flex', color: 'fg.muted' },
   },
 })

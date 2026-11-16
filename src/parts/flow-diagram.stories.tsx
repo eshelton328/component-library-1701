@@ -195,8 +195,14 @@ const meta = {
     const arrows = chat.querySelectorAll('.chat-path__arrow')
     await expect(arrows).toHaveLength(3)
     await expect(style(arrows[0] ?? chat).color).toBe(swatch('muted'))
-    await expect(style(arrows[0]?.querySelector('svg') ?? chat).transform).toBe('matrix(0, 1, -1, 0, 0, 0)')
-    await expect(style(connector.querySelector('svg') ?? chat).transform).toBe('matrix(-1, 0, 0, -1, 0, 0)')
+    // Each arrow is drawn pointing its way (the down and right icons), not turned by CSS.
+    const arrowIcon = arrows[0]?.querySelector('svg') ?? chat
+    const connectorIcon = connector.querySelector('svg') ?? chat
+    await expect(arrowIcon.querySelector('path')?.getAttribute('d')).toBe('M5 12H19M12 5L19 12L12 19')
+    await expect(connectorIcon.querySelector('path')?.getAttribute('d')).toBe('M12 5V19M19 12L12 19L5 12')
+    for (const icon of [arrowIcon, connectorIcon]) {
+      await expect([style(icon).transform, box(icon).width, box(icon).height, style(icon).color]).toEqual(['none', 12, 12, swatch('muted')])
+    }
   },
 } satisfies Meta<typeof Flow>
 export default meta

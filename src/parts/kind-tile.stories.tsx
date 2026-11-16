@@ -13,17 +13,18 @@ const toolkit = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const satisfie
 const kinds = [...inbox, ...toolkit]
 
 // The token each kind's tint and icon should use.
-const expected: Record<KindTileKind, { bg: string | null; fg: string }> = {
+const expected: Record<KindTileKind, { bg: string; fg: string }> = {
   approval: { bg: css({ bg: 'status.needsYou.bg' }), fg: css({ color: 'status.needsYou.fg' }) },
   question: { bg: css({ bg: 'status.needsYou.bg' }), fg: css({ color: 'status.needsYou.fg' }) },
   review: { bg: css({ bg: 'status.needsYou.bg' }), fg: css({ color: 'status.needsYou.fg' }) },
   action: { bg: css({ bg: 'status.needsYou.bg' }), fg: css({ color: 'status.needsYou.fg' }) },
   next: { bg: css({ bg: 'status.working.bg' }), fg: css({ color: 'status.working.fg' }) },
-  skill: { bg: css({ bg: 'status.working.bg' }), fg: css({ color: 'kind.skill' }) },
-  agent: { bg: css({ bg: 'status.running.bg' }), fg: css({ color: 'kind.agent' }) },
-  rule: { bg: css({ bg: 'status.needsYou.bg' }), fg: css({ color: 'kind.rule' }) },
-  workflow: { bg: css({ bg: 'status.done.bg' }), fg: css({ color: 'kind.workflow' }) },
-  hook: { bg: null, fg: css({ color: 'kind.hook' }) },
+  // The toolkit kinds sit on their own kindTint (d-074).
+  skill: { bg: css({ bg: 'kindTint.skill' }), fg: css({ color: 'kind.skill' }) },
+  agent: { bg: css({ bg: 'kindTint.agent' }), fg: css({ color: 'kind.agent' }) },
+  rule: { bg: css({ bg: 'kindTint.rule' }), fg: css({ color: 'kind.rule' }) },
+  workflow: { bg: css({ bg: 'kindTint.workflow' }), fg: css({ color: 'kind.workflow' }) },
+  hook: { bg: css({ bg: 'kindTint.hook' }), fg: css({ color: 'kind.hook' }) },
 }
 
 function Tiles() {
@@ -60,7 +61,7 @@ function Tiles() {
         {kinds.map((k) => (
           <span key={k}>
             <span data-testid={`fg-${k}`} className={expected[k].fg} />
-            {expected[k].bg === null ? null : <span data-testid={`bg-${k}`} className={expected[k].bg} />}
+            <span data-testid={`bg-${k}`} className={expected[k].bg} />
           </span>
         ))}
       </div>
@@ -93,8 +94,7 @@ const meta = {
       // The tint and the icon colour come from the kind's tokens.
       await expect(style.color).toBe(getComputedStyle(canvas.getByTestId(`fg-${k}`)).color)
       await expect(getComputedStyle(svg).stroke).toBe(style.color)
-      const bg = expected[k].bg === null ? 'rgba(0, 0, 0, 0)' : getComputedStyle(canvas.getByTestId(`bg-${k}`)).backgroundColor
-      await expect(style.backgroundColor).toBe(bg)
+      await expect(style.backgroundColor).toBe(getComputedStyle(canvas.getByTestId(`bg-${k}`)).backgroundColor)
       await expect(svg.getAttribute('aria-hidden')).toBe('true')
     }
     for (const k of toolkit) {

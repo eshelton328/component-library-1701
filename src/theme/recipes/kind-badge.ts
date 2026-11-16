@@ -2,8 +2,8 @@ import { defineSlotRecipe } from '@pandacss/dev'
 
 // The kind badge of the Toolkit item page (D3 427:252): a pill with the
 // kind icon (13 px, 500:8143) and label in `Workbench/small` and the kind
-// colour. Padding 9/4, gap 6, no border. Figma fills it with the kind
-// colour at 0.14; no token holds a kind tint, so the badge has no fill.
+// colour. Padding 9/4, gap 6, no border, filled with the kind's `kindTint`
+// (d-074).
 export const kindBadge = defineSlotRecipe({
   className: 'kind-badge',
   jsx: ['KindBadge'],
@@ -29,11 +29,11 @@ export const kindBadge = defineSlotRecipe({
   },
   variants: {
     kind: {
-      skill: { root: { color: 'kind.skill' } },
-      agent: { root: { color: 'kind.agent' } },
-      rule: { root: { color: 'kind.rule' } },
-      workflow: { root: { color: 'kind.workflow' } },
-      hook: { root: { color: 'kind.hook' } },
+      skill: { root: { bg: 'kindTint.skill', color: 'kind.skill' } },
+      agent: { root: { bg: 'kindTint.agent', color: 'kind.agent' } },
+      rule: { root: { bg: 'kindTint.rule', color: 'kind.rule' } },
+      workflow: { root: { bg: 'kindTint.workflow', color: 'kind.workflow' } },
+      hook: { root: { bg: 'kindTint.hook', color: 'kind.hook' } },
     },
   },
   defaultVariants: { kind: 'skill' },

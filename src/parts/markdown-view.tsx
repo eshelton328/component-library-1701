@@ -47,17 +47,25 @@ export function MarkdownView({ children, highlight }: MarkdownViewProps) {
 
 type WithChildren = { children?: ReactNode }
 
-// Walks the element tree and colours each fenced block. Other elements keep their props.
+// Walks the element tree and colours each fenced block. It returns the same
+// node when nothing in it changed, and clones an element only to give it new
+// children of the same shape: a single child stays single, so a component
+// that calls `Children.only` still works.
 function highlightFences(node: ReactNode, highlight: MarkdownHighlight): ReactNode {
-  return Children.map(node, (child) => {
-    if (!isValidElement<WithChildren>(child)) return child
-    if (child.type === 'pre') {
-      const fenced = highlightFence(child, highlight)
-      if (fenced !== undefined) return fenced
-    }
-    if (child.props.children === undefined) return child
-    return cloneElement(child, undefined, highlightFences(child.props.children, highlight))
-  })
+  if (Array.isArray(node)) {
+    const items: readonly ReactNode[] = node
+    const next = items.map((item) => highlightFences(item, highlight))
+    return next.some((item, i) => item !== items[i]) ? next : items
+  }
+  if (!isValidElement<WithChildren>(node)) return node
+  if (node.type === 'pre') {
+    const fenced = highlightFence(node, highlight)
+    if (fenced !== undefined) return fenced
+  }
+  const children = node.props.children
+  if (children === undefined) return node
+  const next = highlightFences(children, highlight)
+  return next === children ? node : cloneElement(node, undefined, next)
 }
 
 function highlightFence(pre: ReactElement<WithChildren>, highlight: MarkdownHighlight): ReactNode {
@@ -73,7 +81,8 @@ function highlightFence(pre: ReactElement<WithChildren>, highlight: MarkdownHigh
   const segments = highlight(body, lang)
   if (segments === undefined) return undefined
   const lines = body.split('\n')
-  const pieces = lines.flatMap((line, i) => [...codePieces(line, segments[i]), i < lines.length - 1 ? '\n' : ''])
+  // Keys carry the line number, so pieces of different lines never share one.
+  const pieces = lines.flatMap((line, i) => [...codePieces(line, segments[i], `${String(i)}:`), i < lines.length - 1 ? '\n' : ''])
   if (body !== text) pieces.push('\n')
-  return cloneElement(pre, undefined, cloneElement(code, undefined, ...pieces))
+  return cloneElement(pre, undefined, cloneElement(code, undefined, pieces))
 }

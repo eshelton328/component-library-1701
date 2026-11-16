@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Children, useState, type ReactNode } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { CodeLines, type CodeKind, type CodeSegment } from './code-lines'
@@ -364,3 +365,87 @@ const highlightedPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ can
 
 export const HighlightedDark: StoryObj<typeof meta> = { render: () => <Highlighted />, play: highlightedPlay, globals: { mode: 'dark' } }
 export const HighlightedLight: StoryObj<typeof meta> = { render: () => <Highlighted />, play: highlightedPlay, globals: { mode: 'light' } }
+
+// Colours every word as a keyword, so each line has several coloured pieces.
+const everyWord: MarkdownHighlight = (code) => code.split('\n').map((line) => line.split(/( )/).map((text) => (text === ' ' ? { text } : { text, kind: 'keyword' })))
+
+function Updating() {
+  const [code, setCode] = useState('a b\nc d')
+  return (
+    <main className={page}>
+      <button
+        type="button"
+        onClick={() => {
+          setCode('a\nc')
+        }}
+      >
+        Shorten
+      </button>
+      <div className={panel} data-testid="updating">
+        <MarkdownView highlight={everyWord}>
+          <pre>
+            <code className="language-txt">{`${code}\n`}</code>
+          </pre>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+/** When the code changes, each coloured piece shows its new text: keys never repeat across lines. */
+export const HighlightedUpdate: StoryObj<typeof meta> = {
+  render: () => <Updating />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const code = pick(canvas.getByTestId('updating'), 'pre > code')
+    await expect(code.textContent).toBe('a b\nc d\n')
+    await userEvent.click(canvas.getByRole('button', { name: 'Shorten' }))
+    await expect(pick(canvas.getByTestId('updating'), 'pre > code').textContent).toBe('a\nc\n')
+    await expect(all(canvas.getByTestId('updating'), '[data-kind]').map((el) => el.textContent)).toEqual(['a', 'c'])
+  },
+}
+
+// A component that accepts exactly one child, as some Markdown renderers' wrappers do.
+function OnlyChild({ children }: { children: ReactNode }) {
+  return <div data-testid="only">{Children.only(children)}</div>
+}
+
+function Wrapped() {
+  return (
+    <main className={page}>
+      <div className={panel} data-testid="wrapped">
+        <MarkdownView highlight={demoHighlight}>
+          <OnlyChild>
+            <pre>
+              <code className="language-ts">{`${tsFence}\n`}</code>
+            </pre>
+          </OnlyChild>
+          <OnlyChild>
+            <pre>
+              <code className="language-bash">{`${bashFence}\n`}</code>
+            </pre>
+          </OnlyChild>
+          <OnlyChild>
+            <p>Plain text.</p>
+          </OnlyChild>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+/** A wrapper that calls `Children.only` still gets one child, coloured or not. */
+export const HighlightedSingleChild: StoryObj<typeof meta> = {
+  render: () => <Wrapped />,
+  play: async ({ canvasElement }) => {
+    const wrappers = within(canvasElement).getAllByTestId('only')
+    await expect(wrappers.length).toBe(3)
+    const [ts, bash, plain] = wrappers
+    if (ts === undefined || bash === undefined || plain === undefined) throw new Error('no wrappers')
+    await expect(pick(ts, '[data-kind="keyword"]').textContent).toBe('export')
+    await expect(pick(ts, 'pre > code').textContent).toBe(`${tsFence}\n`)
+    await expect(all(bash, '[data-kind]')).toEqual([])
+    await expect(pick(bash, 'pre > code').textContent).toBe(`${bashFence}\n`)
+    await expect(pick(plain, 'p').textContent).toBe('Plain text.')
+  },
+}

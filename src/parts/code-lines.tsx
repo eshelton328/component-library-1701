@@ -60,15 +60,16 @@ function matching(line: string, parts: readonly CodeSegment[] | undefined): read
  * `segment` slot of the `codeLines` recipe, the rest as plain text. The line
  * is plain when `parts` is missing or does not join to exactly `line`.
  * Shared by CodeLines and MarkdownView; not part of the package's API.
+ * `keyPrefix` keeps the keys unique when several lines share one parent.
  */
-export function codePieces(line: string, parts: readonly CodeSegment[] | undefined): ReactNode[] {
+export function codePieces(line: string, parts: readonly CodeSegment[] | undefined, keyPrefix = ''): ReactNode[] {
   const pieces = matching(line, parts)
   if (pieces === undefined) return [line]
   return pieces.map((part, j) =>
     part.kind === undefined ? (
       part.text
     ) : (
-      <span key={String(j)} className={segmentClass} data-kind={part.kind}>
+      <span key={`${keyPrefix}${String(j)}`} className={segmentClass} data-kind={part.kind}>
         {part.text}
       </span>
     ),

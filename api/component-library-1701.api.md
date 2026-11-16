@@ -82,6 +82,7 @@ export type BottomSheetProps = ({
     onOpenChange?: ((open: boolean) => void) | undefined;
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
+    size?: 'sm' | 'md' | undefined;
 };
 
 // @public

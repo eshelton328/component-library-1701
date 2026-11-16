@@ -135,6 +135,28 @@ export const UntitledDark: StoryObj<typeof meta> = {
 }
 export const UntitledLight: StoryObj<typeof meta> = { ...UntitledDark, globals: { mode: 'light' } }
 
+/** The Workbench M9 chat actions sheet (146:273): `size="sm"` gives it a 15 px SemiBold title. */
+export const SmallDark: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <BottomSheet size="sm" title="drift check" open>
+        <Stack gap="2">
+          <Button size="xl">Rename</Button>
+        </Stack>
+      </BottomSheet>
+    </main>
+  ),
+  play: async () => {
+    const sheet = await within(document.body).findByRole('dialog', { name: 'drift check' })
+    const title = getComputedStyle(within(sheet).getByText('drift check'))
+    // paneTitle: SemiBold 15/20 (146:276).
+    await expect([title.fontSize, title.fontWeight]).toEqual(['15px', '600'])
+    await expect(parseFloat(title.lineHeight)).toBeCloseTo(20, 0)
+  },
+  globals: { mode: 'dark' },
+}
+export const SmallLight: StoryObj<typeof meta> = { ...SmallDark, globals: { mode: 'light' } }
+
 // A sheet that opens with a label and gets its title later, as when its data arrives.
 function LateTitle() {
   const [title, setTitle] = useState<string | undefined>(undefined)

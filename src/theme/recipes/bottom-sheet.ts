@@ -59,8 +59,10 @@ export const bottomSheet = defineSlotRecipe({
   },
   variants: {
     size: {
-      // A sheet: Inbox M6, Artifacts M4, Workbench M9.
+      // A sheet: Inbox M6, Artifacts M4, Workbench T2.
       md: { content: { gap: '2', pt: '8' }, header: { pt: '10', pb: '8' }, title: { textStyle: 'subtitle' } },
+      // The Workbench M9 chat actions sheet (146:273), whose title is SemiBold 15 (146:276): `paneTitle`.
+      sm: { content: { gap: '2', pt: '8' }, header: { pt: '10', pb: '8' }, title: { textStyle: 'paneTitle' } },
       // The More drawer: Artifacts M8 (415:315) and Toolkit M4 (424:6940). Figma pt 9 takes `10` (d-072).
       // The grabber row has 6 below the grabber (415:316).
       lg: { content: { gap: '4', pt: '10' }, grabber: { mb: '6' }, header: { pt: '0', pb: '6' }, title: { textStyle: 'title' } },

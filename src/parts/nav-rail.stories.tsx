@@ -118,12 +118,14 @@ const meta = {
     await expect([b.borderTopWidth, b.borderTopColor]).toEqual(['2px', swatch('ring')])
     await expect(b.color).toBe(swatch('onAccent'))
     await expect([b.fontSize, b.fontWeight]).toEqual(['10px', '600'])
-    await expect([b.paddingLeft, b.paddingTop]).toEqual(['4px', '0px'])
+    await expect([b.paddingLeft, b.paddingTop]).toEqual(['2px', '0px'])
     const icon = slot(inbox, 'icon').getBoundingClientRect()
     const badgeBox = badge.getBoundingClientRect()
     await expect(badgeBox.left - icon.left).toBe(16)
     await expect(badgeBox.top - icon.top).toBe(-4)
     await expect(badgeBox.height).toBe(16)
+    // One digit makes a circle, not an oval.
+    await expect(badgeBox.width).toBe(16)
     // An idle item: no fill, label and icon in fg.muted, no aria-current.
     const home = canvas.getByRole('button', { name: 'Home' })
     await expect(home).not.toHaveAttribute('aria-current')

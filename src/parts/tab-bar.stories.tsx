@@ -111,6 +111,8 @@ const meta = {
     const badgeBox = badge.getBoundingClientRect()
     await expect(badgeBox.left - icon.left).toBe(16)
     await expect(badgeBox.top - icon.top).toBe(-4)
+    // One digit makes a 16 px circle, not an oval.
+    await expect([badgeBox.width, badgeBox.height]).toEqual([16, 16])
   },
 } satisfies Meta<typeof Phone>
 export default meta

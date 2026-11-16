@@ -1,11 +1,12 @@
 import type { ComponentProps } from 'react'
 import { styled } from '../../styled-system/jsx'
 import { button, type ButtonVariantProps } from '../../styled-system/recipes'
+import type { Scalar } from './scalar'
 
 const StyledButton = styled('button', button)
 
 /** The props of a native button, plus the recipe's `variant`, `size` and `iconOnly`. */
-export type ButtonProps = ComponentProps<'button'> & ButtonVariantProps
+export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>
 
 /**
  * A button for an action on the page. It is `type="button"` unless you set

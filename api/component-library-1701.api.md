@@ -7,12 +7,40 @@
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { JSX } from 'react';
+import { LayoutGridVariantProps } from '../../styled-system/recipes';
+import { LayoutInlineVariantProps } from '../../styled-system/recipes';
+import { LayoutStackVariantProps } from '../../styled-system/recipes';
 
 // @public
 export function Button(input: ButtonProps): JSX.Element;
 
 // @public
-export type ButtonProps = ComponentProps<'button'> & ButtonVariantProps;
+export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps>;
+
+// @public
+export function Grid(props: GridProps): JSX.Element;
+
+// @public
+export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
+
+// @public
+export function Inline(props: InlineProps): JSX.Element;
+
+// @public
+export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProps>;
+
+// @public
+export type Scalar<T> = {
+    [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
+        readonly [key: string]: unknown;
+    }>;
+};
+
+// @public
+export function Stack(props: StackProps): JSX.Element;
+
+// @public
+export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>;
 
 // (No @packageDocumentation comment for this package)
 

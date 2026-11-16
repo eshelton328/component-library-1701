@@ -35,7 +35,7 @@ export const markdownView = defineRecipe({
     // the marker's line; later ones are blocks 10 below.
     '& :where(li) > p:first-child': { display: 'inline' },
     '& :where(li) > p:not(:first-child)': { mt: '10' },
-    '& strong': { fontWeight: 'semibold', color: 'fg.default' },
+    '& strong': { fontWeight: 'text.heading', color: 'fg.default' },
     // Inline code and code blocks are not drawn; they take the `code` style
     // of the path line, with no fill.
     '& code': { textStyle: 'code' },

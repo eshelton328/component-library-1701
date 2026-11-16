@@ -16,7 +16,7 @@ export const metaChip = defineSlotRecipe({
       alignItems: 'center',
       gap: '6',
       minW: '0',
-      maxW: 'full',
+      maxW: '100%',
       bg: 'surface.inset',
       borderWidth: 'default',
       borderStyle: 'solid',
@@ -28,7 +28,7 @@ export const metaChip = defineSlotRecipe({
     icon: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.12', h: 'icon.12' },
+      '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
     label: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis' },
   },

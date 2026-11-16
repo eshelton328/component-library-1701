@@ -26,7 +26,7 @@ export const groupHeader = defineSlotRecipe({
     leading: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.14', h: 'icon.14' },
+      '& svg': { w: 'icon.14!', h: 'icon.14!' },
     },
     toggle: {
       display: 'flex',
@@ -56,7 +56,7 @@ export const groupHeader = defineSlotRecipe({
       gap: '4',
       flexShrink: '0',
       ms: 'auto',
-      '& svg': { w: 'icon.14', h: 'icon.14' },
+      '& svg': { w: 'icon.14!', h: 'icon.14!' },
     },
   },
   variants: {

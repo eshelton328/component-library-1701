@@ -59,6 +59,13 @@ const meta = {
     // The sizes come from a list, so their CSS comes only from staticCss.
     const heights = sizes.map((s) => within(canvasElement).getByRole('radiogroup', { name: `View, ${s}` }).getBoundingClientRect().height)
     await expect(heights).toEqual([28, 32, 36])
+    // Each item fills the group's height inside its 2 px padding.
+    for (const s of sizes) {
+      const group = within(canvasElement).getByRole('radiogroup', { name: `View, ${s}` })
+      const label = within(group).getAllByRole('radio')[0]?.closest('label')
+      if (!(label instanceof HTMLElement)) throw new Error('no item')
+      await expect(label.getBoundingClientRect().height).toBe(group.clientHeight - 4)
+    }
     const code = within(canvasElement).getByRole('radio', { name: 'Code' })
     await expect(code).toBeDisabled()
     await expect(getComputedStyle(code.closest('label') ?? code).opacity).toBe('0.45')

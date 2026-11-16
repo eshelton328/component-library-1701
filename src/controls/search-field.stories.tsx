@@ -45,6 +45,11 @@ const meta = {
     // Every size is in the package CSS: the sizes come from a list.
     const heights = sizes.map((s) => within(canvasElement).getByRole('searchbox', { name: `Search, ${s}` }).parentElement?.getBoundingClientRect().height)
     await expect(heights).toEqual([28, 32, 36])
+    // The input fills the field's height, so the whole box takes a click.
+    for (const s of sizes) {
+      const input = within(canvasElement).getByRole('searchbox', { name: `Search, ${s}` })
+      await expect(input.getBoundingClientRect().height).toBe(input.parentElement?.clientHeight)
+    }
     const disabled = within(canvasElement).getByRole('searchbox', { name: 'Disabled search' })
     await expect(disabled).toBeDisabled()
     await expect(getComputedStyle(disabled.parentElement ?? disabled).opacity).toBe('0.45')

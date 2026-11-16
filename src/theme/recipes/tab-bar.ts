@@ -44,7 +44,7 @@ export const tabBar = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[aria-current="page"]': { color: 'fg.accent' },
     },
-    icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24', h: 'icon.24' } },
+    icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24!', h: 'icon.24!' } },
     label: { textStyle: 'navLabel', color: 'inherit', maxW: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     // The badge count for screen readers; the badge itself is hidden from them.
     hint: { srOnly: true },

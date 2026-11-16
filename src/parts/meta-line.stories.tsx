@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline, Stack } from '../controls/layout'
+import { CopyIcon, FolderIcon, HookIcon, SkillIcon, TagIcon } from '../foundations/icons'
 import { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './meta-line'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -263,5 +264,80 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(chipEl).toHaveAttribute('title', 'a-very-long-project-name-that-does-not-fit-either')
     await userEvent.click(canvas.getByRole('button', { name: 'Copy path' }))
     await expect(args.onCopy).toHaveBeenCalledOnce()
+  },
+}
+
+// A block box, not a flex one, so only the badges' own max width keeps them in.
+const block = css({ display: 'block', w: 'shell.popoverSm' })
+
+function LibraryIcons() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        {/* The library's icons, passed with no size, so each draws at its default 24 px unless the slot sizes it. */}
+        <span data-testid="icon-line-row">
+          <MetaLine leading={<SkillIcon />} items={['skill-evals']} />
+        </span>
+        <span data-testid="icon-line-card">
+          <MetaLine icon="md" leading={<SkillIcon />} items={['Claude']} trailing="12m" />
+        </span>
+        <span data-testid="icon-chip">
+          <MetaChip icon={<FolderIcon />} label="ncc-1701" />
+        </span>
+        <span data-testid="icon-path">
+          <PathBadge
+            icon={<FolderIcon />}
+            path="toolkit/skills/writer/"
+            trailing={
+              <button type="button" className={copy} aria-label="Copy path">
+                <CopyIcon size="20" />
+              </button>
+            }
+          />
+        </span>
+        <span data-testid="icon-kind">
+          <KindBadge kind="hook" icon={<HookIcon />} />
+        </span>
+        <span data-testid="icon-tags">
+          <TagsLine icon={<TagIcon />} tags={['global/planning']} />
+        </span>
+        <div className={block} data-testid="block">
+          <MetaChip label="a-very-long-project-name-that-does-not-fit-either" />
+          <PathBadge path="toolkit/skills/a-very-long-skill-name-that-does-not-fit/" />
+        </div>
+      </Stack>
+    </main>
+  )
+}
+
+/** Library icons draw at the slot's size whatever size they carry, and a badge in a block box stays inside it. */
+export const Sizing: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <LibraryIcons />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const size = (id: string) => {
+      const svg = canvas.getByTestId(id).querySelector('svg')
+      if (svg === null) throw new Error(`no icon in ${id}`)
+      const r = svg.getBoundingClientRect()
+      return [r.width, r.height]
+    }
+    await expect(size('icon-line-row')).toEqual([12, 12])
+    await expect(size('icon-line-card')).toEqual([14, 14])
+    await expect(size('icon-chip')).toEqual([12, 12])
+    await expect(size('icon-kind')).toEqual([14, 14])
+    await expect(size('icon-tags')).toEqual([12, 12])
+    const path = canvas.getByTestId('icon-path').querySelectorAll('svg')
+    await expect(Array.from(path, (svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([
+      [12, 12],
+      [12, 12],
+    ])
+    // max-width: 100% keeps each badge in its 240 px block box, and the text truncates.
+    const area = canvas.getByTestId('block')
+    const right = area.getBoundingClientRect().right
+    for (const el of Array.from(area.children)) {
+      await expect(getComputedStyle(el).maxWidth).toBe('100%')
+      await expect(el.getBoundingClientRect().right).toBeLessThanOrEqual(right)
+    }
   },
 }

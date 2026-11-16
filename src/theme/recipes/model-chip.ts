@@ -17,7 +17,7 @@ export const modelChip = defineSlotRecipe({
       gap: '6',
       flexShrink: '0',
       minW: '0',
-      maxW: 'full',
+      maxW: '100%',
       py: '4',
       px: '8',
       bg: 'surface.raised',

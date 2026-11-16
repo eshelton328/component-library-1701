@@ -6,7 +6,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // surface.inset (the notes field, rgba(23,33,58,0.7)); the focused border is
 // border.focus, as the rename field draws it.
 const box = {
-  w: 'full',
+  w: '100%',
   minW: '0',
   px: '10',
   bg: 'surface.inset',

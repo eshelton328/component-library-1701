@@ -21,7 +21,7 @@ export const toolLine = defineSlotRecipe({
       alignItems: 'center',
       gap: '6',
       minW: '0',
-      maxW: 'full',
+      maxW: '100%',
       alignSelf: 'flex-start',
       p: '0',
       bg: 'transparent',

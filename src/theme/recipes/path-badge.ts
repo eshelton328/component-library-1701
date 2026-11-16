@@ -14,7 +14,7 @@ export const pathBadge = defineSlotRecipe({
       alignItems: 'center',
       gap: '6',
       minW: '0',
-      maxW: 'full',
+      maxW: '100%',
       px: '8',
       py: '4',
       bg: 'surface.raised',
@@ -29,9 +29,9 @@ export const pathBadge = defineSlotRecipe({
     icon: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.12', h: 'icon.12' },
+      '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
     path: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', textStyle: 'mono' },
-    trailing: { display: 'inline-flex', flexShrink: '0', '& svg': { w: 'icon.12', h: 'icon.12' } },
+    trailing: { display: 'inline-flex', flexShrink: '0', '& svg': { w: 'icon.12!', h: 'icon.12!' } },
   },
 })

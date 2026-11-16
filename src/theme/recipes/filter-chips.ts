@@ -3,10 +3,21 @@ import { defineSlotRecipe } from '@pandacss/dev'
 
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
+// Clear at the start edge, opaque from the fade width in, clear again at the end edge.
+const fade =
+  'transparent, #000 var(--filter-chips-fade-start), #000 calc(100% - var(--filter-chips-fade-end)), transparent'
+
 // The filter chips of Inbox, Artifacts and Toolkit: selected or idle, with a
 // count and an optional kind dot. The selected border was drawn cyan 0.6 on
 // some frames and solid on others; it is border.selected. On a phone the
 // chips stay on one row and scroll.
+//
+// A row that scrolls fades its chips out over 24 px at each edge with more
+// chips past it, so a cut chip reads as "scroll for more". Figma draws no
+// fade; 24 is the spacing token the reviewer asked for (d-072). The fade is a
+// mask, which uses only alpha, so it needs no colour token: #000 is opaque.
+// The component sets data-overflow-start and data-overflow-end from the
+// scroll position; a row that fits has neither and no mask.
 export const filterChips = defineSlotRecipe({
   className: 'filter-chips',
   jsx: ['FilterChips'],
@@ -21,6 +32,16 @@ export const filterChips = defineSlotRecipe({
       p: '2',
       overflowX: 'auto',
       scrollbarWidth: 'none',
+      // A focused chip scrolls into view clear of the fade, so its focus ring shows.
+      scrollPaddingInline: '24',
+      '--filter-chips-fade-start': '0px',
+      '--filter-chips-fade-end': '0px',
+      '&[data-overflow-start]': { '--filter-chips-fade-start': 'token(spacing.24)' },
+      '&[data-overflow-end]': { '--filter-chips-fade-end': 'token(spacing.24)' },
+      '&[data-overflow-start], &[data-overflow-end]': {
+        maskImage: `linear-gradient(to right, ${fade})`,
+        _rtl: { maskImage: `linear-gradient(to left, ${fade})` },
+      },
     },
     item: {
       display: 'inline-flex',

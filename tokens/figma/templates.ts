@@ -60,7 +60,11 @@ const names = new Set(DATA.vars.map(d => d.n));
 const extra = [...mine.keys()].filter(n => !names.has(n));
 return { collection: { id: col.id, name: col.name, created: createdCollection, modes: modeIds }, created, updated, total: DATA.vars.length, extraInFigma: extra };`
 
-/** Creates or updates each text style by name and binds its font family to a variable. */
+/**
+ * Creates or updates each text style by name and binds its font family to
+ * a variable, then runs the effect styles (__EFFECT_STYLES__) in the same
+ * call. The reply's created, updated and total count the text styles.
+ */
 export const textStylesTemplate = `const DATA = __DATA__;
 const all = await figma.variables.getLocalVariablesAsync('STRING');
 const fontVars = new Map(all.map(v => [v.name, v]));
@@ -98,10 +102,38 @@ for (const d of DATA) {
   s.description = d.description || '';
   s.setBoundVariable('fontFamily', fv);
 }
-return { created, updated, total: DATA.length };`
+__EFFECT_STYLES__
+return { created, updated, total: DATA.length, effectStyles };`
 
 /**
- * Read-only. Returns one FNV-1a hash for each variable and text style in
+ * A part of the text-styles script: creates or updates each drop-shadow
+ * effect style by name and binds its colour to a Color variable, so the
+ * style follows the Dark and Light modes. It sets effectStyles to its counts.
+ */
+export const effectStylesTemplate = `const EFFECTS = __EFFECTS__;
+const colorCol = (await figma.variables.getLocalVariableCollectionsAsync()).find(c => c.name === 'Color');
+if (!colorCol && EFFECTS.length) throw new Error('Missing collection Color');
+const colorVars = new Map((await figma.variables.getLocalVariablesAsync('COLOR')).filter(v => colorCol && v.variableCollectionId === colorCol.id).map(v => [v.name, v]));
+const effects = await figma.getLocalEffectStylesAsync();
+const effectByName = new Map(effects.map(s => [s.name, s]));
+const effectTwins = effects.filter(s => effects.some(o => o !== s && o.name === s.name) && EFFECTS.some(d => d.name === s.name));
+if (effectTwins.length) throw new Error('Effect styles with the same name: ' + effectTwins.map(s => s.name + ' ' + s.id).join(', '));
+// Find every Color variable before the first write, so a missing one changes nothing.
+const missing = EFFECTS.filter(d => !colorVars.has(d.colorVariable)).map(d => d.colorVariable);
+if (missing.length) throw new Error('Missing Color variable ' + missing.join(', '));
+let effectsCreated = 0, effectsUpdated = 0;
+for (const d of EFFECTS) {
+  const cv = colorVars.get(d.colorVariable);
+  let s = effectByName.get(d.name);
+  if (!s) { s = figma.createEffectStyle(); s.name = d.name; effectsCreated++; } else effectsUpdated++;
+  const shadow = { type: d.type, color: { r: 0, g: 0, b: 0, a: 1 }, offset: { x: d.offsetX, y: d.offsetY }, radius: d.radius, spread: d.spread, visible: true, blendMode: 'NORMAL', showShadowBehindNode: false };
+  s.effects = [figma.variables.setBoundVariableForEffect(shadow, 'color', cv)];
+  s.description = d.description || '';
+}
+const effectStyles = { created: effectsCreated, updated: effectsUpdated, total: EFFECTS.length };`
+
+/**
+ * Read-only. Returns one FNV-1a hash for each variable, text style and effect style in
  * the file, with a key of its own for a second item of the same name.
  * expectedHashes() in lib.ts makes the same hashes from the
  * tokens, so a reply of about 10 KB verifies every value.
@@ -131,5 +163,18 @@ for (const s of await figma.getLocalTextStylesAsync()) {
   // A second style with the same name gets its own key, so the compare
   // reports it as extra, with its ID.
   out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, s.textDecoration, f4(s.paragraphSpacing), f4(s.paragraphIndent), f4(s.listSpacing), s.leadingTrim, s.hangingPunctuation ? 1 : 0, s.hangingList ? 1 : 0, s.textWrapStyle, Object.keys(s.boundVariables || {}).sort().join(','), b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
+}
+for (const s of await figma.getLocalEffectStylesAsync()) {
+  // A bound colour is hashed by its variable's name; that variable's values are hashed above.
+  // Blurs, noise and textures have other fields, and some no radius: a missing field hashes as empty.
+  const num = x => typeof x === 'number' ? f4(x) : '';
+  const fx = s.effects.map(e => {
+    const bound = e.boundVariables || {};
+    const shadow = e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW';
+    const colour = !shadow || !e.color ? '' : bound.color ? '@' + (byId.get(bound.color.id)?.name ?? '?') : [e.color.r, e.color.g, e.color.b, e.color.a].map(f4).join(',');
+    return [e.type, shadow ? num(e.offset?.x) : '', shadow ? num(e.offset?.y) : '', num(e.radius), shadow ? num(e.spread || 0) : '', e.visible ? 1 : 0, e.blendMode || '', e.showShadowBehindNode ? 1 : 0, Object.keys(bound).sort().join(','), colour].join('|');
+  });
+  const key = 'effect|' + s.name;
+  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.effects.length, ...fx, s.description || ''].join('|'));
 }
 return out;`

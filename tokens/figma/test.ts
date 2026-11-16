@@ -125,6 +125,7 @@ function stubFigma(styles: StubStyle[]) {
       getLocalVariableCollectionsAsync: () => Promise.resolve([{ id: 'C:theme', name: 'Theme', modes: [{ modeId: 'm', name: 'Viewscreen' }] }]),
     },
     getLocalTextStylesAsync: () => Promise.resolve(styles),
+    getLocalEffectStylesAsync: () => Promise.resolve([]),
     loadFontAsync: () => Promise.resolve(),
     createTextStyle: () => {
       const s: StubStyle = {
@@ -146,7 +147,8 @@ const run = async (code: string, figma: unknown): Promise<unknown> => {
 }
 const textScript = (d: FigmaTokens) => renderScripts(d).find((s) => s.file === 'text-styles.js')?.code ?? ''
 const fingerprint = (d: FigmaTokens) => renderScripts(d).find((s) => s.file === 'fingerprint.js')?.code ?? ''
-const sansOnly = (): FigmaTokens => ({ ...doc, collections: [], textStyles: doc.textStyles.filter((t) => t.fontFamilyVariable === 'font/sans') })
+const sansOnly = (): FigmaTokens => ({ ...doc, collections: [], effectStyles: [], textStyles: doc.textStyles.filter((t) => t.fontFamilyVariable === 'font/sans') })
+const isObject = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null
 const record = (x: unknown): Record<string, unknown> => (typeof x === 'object' && x !== null ? Object.fromEntries(Object.entries(x)) : {})
 // The stub has one font variable that sansOnly() does not export, so these tests compare the styles only.
 const stylesOf = (x: unknown) => Object.fromEntries(Object.entries(record(x)).filter(([k]) => k.startsWith('style|')))
@@ -159,7 +161,8 @@ void test('exports the uppercase transform as the UPPER text case (Codex review 
 void test('the written text styles match their expected hashes, text case included', async () => {
   const d = sansOnly()
   const figma = stubFigma([])
-  assert.deepEqual(record(await run(textScript(d), figma)), { created: d.textStyles.length, updated: 0, total: d.textStyles.length })
+  // JSON makes the reply, built in the script's own realm, comparable here.
+  assert.deepEqual(JSON.parse(JSON.stringify(await run(textScript(d), figma))), { created: d.textStyles.length, updated: 0, total: d.textStyles.length, effectStyles: { created: 0, updated: 0, total: 0 } })
   const expected = expectedHashes(d)
   const got = stylesOf(await run(fingerprint(d), figma))
   assert.deepEqual(compareHashes(expected, got), [])
@@ -241,6 +244,7 @@ function stubVariables(name: string, mode: string, vars: { name: string; type: s
       createVariable: () => fail('the stub creates no variables'),
     },
     getLocalTextStylesAsync: () => Promise.resolve([]),
+    getLocalEffectStylesAsync: () => Promise.resolve([]),
   }
 }
 const fail = (m: string): never => {
@@ -303,4 +307,116 @@ void test('a text wrap style or an extra variable binding changes the hash, and 
   assert.equal(a['textWrapStyle'], 'AUTO')
   assert.deepEqual(Object.keys(record(b['boundVariables'])), ['fontFamily'])
   assert.deepEqual(compareHashes(expectedHashes(d), stylesOf(await run(fingerprint(d), figma))), [])
+})
+
+void test('exports each shadow as an effect style bound to a Color variable that follows Dark and Light', () => {
+  const shadows = ['shadow/overlay', 'shadow/dialog', 'shadow/lift']
+  assert.deepEqual(doc.effectStyles.map((e) => e.name), shadows)
+  assert.deepEqual(doc.notExported, [])
+  const overlay = doc.effectStyles[0]
+  assert.deepEqual(overlay, { name: 'shadow/overlay', type: 'DROP_SHADOW', description: 'Popovers, menus, pickers and sheets.', colorVariable: 'shadow/overlay', offsetX: 0, offsetY: 12, radius: 32, spread: 0 })
+  const colour = collection(doc, 'Color')?.variables.find((v) => v.name === 'shadow/overlay')
+  assert.deepEqual(colour?.aliases, { Dark: 'dark/shadow/overlay', Light: 'light/shadow/overlay' })
+  assert.deepEqual(colour.scopes, ['EFFECT_COLOR'])
+  const theme = collection(doc, 'Theme')?.variables ?? []
+  assert.deepEqual(theme.find((v) => v.name === 'dark/shadow/overlay')?.values, { Viewscreen: { r: 0, g: 0, b: 0, a: 0.55 } })
+  assert.deepEqual(theme.find((v) => v.name === 'light/shadow/overlay')?.values, { Viewscreen: { r: 0, g: 0, b: 0, a: 0.14 } })
+  for (const name of shadows) assert.equal(theme.find((v) => v.name === `light/${name}`)?.hidden, true, name)
+})
+
+void test('rejects a shadow whose offset, blur or spread differs between dark and light', () => {
+  const theme = structuredClone(themes[0]?.json)
+  // Walk to light.shadow.lift in place; record() would copy.
+  const at = (x: unknown, key: string): unknown => (isObject(x) ? x[key] : undefined)
+  const lift = at(at(at(theme, 'light'), 'shadow'), 'lift')
+  assert.ok(isObject(lift))
+  lift['$value'] = { ...record(lift['$value']), blur: { value: 99, unit: 'px' } }
+  assert.throws(() => exportTokens({ themes: [{ name: 'a', json: theme }], layout: {}, commit: '', tokensSha256: '' }), /shadow\/lift has another inset, offset, blur or spread in light\/shadow\/lift/)
+})
+
+// A stub with the Color collection's shadow variables and the effect-style API.
+function stubEffects(d: FigmaTokens) {
+  const col = { id: 'C:color', name: 'Color', modes: [{ modeId: 'd', name: 'Dark' }], hiddenFromPublishing: false }
+  const vars = d.effectStyles.map((e) => ({ id: `V:${e.colorVariable}`, name: e.colorVariable, resolvedType: 'COLOR', variableCollectionId: col.id, scopes: [], codeSyntax: {}, hiddenFromPublishing: false, description: '', valuesByMode: { d: { r: 0, g: 0, b: 0, a: 0.5 } } }))
+  const effects: StubStyle[] = []
+  return {
+    effects,
+    variables: {
+      getLocalVariablesAsync: () => Promise.resolve(vars),
+      getLocalVariableCollectionsAsync: () => Promise.resolve([col]),
+      setBoundVariableForEffect: (e: Record<string, unknown>, field: string, v: { id: string }) => ({ ...e, boundVariables: { [field]: { type: 'VARIABLE_ALIAS', id: v.id } } }),
+    },
+    getLocalTextStylesAsync: () => Promise.resolve([]),
+    getLocalEffectStylesAsync: () => Promise.resolve(effects),
+    createEffectStyle: () => {
+      const s: StubStyle = { id: `E:${String(effects.length)}`, name: '', effects: [], description: '' }
+      effects.push(s)
+      return s
+    },
+  }
+}
+const effectsOnly = (): FigmaTokens => ({ ...doc, collections: [], textStyles: [] })
+const effectsOf = (x: unknown) => Object.fromEntries(Object.entries(record(x)).filter(([k]) => k.startsWith('effect|')))
+
+void test('the written effect styles match their expected hashes, and a changed blur or an unbound colour does not', async () => {
+  const d = effectsOnly()
+  const figma = stubEffects(d)
+  const reply = record(await run(textScript(d), figma))
+  assert.deepEqual(record(reply['effectStyles']), { created: 3, updated: 0, total: 3 })
+  assert.deepEqual(compareHashes(expectedHashes(d), effectsOf(await run(fingerprint(d), figma))), [])
+  const [a, b] = figma.effects
+  assert.ok(a && b)
+  const shadowA = record(Array.isArray(a['effects']) ? a['effects'][0] : undefined)
+  const shadowB = record(Array.isArray(b['effects']) ? b['effects'][0] : undefined)
+  a['effects'] = [{ ...shadowA, radius: 1 }]
+  b['effects'] = [{ ...shadowB, boundVariables: {} }]
+  assert.deepEqual(compareHashes(expectedHashes(d), effectsOf(await run(fingerprint(d), figma))).sort(), [`changed effect|${a.name}`, `changed effect|${b.name}`].sort())
+  assert.deepEqual(record(record(await run(textScript(d), figma))['effectStyles']), { created: 0, updated: 3, total: 3 })
+  assert.deepEqual(compareHashes(expectedHashes(d), effectsOf(await run(fingerprint(d), figma))), [])
+})
+
+void test('the effect styles stop before any change when a Color variable is missing or a style name is taken twice (Codex review of #70)', async () => {
+  const d = effectsOnly()
+  const figma = stubEffects(d)
+  // Only the last style's variable is missing, so a write-then-check script would create the first two.
+  const present = await figma.variables.getLocalVariablesAsync()
+  figma.variables.getLocalVariablesAsync = () => Promise.resolve(present.filter((v) => v.name !== 'shadow/lift'))
+  await assert.rejects(run(textScript(d), figma), /Missing Color variable shadow\/lift/)
+  assert.equal(figma.effects.length, 0)
+  const ok = stubEffects(d)
+  await run(textScript(d), ok)
+  const first = ok.effects[0]
+  assert.ok(first)
+  ok.effects.push({ ...first, id: 'E:twin' })
+  await assert.rejects(run(textScript(d), ok), /Effect styles with the same name: shadow\/overlay/)
+  assert.ok(`effect|${first.name}|duplicate|E:twin` in record(await run(fingerprint(d), ok)))
+})
+
+void test('exports an inset shadow as an inner shadow, and its hash sees the type (Codex review of #70)', async () => {
+  const theme = structuredClone(themes[0]?.json)
+  const at = (x: unknown, key: string): unknown => (isObject(x) ? x[key] : undefined)
+  for (const scheme of ['dark', 'light']) {
+    const lift = at(at(at(theme, scheme), 'shadow'), 'lift')
+    assert.ok(isObject(lift))
+    lift['$value'] = { ...record(lift['$value']), inset: true }
+  }
+  const d = exportTokens({ themes: [{ name: 'viewscreen', json: theme }], layout: {}, commit: '', tokensSha256: '' })
+  assert.equal(d.effectStyles.find((e) => e.name === 'shadow/lift')?.type, 'INNER_SHADOW')
+  const only = { ...d, collections: [], textStyles: [] }
+  const figma = stubEffects(only)
+  await run(textScript(only), figma)
+  assert.deepEqual(compareHashes(expectedHashes(only), effectsOf(await run(fingerprint(only), figma))), [])
+  assert.notEqual(expectedHashes(only)['effect|shadow/lift'], expectedHashes(effectsOnly())['effect|shadow/lift'])
+  const dark = at(at(at(theme, 'dark'), 'shadow'), 'lift')
+  assert.ok(isObject(dark))
+  dark['$value'] = { ...record(dark['$value']), inset: false }
+  assert.throws(() => exportTokens({ themes: [{ name: 'viewscreen', json: theme }], layout: {}, commit: '', tokensSha256: '' }), /shadow\/lift has another inset/)
+})
+
+void test('the fingerprint hashes an effect style with a noise effect, which has no radius (Codex review of #70)', async () => {
+  const d = effectsOnly()
+  const figma = stubEffects(d)
+  await run(textScript(d), figma)
+  figma.effects.push({ id: 'E:noise', name: 'other/noise', description: '', effects: [{ type: 'NOISE', noiseType: 'MONOTONE', noiseSize: 1, density: 0.5, visible: true, blendMode: 'NORMAL', color: { r: 0, g: 0, b: 0, a: 1 } }] })
+  assert.deepEqual(compareHashes(expectedHashes(d), effectsOf(await run(fingerprint(d), figma))), ['extra effect|other/noise'])
 })

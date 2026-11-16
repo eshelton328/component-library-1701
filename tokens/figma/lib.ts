@@ -6,9 +6,11 @@
 //            no scopes), radius, border width, blur, opacity, font family.
 //   Color  - modes Dark and Light; each colour aliases its Theme variable.
 //   Layout - one mode: spacing and sizes, the same in every theme (d-035).
-// Text styles come from text/*. Shadows are not exported: an effect style
-// cannot change with a variable mode.
-import { fingerprintScript, textStylesTemplate, upsertTemplate } from './templates.ts'
+// Text styles come from text/*. Each shadow/* token becomes one effect
+// style whose colour is bound to a Color variable (shadow/<name>), so the
+// style follows the Dark and Light modes; its offset, blur and spread are
+// the same in both schemes.
+import { effectStylesTemplate, fingerprintScript, textStylesTemplate, upsertTemplate } from './templates.ts'
 
 export type Rgba = { r: number; g: number; b: number; a: number }
 export type Value = Rgba | number | string
@@ -34,6 +36,17 @@ export type TextStyle = {
   letterSpacingPx: number
   textCase: TextCase
 }
+/** A drop or inner shadow; its colour comes from the Color variable colorVariable. */
+export type EffectStyle = {
+  name: string
+  type: 'DROP_SHADOW' | 'INNER_SHADOW'
+  description: string
+  colorVariable: string
+  offsetX: number
+  offsetY: number
+  radius: number
+  spread: number
+}
 export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
 /** The CSS text-transform values a token may set, as Figma text cases. */
 const textCases: Record<string, TextCase> = { none: 'ORIGINAL', uppercase: 'UPPER', lowercase: 'LOWER', capitalize: 'TITLE' }
@@ -41,6 +54,7 @@ export type FigmaTokens = {
   source: { repo: string; commit: string; tokensSha256: string }
   collections: Collection[]
   textStyles: TextStyle[]
+  effectStyles: EffectStyle[]
   notExported: string[]
 }
 
@@ -115,6 +129,7 @@ export function exportTokens(src: TokenSources): FigmaTokens {
   const themeVars = new Map<string, FigmaVariable>()
   const colourVars = new Map<string, FigmaVariable>()
   const textStyles = new Map<string, TextStyle>()
+  const effectStyles = new Map<string, EffectStyle>()
   const themeModes: string[] = []
   const valuesOf = (v: FigmaVariable) => (v.values ??= {})
   for (const { name: file, json } of src.themes) {
@@ -131,6 +146,44 @@ export function exportTokens(src: TokenSources): FigmaTokens {
         const c = colourVars.get(key) ?? { name: `color/${key}`, type: 'COLOR', scopes: colourScopes(path), description: description(tok), web: web('colors', path), aliases: {} }
         colourVars.set(key, c)
         ;(c.aliases ??= {})[capital(scheme)] = name
+      }
+      for (const [path, tok] of leaves(field(field(json, scheme), 'shadow'))) {
+        const key = path.join('/')
+        const where = `${scheme}/shadow/${key}`
+        const val = tok['$value']
+        if (!isRecord(val)) return fail(`${where} is not a shadow value`)
+        // The colour changes with the scheme: a hidden Theme primitive per
+        // scheme, and one Color variable that aliases them by mode.
+        const name = `${scheme}/shadow/${key}`
+        const v = themeVars.get(name) ?? { name, type: 'COLOR', scopes: [], hidden: true, description: description(tok), values: {} }
+        themeVars.set(name, v)
+        valuesOf(v)[mode] = rgba(val['color'], where)
+        const cname = `shadow/${key}`
+        const c = colourVars.get(cname) ?? { name: cname, type: 'COLOR', scopes: ['EFFECT_COLOR'], description: '', aliases: {} }
+        colourVars.set(cname, c)
+        ;(c.aliases ??= {})[capital(scheme)] = name
+        // One effect style serves both schemes, so its geometry must match.
+        const inset = val['inset'] ?? false
+        if (typeof inset !== 'boolean') return fail(`${where} has an inset that is not true or false`)
+        const style: EffectStyle = {
+          name: cname,
+          type: inset ? 'INNER_SHADOW' : 'DROP_SHADOW',
+          description: '',
+          colorVariable: cname,
+          offsetX: px(val['offsetX'], where),
+          offsetY: px(val['offsetY'], where),
+          radius: px(val['blur'], where),
+          spread: px(val['spread'], where),
+        }
+        const before = effectStyles.get(cname)
+        const geometry = (e: EffectStyle) => [e.type, e.offsetX, e.offsetY, e.radius, e.spread].join(',')
+        if (before !== undefined && geometry(before) !== geometry(style)) {
+          return fail(`${cname} has another inset, offset, blur or spread in ${where}; a Figma effect style binds only its colour to a mode`)
+        }
+        // Only one scheme may describe the token; keep the first description found.
+        const text = before?.description || description(tok)
+        effectStyles.set(cname, { ...style, description: text })
+        c.description ||= text
       }
     }
     const singles: [string, string, string][] = [
@@ -212,7 +265,8 @@ export function exportTokens(src: TokenSources): FigmaTokens {
       { name: 'Layout', modes: ['Value'], variables: layoutVars },
     ],
     textStyles: [...textStyles.values()],
-    notExported: ['shadow/* (dark and light): effect styles cannot change with a variable mode'],
+    effectStyles: [...effectStyles.values()],
+    notExported: [],
   }
 }
 
@@ -239,7 +293,11 @@ export function renderScripts(doc: FigmaTokens): { file: string; code: string }[
     const data = { name: c.name, modes: c.modes, aliasFrom: aliasFrom[c.name] ?? null, vars }
     return { file: `${c.name.toLowerCase()}.js`, code: upsertTemplate.replace('__DATA__', () => JSON.stringify(data)) }
   })
-  scripts.push({ file: 'text-styles.js', code: textStylesTemplate.replace('__DATA__', () => JSON.stringify(doc.textStyles)) })
+  // The effect styles run in the same call as the text styles, after the
+  // Color variables they bind; the text styles' counts stay the reply's
+  // created, updated and total, and the effect styles' go in effectStyles.
+  const effects = effectStylesTemplate.replace('__EFFECTS__', () => JSON.stringify(doc.effectStyles))
+  scripts.push({ file: 'text-styles.js', code: textStylesTemplate.replace('__DATA__', () => JSON.stringify(doc.textStyles)).replace('__EFFECT_STYLES__', () => effects) })
   scripts.push({ file: 'fingerprint.js', code: fingerprintScript })
   return scripts
 }
@@ -277,6 +335,9 @@ export function expectedHashes(doc: FigmaTokens): Record<string, string> {
   for (const t of doc.textStyles) {
     const style = fontStyle[t.fontWeight] ?? fail(`${t.name}: no font style for weight ${String(t.fontWeight)}`)
     out[`style|${t.name}`] = fnv([style, f4(t.fontSize), 'PERCENT', t.lineHeightPercent.toFixed(2), 'PIXELS', f4(t.letterSpacingPx), t.textCase, 'NONE', f4(0), f4(0), f4(0), 'NONE', '0', '0', 'AUTO', 'fontFamily', t.fontFamilyVariable, escapeHtml(t.description)].join('|'))
+  }
+  for (const e of doc.effectStyles) {
+    out[`effect|${e.name}`] = fnv(['1', e.type, f4(e.offsetX), f4(e.offsetY), f4(e.radius), f4(e.spread), '1', 'NORMAL', '0', 'color', `@${e.colorVariable}`, escapeHtml(e.description)].join('|'))
   }
   return out
 }

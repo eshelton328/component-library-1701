@@ -24,5 +24,14 @@ scripts that the Figma MCP tool `use_figma` runs. It never calls Figma.
   percent, so the export multiplies by 100; an empty `scopes` list does
   not hide a variable from publishing, so the primitives also set
   `hiddenFromPublishing`; Figma stores a description HTML-escaped.
-- Shadows are not exported: an effect style cannot change with a mode.
+- Each `shadow.*` token becomes one effect style, `shadow/<name>`. An
+  effect style has no modes, but its colour can be bound to a variable,
+  and a bound colour follows the mode of the node that uses the style. So
+  the export adds hidden `dark/shadow/*` and `light/shadow/*` primitives
+  to Theme and a `shadow/<name>` Color variable that aliases them, and
+  binds the style's colour to it. Offset, blur and spread are fixed in the
+  style, so the export fails when they differ between dark and light.
+  `text-styles.js` writes the effect styles after the text styles and
+  returns their counts in `effectStyles`, so the sync keeps its four write
+  scripts.
 - `test.ts` (`pnpm test:figma`) tests `lib.ts`.

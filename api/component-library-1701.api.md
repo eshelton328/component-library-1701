@@ -4,6 +4,7 @@
 
 ```ts
 
+import { BackdropVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
@@ -47,6 +48,14 @@ export function ArrowUpIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ArtifactsIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Backdrop(input: BackdropProps): JSX.Element;
+
+// @public (undocumented)
+export type BackdropProps = Scalar<BackdropVariantProps> & {
+    children?: ReactNode;
+};
 
 // @public
 export function BackRow(input: BackRowProps): JSX.Element;

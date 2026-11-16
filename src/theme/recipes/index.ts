@@ -3,6 +3,7 @@
 // typed recipe function and variant props for each one in
 // styled-system/recipes. Add a recipe as its own file and list it below.
 import type { Config } from '@pandacss/dev'
+import { backdrop } from './backdrop'
 import { bottomSheet } from './bottom-sheet'
 import { backRow } from './back-row'
 import { button } from './button'
@@ -47,6 +48,6 @@ import { navRail } from './nav-rail'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, navBadge, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, navBadge, statusPill }
 
 export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, chatPath, checkbox, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, treeView, viewSwitch }

@@ -13,6 +13,7 @@ import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
+import { PanelVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
@@ -199,6 +200,17 @@ export type MenuProps = {
 // @public
 export type MenuSeparator = {
     type: 'separator';
+};
+
+// @public
+export function Panel(input: PanelProps): JSX.Element;
+
+// @public (undocumented)
+export type PanelProps = Scalar<PanelVariantProps> & {
+    title?: string | undefined;
+    meta?: ReactNode;
+    actions?: ReactNode;
+    children?: ReactNode;
 };
 
 // @public

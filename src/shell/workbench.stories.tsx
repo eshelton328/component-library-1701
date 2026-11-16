@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
@@ -144,5 +145,44 @@ export const Controlled: StoryObj<typeof meta> = {
     // With no status bar, the panes reach the bottom.
     const root = find(canvasElement, '.workbench__root')
     await expect(Math.round(rect(canvas.getByRole('tabpanel')).bottom)).toBe(Math.round(rect(root).bottom))
+  },
+}
+
+const x = { value: 'x', label: 'x-ray', count: 1, content: <div className={panes}>The x-ray panes</div> }
+
+function Changing() {
+  const [items, setItems] = useState(workspaces.slice(0, 2))
+  return (
+    <div className={frame}>
+      <button type="button" onClick={() => { setItems((i) => [x, ...i]) }}>
+        Add first
+      </button>
+      <button type="button" onClick={() => { setItems((i) => i.filter((w) => w.value !== 'the-bridge')) }}>
+        Remove the-bridge
+      </button>
+      <button type="button" onClick={() => { setItems((i) => [...i, workspaces[1] ?? x]) }}>
+        Restore the-bridge
+      </button>
+      <Workbench workspaces={items} />
+    </div>
+  )
+}
+
+/** Uncontrolled tabs keep their workspace while others are added; when it is removed, the first is selected and stays selected. */
+export const ChangingWorkspaces: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Changing />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const tab = (name: RegExp) => canvas.getByRole('tab', { name })
+    await expect(tab(/omni-brain/)).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(canvas.getByRole('button', { name: 'Add first' }))
+    await expect(tab(/omni-brain/)).toHaveAttribute('aria-selected', 'true')
+    await userEvent.click(tab(/the-bridge/))
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove the-bridge' }))
+    await waitFor(() => expect(tab(/x-ray/)).toHaveAttribute('aria-selected', 'true'))
+    await userEvent.click(canvas.getByRole('button', { name: 'Restore the-bridge' }))
+    await expect(tab(/x-ray/)).toHaveAttribute('aria-selected', 'true')
+    await expect(tab(/the-bridge/)).toHaveAttribute('aria-selected', 'false')
   },
 }

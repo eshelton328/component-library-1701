@@ -39,13 +39,20 @@ export type WorkspaceTabsProps = {
 /**
  * The Workbench's workspace tabs, with the selected workspace's content
  * below them in a 10 px padded area that fills the rest of the height.
- * The arrow keys move between tabs and select them.
+ * The arrow keys move between tabs and select them. Uncontrolled tabs keep
+ * the selected workspace while others are added, moved or removed.
  */
 export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange, actions }: WorkspaceTabsProps) {
-  // Uncontrolled tabs keep their own selection, so that it follows the items:
-  // when the selected workspace goes away, the first one is selected.
-  const [picked, setPicked] = useState(defaultValue)
-  const selected = value ?? (items.some((item) => item.value === picked) ? picked : items[0]?.value)
+  // Uncontrolled tabs store the workspace they show, so adding, moving or
+  // restoring other workspaces never changes it. When it goes away, the
+  // first workspace is selected and stored.
+  const [picked, setPicked] = useState(defaultValue ?? items[0]?.value)
+  let selected = value ?? picked
+  if (value === undefined && !items.some((item) => item.value === picked)) {
+    const first = items[0]?.value
+    if (first !== picked) setPicked(first)
+    selected = first
+  }
   return (
     <Root
       // Ark treats an empty string as no value, so each value gets a prefix.

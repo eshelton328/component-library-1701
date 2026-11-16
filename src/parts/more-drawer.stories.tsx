@@ -78,6 +78,17 @@ const meta = {
     await expect(style.paddingBottom).toBe('34px')
     await expect(style.rowGap).toBe('4px')
     await expect(getComputedStyle(within(drawer).getByText('More')).fontSize).toBe('20px')
+    // The grabber (415:317): 36x5, centred 10 below the top edge (Figma 9, inside the 1 px
+    // border), with 6 below it (415:316) and the 4 px gap before the title row.
+    const grabber = drawer.querySelector('.bottom-sheet__grabber')
+    const header = drawer.querySelector('.bottom-sheet__header')
+    if (grabber === null || header === null) throw new Error('no grabber or title row')
+    const g = grabber.getBoundingClientRect()
+    await expect([g.width, g.height]).toEqual([36, 5])
+    await expect(g.top - box.top).toBe(11)
+    await expect(g.left + g.width / 2).toBe(box.left + box.width / 2)
+    await expect(grabber).toHaveAttribute('aria-hidden', 'true')
+    await expect(header.getBoundingClientRect().top - g.bottom).toBe(10)
     // The selected item: the current page.
     const artifacts = item(drawer, /^Artifacts/)
     await expect(artifacts).toHaveAttribute('aria-current', 'page')

@@ -43,6 +43,8 @@ export const menu = defineSlotRecipe({
       userSelect: 'none',
       outline: 'none',
       '& svg': { width: 'icon.16', height: 'icon.16', flexShrink: '0', color: 'fg.muted' },
+      // The check of a picked choice is the accent colour, not the icon colour.
+      '& [data-part=item-indicator] svg': { color: 'accent.default' },
       _highlighted: { bg: 'surface.selected' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
       // A danger item, such as Delete.

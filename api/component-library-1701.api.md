@@ -11,7 +11,7 @@ import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
-import type { ReactElement } from 'react';
+import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
@@ -147,6 +147,29 @@ export type MenuProps = {
 // @public
 export type MenuSeparator = {
     type: 'separator';
+};
+
+// @public
+export function RadioMenu(input: RadioMenuProps): JSX.Element;
+
+// @public
+export type RadioMenuOption = {
+    value: string;
+    label: string;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type RadioMenuProps = {
+    trigger: ReactElement;
+    label: string;
+    options: readonly RadioMenuOption[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
 };
 
 // @public

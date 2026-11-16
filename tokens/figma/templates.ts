@@ -12,13 +12,17 @@
  */
 export const upsertTemplate = `const DATA = __DATA__;
 const cols = await figma.variables.getLocalVariableCollectionsAsync();
-let col = cols.find(c => c.name === DATA.name);
+const same = cols.filter(c => c.name === DATA.name);
+if (same.length > 1) throw new Error('Collections with the same name: ' + same.map(c => c.name + ' ' + c.id).join(', '));
+let col = same[0];
 const all = await figma.variables.getLocalVariablesAsync();
 // Stop before any change when two variables in the collection share a name.
 const twins = col ? all.filter(v => v.variableCollectionId === col.id && all.some(o => o !== v && o.variableCollectionId === col.id && o.name === v.name)) : [];
 if (twins.length) throw new Error('Variables with the same name in ' + DATA.name + ': ' + twins.map(v => v.name + ' ' + v.id).join(', '));
 const createdCollection = !col;
 if (!col) col = figma.variables.createVariableCollection(DATA.name);
+// A hidden collection is left out when the library is published.
+col.hiddenFromPublishing = false;
 const modeIds = {};
 for (const [i, m] of DATA.modes.entries()) {
   let mode = col.modes.find(x => x.name === m);
@@ -88,6 +92,9 @@ for (const d of DATA) {
   s.leadingTrim = 'NONE';
   s.hangingPunctuation = false;
   s.hangingList = false;
+  s.textWrapStyle = 'AUTO';
+  // Only the font family is bound to a variable; clear any other binding.
+  for (const k of Object.keys(s.boundVariables || {})) if (k !== 'fontFamily') s.setBoundVariable(k, null);
   s.description = d.description || '';
   s.setBoundVariable('fontFamily', fv);
 }
@@ -107,6 +114,10 @@ const all = await figma.variables.getLocalVariablesAsync();
 const byId = new Map(all.map(v => [v.id, v]));
 const val = x => x && x.type === 'VARIABLE_ALIAS' ? '@' + (byId.get(x.id)?.name ?? '?') : typeof x === 'object' ? [x.r, x.g, x.b, x.a].map(f4).join(',') : typeof x === 'number' ? f4(x) : String(x);
 const out = {};
+for (const c of cols) {
+  const ckey = 'col|' + c.name;
+  out[ckey in out ? ckey + '|duplicate|' + c.id : ckey] = fnv([c.modes.map(m => m.name).sort().join(','), c.hiddenFromPublishing ? 1 : 0].join('|'));
+}
 for (const v of all) {
   const c = colById.get(v.variableCollectionId);
   const modes = [...c.modes].sort((a, b) => a.name < b.name ? -1 : 1).map(m => m.name + '=' + val(v.valuesByMode[m.modeId])).join(';');
@@ -119,6 +130,6 @@ for (const s of await figma.getLocalTextStylesAsync()) {
   const key = 'style|' + s.name;
   // A second style with the same name gets its own key, so the compare
   // reports it as extra, with its ID.
-  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, s.textDecoration, f4(s.paragraphSpacing), f4(s.paragraphIndent), f4(s.listSpacing), s.leadingTrim, s.hangingPunctuation ? 1 : 0, s.hangingList ? 1 : 0, b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
+  out[key in out ? key + '|duplicate|' + s.id : key] = fnv([s.fontName.style, f4(s.fontSize), lh, s.letterSpacing.unit, f4(s.letterSpacing.value), s.textCase, s.textDecoration, f4(s.paragraphSpacing), f4(s.paragraphIndent), f4(s.listSpacing), s.leadingTrim, s.hangingPunctuation ? 1 : 0, s.hangingList ? 1 : 0, s.textWrapStyle, Object.keys(s.boundVariables || {}).sort().join(','), b ? byId.get(b.id)?.name : '', s.description || ''].join('|'));
 }
 return out;`

@@ -1,11 +1,12 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { modelChip } from '../../styled-system/recipes'
+import { ChevronDownIcon } from '../foundations/icons'
 import { RadioMenu, type RadioMenuOption } from '../controls/menu'
 
 const { withProvider, withContext } = createSlotRecipeContext(modelChip)
 const ButtonRoot = withProvider('button', 'root')
 const StaticRoot = withProvider('span', 'root')
-const Chevron = withContext('svg', 'chevron')
+const Chevron = withContext('span', 'chevron')
 const Label = withContext('span', 'label')
 
 /** A model the user can pick in a `ModelChip`'s menu, such as "Sonnet 5.5 · high effort". */
@@ -56,8 +57,8 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
       onOpenChange={onOpenChange}
       trigger={
         <ButtonRoot type="button" aria-label={`Model: ${text}`} disabled={disabled === true ? true : undefined}>
-          <Chevron viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M4 6l4 4 4-4" />
+          <Chevron aria-hidden="true">
+            <ChevronDownIcon size="12" />
           </Chevron>
           <Label>{text}</Label>
         </ButtonRoot>

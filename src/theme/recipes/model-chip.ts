@@ -36,7 +36,8 @@ export const modelChip = defineSlotRecipe({
       _expanded: { borderColor: 'border.active' },
       _disabled: { opacity: 'disabled', cursor: 'not-allowed' },
     },
-    chevron: { w: 'icon.12', h: 'icon.12', flexShrink: '0', color: 'fg.muted' },
+    // The chevron is the icon set's ChevronDownIcon at 12 px.
+    chevron: { display: 'inline-flex', flexShrink: '0', color: 'fg.muted' },
     label: { overflow: 'hidden', textOverflow: 'ellipsis' },
   },
 })

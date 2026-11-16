@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { Checkbox } from '../controls/checkbox'
 import { Stack } from '../controls/layout'
-import { CheckIcon } from '../foundations/icons'
+import { CheckIcon, PlusIcon } from '../foundations/icons'
 import { ProposalBlock, ProposalCommand, ProposalDiff, ProposalSection } from './proposal-block'
 
 const page = css({ bg: 'surface.pane', p: '24', w: 'shell.dialogLg' })
@@ -227,3 +228,50 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(onApply).toHaveBeenCalledTimes(1)
   },
 }
+
+const onCreate = fn()
+
+/** New tasks from a discussion: Inbox D17 403:2430, a checkbox for each task. */
+function Create() {
+  return (
+    <main className={page}>
+      <ProposalBlock
+        tone="create"
+        label="Proposed · Create 3 tasks"
+        actions={[
+          { label: 'Create 3 tasks', variant: 'primary', icon: <PlusIcon size="14" />, onClick: () => { onCreate() } },
+          { label: 'Discard', onClick: noop },
+        ]}
+      >
+        <Checkbox label="Write the Workbench tickets" defaultChecked />
+        <Checkbox label="Write the Inbox tickets" defaultChecked />
+        <Checkbox label="Write the App frame tickets" defaultChecked />
+      </ProposalBlock>
+      <Swatches />
+    </main>
+  )
+}
+
+// The create tone has the update colours (Figma draws both in violet) and its own name.
+const createPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onCreate.mockClear()
+  const canvas = within(canvasElement)
+  const s = (name: string) => swatch(canvasElement, name)
+  const group = canvas.getByRole('group', { name: 'Proposed · Create 3 tasks' })
+  const root = getComputedStyle(group)
+  await expect([root.backgroundColor, root.borderTopWidth, root.borderTopColor]).toEqual([s('inset'), '1px', s('updateBorder')])
+  await expect([root.borderTopLeftRadius, root.paddingTop, root.paddingLeft, root.rowGap]).toEqual(['12px', '12px', '12px', '12px'])
+  const label = getComputedStyle(first(group, '.proposal-block__label'))
+  await expect([label.color, label.textTransform, label.fontSize]).toEqual([s('discuss'), 'uppercase', '11px'])
+  // The user picks the tasks, then creates them from the keyboard.
+  const box = canvas.getByRole('checkbox', { name: 'Write the Inbox tickets' })
+  await userEvent.click(box)
+  await expect(box).not.toBeChecked()
+  const create = canvas.getByRole('button', { name: 'Create 3 tasks' })
+  create.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(onCreate).toHaveBeenCalledTimes(1)
+}
+
+export const CreateDark: StoryObj<typeof meta> = { render: () => <Create />, globals: { mode: 'dark' }, play: createPlay }
+export const CreateLight: StoryObj<typeof meta> = { render: () => <Create />, globals: { mode: 'light' }, play: createPlay }

@@ -37,6 +37,11 @@ export const proposalBlock = defineSlotRecipe({
     tone: {
       // An update: Inbox D15. The border is #9e8fff at 0.5, the value of status.running.border.
       update: { root: { borderColor: 'status.running.border' }, label: { color: 'accent.discuss' } },
+      // New tasks: Inbox D17 403:2430 (T20, M21). Figma draws it in the update
+      // colours: border #9e8fff at 0.5 (status.running.border), eyebrow #9e8fff
+      // (accent.discuss), fill rgba(23,33,58,0.7) (surface.inset), radius 12,
+      // padding 12, gap 12. Its own tone keeps the meaning apart from update.
+      create: { root: { borderColor: 'status.running.border' }, label: { color: 'accent.discuss' } },
       // A removal: Inbox D19. The title of the item it removes is struck through in fg.muted.
       remove: {
         root: { borderColor: 'status.danger.border' },

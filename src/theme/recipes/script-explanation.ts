@@ -7,8 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // are Geist Mono 12 caps #8a97b8 (440:1425), merged into `eyebrow`. The
 // In / Out / Exit rows (440:1427) have a 10 gap, keys mono #8a97b8 and
 // values mono #e6ecff. Steps (440:1437) are 12 apart; each row (440:1438)
-// has a 10 gap: a round number badge (440:1439: surface.raised, 1 px
-// border.default, digit Regular 12/17 #e6ecff), the text (440:1443, body
+// has a 10 gap: a round number badge (440:1439: a 22 by 22 circle, 24 here
+// on the 4 px grid (d-072), surface.raised, 1 px border.default, digit
+// Regular 12/17 #e6ecff), the text (440:1443, body
 // #e6ecff) and a line link (440:1441: 1 px cyan 0.5 border, radius 5 merged
 // into `radius.sm`, padding 2 by 6, mono #5ee1ff). The note (440:1480) is
 // Regular 12/17 #8a97b8.
@@ -43,8 +44,8 @@ export const scriptExplanation = defineSlotRecipe({
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: '0',
-      px: '6',
-      py: '2',
+      w: '24',
+      h: '24',
       textStyle: 'small',
       color: 'fg.default',
       bg: 'surface.raised',

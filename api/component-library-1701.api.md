@@ -32,6 +32,7 @@ import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
+import { ThumbnailVariantProps } from '../../styled-system/recipes';
 import { ToolLineVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
@@ -1096,6 +1097,22 @@ export type TextFieldBaseProps = {
 export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> & {
     type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined;
 };
+
+// @public
+export function Thumbnail(input: ThumbnailProps): JSX.Element;
+
+// @public
+export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui';
+
+// @public (undocumented)
+export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
+    kind?: ThumbnailKind | undefined;
+    shape?: ThumbnailShape | undefined;
+    label?: string | undefined;
+};
+
+// @public
+export type ThumbnailShape = 'wide' | 'compact' | 'banner';
 
 // @public
 export function ToolkitIcon(props: IconProps): JSX.Element;

@@ -12,8 +12,6 @@ const GROUP_PAD = 20
 const PLOT = 110
 const AXIS_GAP = 8
 const AXIS = 17
-// The shortest bar of Toolkit D17 (474:609), in px.
-const MIN_BAR = 4
 
 function finite(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 0
@@ -129,6 +127,7 @@ const Track = horizontal.withContext('span', 'track')
 const HorizontalSvg = horizontal.withContext('svg', 'svg')
 const HorizontalBar = horizontal.withContext('rect', 'bar')
 const Value = horizontal.withContext('span', 'value')
+const Room = horizontal.withContext('span', 'room')
 
 export type BarRow = {
   /** The row label, such as a day or a folder. */
@@ -169,16 +168,12 @@ export function HorizontalBarChart({ label, rows, max, tone = 'accent', formatVa
           <Row key={`${String(r)}:${row.label}`}>
             <RowLabel>{row.label}</RowLabel>
             <Track>
-              <HorizontalSvg width={percent} aria-hidden="true" focusable="false">
-                {share > 0 ? (
-                  <>
-                    <HorizontalBar data-tone={tone} x="0" y="0" width={MIN_BAR} height="100%" />
-                    <HorizontalBar data-tone={tone} x="0" y="0" width="100%" height="100%" />
-                  </>
-                ) : null}
+              <HorizontalSvg width={percent} data-filled={share > 0 ? '' : undefined} aria-hidden="true" focusable="false">
+                {share > 0 ? <HorizontalBar data-tone={tone} x="0" y="0" width="100%" height="100%" /> : null}
               </HorizontalSvg>
               <Value>{formatValue(row.value)}</Value>
             </Track>
+            <Room aria-hidden="true">{formatValue(row.value)}</Room>
           </Row>
         )
       })}

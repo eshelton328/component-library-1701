@@ -61,6 +61,17 @@ function Charts() {
             ]}
           />
         </div>
+        <div className={panel}>
+          <HorizontalBarChart
+            label="Edge cases"
+            max={100000}
+            formatValue={(v) => `${v.toLocaleString('en')} calls`}
+            rows={[
+              { label: 'rare', value: 1 },
+              { label: 'projects/ncc-1701/component-library-1701-worktrees/charts/src/parts/bar-chart.stories.tsx', value: 100000 },
+            ]}
+          />
+        </div>
         <GroupedBarChart label="Three series" series={[{ name: 'a', tone: 'done' }, { name: 'b' }, { name: 'c', tone: 'danger' }]} groups={[{ label: 'g1', values: [1, 2, 3] }]} />
       </Stack>
       <div hidden>
@@ -127,11 +138,13 @@ const meta = {
     // Horizontal bars: a named list; each item reads its label and value.
     const days = canvas.getByRole('list', { name: 'Calls per day' })
     const items = within(days).getAllByRole('listitem')
-    await expect(items.map((i) => i.textContent)).toEqual(['Nov 82', 'Nov 9326', 'Nov 132'])
+    // Each item reads its label and value; the copy that sizes the value column is hidden from assistive technology.
+    const visible = (i: HTMLElement) => Array.from(i.children).filter((c) => c.getAttribute('aria-hidden') !== 'true').map((c) => c.textContent)
+    await expect(items.map(visible)).toEqual([['Nov 8', '2'], ['Nov 9', '326'], ['Nov 13', '2']])
     const [small, full] = items
     if (small === undefined || full === undefined) throw new Error('no rows')
     const label = within(full).getByText('Nov 9')
-    const value = within(full).getByText('326')
+    const value = within(full).getAllByText('326')[0] ?? full
     const bar = full.querySelector('svg')
     const smallBar = small.querySelector('svg')
     if (bar === null || smallBar === null) throw new Error('no bar')
@@ -147,6 +160,19 @@ const meta = {
     const drawn = (s: Element) => Math.max(...Array.from(s.querySelectorAll('rect')).map((r) => box(r).width))
     await expect(drawn(smallBar)).toBe(4)
     await expect(Math.round(drawn(bar))).toBeGreaterThan(200)
+    // 1 of 100,000 still draws 4 px; a long label stops at half the width with an ellipsis,
+    // leaving the bars room; a long value fits inside the row after a full bar.
+    const edge = within(canvas.getByRole('list', { name: 'Edge cases' })).getAllByRole('listitem')
+    const [rare, long] = edge
+    if (rare === undefined || long === undefined) throw new Error('no edge rows')
+    await expect(drawn(rare.querySelector('svg') ?? rare)).toBe(4)
+    const longLabel = long.firstElementChild
+    const longBar = long.querySelector('svg')
+    if (longLabel === null || longBar === null) throw new Error('no long row')
+    await expect(box(longLabel).width).toBeLessThanOrEqual(box(long).width / 2)
+    await expect(longLabel.scrollWidth).toBeGreaterThan(longLabel.clientWidth)
+    await expect(box(longBar).width).toBeGreaterThan(20)
+    await expect(box(within(long).getAllByText('100,000 calls')[0] ?? long).right).toBeLessThanOrEqual(box(long).right)
     await expect(box(value).right).toBeLessThanOrEqual(box(full).right)
     const rect = bar.querySelector('rect')
     if (rect === null) throw new Error('no rect')
@@ -161,7 +187,7 @@ const meta = {
     const [first, zero, over] = where
     if (first === undefined || zero === undefined || over === undefined) throw new Error('no rows')
     await expect(zero.querySelectorAll('rect')).toHaveLength(0)
-    await expect(within(zero).getByText('0')).toBeInTheDocument()
+    await expect(within(zero).getAllByText('0')).toHaveLength(2)
     const fullOf = (row: Element) => row.querySelector('svg')?.getBoundingClientRect().width ?? 0
     await expect(fullOf(first) / fullOf(over)).toBeCloseTo(302 / 400, 2)
     await expect(getComputedStyle(first.querySelector('rect') ?? first).fill).toBe(swatch('done'))

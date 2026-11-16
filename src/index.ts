@@ -59,3 +59,5 @@ export {
 export type { IconProps, IconSize } from './foundations/icons'
 export { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './parts/meta-line'
 export type { KindBadgeProps, MetaChipProps, MetaLineProps, PathBadgeProps, TagsLineProps, ToolkitKind } from './parts/meta-line'
+export { GroupHeader } from './parts/group-header'
+export type { GroupHeaderProps } from './parts/group-header'

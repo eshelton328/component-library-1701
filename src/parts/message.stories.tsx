@@ -54,8 +54,18 @@ function Messages() {
           </Message>
         </div>
         <div data-testid="codex">
-          <Message name="Codex" kind="codex" actions={[]}>
+          <Message kind="codex" actions={[]}>
             3 candidate pairs, 1 stale link.
+          </Message>
+        </div>
+        <div data-testid="shell">
+          <Message kind="shell" name=" ">
+            On branch main
+          </Message>
+        </div>
+        <div data-testid="unnamed-user">
+          <Message from="user" name="">
+            Thanks.
           </Message>
         </div>
       </Stack>
@@ -71,7 +81,7 @@ const meta = {
     const canvas = within(canvasElement)
     const s = (name: string) => swatch(canvasElement, name)
     // Each message is an article named by its author; the user's name is "You", read but not shown.
-    const user = canvas.getByRole('article', { name: 'You' })
+    const user = within(canvas.getByTestId('user')).getByRole('article', { name: 'You' })
     const youName = slot(canvasElement, 'user', 'srName')
     await expect(youName.getBoundingClientRect().width).toBeLessThanOrEqual(1)
     // The user's bubble: the width of the transcript, surface.raised, radius 12, padding 10 by 12, no border.
@@ -110,6 +120,11 @@ const meta = {
     await expect([getComputedStyle(time).color, getComputedStyle(time).fontFamily]).toEqual([s('subtle'), expect.stringMatching(/Mono/)])
     await expect(getComputedStyle(body).color).toBe(s('default'))
     await expect(body).toHaveTextContent(answer)
+    // With no name, or a blank one, the message shows and is named by its kind; a blank user name is "You".
+    await expect(canvas.getByRole('article', { name: 'Codex' })).toBe(canvas.getByTestId('codex').firstElementChild)
+    await expect(slot(canvasElement, 'codex', 'name')).toHaveTextContent(/^Codex$/)
+    await expect(canvas.getByRole('article', { name: 'Shell' })).toBe(canvas.getByTestId('shell').firstElementChild)
+    await expect(within(canvas.getByTestId('unnamed-user')).getByRole('article', { name: 'You' })).toBeInTheDocument()
     // Codex: its own mark; actions that render nothing leave no actions slot.
     const codexMark = canvas.getByTestId('codex').querySelector('svg')
     if (codexMark === null) throw new Error('no codex mark')

@@ -24,11 +24,18 @@ function present(node: ReactNode): boolean {
   })
 }
 
+// The name an assistant's message shows when it gets none, so the message
+// always names its author: the mark itself is hidden from assistive technology.
+const kindNames: Record<KindMarkKind, string> = { claude: 'Claude', codex: 'Codex', shell: 'Shell' }
+
 /** Who wrote a message: `user` or `assistant`. */
 export type MessageFrom = NonNullable<MessageProps['from']>
 
 export type MessageProps = Scalar<MessageVariantProps> & {
-  /** The author's name: "Claude" or "Codex" on an assistant message; "You" when not set on a user message. */
+  /**
+   * The author's name, such as "Claude" or "writer". When not set (or blank) an assistant message shows the
+   * name of its `kind` ("Claude", "Codex" or "Shell"), and a user message is named "You" without showing it.
+   */
   name?: string | undefined
   /** The kind mark before an assistant's name: `claude`, `codex` or `shell`. A user message has no mark. */
   kind?: KindMarkKind | undefined
@@ -56,22 +63,20 @@ export function Message({ from = 'assistant', name, kind = 'claude', time, dateT
   if (from === 'user') {
     return (
       <Root from="user" aria-labelledby={nameId}>
-        <SrName id={nameId}>{name ?? 'You'}</SrName>
+        <SrName id={nameId}>{name === undefined || name.trim() === '' ? 'You' : name}</SrName>
         <Body>{children}</Body>
         {timeNode}
       </Root>
     )
   }
-  const shown = name ?? ''
+  const shown = name === undefined || name.trim() === '' ? kindNames[kind] : name
   return (
-    <Root from="assistant" aria-labelledby={shown === '' ? undefined : nameId}>
-      {shown === '' && !hasTime ? null : (
-        <Author>
-          <KindMark kind={kind} size="14" />
-          {shown === '' ? null : <Name id={nameId}>{shown}</Name>}
-          {timeNode}
-        </Author>
-      )}
+    <Root from="assistant" aria-labelledby={nameId}>
+      <Author>
+        <KindMark kind={kind} size="14" />
+        <Name id={nameId}>{shown}</Name>
+        {timeNode}
+      </Author>
       <Body>{children}</Body>
       {present(actions) ? <Actions>{actions}</Actions> : null}
     </Root>

@@ -275,6 +275,16 @@ export type KindBadgeProps = {
 };
 
 // @public
+export function KpiTile(input: KpiTileProps): JSX.Element;
+
+// @public (undocumented)
+export type KpiTileProps = {
+    label: string;
+    value: string;
+    caption?: string | undefined;
+};
+
+// @public
 export function ListRow(input: ListRowProps): JSX.Element;
 
 // @public (undocumented)

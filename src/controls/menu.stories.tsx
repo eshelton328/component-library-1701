@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
-import { Menu, type MenuEntry } from './menu'
+import { useState } from 'react'
+import { Menu, RadioMenu, type MenuEntry, type RadioMenuOption } from './menu'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 
@@ -159,3 +160,89 @@ export const Typeahead: StoryObj<typeof meta> = {
     await waitFor(() => expect(within(menu).getByRole('menuitem', { name: /Rename/ })).toHaveAttribute('data-highlighted'))
   },
 }
+
+// The sort menu of Inbox and Artifacts: the picked order has a check.
+const sorts: readonly RadioMenuOption[] = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'Name' },
+  { value: 'size', label: 'Size', disabled: true },
+]
+const onSort = fn<(value: string) => void>()
+
+function SortMenu() {
+  const [sort, setSort] = useState('newest')
+  const label = sorts.find((o) => o.value === sort)?.label ?? ''
+  return (
+    <main className={page}>
+      <RadioMenu
+        trigger={<Button>Sort: {label}</Button>}
+        label="Sort by"
+        options={sorts}
+        value={sort}
+        onValueChange={(v) => {
+          onSort(v)
+          setSort(v)
+        }}
+      />
+    </main>
+  )
+}
+
+/** The sort menu: one choice has a check, and a pick closes the menu and reports the value. */
+export const Sort: StoryObj<typeof meta> = {
+  render: () => <SortMenu />,
+  play: async ({ canvasElement }) => {
+    onSort.mockClear()
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: 'Sort: Newest first' }))
+    const menu = await body.findByRole('menu')
+    await expect(within(menu).getByRole('group', { name: 'Sort by' })).toBeInTheDocument()
+    const newest = within(menu).getByRole('menuitemradio', { name: 'Newest first' })
+    const oldest = within(menu).getByRole('menuitemradio', { name: 'Oldest first' })
+    await expect(newest).toHaveAttribute('aria-checked', 'true')
+    await expect(oldest).toHaveAttribute('aria-checked', 'false')
+    await expect(newest.getBoundingClientRect().height).toBe(32)
+    // Only the picked choice shows its check, in the accent colour.
+    const checkOf = (item: HTMLElement) => item.querySelector('[data-part="item-indicator"]')
+    const check = checkOf(newest)
+    if (!(check instanceof HTMLElement)) throw new Error('no check')
+    await expect(check).toBeVisible()
+    await expect(checkOf(oldest)).not.toBeVisible()
+    const svg = check.querySelector('svg')
+    if (svg === null) throw new Error('no check icon')
+    // The indicator is accent.default, and the check icon must keep that colour, not the muted icon colour.
+    await expect(getComputedStyle(svg).color).toBe(getComputedStyle(check).color)
+    await expect(getComputedStyle(svg).color).not.toBe(getComputedStyle(newest).color)
+    await expect(within(menu).getByRole('menuitemradio', { name: 'Size' })).toHaveAttribute('aria-disabled', 'true')
+    // A click picks Oldest first and closes the menu.
+    await userEvent.click(oldest)
+    await expect(onSort).toHaveBeenLastCalledWith('oldest')
+    await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+    // The keyboard picks Name; a pick of the checked choice reports nothing.
+    await userEvent.click(canvas.getByRole('button', { name: 'Sort: Oldest first' }))
+    const again = await body.findByRole('menu')
+    await waitFor(() => expect(again).toHaveFocus())
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+    await waitFor(() => expect(within(again).getByRole('menuitemradio', { name: 'Name' })).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{Enter}')
+    await expect(onSort).toHaveBeenLastCalledWith('name')
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Sort: Name' })).toHaveFocus())
+    await userEvent.click(canvas.getByRole('button', { name: 'Sort: Name' }))
+    await userEvent.click(within(await body.findByRole('menu')).getByRole('menuitemradio', { name: 'Name' }))
+    await expect(onSort).toHaveBeenCalledTimes(2)
+  },
+}
+
+function OpenSort() {
+  return (
+    <main className={page}>
+      <RadioMenu open trigger={<Button>Sort</Button>} label="Sort by" options={sorts} defaultValue="oldest" />
+    </main>
+  )
+}
+
+/** The open sort menu in each mode, so axe checks the check and the disabled choice. */
+export const SortDark: StoryObj<typeof meta> = { render: () => <OpenSort />, play: async () => { await within(document.body).findByRole('menu') }, globals: { mode: 'dark' } }
+export const SortLight: StoryObj<typeof meta> = { render: () => <OpenSort />, play: async () => { await within(document.body).findByRole('menu') }, globals: { mode: 'light' } }

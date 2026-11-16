@@ -1,6 +1,6 @@
 import { Menu as ArkMenu } from '@ark-ui/react/menu'
 import { Portal } from '@ark-ui/react/portal'
-import type { ReactElement, ReactNode } from 'react'
+import { useState, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { menu } from '../../styled-system/recipes'
 
@@ -11,6 +11,9 @@ const Content = withContext(ArkMenu.Content, 'content')
 const Item = withContext(ArkMenu.Item, 'item')
 const ItemText = withContext(ArkMenu.ItemText, 'itemText')
 const Separator = withContext(ArkMenu.Separator, 'separator')
+const RadioItemGroup = withContext(ArkMenu.RadioItemGroup, 'itemGroup')
+const RadioItem = withContext(ArkMenu.RadioItem, 'item')
+const ItemIndicator = withContext(ArkMenu.ItemIndicator, 'itemIndicator')
 
 /** An action in the menu. */
 export type MenuAction = {
@@ -80,5 +83,88 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
         </Positioner>
       </Portal>
     </Root>
+  )
+}
+
+/** A choice in a `RadioMenu`. */
+export type RadioMenuOption = {
+  value: string
+  label: string
+  disabled?: boolean | undefined
+}
+
+export type RadioMenuProps = {
+  /** The element that opens the menu, such as a `Button`. It must pass its props and ref to a DOM element. */
+  trigger: ReactElement
+  /** The accessible name of the list of choices, such as "Sort by". */
+  label: string
+  options: readonly RadioMenuOption[]
+  /** The picked value. Set it with `onValueChange` to control the menu. */
+  value?: string | undefined
+  defaultValue?: string | undefined
+  /** Called with the value the user picks. */
+  onValueChange?: ((value: string) => void) | undefined
+  open?: boolean | undefined
+  onOpenChange?: ((open: boolean) => void) | undefined
+  /** Where the menu opens next to the trigger; `bottom-start` when not set. */
+  placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined
+}
+
+/**
+ * A menu in which the user picks one value, such as the sort menu. The
+ * picked value has a check. Picking a value closes the menu.
+ */
+export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start' }: RadioMenuProps) {
+  const [picked, setPicked] = useState(defaultValue)
+  const selected = value ?? picked
+  return (
+    <Root
+      positioning={{ placement, gutter: 4 }}
+      {...(open === undefined ? {} : { open })}
+      onOpenChange={(details) => {
+        onOpenChange?.(details.open)
+      }}
+    >
+      <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
+      <Portal>
+        <Positioner>
+          <Content>
+            <RadioItemGroup
+              aria-label={label}
+              value={selected === undefined ? '' : toArk(selected)}
+              onValueChange={(details) => {
+                const next = fromArk(details.value)
+                if (next === undefined || next === selected) return
+                if (value === undefined) setPicked(next)
+                onValueChange?.(next)
+              }}
+            >
+              {options.map((option) => (
+                <RadioItem
+                  key={option.value}
+                  value={toArk(option.value)}
+                  valueText={option.label}
+                  disabled={option.disabled}
+                  closeOnSelect
+                >
+                  <ItemText>{option.label}</ItemText>
+                  <ItemIndicator>
+                    <Check />
+                  </ItemIndicator>
+                </RadioItem>
+              ))}
+            </RadioItemGroup>
+          </Content>
+        </Positioner>
+      </Portal>
+    </Root>
+  )
+}
+
+function Check() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3.5 8.5l3 3 6-7" />
+    </svg>
   )
 }

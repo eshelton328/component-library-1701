@@ -12,6 +12,7 @@ import { contextMeter } from './context-meter'
 import { dialog } from './dialog'
 import { filterChips } from './filter-chips'
 import { icon } from './icon'
+import { kindTile } from './kind-tile'
 import { itemTabs } from './item-tabs'
 import { kpiTile } from './kpi-tile'
 import { listRow } from './list-row'
@@ -35,6 +36,6 @@ import { viewSwitch } from './view-switch'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, layoutGrid, layoutInline, layoutStack, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
 export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, metaChip, metaLine, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }

@@ -8,8 +8,9 @@ Storybook for docs and tests.
 
 Not released yet. The repository has its checks (lint, type checks, story
 tests and CI), the Viewscreen theme's tokens in dark and light, and the
-release automation. The first release is `1.0.0-beta.1` from the `beta`
-branch; the components come next. Each version's notes are on the
+release automation, and the first components, which the package exports
+from its root (`src/index.ts`).
+The first release is `1.0.0-beta.1` from the `beta` branch. Each version's notes are on the
 [releases page](https://github.com/eshelton328/component-library-1701/releases).
 
 ## Prerequisites

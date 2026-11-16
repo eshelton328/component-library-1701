@@ -37,7 +37,7 @@
     "check:agents-md": "node scripts/check-agents-md.ts",
     "check:worktree": "node scripts/check-worktree.ts",
     "check:ci": "node scripts/check-ci.ts",
-    "build:lib": "panda codegen && panda lib --max-warnings 0 --files \"./**/*.{js,mjs}\"",
+    "build:lib": "panda codegen && panda lib --max-warnings 0 --files \"./**/*.{js,mjs}\" && pnpm build:components",
     "check:pack": "node scripts/check-pack.ts",
     "check:api": "node scripts/check-api.ts",
     "api:update": "node scripts/check-api.ts --update",
@@ -46,7 +46,8 @@
     "check:release-api": "node scripts/check-release-api.ts",
     "check:release-registry": "node scripts/check-release-registry.ts",
     "check:cycles": "node scripts/check-cycles.ts",
-    "test:cycles": "node --test scripts/cycles.test.ts"
+    "test:cycles": "node --test scripts/cycles.test.ts",
+    "build:components": "node scripts/build-components.ts"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -98,6 +99,10 @@
     "yaml": "2.9.1"
   },
   "exports": {
+    ".": {
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
+    },
     "./panda/*": "./dist/panda/*",
     "./css": {
       "types": "./styled-system/css/index.d.ts",

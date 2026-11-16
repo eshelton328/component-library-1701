@@ -86,6 +86,13 @@ declares the first stable contract.
 - `pnpm build:lib` runs `panda lib`, which writes `dist/panda/` and the
   `exports` in `package.json`. Commit the exports it writes;
   `pnpm check:pack` fails when they differ or a target is not packed.
+- `pnpm build:lib` then runs `pnpm build:components`. It builds
+  `src/index.ts` into `dist/components/`, the package's root export:
+  one ES module per source file (`vite.lib.config.ts`) and one rolled-up
+  `index.d.ts` (API Extractor). Each `styled-system` import becomes the
+  package's own subpath export, such as
+  `@eshelton328/component-library-1701/recipes`. React and Ark UI stay
+  external, and each module starts with `"use client"`.
 - The version in `package.json` stays `0.0.0-development`. The release
   job writes the real version only in its own checkout.
 - After a failed release, look at the tags, the GitHub release and the

@@ -1,0 +1,236 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { expect, fn, userEvent, within } from 'storybook/test'
+import { css } from '../../styled-system/css'
+import { Inline, Stack } from '../controls/layout'
+import { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './meta-line'
+
+const page = css({ bg: 'bg.canvas', p: '24' })
+const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
+// A bare icon button for the path badge's action slot, as the Toolkit page draws it.
+const copy = css({ display: 'inline-flex', p: '0', bg: 'transparent', color: 'fg.muted', cursor: 'pointer', borderRadius: 'xs', _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' } })
+const narrow = css({ w: 'shell.popoverSm' })
+// Swatches of the expected tokens, so the play function compares resolved colours.
+const swatches = {
+  inset: css({ bg: 'surface.inset' }),
+  raised: css({ bg: 'surface.raised' }),
+  border: css({ bg: 'border.default' }),
+  default: css({ bg: 'fg.default' }),
+  muted: css({ bg: 'fg.muted' }),
+  issue: css({ bg: 'accent.discuss' }),
+  skill: css({ bg: 'kind.skill' }),
+  agent: css({ bg: 'kind.agent' }),
+  rule: css({ bg: 'kind.rule' }),
+  workflow: css({ bg: 'kind.workflow' }),
+  hook: css({ bg: 'kind.hook' }),
+}
+const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
+
+function Glyph() {
+  return (
+    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">
+      <path d="M1.5 3.5h3l1 1h5v5h-9z" />
+    </svg>
+  )
+}
+function Mark() {
+  return (
+    <svg viewBox="0 0 12 12" aria-hidden="true">
+      <circle cx="6" cy="6" r="5" fill="currentColor" />
+    </svg>
+  )
+}
+
+function Family({ onCopy = () => undefined }: { onCopy?: () => void }) {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <div className={pane}>
+          <Stack gap="12">
+            <span data-testid="line-inbox">
+              <MetaLine items={['omni-brain', 'drift check']} />
+            </span>
+            <span data-testid="line-card">
+              <MetaLine icon="md" leading={<Mark />} items={['Claude', 'skill-evals']} trailing="12m" />
+            </span>
+            <span data-testid="line-row">
+              <MetaLine leading={<Mark />} items={['skill-evals']} />
+            </span>
+          </Stack>
+        </div>
+        <Inline wrap gap="6">
+          <span data-testid="chip-sm">
+            <MetaChip size="sm" tone="muted" icon={<Glyph />} label="ncc-1701" />
+          </span>
+          <span data-testid="chip-issue">
+            <MetaChip size="sm" tone="issue" icon={<Glyph />} label="NCC-28" />
+          </span>
+        </Inline>
+        <Inline gap="6">
+          <span data-testid="chip-md">
+            <MetaChip icon={<Mark />} label="Claude artifact" />
+          </span>
+          <span data-testid="chip-age">
+            <MetaChip tone="muted" icon={<Glyph />} label="updated 12m ago" />
+          </span>
+        </Inline>
+        <Inline gap="10">
+          <span data-testid="path">
+            <PathBadge
+              icon={<Glyph />}
+              path="toolkit/skills/writer/"
+              trailing={
+                <button type="button" className={copy} aria-label="Copy path" onClick={onCopy}>
+                  <Glyph />
+                </button>
+              }
+            />
+          </span>
+        </Inline>
+        <Inline wrap gap="10">
+          {kinds.map((k) => (
+            <span key={k} data-testid={`kind-${k}`}>
+              <KindBadge kind={k} icon={<Mark />} />
+            </span>
+          ))}
+        </Inline>
+        <TagsLine icon={<Glyph />} tags={['global/planning', 'project/ncc-1701/the-bridge']} />
+        <span data-testid="tags-empty">
+          <TagsLine tags={[]} />
+        </span>
+        <div className={narrow} data-testid="narrow">
+          <Stack gap="8">
+            <MetaLine items={['a-very-long-project-name-that-does-not-fit', 'source']} trailing="4m" />
+            <MetaChip label="a-very-long-project-name-that-does-not-fit-either" />
+          </Stack>
+        </div>
+      </Stack>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const meta = {
+  title: 'Data display/Meta line and tags',
+  component: Family,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const swatch = (name: string) => {
+      const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+      if (el === null) throw new Error(`no swatch ${name}`)
+      return getComputedStyle(el).backgroundColor
+    }
+    const first = (id: string) => {
+      const el = canvas.getByTestId(id).firstElementChild
+      if (!(el instanceof HTMLElement)) throw new Error(`nothing in ${id}`)
+      return el
+    }
+    const box = (el: Element) => el.getBoundingClientRect()
+
+    // Meta line: mono 12 in fg.muted, items 6 apart with a "·" between.
+    const inbox = first('line-inbox')
+    const inboxStyle = getComputedStyle(inbox)
+    await expect([inboxStyle.fontSize, inboxStyle.color, inboxStyle.columnGap]).toEqual(['12px', swatch('muted'), '6px'])
+    await expect(inboxStyle.fontFamily).toContain('Geist Mono')
+    await expect(inbox.textContent).toBe('omni-brain·drift check')
+    await expect(inbox.querySelectorAll('.meta-line__separator')).toHaveLength(1)
+    // The card line: a 14 px mark, and the age at the right edge.
+    const card = first('line-card')
+    const mark = card.querySelector('.meta-line__leading svg')
+    if (mark === null) throw new Error('no mark')
+    await expect(box(mark).width).toBe(14)
+    const age = card.querySelector('.meta-line__trailing')
+    if (age === null) throw new Error('no age')
+    await expect(box(age).right).toBe(box(card).right)
+    const rowMark = first('line-row').querySelector('.meta-line__leading svg')
+    if (rowMark === null) throw new Error('no row mark')
+    await expect(box(rowMark).width).toBe(12)
+
+    // Meta chip: radius 6, a 1 px border.default border, surface.inset fill.
+    const sm = first('chip-sm')
+    const smStyle = getComputedStyle(sm)
+    await expect([smStyle.paddingTop, smStyle.paddingLeft, smStyle.borderTopLeftRadius, smStyle.borderTopWidth]).toEqual(['4px', '8px', '6px', '1px'])
+    await expect([smStyle.backgroundColor, smStyle.borderTopColor, smStyle.color]).toEqual([swatch('inset'), swatch('border'), swatch('muted')])
+    await expect(smStyle.fontSize).toBe('12px')
+    const smIcon = sm.querySelector('svg')
+    const smLabel = sm.querySelector('.meta-chip__label')
+    if (smIcon === null || smLabel === null) throw new Error('no chip icon or label')
+    await expect(box(smIcon).width).toBe(12)
+    await expect(box(smLabel).left - box(smIcon).right).toBe(6)
+    await expect(getComputedStyle(first('chip-issue')).color).toBe(swatch('issue'))
+    const md = getComputedStyle(first('chip-md'))
+    await expect([md.paddingTop, md.paddingLeft, md.color, md.backgroundColor]).toEqual(['6px', '10px', swatch('default'), swatch('inset')])
+    await expect(getComputedStyle(first('chip-age')).color).toBe(swatch('muted'))
+
+    // Path badge: surface.raised, padding 8/4, the path in mono fg.default, and its action.
+    const badge = first('path')
+    const badgeStyle = getComputedStyle(badge)
+    await expect([badgeStyle.backgroundColor, badgeStyle.borderTopColor, badgeStyle.borderTopLeftRadius]).toEqual([swatch('raised'), swatch('border'), '6px'])
+    await expect([badgeStyle.paddingTop, badgeStyle.paddingLeft]).toEqual(['4px', '8px'])
+    const pathText = canvas.getByText('toolkit/skills/writer/')
+    const pathStyle = getComputedStyle(pathText)
+    await expect([pathStyle.fontSize, pathStyle.color]).toEqual(['12px', swatch('default')])
+    await expect(pathStyle.fontFamily).toContain('Geist Mono')
+    await expect(canvas.getByRole('button', { name: 'Copy path' })).toBeVisible()
+
+    // Kind badge: a pill in the kind colour, labelled with the kind's name.
+    for (const k of kinds) {
+      const el = first(`kind-${k}`)
+      const s = getComputedStyle(el)
+      await expect(s.color).toBe(swatch(k))
+      await expect([s.borderTopLeftRadius, s.paddingTop, s.paddingLeft, s.fontSize]).toEqual(['999px', '4px', '10px', '12px'])
+    }
+    await expect(first('kind-skill')).toHaveTextContent('Skill')
+    const kindIcon = first('kind-hook').querySelector('svg')
+    if (kindIcon === null) throw new Error('no kind icon')
+    await expect(box(kindIcon).width).toBe(14)
+
+    // Tags line: a named list, separators hidden from screen readers.
+    const list = canvas.getByRole('list', { name: 'Tags' })
+    const items = within(list).getAllByRole('listitem')
+    await expect(items.map((i) => i.textContent)).toEqual(['global/planning', '·project/ncc-1701/the-bridge'])
+    await expect(list.querySelector('.tags-line__separator')).toHaveAttribute('aria-hidden', 'true')
+    await expect(getComputedStyle(list).color).toBe(swatch('muted'))
+    await expect(canvas.getByTestId('tags-empty')).toBeEmptyDOMElement()
+  },
+} satisfies Meta<typeof Family>
+export default meta
+
+export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
+export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+/** Long text truncates inside its box, and the path badge's action reports through the caller's handler. */
+export const Behaviour: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  args: { onCopy: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const area = canvas.getByTestId('narrow')
+    const width = area.getBoundingClientRect().right
+    const lineEl = area.querySelector('.meta-line__root')
+    const chipEl = area.querySelector('.meta-chip__root')
+    if (!(lineEl instanceof HTMLElement) || !(chipEl instanceof HTMLElement)) throw new Error('no narrow line or chip')
+    // The line and the chip stay inside the 240 px box, and the long text ends in an ellipsis.
+    await expect(lineEl.getBoundingClientRect().right).toBeLessThanOrEqual(width)
+    await expect(chipEl.getBoundingClientRect().right).toBeLessThanOrEqual(width)
+    const item = lineEl.querySelector('.meta-line__item')
+    const label = chipEl.querySelector('.meta-chip__label')
+    if (!(item instanceof HTMLElement) || !(label instanceof HTMLElement)) throw new Error('no item or label')
+    for (const el of [item, label]) {
+      await expect(el.scrollWidth).toBeGreaterThan(el.clientWidth)
+      await expect(getComputedStyle(el).textOverflow).toBe('ellipsis')
+    }
+    // The age keeps its full width at the end of the line.
+    const age = lineEl.querySelector('.meta-line__trailing')
+    if (!(age instanceof HTMLElement)) throw new Error('no age')
+    await expect(age.scrollWidth).toBe(age.clientWidth)
+    await expect(age.getBoundingClientRect().right).toBe(lineEl.getBoundingClientRect().right)
+    // The full chip text is in its title.
+    await expect(chipEl).toHaveAttribute('title', 'a-very-long-project-name-that-does-not-fit-either')
+    await userEvent.click(canvas.getByRole('button', { name: 'Copy path' }))
+    await expect(args.onCopy).toHaveBeenCalledOnce()
+  },
+}

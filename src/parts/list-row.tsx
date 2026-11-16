@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { listRow, type ListRowVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(listRow)
 const Root = withProvider('div', 'root')
@@ -43,15 +44,17 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * a click anywhere on the row selects it.
  */
 export function ListRow({ title, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, onSelect, variant }: ListRowProps) {
+  // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
+  const titleText = variant === 'sidebar' ? <TruncatedText>{title}</TruncatedText> : title
   return (
     <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined}>
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
         {onSelect === undefined ? (
-          <TitleText aria-current={selected ? 'true' : undefined}>{title}</TitleText>
+          <TitleText aria-current={selected ? 'true' : undefined}>{titleText}</TitleText>
         ) : (
           <TitleButton type="button" aria-current={selected ? 'true' : undefined} onClick={onSelect}>
-            {title}
+            {titleText}
           </TitleButton>
         )}
         {meta === undefined ? null : <Meta>{meta}</Meta>}

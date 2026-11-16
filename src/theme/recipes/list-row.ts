@@ -57,7 +57,8 @@ export const listRow = defineSlotRecipe({
       // A chat row of the Workbench sidebar: one line of title, centred items.
       sidebar: {
         root: { alignItems: 'center', py: '8', ps: '24', pe: '10' },
-        title: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        // TruncatedText inside cuts a long title and shows it whole in a tooltip.
+        title: { minW: '0' },
         meta: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
       },
     },

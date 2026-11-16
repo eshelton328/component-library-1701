@@ -1,6 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { card } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(card)
 const Root = withProvider('article', 'root')
@@ -24,7 +25,7 @@ const shown = (node: ReactNode) => node !== undefined && node !== null && typeof
 const INTERACTIVE = 'a[href], button, input, select, textarea, summary, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"])'
 
 export type CardProps = {
-  /** The title, on one line; a long title ends with an ellipsis. */
+  /** The title, on one line; a long title ends with an ellipsis and shows in full in a tooltip. */
   title: string
   /** A picture on top of the card, such as an artifact thumbnail. It takes the card's width. */
   media?: ReactNode
@@ -72,10 +73,10 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
             <TitleRow>
               <Title>
                 {onSelect === undefined ? (
-                  title
+                  <TruncatedText>{title}</TruncatedText>
                 ) : (
                   <Action type="button">
-                    {title}
+                    <TruncatedText>{title}</TruncatedText>
                   </Action>
                 )}
               </Title>

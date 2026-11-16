@@ -140,10 +140,11 @@ const meta = {
     const empty = find(canvasElement, '[data-testid="empty-slots"] article')
     for (const slot of ['media', 'leading', 'badge', 'meta']) await expect(empty.querySelector(`.card__${slot}`)).toBeNull()
     await expect(getComputedStyle(find(empty, '.card__body')).paddingTop).toBe('16px')
-    // A long title stays on one line and ends with an ellipsis.
+    // A long title stays on one line and ends with an ellipsis; the TruncatedText in the title cuts it.
     const long = find(canvasElement, '[data-testid="long"] .card__title')
-    await expect(getComputedStyle(long).textOverflow).toBe('ellipsis')
-    await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
+    const longText = find(long, '.truncated-text')
+    await expect(getComputedStyle(longText).textOverflow).toBe('ellipsis')
+    await expect(longText.scrollWidth).toBeGreaterThan(longText.clientWidth)
     await expect(Math.round(long.getBoundingClientRect().height)).toBe(20)
   },
 } satisfies Meta<typeof Cards>

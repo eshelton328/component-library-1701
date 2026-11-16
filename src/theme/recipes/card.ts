@@ -34,7 +34,8 @@ export const card = defineSlotRecipe({
     leading: { display: 'flex', flexShrink: '0' },
     heading: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
-    title: { minW: '0', textStyle: 'label', color: 'fg.default', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long title and shows it whole in a tooltip.
+    title: { minW: '0', textStyle: 'label', color: 'fg.default' },
     // The title button of a card with onSelect: no box of its own, and a hit area over the whole card.
     action: {
       display: 'block',
@@ -45,9 +46,6 @@ export const card = defineSlotRecipe({
       color: 'inherit',
       font: 'inherit',
       textAlign: 'start',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
       cursor: 'pointer',
       outline: 'none',
       _after: { content: '""', position: 'absolute', inset: '0' },

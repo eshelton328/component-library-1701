@@ -3,6 +3,7 @@ import { AgentIcon, ChevronRightIcon, CloseIcon, HookIcon, type IconProps, RuleI
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
 import { Button } from '../controls/button'
+import { TruncatedText } from '../controls/tooltip'
 import type { ToolkitKind } from './meta-line'
 
 const kindIcons: Record<ToolkitKind, (props: IconProps) => React.JSX.Element> = {
@@ -43,7 +44,9 @@ export type MapNodeProps = {
 
 /**
  * One item on the toolkit map: a button with the kind icon, the name and
- * an optional meta text. It fills the box it is placed in. `aria-pressed`
+ * an optional meta text. It fills the box it is placed in. A label too long
+ * for the node ends with an ellipsis and shows in full in a tooltip on hover
+ * and keyboard focus. `aria-pressed`
  * tells assistive technology whether it is the selected item.
  */
 export function MapNode({ label, kind, meta, state = 'lit', onClick, onKeyDown, describedBy }: MapNodeProps) {
@@ -53,7 +56,9 @@ export function MapNode({ label, kind, meta, state = 'lit', onClick, onKeyDown, 
       <NodeIcon>
         <Icon size="16" />
       </NodeIcon>
-      <NodeLabel>{label}</NodeLabel>
+      <NodeLabel>
+        <TruncatedText>{label}</TruncatedText>
+      </NodeLabel>
       {meta !== undefined && meta !== '' ? <NodeMeta>{meta}</NodeMeta> : null}
     </NodeRoot>
   )
@@ -135,7 +140,9 @@ export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom,
         <CardIcon>
           <Icon size="16" />
         </CardIcon>
-        <CardName>{name}</CardName>
+        <CardName>
+          <TruncatedText>{name}</TruncatedText>
+        </CardName>
         <CardKind>{kindNames[kind]}</CardKind>
         {onClose === undefined ? null : (
           <CardClose>

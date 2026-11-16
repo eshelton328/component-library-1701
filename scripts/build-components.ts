@@ -8,10 +8,12 @@ import { spawnSync } from 'node:child_process'
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { Extractor, ExtractorConfig } from '@microsoft/api-extractor'
+import ts from 'typescript'
 
 const root = join(import.meta.dirname, '..')
 const pkg: unknown = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
-const name = typeof pkg === 'object' && pkg !== null && 'name' in pkg && typeof pkg.name === 'string' ? pkg.name : ''
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+const name = isRecord(pkg) && typeof pkg['name'] === 'string' ? pkg['name'] : ''
 if (!name) throw new Error('package.json has no name')
 
 const run = (cmd: string, args: string[]) => {
@@ -38,11 +40,46 @@ const config = ExtractorConfig.prepare({
 const result = Extractor.invoke(config, { localBuild: true, showVerboseMessages: false })
 if (!result.succeeded) process.exit(1)
 
-/** Rewrites `../../styled-system/recipes` (and `/index`, `.js`) to `<name>/recipes`. */
-export const toPackagePath = (text: string, pkgName: string) =>
-  text.replace(/(['"])(?:\.\.?\/)+styled-system\/([\w/-]+?)(?:\/index)?(?:\.(?:d\.)?js)?\1/g, (_, q: string, sub: string) => `${q}${pkgName}/${sub}${q}`)
+// Read the import specifiers with TypeScript's scanner, so that a comment
+// or an ordinary string that names styled-system is not an import.
+const specifiers = (text: string) => ts.preProcessFile(text, true, true).importedFiles.map((f) => f.fileName)
 
-const rolled = toPackagePath(readFileSync(dts, 'utf8'), name)
-if (/styled-system/.test(rolled.replaceAll(name, ''))) throw new Error('dist/components/index.d.ts still imports a styled-system path')
+/** `../../styled-system/recipes` (with `/index` or `.js`) becomes `<name>/recipes`; other specifiers stay. */
+export const toPackagePath = (spec: string, pkgName: string) => {
+  const m = /^(?:\.\.?\/)+styled-system\/([\w/-]+?)(?:\/index)?(?:\.(?:d\.)?js)?$/.exec(spec)
+  return m?.[1] === undefined ? spec : `${pkgName}/${m[1]}`
+}
+
+// Each import of the built code must be a dependency, a peer, or a subpath
+// that the package exports; a relative import must stay inside the build.
+const exportKeys = Object.keys(isRecord(pkg) && isRecord(pkg['exports']) ? pkg['exports'] : {})
+const deps = Object.keys({ ...(isRecord(pkg) && isRecord(pkg['dependencies']) ? pkg['dependencies'] : {}), ...(isRecord(pkg) && isRecord(pkg['peerDependencies']) ? pkg['peerDependencies'] : {}) })
+const exported = (sub: string) => exportKeys.some((k) => k === `./${sub}` || (k.includes('*') && new RegExp(`^${k.replace('.', '\\.').replace('*', '.+')}$`).test(`./${sub}`)))
+export const badImport = (spec: string, pkgName: string, rolled: boolean) => {
+  if (spec.startsWith('.')) return rolled || spec.includes('styled-system') ? 'a relative path outside the build' : undefined
+  if (spec.startsWith(`${pkgName}/`)) return exported(spec.slice(pkgName.length + 1)) ? undefined : 'a subpath the package does not export'
+  return deps.some((d) => spec === d || spec.startsWith(`${d}/`)) ? undefined : 'not a dependency or a peer'
+}
+
+const problems: string[] = []
+const dtsText = readFileSync(dts, 'utf8')
+let rolled = dtsText
+for (const spec of new Set(specifiers(dtsText))) {
+  const to = toPackagePath(spec, name)
+  if (to !== spec) rolled = rolled.replaceAll(`'${spec}'`, `'${to}'`).replaceAll(`"${spec}"`, `"${to}"`)
+}
 writeFileSync(dts, rolled)
-console.log(JSON.stringify({ ok: true, types: 'dist/components/index.d.ts' }))
+const files = readdirSync(join(root, 'dist/components'), { recursive: true, encoding: 'utf8' }).filter((f) => /\.(js|d\.ts)$/.test(f))
+for (const f of files) {
+  // A React Server Components app must load each module on the client.
+  if (f.endsWith('.js') && !readFileSync(join(root, 'dist/components', f), 'utf8').startsWith('"use client";')) problems.push(`dist/components/${f} does not start with "use client"`)
+  for (const spec of specifiers(readFileSync(join(root, 'dist/components', f), 'utf8'))) {
+    const why = badImport(spec, name, f.endsWith('.d.ts'))
+    if (why) problems.push(`dist/components/${f} imports ${spec}: ${why}`)
+  }
+}
+if (problems.length) {
+  console.error(problems.join('\n'))
+  process.exit(1)
+}
+console.log(JSON.stringify({ ok: true, types: 'dist/components/index.d.ts', modules: files.length }))

@@ -92,7 +92,7 @@ declares the first stable contract.
   `index.d.ts` (API Extractor). Each `styled-system` import becomes the
   package's own subpath export, such as
   `@eshelton328/component-library-1701/recipes`. React and Ark UI stay
-  external.
+  external, and each module starts with `"use client"`.
 - The version in `package.json` stays `0.0.0-development`. The release
   job writes the real version only in its own checkout.
 - After a failed release, look at the tags, the GitHub release and the

@@ -34,7 +34,9 @@ export default defineConfig({
     lib: { entry: resolve(root, 'src/index.ts'), formats: ['es'] },
     rolldownOptions: {
       external: (id) => /^(react|react-dom)(\/|$)/.test(id) || /^@ark-ui\/react(\/|$)/.test(id),
-      output: { preserveModules: true, preserveModulesRoot: 'src', entryFileNames: '[name].js' },
+      // The components use hooks and context, so a React Server Components
+      // app must load each module on the client.
+      output: { preserveModules: true, preserveModulesRoot: 'src', entryFileNames: '[name].js', banner: "'use client';" },
     },
   },
 })

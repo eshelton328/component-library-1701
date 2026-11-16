@@ -4,6 +4,7 @@
 // styled-system/recipes. Add a recipe as its own file and list it below.
 import type { Config } from '@pandacss/dev'
 import { button } from './button'
+import { checkbox } from './checkbox'
 import { itemTabs } from './item-tabs'
 import { menu } from './menu'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
@@ -14,4 +15,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { itemTabs, menu, searchField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, itemTabs, menu, searchField, viewSwitch }

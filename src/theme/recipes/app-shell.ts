@@ -21,7 +21,17 @@ export const appShell = defineSlotRecipe({
     root: { display: 'flex', flex: '1', minW: '0', minH: '0', h: '100%' },
     rail: { display: 'flex', flexDirection: 'column', flexShrink: '0', w: 'shell.rail', minH: '0' },
     list: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
-    detail: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0', minH: '0', overflowY: 'auto' },
+    detail: {
+      display: 'flex',
+      flexDirection: 'column',
+      flex: '1',
+      minW: '0',
+      minH: '0',
+      overflowY: 'auto',
+      // It takes focus so the keyboard can scroll it; the ring sits inside, as the pane abuts its neighbours.
+      outline: 'none',
+      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+    },
     side: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
     tabBar: { display: 'flex', flexDirection: 'column', flexShrink: '0' },
     safeArea: { flexShrink: '0', h: 'shell.safeAreaBottom' },

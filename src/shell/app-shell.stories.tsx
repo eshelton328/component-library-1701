@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { useState } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
@@ -24,7 +25,6 @@ function Desktop() {
         detail={
           <Container>
             <h1 className={text}>Approve the release plan</h1>
-            <Button>Start</Button>
             {lines.map((l) => (
               <p key={l} className={text}>
                 {l}
@@ -77,6 +77,8 @@ const meta = {
     detail.scrollTop = 300
     await expect(detail.scrollTop).toBe(300)
     await expect(rect(list).top).toBe(top)
+    // With only text in it, the detail takes focus, so the keyboard can scroll it.
+    await expect(detail).toHaveAttribute('tabindex', '0')
   },
 } satisfies Meta<typeof Desktop>
 export default meta
@@ -138,6 +140,7 @@ export const Tablet: StoryObj<typeof meta> = {
     const tablet = within(canvasElement)
     // The list fills the width; the detail, rail and side panel are not shown.
     await expect(tablet.getByRole('region', { name: 'Inbox' })).toBeVisible()
+    await expect(Math.round(rect(tablet.getByRole('region', { name: 'Inbox' })).width)).toBe(Math.round(rect(box(canvasElement)).width))
     await expect(tablet.queryByRole('region', { name: 'Task' })).toBeNull()
     await expect(tablet.queryByRole('navigation', { name: 'Main' })).toBeNull()
     await expect(tablet.queryByText('Discussion')).toBeNull()
@@ -189,5 +192,55 @@ export const NoList: StoryObj<typeof meta> = {
   ),
   play: async ({ canvasElement }) => {
     await expect(within(canvasElement).getByRole('button', { name: 'Only the detail' })).toBeVisible()
+  },
+}
+
+function Switching() {
+  const [view, setView] = useState<'list' | 'detail'>('list')
+  return (
+    <div className={narrowFrame}>
+      <AppShell
+        size="phone"
+        view={view}
+        list={<input aria-label="Note" />}
+        detail={<input aria-label="Note" />}
+        tabBar={
+          <Button
+            onClick={() => {
+              setView('detail')
+            }}
+          >
+            Open
+          </Button>
+        }
+      />
+    </div>
+  )
+}
+
+/** Switching from list to detail mounts the detail afresh, so the list's state never shows in it. */
+export const SwitchView: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Switching />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByRole('textbox', { name: 'Note' }), 'list-only draft')
+    await userEvent.click(canvas.getByRole('button', { name: 'Open' }))
+    await expect(canvas.getByRole('textbox', { name: 'Note' })).toHaveValue('')
+  },
+}
+
+/** An empty array or an empty fragment counts as no slot: the phone shows the detail and keeps the safe area. */
+export const EmptySlots: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={narrowFrame}>
+      <AppShell size="phone" list={[]} detail={<p className={text}>The detail</p>} tabBar={<>{false}</>} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText('The detail')).toBeVisible()
+    await expect(canvasElement.querySelector('.app-shell__safeArea')).not.toBeNull()
+    await expect(canvasElement.querySelector('.app-shell__tabBar')).toBeNull()
   },
 }

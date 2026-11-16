@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Children, Fragment, isValidElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -13,8 +13,12 @@ const Side = withContext('aside', 'side')
 const TabBar = withContext('div', 'tabBar')
 const SafeArea = withContext('div', 'safeArea')
 
-// A slot given as `false`, `null` or an empty string is left out, as React leaves it out.
-const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
+// A slot that renders nothing is left out: `false`, `null`, `''`, an empty
+// array, or a fragment of those.
+const shown = (node: ReactNode): boolean =>
+  Children.toArray(node).some((child) =>
+    isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment ? shown(child.props.children) : child !== '',
+  )
 
 export type AppShellProps = Scalar<AppShellVariantProps> & {
   /** The desktop nav rail. Shown only at `size="desktop"`. */
@@ -38,7 +42,8 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * by side; `tablet` and `phone` show one pane at a time above the tab bar.
  * `listWidth` is `list` (420, the default) or `sidebar` (330, Workbench);
  * `sideWidth` is `side` (380, the default) or `wide` (420). The slots bring
- * their own surfaces. It is as tall as its parent.
+ * their own surfaces. It is as tall as its parent. The scrolling pane is
+ * focusable, so the keyboard can scroll it when it holds only text.
  */
 export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list' }: AppShellProps) {
   const desktop = size === undefined || size === 'desktop'
@@ -48,18 +53,21 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
         <Root size="desktop" listWidth={listWidth} sideWidth={sideWidth}>
           {shown(rail) ? <Rail>{rail}</Rail> : null}
           {shown(list) ? <List>{list}</List> : null}
-          <Detail>{detail}</Detail>
+          <Detail tabIndex={0}>{detail}</Detail>
           {shown(side) ? <Side>{side}</Side> : null}
         </Root>
       </Backdrop>
     )
   }
-  const pane = view === 'detail' || !shown(list) ? detail : list
+  const showDetail = view === 'detail' || !shown(list)
   const hasTabBar = shown(tabBar)
   return (
     <Backdrop size={size}>
       <Root size={size} listWidth={listWidth} sideWidth={sideWidth}>
-        <Detail>{pane}</Detail>
+        {/* Keyed, so the list's state never carries over into the detail. */}
+        <Detail key={showDetail ? 'detail' : 'list'} tabIndex={0}>
+          {showDetail ? detail : list}
+        </Detail>
         {hasTabBar ? <TabBar>{tabBar}</TabBar> : null}
         {!hasTabBar && size === 'phone' ? <SafeArea aria-hidden="true" /> : null}
       </Root>

@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Children, useState, type ReactNode } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { CodeLines } from './code-lines'
-import { MarkdownView } from './markdown-view'
+import { CodeLines, type CodeKind, type CodeSegment } from './code-lines'
+import { MarkdownView, type MarkdownHighlight } from './markdown-view'
 import { ScriptExplanation, type ScriptStep } from './script-explanation'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'flex', flexWrap: 'wrap', gap: '24', alignItems: 'flex-start' })
@@ -282,5 +283,169 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onLineSelect).toHaveBeenLastCalledWith(12)
     await expect(onLineSelect).toHaveBeenCalledTimes(2)
+  },
+}
+
+// A tiny demo highlighter for the story only; the app plugs in a real one (d-068).
+// It colours `ts` fences and returns undefined for every other language.
+const tokens = /(\/\/.*$)|('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")|\b(function|return|const|let|if|else|export|import|from)\b|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_]\w*)(?=\()/g
+
+const demoKind = (m: RegExpExecArray): CodeKind | undefined => {
+  if (m[1] !== undefined) return 'comment'
+  if (m[2] !== undefined) return 'string'
+  if (m[3] !== undefined) return 'keyword'
+  if (m[4] !== undefined) return 'number'
+  if (m[5] !== undefined) return 'function'
+  return undefined
+}
+
+const demoLine = (line: string): CodeSegment[] => {
+  const parts: CodeSegment[] = []
+  let at = 0
+  for (const m of line.matchAll(tokens)) {
+    if (m.index > at) parts.push({ text: line.slice(at, m.index) })
+    parts.push({ text: m[0], kind: demoKind(m) })
+    at = m.index + m[0].length
+  }
+  if (at < line.length) parts.push({ text: line.slice(at) })
+  return parts
+}
+
+const demoHighlight: MarkdownHighlight = (code, lang) => (lang === 'ts' ? code.split('\n').map(demoLine) : undefined)
+
+const tsFence = ["// Adds the tax to a price.", "export function total(price: number) {", "  const rate = 0.2", "  return price * (1 + rate) + ' EUR'", '}'].join('\n')
+const bashFence = ['set -euo pipefail', 'pnpm verify'].join('\n')
+
+const keywordSwatch = css({ color: 'code.keyword' })
+
+function Highlighted() {
+  return (
+    <main className={page}>
+      <div className={panel} data-testid="highlighted">
+        <MarkdownView highlight={demoHighlight}>
+          <h1>total</h1>
+          <p>Adds the tax to a price.</p>
+          <pre>
+            <code className="language-ts">{`${tsFence}\n`}</code>
+          </pre>
+          <p>Check it before you push:</p>
+          <pre>
+            <code className="language-bash">{`${bashFence}\n`}</code>
+          </pre>
+        </MarkdownView>
+      </div>
+      <span hidden data-swatch="keyword" className={keywordSwatch} />
+      <span hidden data-swatch="muted" className={swatches.muted} />
+    </main>
+  )
+}
+
+/** Fenced code in syntax colours from the caller's `highlight`; a fence it returns nothing for stays plain. */
+const highlightedPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const md = pick(within(canvasElement).getByTestId('highlighted'), '.markdown-view')
+  const [ts, bash] = all(md, 'pre > code')
+  if (ts === undefined || bash === undefined) throw new Error('no fences')
+  const keyword = pick(ts, '[data-kind="keyword"]')
+  await expect(keyword.textContent).toBe('export')
+  await expect(getComputedStyle(keyword).color).toBe(swatch(canvasElement, 'keyword'))
+  await expect(getComputedStyle(keyword).color).not.toBe(swatch(canvasElement, 'muted'))
+  await expect(all(ts, '[data-kind]').map((el) => el.dataset['kind'])).toEqual(expect.arrayContaining(['comment', 'keyword', 'function', 'number', 'string']))
+  // The bash fence has no highlighter result: plain text, no coloured pieces.
+  await expect(all(bash, '[data-kind]')).toEqual([])
+  await expect(getComputedStyle(bash).color).toBe(swatch(canvasElement, 'muted'))
+  // The text, and so the copied code, is the original code.
+  await expect(ts.textContent).toBe(`${tsFence}\n`)
+  await expect(bash.textContent).toBe(`${bashFence}\n`)
+  const selection = window.getSelection()
+  if (selection === null) throw new Error('no selection')
+  selection.selectAllChildren(ts)
+  await expect(selection.toString().replace(/\n$/, '')).toBe(tsFence)
+  selection.removeAllRanges()
+}
+
+export const HighlightedDark: StoryObj<typeof meta> = { render: () => <Highlighted />, play: highlightedPlay, globals: { mode: 'dark' } }
+export const HighlightedLight: StoryObj<typeof meta> = { render: () => <Highlighted />, play: highlightedPlay, globals: { mode: 'light' } }
+
+// Colours every word as a keyword, so each line has several coloured pieces.
+const everyWord: MarkdownHighlight = (code) => code.split('\n').map((line) => line.split(/( )/).map((text) => (text === ' ' ? { text } : { text, kind: 'keyword' })))
+
+function Updating() {
+  const [code, setCode] = useState('a b\nc d')
+  return (
+    <main className={page}>
+      <button
+        type="button"
+        onClick={() => {
+          setCode('a\nc')
+        }}
+      >
+        Shorten
+      </button>
+      <div className={panel} data-testid="updating">
+        <MarkdownView highlight={everyWord}>
+          <pre>
+            <code className="language-txt">{`${code}\n`}</code>
+          </pre>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+/** When the code changes, each coloured piece shows its new text: keys never repeat across lines. */
+export const HighlightedUpdate: StoryObj<typeof meta> = {
+  render: () => <Updating />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const code = pick(canvas.getByTestId('updating'), 'pre > code')
+    await expect(code.textContent).toBe('a b\nc d\n')
+    await userEvent.click(canvas.getByRole('button', { name: 'Shorten' }))
+    await expect(pick(canvas.getByTestId('updating'), 'pre > code').textContent).toBe('a\nc\n')
+    await expect(all(canvas.getByTestId('updating'), '[data-kind]').map((el) => el.textContent)).toEqual(['a', 'c'])
+  },
+}
+
+// A component that accepts exactly one child, as some Markdown renderers' wrappers do.
+function OnlyChild({ children }: { children: ReactNode }) {
+  return <div data-testid="only">{Children.only(children)}</div>
+}
+
+function Wrapped() {
+  return (
+    <main className={page}>
+      <div className={panel} data-testid="wrapped">
+        <MarkdownView highlight={demoHighlight}>
+          <OnlyChild>
+            <pre>
+              <code className="language-ts">{`${tsFence}\n`}</code>
+            </pre>
+          </OnlyChild>
+          <OnlyChild>
+            <pre>
+              <code className="language-bash">{`${bashFence}\n`}</code>
+            </pre>
+          </OnlyChild>
+          <OnlyChild>
+            <p>Plain text.</p>
+          </OnlyChild>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+/** A wrapper that calls `Children.only` still gets one child, coloured or not. */
+export const HighlightedSingleChild: StoryObj<typeof meta> = {
+  render: () => <Wrapped />,
+  play: async ({ canvasElement }) => {
+    const wrappers = within(canvasElement).getAllByTestId('only')
+    await expect(wrappers.length).toBe(3)
+    const [ts, bash, plain] = wrappers
+    if (ts === undefined || bash === undefined || plain === undefined) throw new Error('no wrappers')
+    await expect(pick(ts, '[data-kind="keyword"]').textContent).toBe('export')
+    await expect(pick(ts, 'pre > code').textContent).toBe(`${tsFence}\n`)
+    await expect(all(bash, '[data-kind]')).toEqual([])
+    await expect(pick(bash, 'pre > code').textContent).toBe(`${bashFence}\n`)
+    await expect(pick(plain, 'p').textContent).toBe('Plain text.')
   },
 }

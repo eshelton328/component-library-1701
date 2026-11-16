@@ -683,11 +683,15 @@ export type MapSelectionCardProps = {
 };
 
 // @public
+export type MarkdownHighlight = (code: string, lang: string | undefined) => readonly (readonly CodeSegment[] | undefined)[] | undefined;
+
+// @public
 export function MarkdownView(input: MarkdownViewProps): JSX.Element;
 
 // @public (undocumented)
 export type MarkdownViewProps = {
     children: ReactNode;
+    highlight?: MarkdownHighlight | undefined;
 };
 
 // @public

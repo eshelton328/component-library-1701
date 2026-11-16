@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { codeLines } from '../../styled-system/recipes'
 
@@ -5,7 +6,8 @@ const { withProvider, withContext } = createSlotRecipeContext(codeLines)
 const Root = withProvider('pre', 'root')
 const LineNumber = withContext('span', 'number')
 const LineText = withContext('code', 'text')
-const Segment = withContext('span', 'segment')
+// A plain class, not a context component, so MarkdownView can colour its code blocks with the same slot.
+const segmentClass = codeLines().segment
 
 /** The kind of a piece of code, which picks its syntax colour (`code.<kind>`). */
 export type CodeKind = 'keyword' | 'string' | 'comment' | 'number' | 'function'
@@ -41,7 +43,7 @@ export function CodeLines({ lines, segments, start = 1 }: CodeLinesProps) {
   return (
     <Root>
       {lines.map((line, i) => (
-        <LineRow key={String(i)} number={start + i} text={line} parts={matching(line, segments?.[i])} />
+        <LineRow key={String(i)} number={start + i} text={line} parts={segments?.[i]} />
       ))}
     </Root>
   )
@@ -53,6 +55,27 @@ function matching(line: string, parts: readonly CodeSegment[] | undefined): read
   return parts.map((p) => p.text).join('') === line ? parts : undefined
 }
 
+/**
+ * One line of code in its syntax colours: each piece with a kind in the
+ * `segment` slot of the `codeLines` recipe, the rest as plain text. The line
+ * is plain when `parts` is missing or does not join to exactly `line`.
+ * Shared by CodeLines and MarkdownView; not part of the package's API.
+ * `keyPrefix` keeps the keys unique when several lines share one parent.
+ */
+export function codePieces(line: string, parts: readonly CodeSegment[] | undefined, keyPrefix = ''): ReactNode[] {
+  const pieces = matching(line, parts)
+  if (pieces === undefined) return [line]
+  return pieces.map((part, j) =>
+    part.kind === undefined ? (
+      part.text
+    ) : (
+      <span key={`${keyPrefix}${String(j)}`} className={segmentClass} data-kind={part.kind}>
+        {part.text}
+      </span>
+    ),
+  )
+}
+
 function LineRow({ number, text, parts }: { number: number; text: string; parts: readonly CodeSegment[] | undefined }) {
   return (
     <>
@@ -60,22 +83,7 @@ function LineRow({ number, text, parts }: { number: number; text: string; parts:
         {number}
       </LineNumber>
       {/* The line break keeps blank lines when the code is copied; at the end of the cell it draws no extra line. */}
-      <LineText>
-        {parts === undefined
-          ? `${text}\n`
-          : [
-              ...parts.map((part, j) =>
-                part.kind === undefined ? (
-                  part.text
-                ) : (
-                  <Segment key={String(j)} data-kind={part.kind}>
-                    {part.text}
-                  </Segment>
-                ),
-              ),
-              '\n',
-            ]}
-      </LineText>
+      <LineText>{[...codePieces(text, parts), '\n']}</LineText>
     </>
   )
 }

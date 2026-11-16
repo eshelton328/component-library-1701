@@ -151,3 +151,44 @@ export const ControlledVertical: StoryObj<typeof meta> = {
     await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('90 : 10'))
   },
 }
+
+function Three() {
+  return (
+    <div className={frame}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          throw new Error('the handle submitted the form')
+        }}
+      >
+        <Splitter
+          defaultSize={[30, 50, 20]}
+          panels={[
+            { id: 'a', content: <div className={box}>Pane A</div> },
+            { id: 'b', content: <div className={box}>Pane B</div>, minSize: 50 },
+            { id: 'c', content: <div className={box}>Pane C</div> },
+          ]}
+        />
+      </form>
+    </div>
+  )
+}
+
+/** Double-click on B : C keeps B at its 50 % minimum and leaves A alone; a handle in a form is not a submit button. */
+export const DoubleClickWithinLimits: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Three />,
+  play: async ({ canvasElement }) => {
+    const handles = within(canvasElement).getAllByRole('separator', { name: 'Resize' })
+    for (const h of handles) await expect(h).toHaveAttribute('type', 'button')
+    const a = panelOf(canvasElement, 'Pane A')
+    const b = panelOf(canvasElement, 'Pane B')
+    const widthA = rect(a).width
+    const widthB = rect(b).width
+    const second = handles[1]
+    if (second === undefined) throw new Error('no second handle')
+    await userEvent.dblClick(second)
+    await expect(Math.round(rect(a).width)).toBe(Math.round(widthA))
+    await expect(Math.round(rect(b).width)).toBe(Math.round(widthB))
+  },
+}

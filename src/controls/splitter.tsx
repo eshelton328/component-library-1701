@@ -11,7 +11,7 @@ const Indicator = withContext(ArkSplitter.ResizeTriggerIndicator, 'resizeTrigger
 
 /** One panel of a splitter. */
 export type SplitterPanel = {
-  /** Unique within the splitter; Ark names the handles after it. */
+  /** Unique within the splitter. Any string, colons included. */
   id: string
   content: ReactNode
   /** The smallest size, in percent of the splitter. 10 by default. */
@@ -21,7 +21,7 @@ export type SplitterPanel = {
 export type SplitterProps = {
   /** `horizontal` (the default) puts the panels side by side; `vertical` stacks them. */
   orientation?: 'horizontal' | 'vertical' | undefined
-  /** Two or more panels, in order. */
+  /** The panels, in order. One panel fills the splitter and has no handle. */
   panels: readonly SplitterPanel[]
   /** The sizes in percent, one for each panel. Set it with `onSizeChange` to control the splitter. */
   size?: readonly number[] | undefined
@@ -33,20 +33,32 @@ export type SplitterProps = {
   handleLabel?: string | undefined
 }
 
-// Double-click sets the two panels beside a handle to equal halves of their joint size.
-function Handle({ id, before, after, label }: { id: `${string}:${string}`; before: number; after: number; label: string }) {
+// Ark names a handle "before:after" and splits that name at the colon, so
+// the ids it sees must have none. encodeURIComponent turns ":" into "%3A"
+// and keeps distinct ids distinct.
+const arkId = (id: string) => encodeURIComponent(id)
+const minOf = (p: SplitterPanel | undefined) => p?.minSize ?? 10
+
+// Double-click shares the two panels beside a handle equally, within their
+// minimum sizes, and leaves every other panel as it is.
+function Handle({ before, after, panels, label }: { before: number; after: number; panels: readonly SplitterPanel[]; label: string }) {
   const api = useSplitterContext()
+  const a = panels[before]
+  const b = panels[after]
+  if (a === undefined || b === undefined) return null
   return (
     <Trigger
-      id={id}
+      id={`${arkId(a.id)}:${arkId(b.id)}`}
+      type="button"
       aria-label={label}
       onDoubleClick={() => {
         const sizes = api.getSizes()
-        const a = sizes[before]
-        const b = sizes[after]
-        if (a === undefined || b === undefined) return
-        const half = (a + b) / 2
-        api.setSizes(sizes.map((s, i) => (i === before || i === after ? half : s)))
+        const sa = sizes[before]
+        const sb = sizes[after]
+        if (sa === undefined || sb === undefined) return
+        const total = sa + sb
+        const next = Math.min(Math.max(total / 2, minOf(a)), total - minOf(b))
+        api.setSizes(sizes.map((s, i) => (i === before ? next : i === after ? total - next : s)))
       }}
     >
       <Indicator />
@@ -58,25 +70,28 @@ function Handle({ id, before, after, label }: { id: `${string}:${string}`; befor
  * Panels with a resize handle between each pair. Drag a handle, or focus
  * it and use the arrow keys, Home and End; double-click it to share the
  * two panels' space equally. The sizes stay inside Ark and are
- * controllable with `size` and `onSizeChange` (d-069).
+ * controllable with `size` and `onSizeChange` (d-069). Each panel keeps
+ * its React state when panels are added, removed or reordered.
  */
 export function Splitter({ orientation = 'horizontal', panels, size, defaultSize, onSizeChange, handleLabel = 'Resize' }: SplitterProps) {
   const equal = panels.map(() => 100 / panels.length)
   return (
     <Root
       orientation={orientation}
-      panels={panels.map((p) => ({ id: p.id, minSize: p.minSize ?? 10 }))}
+      panels={panels.map((p) => ({ id: arkId(p.id), minSize: minOf(p) }))}
       {...(size === undefined ? { defaultSize: [...(defaultSize ?? equal)] } : { size: [...size] })}
       onResize={(details) => onSizeChange?.(details.size)}
     >
-      {panels.map((p, i) => {
-        const next = panels[i + 1]
-        return [
-          <Panel key={p.id} id={p.id}>
+      {panels.flatMap((p, i) => {
+        const panel = (
+          <Panel key={`panel:${p.id}`} id={arkId(p.id)}>
             {p.content}
-          </Panel>,
-          next === undefined ? null : <Handle key={`${p.id}:${next.id}`} id={`${p.id}:${next.id}`} before={i} after={i + 1} label={handleLabel} />,
-        ]
+          </Panel>
+        )
+        const next = panels[i + 1]
+        return next === undefined
+          ? [panel]
+          : [panel, <Handle key={`handle:${p.id}:${next.id}`} before={i} after={i + 1} panels={panels} label={handleLabel} />]
       })}
     </Root>
   )

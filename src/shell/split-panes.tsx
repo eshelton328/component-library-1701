@@ -14,7 +14,7 @@ export type SplitPane = {
 export type SplitPart = 'columns' | 'left' | 'right'
 
 export type SplitPanesProps = {
-  /** One to four panes, in reading order. Panes after the fourth are not shown. */
+  /** One to four panes. Panes after the fourth are not shown. */
   panes: readonly SplitPane[]
   /** The sizes of each splitter, in percent. Set them with `onSizeChange` to control the split. */
   sizes?: Partial<Record<SplitPart, readonly number[]>> | undefined
@@ -26,9 +26,10 @@ export type SplitPanesProps = {
  * The Workbench split: one to four panes, 10 apart, with a resize handle
  * between each pair (Workbench D9, D11, D12). One pane fills the space;
  * two sit side by side; three put the first on the left and the second
- * over the third on the right; four make two columns, the first and third
- * on the left and the second and fourth on the right, so the reading
- * order runs left to right, then top to bottom. It fills its parent.
+ * over the third on the right; four put the fourth under the first, so the
+ * panes run clockwise from the top left. A pane keeps its place, and its
+ * React state, when a pane is added after it or removed after it; a pane
+ * that moves to the other column is mounted again. It fills its parent.
  */
 export function SplitPanes({ panes, sizes, onSizeChange }: SplitPanesProps) {
   const [a, b, c, d] = panes
@@ -37,12 +38,15 @@ export function SplitPanes({ panes, sizes, onSizeChange }: SplitPanesProps) {
     size: sizes?.[part],
     onSizeChange: (size: number[]) => onSizeChange?.(part, size),
   })
-  const column = (id: string, top: SplitPane, bottom: SplitPane | undefined, part: SplitPart): SplitPane =>
-    bottom === undefined
-      ? { id, content: top.content }
-      : { id, content: <Splitter orientation="vertical" handleLabel="Resize rows" panels={[top, bottom]} {...props(part)} /> }
-  if (b === undefined) return <Splitter panels={[a]} />
-  const left = column('left', a, c !== undefined && d !== undefined ? c : undefined, 'left')
-  const right = column('right', b, d ?? c, 'right')
-  return <Splitter handleLabel="Resize columns" panels={[left, right]} {...props('columns')} />
+  // Every pane sits at the same depth, in a vertical splitter inside a
+  // column, so adding a pane never moves the others to a new parent.
+  const column = (id: 'left' | 'right', rows: readonly (SplitPane | undefined)[]) => {
+    const shown = rows.filter((r): r is SplitPane => r !== undefined)
+    return {
+      id,
+      content: <Splitter orientation="vertical" handleLabel="Resize rows" panels={shown} {...props(id)} />,
+    }
+  }
+  const columns = b === undefined ? [column('left', [a])] : [column('left', [a, d]), column('right', [b, c])]
+  return <Splitter handleLabel="Resize columns" panels={columns} {...props('columns')} />
 }

@@ -151,7 +151,7 @@ export const Three: StoryObj<typeof meta> = {
   },
 }
 
-/** Four panes in two columns: reading order runs left to right, then top to bottom. */
+/** Four panes in two columns, clockwise from the top left: the fourth sits under the first. */
 export const Four: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
   args: { count: 4 },
@@ -161,9 +161,10 @@ export const Four: StoryObj<typeof meta> = {
     if (a === undefined || b === undefined || c === undefined || d === undefined) throw new Error('no panes')
     await expect(Math.round(a.top)).toBe(Math.round(b.top))
     await expect(Math.round(c.top)).toBe(Math.round(d.top))
-    await expect(Math.round(c.left)).toBe(Math.round(a.left))
-    await expect(Math.round(d.left)).toBe(Math.round(b.left))
-    await expect(Math.round(c.top - a.bottom)).toBe(10)
+    await expect(Math.round(d.left)).toBe(Math.round(a.left))
+    await expect(Math.round(c.left)).toBe(Math.round(b.left))
+    await expect(Math.round(d.top - a.bottom)).toBe(10)
+    await expect(Math.round(c.top - b.bottom)).toBe(10)
     await expect(canvas.getAllByRole('separator', { name: 'Resize rows' })).toHaveLength(2)
     await expect(canvas.getAllByRole('separator', { name: 'Resize columns' })).toHaveLength(1)
   },
@@ -218,5 +219,54 @@ export const ControlledSizes: StoryObj<typeof meta> = {
     canvas.getByRole('separator', { name: 'Resize columns' }).focus()
     await userEvent.keyboard('{End}')
     await waitFor(() => expect(canvas.getByRole('status')).toHaveTextContent('90 : 10'))
+  },
+}
+
+function Growing() {
+  const [order, setOrder] = useState(['bridge themes', 'drift check'])
+  return (
+    <div className={frame}>
+      <button type="button" onClick={() => { setOrder((o) => [...o, 'brain git']); }}>
+        Add a pane
+      </button>
+      <button type="button" onClick={() => { setOrder((o) => [...o].reverse()); }}>
+        Swap
+      </button>
+      <SplitPanes
+        panes={order.map((t) => ({
+          id: `chat:${t}`,
+          content: (
+            <Pane title={t}>
+              <input aria-label={`Draft in ${t}`} />
+            </Pane>
+          ),
+        }))}
+      />
+    </div>
+  )
+}
+
+/** A pane keeps its state when a pane is added; a pane that changes column does not take another pane's state. Ids may hold colons. */
+export const KeepsState: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Growing />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.type(canvas.getByRole('textbox', { name: 'Draft in drift check' }), 'unsent')
+    await userEvent.click(canvas.getByRole('button', { name: 'Add a pane' }))
+    await expect(canvas.getByRole('region', { name: 'brain git' })).toBeVisible()
+    await expect(canvas.getByRole('textbox', { name: 'Draft in drift check' })).toHaveValue('unsent')
+    // The new pane gets a share of the right column.
+    await expect(rect(canvas.getByRole('region', { name: 'brain git' })).height).toBeGreaterThan(100)
+    // Ids with colons still resize from the keyboard.
+    const rows = canvas.getByRole('separator', { name: 'Resize rows' })
+    const before = rect(canvas.getByRole('region', { name: 'drift check' })).height
+    rows.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(rect(canvas.getByRole('region', { name: 'drift check' })).height).toBeGreaterThan(before))
+    // Reversing moves panes between columns; none takes another's draft.
+    await userEvent.click(canvas.getByRole('button', { name: 'Swap' }))
+    await expect(canvas.getByRole('textbox', { name: 'Draft in bridge themes' })).toHaveValue('')
+    await expect(canvas.getByRole('textbox', { name: 'Draft in brain git' })).toHaveValue('')
   },
 }

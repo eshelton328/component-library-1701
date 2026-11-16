@@ -1,5 +1,5 @@
 import { Field } from '@ark-ui/react/field'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { textField, type TextFieldVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
@@ -34,10 +34,10 @@ export type TextFieldBaseProps = {
   name?: string | undefined
 }
 
-function Frame({ label, helperText, error, disabled, readOnly, required, size, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
+function Frame({ label, helperText, error, disabled, readOnly, required, size, variant, labelHidden, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
   const invalid = error !== undefined && error !== ''
   return (
-    <Root size={size} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
+    <Root size={size} variant={variant} labelHidden={labelHidden} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
       <Label>
         {label}
         <RequiredIndicator>*</RequiredIndicator>
@@ -78,13 +78,28 @@ export type TextAreaProps = TextFieldBaseProps & {
   autoresize?: boolean | undefined
   /** The number of lines it shows when it is empty. */
   rows?: number | undefined
+  /**
+   * `field` (the default) draws the field's own fill and border; `bare`
+   * draws none, for a text area inside a box that draws them, such as the
+   * composer.
+   */
+  variant?: 'field' | 'bare' | undefined
+  /** Hide the label from view. Screen readers still read it as the name. */
+  labelHidden?: boolean | undefined
+  /** Called on each key press in the text area, such as Enter to send. */
+  onKeyDown?: ((event: KeyboardEvent<HTMLTextAreaElement>) => void) | undefined
 }
 
 /** A text input of more than one line with a label, such as the notes field or a prompt. */
-export function TextArea({ autoresize, rows, ...props }: TextAreaProps) {
+export function TextArea({ autoresize, rows, onKeyDown, ...props }: TextAreaProps) {
   return (
     <Frame {...props}>
-      <Textarea {...inputProps(props)} {...(autoresize === undefined ? {} : { autoresize })} {...(rows === undefined ? {} : { rows })} />
+      <Textarea
+        {...inputProps(props)}
+        {...(autoresize === undefined ? {} : { autoresize })}
+        {...(rows === undefined ? {} : { rows })}
+        {...(onKeyDown === undefined ? {} : { onKeyDown })}
+      />
     </Frame>
   )
 }

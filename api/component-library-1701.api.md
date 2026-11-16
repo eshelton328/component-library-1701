@@ -11,6 +11,7 @@ import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
+import type { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { KindTileVariantProps } from '../../styled-system/recipes';
@@ -40,6 +41,9 @@ export function AgentIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ApproveIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ArrowUpIcon(props: IconProps): JSX.Element;
 
 // @public
 export function BackRow(input: BackRowProps): JSX.Element;
@@ -143,7 +147,36 @@ export function ChevronDownIcon(props: IconProps): JSX.Element;
 export function ChevronRightIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ClipIcon(props: IconProps): JSX.Element;
+
+// @public
 export function CloseIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Composer(input: ComposerProps): JSX.Element;
+
+// @public
+export type ComposerAttachment = {
+    id: string;
+    name: string;
+};
+
+// @public (undocumented)
+export type ComposerProps = {
+    label?: string | undefined;
+    placeholder?: string | undefined;
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    onSubmit?: ((text: string) => void) | undefined;
+    running?: boolean | undefined;
+    onStop?: (() => void) | undefined;
+    attachments?: readonly ComposerAttachment[] | undefined;
+    onRemoveAttachment?: ((id: string) => void) | undefined;
+    onAttach?: (() => void) | undefined;
+    model?: ReactNode;
+    disabled?: boolean | undefined;
+};
 
 // @public
 export function ContextMeter(input: ContextMeterProps): JSX.Element;
@@ -648,6 +681,9 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 };
 
 // @public
+export function StopIcon(props: IconProps): JSX.Element;
+
+// @public
 export function TagsLine(input: TagsLineProps): JSX.Element | null;
 
 // @public (undocumented)
@@ -664,6 +700,9 @@ export function TextArea(input: TextAreaProps): JSX.Element;
 export type TextAreaProps = TextFieldBaseProps & {
     autoresize?: boolean | undefined;
     rows?: number | undefined;
+    variant?: 'field' | 'bare' | undefined;
+    labelHidden?: boolean | undefined;
+    onKeyDown?: ((event: KeyboardEvent_2<HTMLTextAreaElement>) => void) | undefined;
 };
 
 // @public

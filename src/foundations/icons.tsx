@@ -257,3 +257,31 @@ export function ChevronRightIcon(props: IconProps) {
     </Svg>
   )
 }
+
+/** A paper clip, for attachments. Figma node 105:901, drawn at 14 px and scaled to 24. */
+export function ClipIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21.44 11.05L12.25 20.24C11.12 21.37 9.6 22 8 22C6.41 22 4.89 21.37 3.76 20.24C2.63 19.11 2 17.59 2 16C2 14.4 2.63 12.88 3.76 11.75L12.33 3.18C13.08 2.43 14.1 2.01 15.16 2C16.22 2 17.24 2.42 18 3.17C18.75 3.93 19.17 4.94 19.17 6.01C19.17 7.07 18.75 8.09 18 8.84L9.41 17.41C9.03 17.79 8.53 18 8 18C7.46 18 6.96 17.79 6.58 17.41C6.2 17.03 5.99 16.53 5.99 16C5.99 15.46 6.2 14.96 6.58 14.58L15.07 6.1" />
+    </Svg>
+  )
+}
+
+/** A rounded square, for Stop. Figma node 105:911, drawn at 12 px and scaled to 24. */
+export function StopIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M8 6H16C17.1 6 18 6.9 18 8V16C18 17.1 17.1 18 16 18H8C6.9 18 6 17.1 6 16V8C6 6.9 6.9 6 8 6Z" />
+    </Svg>
+  )
+}
+
+/** An arrow that points up, for Send. Figma node 105:917, drawn at 14 px and scaled to 24. */
+export function ArrowUpIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M5 12L12 5L19 12" />
+      <path d="M12 19V5" />
+    </Svg>
+  )
+}

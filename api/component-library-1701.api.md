@@ -1029,6 +1029,17 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 export function StopIcon(props: IconProps): JSX.Element;
 
 // @public
+export function TabBar(input: TabBarProps): JSX.Element;
+
+// @public (undocumented)
+export type TabBarProps = {
+    items: readonly NavItem[];
+    selected?: string | undefined;
+    onSelect?: ((value: string) => void) | undefined;
+    label?: string | undefined;
+};
+
+// @public
 export function TagIcon(props: IconProps): JSX.Element;
 
 // @public

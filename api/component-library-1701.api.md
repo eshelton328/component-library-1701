@@ -10,10 +10,13 @@ import { DialogVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
+import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
+import { MetaChipVariantProps } from '../../styled-system/recipes';
+import { MetaLineVariantProps } from '../../styled-system/recipes';
 import { PanelVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
@@ -220,6 +223,16 @@ export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
 };
 
 // @public
+export function KindBadge(input: KindBadgeProps): JSX.Element;
+
+// @public (undocumented)
+export type KindBadgeProps = {
+    kind: ToolkitKind;
+    label?: string | undefined;
+    icon?: ReactNode;
+};
+
+// @public
 export function ListRow(input: ListRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -268,6 +281,25 @@ export type MenuSeparator = {
 };
 
 // @public
+export function MetaChip(input: MetaChipProps): JSX.Element;
+
+// @public (undocumented)
+export type MetaChipProps = Scalar<MetaChipVariantProps> & {
+    label: string;
+    icon?: ReactNode;
+};
+
+// @public
+export function MetaLine(input: MetaLineProps): JSX.Element;
+
+// @public (undocumented)
+export type MetaLineProps = Scalar<MetaLineVariantProps> & {
+    items: readonly ReactNode[];
+    leading?: ReactNode;
+    trailing?: ReactNode;
+};
+
+// @public
 export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -282,6 +314,16 @@ export type PanelProps = Scalar<PanelVariantProps> & {
     meta?: ReactNode;
     actions?: ReactNode;
     children?: ReactNode;
+};
+
+// @public
+export function PathBadge(input: PathBadgeProps): JSX.Element;
+
+// @public (undocumented)
+export type PathBadgeProps = {
+    path: string;
+    icon?: ReactNode;
+    trailing?: ReactNode;
 };
 
 // @public
@@ -388,6 +430,16 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 };
 
 // @public
+export function TagsLine(input: TagsLineProps): JSX.Element | null;
+
+// @public (undocumented)
+export type TagsLineProps = {
+    tags: readonly string[];
+    icon?: ReactNode;
+    label?: string | undefined;
+};
+
+// @public
 export function TextArea(input: TextAreaProps): JSX.Element;
 
 // @public (undocumented)
@@ -418,6 +470,9 @@ export type TextFieldBaseProps = {
 export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> & {
     type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined;
 };
+
+// @public
+export type ToolkitKind = NonNullable<Scalar<KindBadgeVariantProps>['kind']>;
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

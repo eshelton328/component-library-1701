@@ -17,6 +17,7 @@ import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
 import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
+import { PageHeaderVariantProps } from '../../styled-system/recipes';
 import { PanelVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
@@ -304,6 +305,18 @@ export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public
 export function NextIcon(props: IconProps): JSX.Element;
+
+// @public
+export function PageHeader(input: PageHeaderProps): JSX.Element;
+
+// @public (undocumented)
+export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
+    title: string;
+    count?: number | string | undefined;
+    countLabel?: string | undefined;
+    level?: 1 | 2 | 3 | undefined;
+    children?: ReactNode;
+};
 
 // @public
 export function Panel(input: PanelProps): JSX.Element;

@@ -27,7 +27,7 @@ export type DialogProps = Scalar<DialogVariantProps> & {
   actions?: ReactNode
   /** The element that opens the dialog, such as a `Button`. Leave it out to open the dialog with `open`. */
   trigger?: ReactElement | undefined
-  /** Whether the dialog is open. Set it with `onOpenChange` to control the dialog. */
+  /** Whether the dialog is open. Set it with `onOpenChange` to control the dialog. When set, `defaultOpen` has no effect. */
   open?: boolean | undefined
   defaultOpen?: boolean | undefined
   onOpenChange?: ((open: boolean) => void) | undefined
@@ -35,7 +35,11 @@ export type DialogProps = Scalar<DialogVariantProps> & {
   role?: 'dialog' | 'alertdialog' | undefined
   /** Show a close button in the header, as the New chat dialog does. */
   closeButton?: boolean | undefined
-  /** The element that gets the focus when the dialog opens, such as the first field of a form. The first button when not set. */
+  /**
+   * The element that gets the focus when the dialog opens, such as the first field of a form. When not set, Ark
+   * picks it: in an `alertdialog`, the `DialogClose` button, such as Cancel; in a `dialog`, the first element that
+   * takes the focus, which can be the close button.
+   */
   initialFocus?: (() => HTMLElement | null) | undefined
 }
 
@@ -54,7 +58,7 @@ export function Dialog({ title, description, children, actions, trigger, open, d
       unmountOnExit
       {...(initialFocus === undefined ? {} : { initialFocusEl: initialFocus })}
       {...(open === undefined ? {} : { open })}
-      {...(defaultOpen === undefined ? {} : { defaultOpen })}
+      {...(open === undefined && defaultOpen !== undefined ? { defaultOpen } : {})}
       onOpenChange={(details) => {
         onOpenChange?.(details.open)
       }}

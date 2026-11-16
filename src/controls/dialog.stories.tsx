@@ -132,6 +132,8 @@ export const Behaviour: StoryObj<typeof meta> = {
       <Stack gap="12">
         <Confirm onOpenChange={onOpenChange} />
         <NewChat />
+        {/* A controlled dialog that is closed stays closed, also with defaultOpen. */}
+        <Dialog title="Controlled" open={false} defaultOpen />
       </Stack>
     </main>
   ),
@@ -141,10 +143,12 @@ export const Behaviour: StoryObj<typeof meta> = {
     const body = within(document.body)
     const trigger = canvas.getByRole('button', { name: 'Remove' })
     await expect(body.queryByRole('alertdialog')).toBeNull()
+    await expect(body.queryByRole('dialog', { name: 'Controlled' })).toBeNull()
     await userEvent.click(trigger)
     const box = await body.findByRole('alertdialog')
     await expect(onOpenChange).toHaveBeenLastCalledWith(true)
-    await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))
+    // A confirm dialog opens with the focus on the safe choice, Keep it.
+    await waitFor(() => expect(within(box).getByRole('button', { name: 'Keep it' })).toHaveFocus())
     // Tab moves between the two buttons and never leaves the dialog.
     for (let i = 0; i < 3; i += 1) {
       await userEvent.tab()

@@ -64,3 +64,54 @@ export const horizontalBarChart = defineSlotRecipe({
     room: { textStyle: 'mono', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', visibility: 'hidden' },
   },
 })
+
+// The legend swatch colours, the same tones as the bars.
+const swatchTones = {
+  '&[data-tone=accent]': { bg: 'accent.default' },
+  '&[data-tone=muted]': { bg: 'fg.muted' },
+  '&[data-tone=running]': { bg: 'status.running.fg' },
+  '&[data-tone=needsYou]': { bg: 'status.needsYou.fg' },
+  '&[data-tone=done]': { bg: 'status.done.fg' },
+  '&[data-tone=danger]': { bg: 'status.danger.fg' },
+}
+
+// Vertical bars, one per day: Toolkit D17 "calls per day" panel 444:581,
+// charts 444:586 (Headless runs, purple = status.running.fg) and 444:597
+// (Chats, cyan = accent.default). A legend (8 px swatch 444:588 at
+// radius 2, the name in small, "max N" in mono muted, 6 px apart), 6 px
+// above the bars 444:592; a 1 px border.default baseline 444:593; the axis
+// 444:611 in mono muted, its labels spread from edge to edge. The bar
+// geometry (a 78 px plot, bars 64 % of their slot) lives in the component
+// as SVG coordinates. Figma rounds the bar tops 3 px; no radius token is
+// 3 px, so the bars take radii.xs (4 px), the larger of the two nearest
+// (d-072). Figma draws no highlighted day; a highlighted bar gets a
+// 1.5 px fg.default ring (borderWidths.strong), our choice; a
+// highlighted day at 0 gets the ring on an empty 2 px slot at the baseline.
+export const dailyBarChart = defineSlotRecipe({
+  className: 'daily-bar-chart',
+  jsx: ['DailyBarChart'],
+  staticCss: ['*'],
+  slots: ['root', 'legend', 'swatch', 'name', 'max', 'svg', 'bar', 'baseline', 'axis', 'axisLabel', 'data'],
+  base: {
+    root: { display: 'flex', flexDirection: 'column', gap: '6', minW: '0' },
+    legend: { display: 'flex', alignItems: 'center', gap: '6', minW: '0' },
+    swatch: { flexShrink: '0', w: '8', h: '8', borderRadius: 'hair', ...swatchTones },
+    // TruncatedText inside cuts a long name and shows it whole in a tooltip.
+    name: { flex: '1', minW: '0', textStyle: 'small', color: 'fg.default' },
+    max: { flexShrink: '0', textStyle: 'mono', color: 'fg.muted', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' },
+    // The plot clips the part of each bar drawn under the baseline, so only its top is round.
+    svg: { display: 'block', overflow: 'hidden' },
+    bar: {
+      rx: 'token(radii.xs)',
+      ...tones,
+      '&[data-highlighted]': { stroke: 'fg.default', strokeWidth: 'token(borderWidths.strong)' },
+      // A highlighted day at 0: an empty outline on the baseline, so the ring still shows.
+      '&[data-empty]': { fill: 'none' },
+    },
+    baseline: { fill: 'border.default' },
+    axis: { display: 'flex', justifyContent: 'space-between', gap: '8', textStyle: 'mono', color: 'fg.muted' },
+    axisLabel: { whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' },
+    // The data table, read by assistive technology and hidden from view.
+    data: { srOnly: true },
+  },
+})

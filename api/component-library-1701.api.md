@@ -317,6 +317,32 @@ export type ContextMeterProps = {
 export function CopyIcon(props: IconProps): JSX.Element;
 
 // @public
+export type DailyAxisLabels = 'ends' | 'endsAndMiddle' | 'none';
+
+// @public (undocumented)
+export type DailyBar = {
+    date: string;
+    value: number;
+    label?: string | undefined;
+};
+
+// @public
+export function DailyBarChart(input: DailyBarChartProps): JSX.Element;
+
+// @public (undocumented)
+export type DailyBarChartProps = {
+    label: string;
+    data: readonly DailyBar[];
+    max?: number | undefined;
+    valueLabel?: string | undefined;
+    highlight?: string | undefined;
+    tone?: BarTone | undefined;
+    legend?: string | undefined;
+    axisLabels?: DailyAxisLabels | undefined;
+    formatValue?: ((value: number) => string) | undefined;
+};
+
+// @public
 export function Dialog(input: DialogProps): JSX.Element;
 
 // @public

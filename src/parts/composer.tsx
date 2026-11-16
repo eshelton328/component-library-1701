@@ -83,11 +83,14 @@ export function Composer({
   const submit = () => {
     if (disabled || text.trim() === '') return
     onSubmit?.(text)
-    if (value === undefined) setDraft('')
+    if (value === undefined) change('')
   }
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter while an input method composes a character confirms the character.
-    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+    // Safari can send that Enter with isComposing false and the legacy keyCode
+    // 229, which the DOM types mark deprecated, so it is read as unknown.
+    const keyCode: unknown = Reflect.get(event.nativeEvent, 'keyCode')
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing || keyCode === 229) return
     event.preventDefault()
     submit()
   }
@@ -140,7 +143,7 @@ export function Composer({
         </Inline>
         <Inline gap="6">
           {running ? (
-            <Button size="sm" onClick={onStop}>
+            <Button size="sm" disabled={disabled} onClick={onStop}>
               <StopIcon size="16" />
               Stop
             </Button>

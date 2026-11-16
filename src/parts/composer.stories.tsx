@@ -39,7 +39,7 @@ function States() {
         <Composer label="Working" running attachments={files} onRemoveAttachment={() => undefined} onAttach={() => undefined} model={<ModelChip model="Opus 5.5" options={[]} />} />
         <Composer label="Idle" attachments={files} onRemoveAttachment={() => undefined} onAttach={() => undefined} model={<ModelChip model="Opus 5.5" options={[]} />} />
         <Composer label="Needs you" placeholder="Reply, or answer the request above" onAttach={() => undefined} defaultValue={'Deny it.\nUse the old path.'} />
-        <Composer label="Disabled" disabled />
+        <Composer label="Disabled" disabled running />
       </Stack>
       {swatchRow}
     </main>
@@ -72,9 +72,9 @@ const meta = {
     // The label is hidden from view and still names the text area.
     const label = canvas.getByText('Working')
     await expect(label.getBoundingClientRect().width).toBeLessThanOrEqual(1)
-    // Stop shows only while the chat works.
+    // Stop shows only while the chat works: the working and the disabled composer.
     const stops = canvas.getAllByRole('button', { name: 'Stop' })
-    await expect(stops).toHaveLength(1)
+    await expect(stops).toHaveLength(2)
     const stop = stops[0]
     if (stop === undefined) throw new Error('no stop')
     await expect(box.contains(stop)).toBe(true)
@@ -109,7 +109,9 @@ const meta = {
     const disabled = canvas.getByRole('textbox', { name: 'Disabled' })
     await expect(disabled).toBeDisabled()
     const disabledBox = disabled.closest<HTMLElement>('.composer__root')
-    await expect(disabledBox === null ? null : within(disabledBox).getByRole('button', { name: 'Send' })).toBeDisabled()
+    if (disabledBox === null) throw new Error('no disabled composer')
+    await expect(within(disabledBox).getByRole('button', { name: 'Send' })).toBeDisabled()
+    await expect(within(disabledBox).getByRole('button', { name: 'Stop' })).toBeDisabled()
   },
 } satisfies Meta<typeof States>
 export default meta
@@ -120,6 +122,7 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 const onSubmit = fn<(text: string) => void>()
 const onStop = fn<() => void>()
 const onRemove = fn<(id: string) => void>()
+const onDraft = fn<(value: string) => void>()
 
 function Chat() {
   const [attachments, setAttachments] = useState<readonly ComposerAttachment[]>([
@@ -134,6 +137,7 @@ function Chat() {
           label="Message"
           running
           onSubmit={onSubmit}
+          onValueChange={onDraft}
           onStop={onStop}
           attachments={attachments}
           onRemoveAttachment={(id) => {
@@ -162,6 +166,7 @@ export const Behaviour: StoryObj<typeof meta> = {
     onSubmit.mockClear()
     onStop.mockClear()
     onRemove.mockClear()
+    onDraft.mockClear()
     const canvas = within(canvasElement)
     const area = canvas.getByRole('textbox', { name: 'Message' })
     const box = area.closest<HTMLElement>('.composer__root')
@@ -179,6 +184,15 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onSubmit).toHaveBeenLastCalledWith('Fix the build\nthen rerun')
     await expect(area).toHaveValue('')
+    // The clear is reported too, so a caller that keeps the draft does not keep sent text.
+    await expect(onDraft).toHaveBeenLastCalledWith('')
+    // Enter that confirms an input method character submits nothing, in both shapes browsers send.
+    await userEvent.type(area, 'nihon')
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true }))
+    area.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, bubbles: true, cancelable: true }))
+    await expect(onSubmit).toHaveBeenCalledTimes(1)
+    await expect(area).toHaveValue('nihon')
+    await userEvent.clear(area)
     // The send button submits too.
     await userEvent.type(area, 'Queue this')
     await userEvent.click(within(box).getByRole('button', { name: 'Send' }))

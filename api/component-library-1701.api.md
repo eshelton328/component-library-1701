@@ -12,6 +12,7 @@ import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
+import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
 // @public
 export function Button(input: ButtonProps): JSX.Element;
@@ -59,6 +60,27 @@ export function Stack(props: StackProps): JSX.Element;
 
 // @public
 export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>;
+
+// @public
+export function ViewSwitch(input: ViewSwitchProps): JSX.Element;
+
+// @public
+export type ViewSwitchItem = {
+    value: string;
+    label: string;
+    icon?: ReactNode;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
+    label: string;
+    items: readonly ViewSwitchItem[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    disabled?: boolean | undefined;
+};
 
 // (No @packageDocumentation comment for this package)
 

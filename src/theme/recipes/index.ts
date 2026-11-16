@@ -6,9 +6,10 @@ import type { Config } from '@pandacss/dev'
 import { button } from './button'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
+import { viewSwitch } from './view-switch'
 
 type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { searchField }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { searchField, viewSwitch }

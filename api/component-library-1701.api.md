@@ -59,6 +59,32 @@ export type CheckboxProps = {
 };
 
 // @public
+export type FilterChip = {
+    value: string;
+    label: string;
+    count?: number | undefined;
+    kind?: FilterChipKind | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public
+export type FilterChipKind = 'skill' | 'agent' | 'rule' | 'workflow' | 'hook';
+
+// @public
+export function FilterChips(input: FilterChipsProps): JSX.Element;
+
+// @public (undocumented)
+export type FilterChipsProps = {
+    label: string;
+    items: readonly FilterChip[];
+    value?: readonly string[] | undefined;
+    defaultValue?: readonly string[] | undefined;
+    onValueChange?: ((value: string[]) => void) | undefined;
+    multiple?: boolean | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public
 export function Grid(props: GridProps): JSX.Element;
 
 // @public

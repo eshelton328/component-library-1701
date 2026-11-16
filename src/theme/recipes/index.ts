@@ -5,6 +5,7 @@
 import type { Config } from '@pandacss/dev'
 import { button } from './button'
 import { checkbox } from './checkbox'
+import { filterChips } from './filter-chips'
 import { itemTabs } from './item-tabs'
 import { menu } from './menu'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
@@ -16,4 +17,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, itemTabs, menu, searchField, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, filterChips, itemTabs, menu, searchField, textField, viewSwitch }

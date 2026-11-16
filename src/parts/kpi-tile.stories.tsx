@@ -25,7 +25,7 @@ function Tiles() {
         <KpiTile value="Nov 13" label="last used" caption="" />
       </Grid>
       <div className={narrow}>
-        <KpiTile value="1,234,567,890,123,456,789" label="tokens read by every agent in the last thirty days" />
+        <KpiTile value="1,234,567,890,123,456,789" label="tokens read by every agent in the last thirty days" caption="counted from the transcripts of every chat and headless run" />
       </div>
       <div hidden>
         {Object.entries(swatches).map(([name, className]) => (
@@ -70,13 +70,21 @@ const meta = {
     const last = canvas.getByText('last used').closest('dl')
     if (!(last instanceof HTMLElement)) throw new Error('no last tile')
     await expect(last.querySelectorAll('dd')).toHaveLength(1)
-    // A long value and label stay on one line with an ellipsis.
-    const long = canvas.getByText('1,234,567,890,123,456,789')
-    await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
-    await expect(Math.round(long.getBoundingClientRect().height)).toBe(29)
-    const longLabel = canvas.getByText('tokens read by every agent in the last thirty days')
-    await expect(longLabel.scrollWidth).toBeGreaterThan(longLabel.clientWidth)
-    await expect(Math.round(longLabel.getBoundingClientRect().height)).toBe(17)
+    // A long value, label and caption each stay on one line, clipped inside the tile with an ellipsis.
+    const lines = [
+      [canvas.getByText('1,234,567,890,123,456,789'), 29],
+      [canvas.getByText('tokens read by every agent in the last thirty days'), 17],
+      [canvas.getByText('counted from the transcripts of every chat and headless run'), 17],
+    ] as const
+    for (const [line, height] of lines) {
+      const ls = getComputedStyle(line)
+      await expect([ls.overflowX, ls.whiteSpace, ls.textOverflow]).toEqual(['hidden', 'nowrap', 'ellipsis'])
+      await expect(line.scrollWidth).toBeGreaterThan(line.clientWidth)
+      await expect(Math.round(line.getBoundingClientRect().height)).toBe(height)
+      const box = line.closest('dl')
+      if (box === null) throw new Error('no tile')
+      await expect(line.getBoundingClientRect().right).toBeLessThanOrEqual(box.getBoundingClientRect().right)
+    }
   },
 } satisfies Meta<typeof Tiles>
 export default meta

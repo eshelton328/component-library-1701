@@ -282,6 +282,13 @@ export default definePreset({
             }
           },
           "border": {
+            "accent": {
+              "value": {
+                "base": "rgba(14, 116, 144, 0.5)",
+                "_dark": "rgba(94, 225, 255, 0.5)"
+              },
+              "description": "The border of a toast that confirms an action, such as a move with Undo (Workbench D20 417:2135). Not for selected items, which use border.selected."
+            },
             "active": {
               "value": {
                 "base": "rgba(14, 116, 144, 0.7)",
@@ -302,6 +309,13 @@ export default definePreset({
                 "_dark": "#24314f"
               },
               "description": "Every 1px border and divider, and empty meter segments."
+            },
+            "discuss": {
+              "value": {
+                "base": "rgba(91, 75, 214, 0.5)",
+                "_dark": "rgba(158, 143, 255, 0.5)"
+              },
+              "description": "The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943). Not for text."
             },
             "focus": {
               "value": {

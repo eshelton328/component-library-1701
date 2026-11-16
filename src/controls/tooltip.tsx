@@ -3,6 +3,7 @@ import { Tooltip as ArkTooltip } from '@ark-ui/react/tooltip'
 import { type ReactElement, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createSlotRecipeContext, styled } from '../../styled-system/jsx'
 import { tooltip, truncatedText } from '../../styled-system/recipes'
+import { Highlight } from './highlight'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(tooltip)
 const Root = withRootProvider(ArkTooltip.Root)
@@ -84,6 +85,8 @@ export type TruncatedTextProps = {
   children: string
   /** Where the tooltip opens; `top` when not set. */
   placement?: TooltipProps['placement']
+  /** A search query, or several, whose matches in the text are marked as `Highlight` marks them. The tooltip shows the plain text. */
+  highlight?: string | readonly string[] | undefined
 }
 
 // How long the pointer rests on an element before its tooltip opens, and how long the tooltip waits after the
@@ -103,7 +106,7 @@ const CLOSE_DELAY = 150
  * anywhere on that element or it has the keyboard focus. Anywhere else, cut
  * text becomes a tab stop of its own; text that fits never does.
  */
-export function TruncatedText({ children, placement }: TruncatedTextProps) {
+export function TruncatedText({ children, placement, highlight }: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)
@@ -214,7 +217,7 @@ export function TruncatedText({ children, placement }: TruncatedTextProps) {
       }
     >
       <Text ref={ref} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
-        {children}
+        {highlight === undefined ? children : <Highlight text={children} query={highlight} />}
       </Text>
     </TooltipBase>
   )

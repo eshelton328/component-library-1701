@@ -18,9 +18,9 @@ const swatches = {
 
 const models: readonly ModelChipOption[] = [
   { value: 'opus-high', label: 'Opus 5.5 · high effort' },
-  { value: 'opus-medium', label: 'Opus 5.5 · medium effort' },
-  { value: 'sonnet-high', label: 'Sonnet 5.5 · high effort' },
   { value: 'haiku', label: 'Haiku 5', disabled: true },
+  { value: 'sonnet-high', label: 'Sonnet 5.5 · high effort' },
+  { value: 'opus-medium', label: 'Opus 5.5 · medium effort' },
 ]
 
 function Chips() {
@@ -130,8 +130,10 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(within(menu).getByRole('group', { name: 'Model' })).toBeInTheDocument()
     await expect(within(menu).getByRole('menuitemradio', { name: 'Opus 5.5 · high effort' })).toHaveAttribute('aria-checked', 'true')
     await waitFor(() => expect(menu).toHaveFocus())
-    // Opus high, Opus medium, Sonnet; then Haiku is disabled, so the arrow stays on Sonnet or wraps past it.
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+    // Opus high, then Sonnet: Haiku, between them, is disabled, so the arrow skips it.
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(within(menu).getByRole('menuitemradio', { name: 'Opus 5.5 · high effort' })).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{ArrowDown}')
     await waitFor(() => expect(within(menu).getByRole('menuitemradio', { name: 'Sonnet 5.5 · high effort' })).toHaveAttribute('data-highlighted'))
     await userEvent.keyboard('{Enter}')
     await expect(onValueChange).toHaveBeenLastCalledWith('sonnet-high')

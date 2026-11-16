@@ -47,6 +47,7 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm tokens:check
       - run: pnpm test:tokens
+      - run: pnpm test:figma
 
   checks:
     runs-on: ubuntu-24.04

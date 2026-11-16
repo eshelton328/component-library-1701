@@ -183,3 +183,65 @@ export const Behaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(statusOf('Copied the path')).toBeNull(), { timeout: 3000 })
   },
 }
+
+const replacing = createToaster()
+const onFirstUndo = fn()
+
+/**
+ * Showing a toast with the id of an open one replaces it whole: an action
+ * the new toast does not have is gone, so Undo cannot run the old callback.
+ */
+export const ReplaceById: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Toaster toaster={replacing} />
+    </main>
+  ),
+  play: async () => {
+    onFirstUndo.mockClear()
+    replacing.dismiss()
+    replacing.show({ id: 'move', text: 'Moving bridge themes', action: { label: 'Undo', onClick: onFirstUndo }, duration: 60000 })
+    await waitFor(() => expect(statusOf('Moving bridge themes')).not.toBeNull())
+    replacing.show({ id: 'move', text: 'Moved bridge themes to the-bridge', duration: 60000 })
+    await waitFor(() => expect(statusOf('Moved bridge themes to the-bridge')).not.toBeNull())
+    const toast = statusOf('Moved bridge themes to the-bridge')
+    if (!(toast instanceof HTMLElement)) throw new Error('no toast')
+    await expect(within(toast).queryByRole('button', { name: 'Undo' })).toBeNull()
+    await expect(onFirstUndo).not.toHaveBeenCalled()
+    replacing.dismiss()
+  },
+}
+
+// Offsets that leave a 300px strip in the middle of any window, as a phone window narrower than the list pane would.
+const narrowToaster = createToaster({ placement: 'bottom', offsets: 'calc(50vw - 150px)' })
+const longToast = 'Moved bridge themes and its subtask chat to the-bridge workspace, under THE-BRIDGE'
+
+/**
+ * In a window narrower than the list pane, the toasts fit between the
+ * offsets: a long toast wraps, and its close button stays in the window.
+ */
+export const NarrowWindow: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Toaster toaster={narrowToaster} />
+    </main>
+  ),
+  play: async () => {
+    narrowToaster.dismiss()
+    narrowToaster.show({ text: longToast, action: { label: 'Undo', onClick: () => undefined }, closable: true, duration: 60000 })
+    await waitFor(() => expect(statusOf(longToast)).not.toBeNull())
+    const toast = statusOf(longToast)
+    if (!(toast instanceof HTMLElement)) throw new Error('no toast')
+    const strip = { left: window.innerWidth / 2 - 150, right: window.innerWidth / 2 + 150 }
+    await waitFor(() => expect(Math.round(toast.getBoundingClientRect().width)).toBeLessThanOrEqual(300))
+    const box = toast.getBoundingClientRect()
+    await expect(Math.round(box.left)).toBeGreaterThanOrEqual(Math.floor(strip.left))
+    await expect(Math.round(box.right)).toBeLessThanOrEqual(Math.ceil(strip.right))
+    const close = within(toast).getByRole('button', { name: 'Dismiss' }).getBoundingClientRect()
+    await expect(close.right).toBeLessThanOrEqual(box.right)
+    await expect(close.width).toBe(16)
+    narrowToaster.dismiss()
+  },
+}

@@ -132,8 +132,11 @@ export function createToaster({ placement = 'bottom-start', offsets, duration = 
         id: key,
         description: text,
         type: 'info',
-        ...(own === undefined ? {} : { duration: own }),
-        ...(action === undefined ? {} : { action: { label: action.label, onClick: action.onClick } }),
+        // Every field is set, so a toast shown again with the same id keeps nothing of the old one, such as its action.
+        duration: own ?? duration,
+        action: action === undefined ? undefined : { label: action.label, onClick: action.onClick },
+        title: undefined,
+        meta: undefined,
         closable: closable ?? false,
         onStatusChange: (details) => {
           if (details.status === 'unmounted') looks.delete(key)

@@ -30,7 +30,8 @@ export const toast = defineSlotRecipe({
   base: {
     // The toasts sit over the list pane (D18: 12px in from its edges), so the group is as wide as one; a toast
     // is as wide as its content, up to the group's width.
-    group: { w: 'shell.listPane', maxW: '100%' },
+    // Ark sets the offsets from the window's edges as --viewport-offset-*; the group stays inside them.
+    group: { w: 'shell.listPane', maxW: 'calc(100vw - var(--viewport-offset-left) - var(--viewport-offset-right))' },
     root: {
       display: 'flex',
       alignItems: 'center',

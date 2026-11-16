@@ -119,7 +119,11 @@ export function TruncatedText({ children, placement, highlight }: TruncatedTextP
     setOwner(node === null ? null : focusOwner(node))
   }, [])
 
-  // Measure on mount, when the text changes and whenever the box changes size.
+  // A new highlight can change the text's width without a change of its box, so it measures again then too. The
+  // queries are joined into one string, so a new array with the same queries does not measure again.
+  const marks = highlight === undefined ? undefined : typeof highlight === 'string' ? highlight : highlight.join('\u0000')
+
+  // Measure on mount, when the text or its highlight changes and whenever the box changes size.
   useLayoutEffect(() => {
     if (element === null) return
     const measure = () => {
@@ -131,7 +135,7 @@ export function TruncatedText({ children, placement, highlight }: TruncatedTextP
     return () => {
       observer.disconnect()
     }
-  }, [element, children])
+  }, [element, children, marks])
 
   // Inside an element that takes the focus, follow its pointer and keyboard focus. The timers are shared with the
   // tooltip box, so the pointer can move from the owner onto the tooltip and back.

@@ -650,6 +650,58 @@
           },
           "$description": "The shell kind mark."
         }
+      },
+      "code": {
+        "keyword": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6196, 0.5608, 1.0],
+            "alpha": 1,
+            "hex": "#9e8fff"
+          },
+          "$description": "Syntax colour for keywords in CodeLines (if, return, import). Only for code text, never for labels or marks."
+        },
+        "string": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.7216, 0.4196],
+            "alpha": 1,
+            "hex": "#ffb86b"
+          },
+          "$description": "Syntax colour for string literals in CodeLines. Only for code text, never for labels or marks."
+        },
+        "comment": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4314, 0.9059, 0.6588],
+            "alpha": 1,
+            "hex": "#6ee7a8"
+          },
+          "$description": "Syntax colour for comments and the shebang line in CodeLines (Toolkit D6 432:2307). Only for code text, never for labels or marks."
+        },
+        "number": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.6039, 0.6706],
+            "alpha": 1,
+            "hex": "#ff9aab"
+          },
+          "$description": "Syntax colour for numbers and constants in CodeLines. Only for code text, never for labels or marks."
+        },
+        "function": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3686, 0.8824, 1.0],
+            "alpha": 1,
+            "hex": "#5ee1ff"
+          },
+          "$description": "Syntax colour for function and command names in CodeLines. Only for code text, never for labels or marks."
+        }
       }
     },
     "shadow": {
@@ -1292,6 +1344,58 @@
             "alpha": 1,
             "hex": "#4a5675"
           }
+        }
+      },
+      "code": {
+        "keyword": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.2941, 0.8392],
+            "alpha": 1,
+            "hex": "#5b4bd6"
+          },
+          "$description": "Syntax colour for keywords in CodeLines (if, return, import). Only for code text, never for labels or marks."
+        },
+        "string": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6039, 0.2902, 0.0235],
+            "alpha": 1,
+            "hex": "#9a4a06"
+          },
+          "$description": "Syntax colour for string literals in CodeLines. Only for code text, never for labels or marks."
+        },
+        "comment": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0863, 0.451, 0.2471],
+            "alpha": 1,
+            "hex": "#16733f"
+          },
+          "$description": "Syntax colour for comments and the shebang line in CodeLines (Toolkit D6 432:2307). Only for code text, never for labels or marks."
+        },
+        "number": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6902, 0.1294, 0.2235],
+            "alpha": 1,
+            "hex": "#b02139"
+          },
+          "$description": "Syntax colour for numbers and constants in CodeLines. Only for code text, never for labels or marks."
+        },
+        "function": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0549, 0.4157, 0.5216],
+            "alpha": 1,
+            "hex": "#0e6a85"
+          },
+          "$description": "Syntax colour for function and command names in CodeLines. Only for code text, never for labels or marks."
         }
       }
     },

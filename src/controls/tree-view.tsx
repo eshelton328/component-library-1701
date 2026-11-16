@@ -1,10 +1,10 @@
 import { TreeView as ArkTreeView, createTreeCollection } from '@ark-ui/react/tree-view'
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { treeView } from '../../styled-system/recipes'
 import { ChevronDownIcon } from '../foundations/icons'
 
-type Inner = { id: string; label: string; source: TreeViewNode; children?: Inner[] }
+type Inner = { id: string; label: string; source: TreeViewNode; disabled?: boolean; children?: Inner[] }
 
 // Ark's Root is generic over its node type, which withProvider would lose.
 function InnerRoot(props: ArkTreeView.RootProps<Inner>) {
@@ -24,6 +24,7 @@ const Item = withContext(ArkTreeView.Item, 'item')
 const ItemText = withContext(ArkTreeView.ItemText, 'itemText')
 const Icon = withContext('span', 'icon')
 const Trailing = withContext('span', 'trailing')
+const Body = withContext('span', 'body')
 const Caption = withContext('span', 'caption')
 
 /** One row in a `TreeView`. A node with `children` (even none) is a branch that opens and closes. */
@@ -45,8 +46,8 @@ export type TreeViewProps = {
   /** The accessible name of the tree, such as "Files". */
   label: string
   nodes: readonly TreeViewNode[]
-  /** The selected node. Set it with `onSelect` to control the tree. */
-  selected?: string | undefined
+  /** The selected node, or `null` for none. Set it with `onSelect` to control the tree. */
+  selected?: string | null | undefined
   /** The first selected node of an uncontrolled tree. */
   defaultSelected?: string | undefined
   /** Called with the value of the node the user selects. */
@@ -66,6 +67,8 @@ const fromArkAll = (values: readonly string[]) => values.flatMap((v) => fromArk(
 
 function toInner(node: TreeViewNode): Inner {
   const inner: Inner = { id: toArk(node.value), label: node.label, source: node }
+  // Ark reads `disabled` from the node itself.
+  if (node.disabled === true) inner.disabled = true
   if (node.children !== undefined) inner.children = node.children.map(toInner)
   return inner
 }
@@ -80,9 +83,11 @@ function Node({ node, indexPath }: { node: Inner; indexPath: number[] }) {
       {node.children === undefined ? (
         <Item>
           {icon}
-          <ItemText>{node.label}</ItemText>
+          <Body>
+            <ItemText>{node.label}</ItemText>
+            {caption}
+          </Body>
           {trailing}
-          {caption}
         </Item>
       ) : (
         <Branch>
@@ -91,9 +96,11 @@ function Node({ node, indexPath }: { node: Inner; indexPath: number[] }) {
               <ChevronDownIcon size="14" />
             </BranchIndicator>
             {icon}
-            <BranchText>{node.label}</BranchText>
+            <Body>
+              <BranchText>{node.label}</BranchText>
+              {caption}
+            </Body>
             {trailing}
-            {caption}
           </BranchControl>
           <BranchContent>
             {node.children.map((child, i) => (
@@ -116,19 +123,27 @@ export function TreeView({ label, nodes, selected, defaultSelected, onSelect, ex
   const collection = useMemo(
     () =>
       createTreeCollection<Inner>({
-        rootNode: { id: 'tree:', label: '', source: { value: '', label: '' }, children: nodes.map(toInner) },
+        // The hidden root's id is outside the `tree:` values, so no node can share it.
+        rootNode: { id: 'root', label: '', source: { value: '', label: '' }, children: nodes.map(toInner) },
         nodeToValue: (n) => n.id,
         nodeToString: (n) => n.label,
-        isNodeDisabled: (n) => n.source.disabled === true,
       }),
     [nodes],
   )
   const top = collection.rootNode.children ?? []
+  // Ark keeps the focused row after the nodes change. When that row is gone,
+  // fall back to none, so the first row takes the Tab stop again.
+  const [focused, setFocused] = useState<string | null>(null)
+  const focusedValue = focused !== null && collection.findNode(focused) !== undefined ? focused : null
   return (
     <Root
       collection={collection}
       selectionMode="single"
-      {...(selected === undefined ? {} : { selectedValue: [toArk(selected)] })}
+      focusedValue={focusedValue}
+      onFocusChange={(details) => {
+        setFocused(details.focusedValue)
+      }}
+      {...(selected === undefined ? {} : { selectedValue: selected === null ? [] : [toArk(selected)] })}
       {...(defaultSelected === undefined ? {} : { defaultSelectedValue: [toArk(defaultSelected)] })}
       {...(expanded === undefined ? {} : { expandedValue: expanded.map(toArk) })}
       {...(defaultExpanded === undefined ? {} : { defaultExpandedValue: defaultExpanded.map(toArk) })}

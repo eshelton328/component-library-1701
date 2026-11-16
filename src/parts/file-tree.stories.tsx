@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { TreeView, type TreeViewNode } from '../controls/tree-view'
 import { FileTree, type FileTreeNode } from './file-tree'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -239,5 +240,92 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{ArrowLeft}')
     await expect(onExpandedChange).toHaveBeenLastCalledWith(['references'])
     await waitFor(() => expect(scripts).toHaveAttribute('aria-expanded', 'false'))
+  },
+}
+
+const onEdgeSelect = fn<(value: string) => void>()
+
+const edgeNodes: TreeViewNode[] = [
+  { value: '', label: 'Workspace' },
+  { value: 'a', label: 'Alpha', caption: 'No icon, with a caption' },
+  { value: 'blocked', label: 'Blocked', disabled: true },
+  { value: 'b', label: 'Beta' },
+]
+
+function Edges() {
+  const [selected, setSelected] = useState<string | null>('b')
+  const [nodes, setNodes] = useState(edgeNodes)
+  return (
+    <main className={page}>
+      <div className={browser}>
+        <TreeView
+          label="Edge cases"
+          nodes={nodes}
+          selected={selected}
+          onSelect={(value) => {
+            setSelected(value)
+            onEdgeSelect(value)
+          }}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          setSelected(null)
+        }}
+      >
+        Clear selection
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setNodes((current) => current.filter((n) => n.value !== 'a'))
+        }}
+      >
+        Remove Alpha
+      </button>
+    </main>
+  )
+}
+
+/** An empty value, a disabled row, clearing the selection and removing the focused row. */
+export const EdgeCases: StoryObj<typeof meta> = {
+  render: () => <Edges />,
+  play: async ({ canvasElement }) => {
+    onEdgeSelect.mockClear()
+    const canvas = within(canvasElement)
+    const item = (name: string) => canvas.getByRole('treeitem', { name: new RegExp(`^${name}`) })
+
+    // A node whose value is the empty string is a real row, and the first Tab stop.
+    await expect(item('Workspace').tabIndex).toBe(0)
+    await userEvent.click(canvas.getByText('Workspace'))
+    await expect(onEdgeSelect).toHaveBeenLastCalledWith('')
+    await expect(item('Workspace')).toHaveAttribute('aria-selected', 'true')
+
+    // A disabled row is not selected by a click.
+    await userEvent.click(canvas.getByText('Blocked'))
+    await expect(onEdgeSelect).toHaveBeenCalledTimes(1)
+    await expect(item('Blocked')).toHaveAttribute('aria-disabled', 'true')
+    await expect(item('Blocked')).not.toHaveAttribute('aria-selected', 'true')
+
+    // `null` clears a controlled selection.
+    await userEvent.click(canvas.getByRole('button', { name: 'Clear selection' }))
+    await expect(canvas.queryAllByRole('treeitem', { selected: true })).toHaveLength(0)
+
+    // A caption sits under the label, also with no icon.
+    const alpha = item('Alpha')
+    const label = alpha.querySelector('.tree-view__itemText')
+    const caption = alpha.querySelector('.tree-view__caption')
+    if (!(label instanceof HTMLElement) || !(caption instanceof HTMLElement)) throw new Error('no caption')
+    await expect(caption.getBoundingClientRect().left).toBe(label.getBoundingClientRect().left)
+    await expect(caption.getBoundingClientRect().top).toBeGreaterThanOrEqual(label.getBoundingClientRect().bottom)
+
+    // When the focused row is removed, Tab still reaches the tree.
+    await userEvent.click(canvas.getByText('Alpha'))
+    await waitFor(() => expect(item('Alpha')).toHaveFocus())
+    await userEvent.click(canvas.getByRole('button', { name: 'Remove Alpha' }))
+    await expect(canvas.queryByText('Alpha')).toBeNull()
+    const stops = canvas.getAllByRole('treeitem').filter((el) => el.tabIndex === 0)
+    await expect(stops).toHaveLength(1)
   },
 }

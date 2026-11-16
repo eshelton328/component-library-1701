@@ -8,7 +8,7 @@ export const treeView = defineSlotRecipe({
   className: 'tree-view',
   jsx: ['TreeView', 'FileTree'],
   staticCss: ['*'],
-  slots: [...treeViewAnatomy.keys(), 'icon', 'trailing', 'caption'],
+  slots: [...treeViewAnatomy.keys(), 'icon', 'body', 'trailing', 'caption'],
   base: {
     root: {
       display: 'flex',
@@ -35,10 +35,9 @@ export const treeView = defineSlotRecipe({
     },
     branchIndentGuide: { display: 'none' },
     branchControl: {
-      display: 'grid',
-      gridTemplateColumns: 'auto auto minmax(0, 1fr) auto',
-      alignItems: 'center',
-      columnGap: '8',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '8',
       py: '4',
       // One indent step for each level below the top (--depth is 1 at the top).
       ps: 'calc(token(spacing.8) + (var(--depth, 1) - 1) * token(spacing.16))',
@@ -51,20 +50,23 @@ export const treeView = defineSlotRecipe({
       userSelect: 'none',
       _selected: { bg: 'surface.selected', borderColor: 'border.selected', color: 'fg.accent' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     branchIndicator: {
       display: 'inline-flex',
+      flexShrink: '0',
+      pt: '2',
       color: 'fg.muted',
       // Figma draws only the open folder's down chevron; a closed folder turns it to point right.
       _closed: { transform: 'rotate(-90deg)' },
+      transformOrigin: 'center',
     },
     branchText: { textStyle: 'mono', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     branchTrigger: {},
     item: {
-      display: 'grid',
-      gridTemplateColumns: 'auto minmax(0, 1fr) auto',
-      alignItems: 'center',
-      columnGap: '8',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '8',
       py: '4',
       ps: 'calc(token(spacing.8) + (var(--depth, 1) - 1) * token(spacing.16))',
       pe: '8',
@@ -78,16 +80,20 @@ export const treeView = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
+    // The label and the caption under it, in one column.
+    body: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0' },
     itemText: { textStyle: 'mono', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     itemIndicator: {},
     icon: {
       display: 'inline-flex',
+      flexShrink: '0',
+      pt: '2',
       color: 'fg.muted',
       '[data-selected] > &': { color: 'fg.accent' },
     },
-    trailing: { textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap' },
+    trailing: { flexShrink: '0', textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap' },
     // 432:2149: a line under a row, such as the role of SKILL.md.
-    caption: { gridColumn: '2 / -1', textStyle: 'small', color: 'fg.muted' },
+    caption: { textStyle: 'small', color: 'fg.muted' },
     label: { srOnly: true },
     nodeCheckbox: {},
     nodeRenameInput: {},

@@ -1022,7 +1022,7 @@ export type TreeViewNode = {
 export type TreeViewProps = {
     label: string;
     nodes: readonly TreeViewNode[];
-    selected?: string | undefined;
+    selected?: string | null | undefined;
     defaultSelected?: string | undefined;
     onSelect?: ((value: string) => void) | undefined;
     expanded?: readonly string[] | undefined;

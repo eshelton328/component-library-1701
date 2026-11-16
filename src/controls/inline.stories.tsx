@@ -3,7 +3,7 @@ import { expect } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Grid, Inline, Stack } from './layout'
-import { justifies, styleOf } from './layout-test'
+import { gaps, justifies, styleOf } from './layout-test'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 
@@ -33,6 +33,9 @@ function Inlines() {
           <Inline key={j} justify={j} data-testid={`all-justify-${j}`} />
         ))}
         <Inline align="baseline" data-testid="baseline" />
+        {gaps.map((g) => (
+          <Inline key={g} gap={g} data-testid={`all-gap-${g}`} />
+        ))}
       </Stack>
     </main>
   )
@@ -48,6 +51,7 @@ const meta = {
     await expect(styleOf(canvasElement, 'wrap').columnGap).toBe('6px')
     for (const [j, css] of justifies) await expect(styleOf(canvasElement, `all-justify-${j}`).justifyContent).toBe(css)
     await expect(styleOf(canvasElement, 'baseline').alignItems).toBe('baseline')
+    for (const g of gaps) await expect(styleOf(canvasElement, `all-gap-${g}`).columnGap).toBe(`${g}px`)
   },
 } satisfies Meta<typeof Inlines>
 export default meta

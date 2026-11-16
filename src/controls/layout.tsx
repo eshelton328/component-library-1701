@@ -8,17 +8,18 @@ import {
   type LayoutInlineVariantProps,
   type LayoutStackVariantProps,
 } from '../../styled-system/recipes'
+import type { Scalar } from './scalar'
 
 const StyledStack = styled('div', layoutStack)
 const StyledInline = styled('div', layoutInline)
 const StyledGrid = styled('div', layoutGrid)
 
 /** The props of a div, plus `gap` (a spacing token) and `align`. */
-export type StackProps = ComponentProps<'div'> & LayoutStackVariantProps
+export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>
 /** The props of a div, plus `gap`, `align`, `justify` and `wrap`. */
-export type InlineProps = ComponentProps<'div'> & LayoutInlineVariantProps
+export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProps>
 /** The props of a div, plus `gap` and `columns` (1 to 6). */
-export type GridProps = ComponentProps<'div'> & LayoutGridVariantProps
+export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>
 
 /** Places its children one under the other, `gap` apart. */
 export function Stack(props: StackProps) {

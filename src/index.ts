@@ -1,2 +1,3 @@
-// The package entry. Components are exported here from phase 4 on.
-export {}
+// The package entry: Controls, Parts and Shell, with their props types.
+export { Button } from './controls/button'
+export type { ButtonProps } from './controls/button'

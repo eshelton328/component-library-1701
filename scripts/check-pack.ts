@@ -46,8 +46,9 @@ for (const t of targets) {
 
 // A wildcard export with both conditions: every runtime file needs its
 // types file, and every types file its runtime file. Panda writes these
-// internal helpers with no types file; only its own files import them.
-const internalRuntime = new Set(['styled-system/patterns/runtime.js'])
+// internal helpers with no types file; only its own files import them:
+// the patterns and, since the first config recipe, each recipe file.
+const internalRuntime = new Set(['styled-system/patterns/runtime.js', 'styled-system/recipes/runtime.js'])
 const isRuntime = /\.[cm]?js$/
 const runtime: string[] = []
 for (const value of Object.values(isRecord(exportsField) ? exportsField : {})) {

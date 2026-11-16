@@ -3,9 +3,10 @@
 // typed recipe function and variant props for each one in
 // styled-system/recipes. Add a recipe as its own file and list it below.
 import type { Config } from '@pandacss/dev'
+import { button } from './button'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = {}
+export const recipes: NonNullable<Theme['recipes']> = { button }
 
 export const slotRecipes: NonNullable<Theme['slotRecipes']> = {}

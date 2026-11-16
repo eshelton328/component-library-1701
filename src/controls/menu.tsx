@@ -70,7 +70,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
               entry.type === 'separator' ? (
                 <Separator key={`separator-${String(i)}`} />
               ) : (
-                <Item key={entry.value} value={toArk(entry.value)} disabled={entry.disabled} data-tone={entry.tone}>
+                <Item key={entry.value} value={toArk(entry.value)} valueText={entry.label} disabled={entry.disabled} data-tone={entry.tone}>
                   {entry.icon === undefined ? null : <span aria-hidden="true">{entry.icon}</span>}
                   <ItemText>{entry.label}</ItemText>
                 </Item>

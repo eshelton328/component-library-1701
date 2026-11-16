@@ -15,6 +15,9 @@ export const menu = defineSlotRecipe({
       flexDirection: 'column',
       gap: '2',
       minW: 'shell.popoverSm',
+      // Ark measures the space between the trigger and the screen edge; a long menu scrolls.
+      maxH: 'var(--available-height)',
+      overflowY: 'auto',
       p: '6',
       bg: 'surface.overlay',
       color: 'fg.default',
@@ -28,6 +31,7 @@ export const menu = defineSlotRecipe({
     },
     item: {
       display: 'flex',
+      flexShrink: '0',
       alignItems: 'center',
       gap: '10',
       h: 'control.md',

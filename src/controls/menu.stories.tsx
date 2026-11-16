@@ -107,3 +107,55 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(onSelect).toHaveBeenLastCalledWith('rename')
   },
 }
+
+const many: readonly MenuEntry[] = Array.from({ length: 80 }, (_, i) => ({ value: `action-${String(i)}`, label: `Action ${String(i + 1)}` }))
+
+/** A menu longer than the window scrolls and stays inside the window. */
+export const LongMenu: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu open trigger={<Button>Many actions</Button>} items={many} />
+    </main>
+  ),
+  play: async () => {
+    const menu = await within(document.body).findByRole('menu')
+    await waitFor(() => expect(menu.getBoundingClientRect().bottom).toBeLessThanOrEqual(window.innerHeight))
+    await expect(menu.scrollHeight).toBeGreaterThan(menu.clientHeight)
+    await expect(within(menu).getByRole('menuitem', { name: 'Action 1' }).getBoundingClientRect().height).toBe(32)
+  },
+}
+
+function TitledPencil() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <title>Pencil</title>
+      <path d="M10.5 2.5l3 3L6 13H3v-3l7.5-7.5z" />
+    </svg>
+  )
+}
+
+/** Typeahead matches the label, not the text inside an icon. */
+export const Typeahead: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu
+        trigger={<Button>Chat actions</Button>}
+        items={[
+          { value: 'rename', label: 'Rename', icon: <TitledPencil /> },
+          { value: 'pin', label: 'Pin to sidebar' },
+        ]}
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Chat actions' }))
+    const menu = await within(document.body).findByRole('menu')
+    await waitFor(() => expect(menu).toHaveFocus())
+    await userEvent.keyboard('p')
+    await waitFor(() => expect(within(menu).getByRole('menuitem', { name: 'Pin to sidebar' })).toHaveAttribute('data-highlighted'))
+    // Ark joins keys pressed within a short time into one search, so wait before the next key.
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    await userEvent.keyboard('r')
+    await waitFor(() => expect(within(menu).getByRole('menuitem', { name: /Rename/ })).toHaveAttribute('data-highlighted'))
+  },
+}

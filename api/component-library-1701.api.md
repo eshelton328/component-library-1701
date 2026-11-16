@@ -154,10 +154,8 @@ export type StackProps = ComponentProps<'div'> & Scalar<LayoutStackVariantProps>
 // @public
 export function TextArea(input: TextAreaProps): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "FieldProps" needs to be exported by the entry point index.d.ts
-//
 // @public (undocumented)
-export type TextAreaProps = FieldProps & {
+export type TextAreaProps = TextFieldBaseProps & {
     autoresize?: boolean | undefined;
     rows?: number | undefined;
 };
@@ -165,8 +163,23 @@ export type TextAreaProps = FieldProps & {
 // @public
 export function TextField(input: TextFieldProps): JSX.Element;
 
+// @public
+export type TextFieldBaseProps = {
+    label: string;
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    placeholder?: string | undefined;
+    helperText?: string | undefined;
+    error?: string | undefined;
+    disabled?: boolean | undefined;
+    readOnly?: boolean | undefined;
+    required?: boolean | undefined;
+    name?: string | undefined;
+};
+
 // @public (undocumented)
-export type TextFieldProps = FieldProps & Scalar<TextFieldVariantProps> & {
+export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> & {
     type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined;
 };
 

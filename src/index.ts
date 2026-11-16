@@ -8,7 +8,7 @@ export type { MenuAction, MenuEntry, MenuProps, MenuSeparator } from './controls
 export { Checkbox, CheckboxGroup } from './controls/checkbox'
 export type { CheckboxGroupItem, CheckboxGroupProps, CheckboxProps } from './controls/checkbox'
 export { TextArea, TextField } from './controls/text-field'
-export type { TextAreaProps, TextFieldProps } from './controls/text-field'
+export type { TextAreaProps, TextFieldBaseProps, TextFieldProps } from './controls/text-field'
 export { Grid, Inline, Stack } from './controls/layout'
 export type { GridProps, InlineProps, StackProps } from './controls/layout'
 export type { Scalar } from './controls/scalar'

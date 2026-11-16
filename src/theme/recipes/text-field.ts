@@ -22,6 +22,8 @@ const box = {
   // Only Ark's invalid state, set by the `error` prop. Panda's `_invalid` also
   // matches `:invalid`, which marks an empty required field before any input.
   '&[data-invalid]': { borderColor: 'status.danger.border' },
+  // Focus wins over invalid, so the focus shows; the error text stays.
+  '&[data-invalid]:focus-visible': { borderColor: 'border.focus' },
   _disabled: { cursor: 'not-allowed' },
   _readOnly: { bg: 'transparent' },
 } as const

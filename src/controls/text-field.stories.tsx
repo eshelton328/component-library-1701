@@ -44,6 +44,12 @@ const meta = {
     await expect(branch).toBeDisabled()
     await expect(getComputedStyle(branch.parentElement ?? branch).opacity).toBe('0.45')
     await expect(canvas.getByRole('textbox', { name: 'Notes' }).tagName).toBe('TEXTAREA')
+    // A focused invalid field draws the focus border, as a valid field does.
+    const chat = canvas.getByRole('textbox', { name: 'Chat name' })
+    chat.focus()
+    const focused = getComputedStyle(chat).borderColor
+    url.focus()
+    await expect(getComputedStyle(url).borderColor).toBe(focused)
   },
 } satisfies Meta<typeof Fields>
 export default meta

@@ -13,7 +13,8 @@ const Textarea = withContext(Field.Textarea, 'textarea')
 const HelperText = withContext(Field.HelperText, 'helperText')
 const ErrorText = withContext(Field.ErrorText, 'errorText')
 
-type FieldProps = {
+/** The props that `TextField` and `TextArea` share. */
+export type TextFieldBaseProps = {
   /** The visible label. */
   label: string
   /** The text. Set it with `onValueChange` to control the field. */
@@ -33,7 +34,7 @@ type FieldProps = {
   name?: string | undefined
 }
 
-function Frame({ label, helperText, error, disabled, readOnly, required, size, children }: FieldProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
+function Frame({ label, helperText, error, disabled, readOnly, required, size, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
   const invalid = error !== undefined && error !== ''
   return (
     <Root size={size} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
@@ -47,7 +48,7 @@ function Frame({ label, helperText, error, disabled, readOnly, required, size, c
   )
 }
 
-const inputProps = ({ value, defaultValue, onValueChange, placeholder, name }: FieldProps) => ({
+const inputProps = ({ value, defaultValue, onValueChange, placeholder, name }: TextFieldBaseProps) => ({
   ...(value === undefined ? {} : { value }),
   ...(value === undefined && defaultValue !== undefined ? { defaultValue } : {}),
   ...(placeholder === undefined ? {} : { placeholder }),
@@ -57,7 +58,7 @@ const inputProps = ({ value, defaultValue, onValueChange, placeholder, name }: F
   },
 })
 
-export type TextFieldProps = FieldProps &
+export type TextFieldProps = TextFieldBaseProps &
   Scalar<TextFieldVariantProps> & {
     /** `text` when not set. */
     type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined
@@ -72,7 +73,7 @@ export function TextField({ type = 'text', ...props }: TextFieldProps) {
   )
 }
 
-export type TextAreaProps = FieldProps & {
+export type TextAreaProps = TextFieldBaseProps & {
   /** Grow with the text instead of showing a scroll bar. */
   autoresize?: boolean | undefined
   /** The number of lines it shows when it is empty. */

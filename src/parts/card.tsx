@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { card } from '../../styled-system/recipes'
 
@@ -17,6 +17,12 @@ const Subtitle = withContext('p', 'subtitle')
 const Description = withContext('p', 'description')
 const Meta = withContext('div', 'meta')
 
+// A slot given as `false`, `null` or an empty string (`hasThumbnail && <img />`) is left out, as React leaves it out.
+const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
+
+// The controls that keep their own click inside a card, such as a link in the meta row.
+const INTERACTIVE = 'a[href], button, input, select, textarea, summary, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"])'
+
 export type CardProps = {
   /** The title, on one line; a long title ends with an ellipsis. */
   title: string
@@ -32,7 +38,10 @@ export type CardProps = {
   description?: string | undefined
   /** The meta row at the end, such as a kind, an age or counts. */
   meta?: ReactNode
-  /** Called when the card is clicked, or its title button is pressed. Without it the card is not interactive. */
+  /**
+   * Called when the card is clicked, or its title button is pressed. A click on a control inside the card, such as a
+   * link in `meta`, is left to that control. Without `onSelect` the card is not interactive.
+   */
   onSelect?: (() => void) | undefined
 }
 
@@ -43,31 +52,40 @@ export type CardProps = {
  * presses it.
  */
 export function Card({ title, media, leading, badge, subtitle, description, meta, onSelect }: CardProps) {
-  const hasMedia = media !== undefined && media !== null
+  const hasMedia = shown(media)
+  // The card handles the click, so a click on any part of it selects it, even on a positioned child that paints
+  // over the title button's hit area. Enter or Space on the title button fires a click that bubbles here too. A
+  // click on another control inside the card is left to that control.
+  const select = (event: MouseEvent<HTMLElement>) => {
+    if (onSelect === undefined || !(event.target instanceof Element)) return
+    const control = event.target.closest(INTERACTIVE)
+    if (control !== null && control !== event.currentTarget && !control.classList.contains('card__action')) return
+    onSelect()
+  }
   return (
-    <Root media={hasMedia}>
+    <Root media={hasMedia} onClick={onSelect === undefined ? undefined : select}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>
-          {leading === undefined ? null : <Leading>{leading}</Leading>}
+          {shown(leading) ? <Leading>{leading}</Leading> : null}
           <Heading>
             <TitleRow>
               <Title>
                 {onSelect === undefined ? (
                   title
                 ) : (
-                  <Action type="button" onClick={onSelect}>
+                  <Action type="button">
                     {title}
                   </Action>
                 )}
               </Title>
-              {badge === undefined ? null : <Badge>{badge}</Badge>}
+              {shown(badge) ? <Badge>{badge}</Badge> : null}
             </TitleRow>
-            {subtitle === undefined ? null : <Subtitle>{subtitle}</Subtitle>}
+            {subtitle === undefined || subtitle === '' ? null : <Subtitle>{subtitle}</Subtitle>}
           </Heading>
         </Header>
-        {description === undefined ? null : <Description>{description}</Description>}
-        {meta === undefined ? null : <Meta>{meta}</Meta>}
+        {description === undefined || description === '' ? null : <Description>{description}</Description>}
+        {shown(meta) ? <Meta>{meta}</Meta> : null}
       </Body>
     </Root>
   )

@@ -11,6 +11,8 @@ const column = css({ w: 'shell.sidebar' })
 const thumbnail = css({ h: 'shell.tabBar', bg: 'surface.raised' })
 const tile = css({ w: 'kindTile.sm', h: 'kindTile.sm', borderRadius: 'md', bg: 'accent.subtle' })
 const strong = css({ color: 'fg.default' })
+const positioned = css({ position: 'relative' })
+const link = css({ position: 'relative', color: 'fg.accent' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {
   pane: css({ bg: 'surface.pane' }),
@@ -61,6 +63,9 @@ function Cards() {
         </div>
         <div className={column} data-testid="toolkit">
           {toolkit()}
+        </div>
+        <div className={column} data-testid="empty-slots">
+          <Card title="Empty slots" media={false} leading={null} badge="" description="Slots set to nothing" meta={null} />
         </div>
         <div className={column} data-testid="long">
           <Card title="A very long artifact title that does not fit on one line of the card" description="Short" />
@@ -131,6 +136,10 @@ const meta = {
     await expect(getComputedStyle(find(toolkitCard, '.card__meta')).columnGap).toBe('12px')
     // A card with no onSelect has no button.
     await expect(within(toolkitCard).queryByRole('button')).toBeNull()
+    // Slots set to false, null or '' render nothing, and the card takes the build without media.
+    const empty = find(canvasElement, '[data-testid="empty-slots"] article')
+    for (const slot of ['media', 'leading', 'badge', 'meta']) await expect(empty.querySelector(`.card__${slot}`)).toBeNull()
+    await expect(getComputedStyle(find(empty, '.card__body')).paddingTop).toBe('16px')
     // A long title stays on one line and ends with an ellipsis.
     const long = find(canvasElement, '[data-testid="long"] .card__title')
     await expect(getComputedStyle(long).textOverflow).toBe('ellipsis')
@@ -145,6 +154,8 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
 const onOpenArtifact = fn()
 const onOpenToolkit = fn()
+const onOpenLinked = fn()
+const onLink = fn()
 
 /** With onSelect, a click anywhere on the card or Enter on its title opens it, and the focus ring circles the card. */
 export const Behaviour: StoryObj<typeof meta> = {
@@ -158,6 +169,28 @@ export const Behaviour: StoryObj<typeof meta> = {
         <div className={column} data-testid="toolkit">
           {toolkit(onOpenToolkit)}
         </div>
+        <div className={column} data-testid="linked">
+          <Card
+            title="writer"
+            description="A positioned meta item and a link"
+            meta={
+              <>
+                <span className={positioned}>positioned</span>
+                <a
+                  className={link}
+                  href="#writer"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onLink()
+                  }}
+                >
+                  open the source
+                </a>
+              </>
+            }
+            onSelect={onOpenLinked}
+          />
+        </div>
       </Inline>
       <div hidden>
         <span data-swatch="focus" className={swatches.focus} />
@@ -167,6 +200,8 @@ export const Behaviour: StoryObj<typeof meta> = {
   play: async ({ canvasElement }) => {
     onOpenArtifact.mockClear()
     onOpenToolkit.mockClear()
+    onOpenLinked.mockClear()
+    onLink.mockClear()
     const canvas = within(canvasElement)
     const open = canvas.getByRole('button', { name: 'Hono server spike' })
     await expect(open.closest('h3')).not.toBeNull()
@@ -177,6 +212,16 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(onOpenArtifact).toHaveBeenCalledTimes(2)
     await userEvent.click(hit(canvas.getByText('5 files')))
     await expect(onOpenToolkit).toHaveBeenCalledTimes(1)
+    // A positioned child paints over the title button's hit area; a click on it still selects the card once.
+    await userEvent.click(hit(canvas.getByText('positioned')))
+    await expect(onOpenLinked).toHaveBeenCalledTimes(1)
+    // A click on the title button selects it once, not once for the button and once for the card.
+    await userEvent.click(canvas.getByRole('button', { name: 'writer' }))
+    await expect(onOpenLinked).toHaveBeenCalledTimes(2)
+    // A link inside the card keeps its own click.
+    await userEvent.click(hit(canvas.getByRole('link', { name: 'open the source' })))
+    await expect(onLink).toHaveBeenCalledTimes(1)
+    await expect(onOpenLinked).toHaveBeenCalledTimes(2)
     // The keyboard: Tab to the first card's title, Enter opens it, and the card shows the focus ring.
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
     await userEvent.tab()

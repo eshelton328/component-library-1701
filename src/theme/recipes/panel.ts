@@ -50,7 +50,8 @@ export const panel = defineSlotRecipe({
         body: { gap: '4' },
       },
       section: {
-        root: { py: '12', px: '16', gap: '8', borderRadius: 'xl' },
+        // fit-content keeps a Grid or a row from stretching it to its neighbours' height.
+        root: { h: 'fit-content', py: '12', px: '16', gap: '8', borderRadius: 'xl' },
         title: { textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
         meta: { textStyle: 'small' },
         body: { gap: '8' },

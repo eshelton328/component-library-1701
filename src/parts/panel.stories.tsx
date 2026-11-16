@@ -93,14 +93,18 @@ const meta = {
       if (!(found instanceof HTMLElement)) throw new Error(`no ${slot}`)
       return found
     }
-    // The pane header: 4 px side and 8 px bottom padding, an 8 px gap, a 15 px SemiBold title and a 12 px mono count.
-    const header = getComputedStyle(part(list, 'header'))
-    await expect([header.paddingLeft, header.paddingBottom, header.columnGap]).toEqual(['4px', '8px', '8px'])
-    const title = getComputedStyle(part(list, 'title'))
-    await expect([title.fontSize, title.fontWeight, title.color]).toEqual(['15px', '600', swatch('text')])
+    // The pane headers: 4 px side and 8 px bottom padding, an 8 px gap, a 15 px SemiBold title and a 12 px mono count.
+    for (const p of [list, sidebar]) {
+      const header = getComputedStyle(part(p, 'header'))
+      await expect([header.paddingLeft, header.paddingRight, header.paddingBottom, header.columnGap]).toEqual(['4px', '4px', '8px', '8px'])
+      const title = getComputedStyle(part(p, 'title'))
+      await expect([title.fontSize, title.fontWeight, title.color]).toEqual(['15px', '600', swatch('text')])
+    }
     const count = getComputedStyle(part(list, 'meta'))
     await expect([count.fontSize, count.color]).toEqual(['12px', swatch('muted')])
     await expect(count.fontFamily).toContain('Mono')
+    // The section panel is as tall as its content, though its Grid row is 440 px tall.
+    await expect(Math.round(section.getBoundingClientRect().height)).toBeLessThan(Math.round(list.getBoundingClientRect().height))
     // The section title is an eyebrow: mono, capitals, fg.muted.
     const eyebrow = getComputedStyle(part(section, 'title'))
     await expect([eyebrow.textTransform, eyebrow.color]).toEqual(['uppercase', swatch('muted')])
@@ -144,6 +148,16 @@ export const Behaviour: StoryObj<typeof meta> = {
             <div className={row}>No header</div>
           </Panel>
         </div>
+        <div data-testid="empty-slots">
+          <Panel meta={null} actions={false}>
+            <div className={row}>Slots set to nothing</div>
+          </Panel>
+        </div>
+        <div data-testid="zero">
+          <Panel meta={0}>
+            <div className={row}>A count of zero</div>
+          </Panel>
+        </div>
       </Grid>
     </main>
   ),
@@ -154,6 +168,9 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(bare).not.toHaveAttribute('aria-labelledby')
     await expect(bare.querySelector('.panel__header')).toBeNull()
     await expect(canvas.queryAllByRole('region')).toHaveLength(2)
+    // false and null slots make no header; a count of 0 shows.
+    await expect(canvasElement.querySelector('[data-testid="empty-slots"] .panel__header')).toBeNull()
+    await expect(canvasElement.querySelector('[data-testid="zero"] .panel__meta')).toHaveTextContent('0')
     // A pane panel with a short body still fills the height of its parent.
     const short = canvasElement.querySelector('[data-testid="short"]')
     if (!(short instanceof HTMLElement)) throw new Error('no short')

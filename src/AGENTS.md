@@ -5,7 +5,7 @@ groups and the bans that the lint reads. Read it before you add a file.
 
 | Folder | What it holds |
 | --- | --- |
-| `foundations/` | Token and icon pages; a tier that imports nothing else in `src/` |
+| `foundations/` | Token pages and the icon set (`icons.tsx`); a tier that imports nothing else in `src/` |
 | `controls/` | One Ark part or one element each, and the layout components |
 | `parts/` | Domain components |
 | `shell/` | The page frame and its panes |
@@ -31,6 +31,9 @@ groups and the bans that the lint reads. Read it before you add a file.
   also through a renamed `styled` or a local const, and rejects
   `@pandacss/dev` there. Story and
   foundation files may use `css()` for their own frames.
+- Draw an icon once, in `foundations/icons.tsx`, on the 24 grid in
+  `currentColor`, and size it with its `size` prop. Components use those
+  icons; a new component draws no inline `<svg>`.
 - Use tokens only. The lint rejects raw values, `'[...]'` values, opacity
   modifiers, primitive tokens where a semantic token exists, and inline
   `style` props. Use a text style (`textStyle: 'body'`), not `fontSize`
@@ -61,8 +64,8 @@ groups and the bans that the lint reads. Read it before you add a file.
 
 ## Public API
 
-`index.ts` exports Controls, Parts and Shell; their props and recipe
-variants are the contract. A removed or renamed prop or variant is a
+`index.ts` exports the icons, Controls, Parts and Shell; their props and
+recipe variants are the contract. A removed or renamed prop or variant is a
 breaking change (d-063): deprecate it in a minor version first, then
 remove it with a `!` commit and a migration footer.
 

@@ -9,6 +9,7 @@ import { checkbox } from './checkbox'
 import { contextMeter } from './context-meter'
 import { dialog } from './dialog'
 import { filterChips } from './filter-chips'
+import { icon } from './icon'
 import { itemTabs } from './item-tabs'
 import { listRow } from './list-row'
 import { menu } from './menu'
@@ -22,6 +23,6 @@ import { viewSwitch } from './view-switch'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { button, icon, layoutStack, layoutInline, layoutGrid, statusPill }
 
 export const slotRecipes: NonNullable<Theme['slotRecipes']> = { bottomSheet, checkbox, contextMeter, dialog, filterChips, itemTabs, listRow, menu, panel, popover, searchField, textField, viewSwitch }

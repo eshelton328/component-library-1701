@@ -7,6 +7,7 @@
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
+import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
@@ -20,6 +21,15 @@ import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
+
+// @public
+export function ActionIcon(props: IconProps): JSX.Element;
+
+// @public
+export function AgentIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ApproveIcon(props: IconProps): JSX.Element;
 
 // @public
 export function BottomSheet(input: BottomSheetProps): JSX.Element;
@@ -88,6 +98,18 @@ export type CheckboxProps = {
 };
 
 // @public
+export function CheckIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ChevronDownIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ChevronRightIcon(props: IconProps): JSX.Element;
+
+// @public
+export function CloseIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ContextMeter(input: ContextMeterProps): JSX.Element;
 
 // @public (undocumented)
@@ -151,6 +173,24 @@ export function Grid(props: GridProps): JSX.Element;
 
 // @public
 export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
+
+// @public
+export function HomeIcon(props: IconProps): JSX.Element;
+
+// @public
+export function HookIcon(props: IconProps): JSX.Element;
+
+// @public (undocumented)
+export type IconProps = {
+    size?: IconSize | undefined;
+    title?: string | undefined;
+};
+
+// @public
+export type IconSize = Extract<IconVariantProps['size'], string>;
+
+// @public
+export function InboxIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Inline(props: InlineProps): JSX.Element;
@@ -228,6 +268,12 @@ export type MenuSeparator = {
 };
 
 // @public
+export function MoreIcon(props: IconProps): JSX.Element;
+
+// @public
+export function NextIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Panel(input: PanelProps): JSX.Element;
 
 // @public (undocumented)
@@ -263,6 +309,12 @@ export type PopoverSectionProps = {
 };
 
 // @public
+export function ProjectsIcon(props: IconProps): JSX.Element;
+
+// @public
+export function QuestionIcon(props: IconProps): JSX.Element;
+
+// @public
 export function RadioMenu(input: RadioMenuProps): JSX.Element;
 
 // @public
@@ -286,6 +338,12 @@ export type RadioMenuProps = {
 };
 
 // @public
+export function ReviewIcon(props: IconProps): JSX.Element;
+
+// @public
+export function RuleIcon(props: IconProps): JSX.Element;
+
+// @public
 export type Scalar<T> = {
     [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
         readonly [key: string]: unknown;
@@ -307,6 +365,12 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
     clearLabel?: string | undefined;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function SearchIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Stack(props: StackProps): JSX.Element;
@@ -375,6 +439,12 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
     onValueChange?: ((value: string) => void) | undefined;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function WorkflowIcon(props: IconProps): JSX.Element;
+
+// @public
+export function WorkspacesIcon(props: IconProps): JSX.Element;
 
 // (No @packageDocumentation comment for this package)
 

@@ -134,7 +134,7 @@
             "alpha": 1,
             "hex": "#070b14"
           },
-          "$description": "Text and icons on accent.default or a solid status.danger fill."
+          "$description": "Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg."
         }
       },
       "border": {
@@ -1504,6 +1504,17 @@
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Rail and tab bar labels."
+    },
+    "railLabel": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 9, "unit": "px" },
+        "fontWeight": 500,
+        "lineHeight": 1.3334,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Labels under the icons of the desktop nav rail, as Figma draws them at 9 px."
     },
     "badge": {
       "$type": "typography",

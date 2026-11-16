@@ -101,7 +101,9 @@ const meta = {
     const label = slot(inbox, 'label')
     const l = getComputedStyle(label)
     await expect(l.color).toBe(swatch('accent'))
-    await expect([l.fontSize, l.fontWeight, l.lineHeight]).toEqual(['10px', '500', '12px'])
+    await expect([l.fontSize, l.fontWeight]).toEqual(['9px', '500'])
+    // railLabel stores its 12 px line as the ratio 1.3334 for the Figma export.
+    await expect(Number.parseFloat(l.lineHeight)).toBeCloseTo(12, 2)
     // The icon is 24 px and takes the item's colour.
     const svg = inbox.querySelector('svg')
     if (svg === null) throw new Error('no icon')
@@ -130,6 +132,11 @@ const meta = {
     // A count below 1 shows no badge and keeps the plain name.
     const workspaces = canvas.getByRole('button', { name: 'Workspaces' })
     await expect(workspaces.querySelector('.nav-badge')).toBeNull()
+    // The longest label shows in full (no ellipsis) and stays inside the rail, as in Figma.
+    const wsLabel = slot(workspaces, 'label')
+    await expect(wsLabel.scrollWidth).toBeLessThanOrEqual(wsLabel.getBoundingClientRect().width + 0.5)
+    await expect(wsLabel.getBoundingClientRect().left).toBeGreaterThanOrEqual(nav.getBoundingClientRect().left)
+    await expect(wsLabel.getBoundingClientRect().right).toBeLessThanOrEqual(nav.getBoundingClientRect().right)
     // A count above 9 shows 9+, and the badge stays inside the rail, which does not scroll sideways.
     const projects = canvas.getByRole('button', { name: /^Projects ?, 120 need you$/ })
     const capped = within(projects).getByText('9+').getBoundingClientRect()
@@ -153,6 +160,8 @@ function Selectable() {
           { value: 'home', label: 'Home', icon: <HomeIcon /> },
           { value: 'inbox', label: 'Inbox', icon: <InboxIcon />, badge: 1 },
           { value: 'more', label: 'More', icon: <MoreIcon /> },
+          { value: 'settings', label: 'Workspace settings', icon: <WorkspacesIcon /> },
+          { value: 'long', label: 'Superlongsinglewordlabel', icon: <ProjectsIcon /> },
         ]}
         selected={selected}
         onSelect={(value) => {
@@ -186,5 +195,15 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onSelect).toHaveBeenLastCalledWith('more')
     await expect(onSelect).toHaveBeenCalledTimes(2)
+    // Long labels stay inside the rail: two words wrap to two lines, and a word wider than the rail breaks.
+    const box = nav.getBoundingClientRect()
+    for (const name of ['Workspace settings', 'Superlongsinglewordlabel']) {
+      const label = slot(canvas.getByRole('button', { name }), 'label').getBoundingClientRect()
+      await expect(label.left).toBeGreaterThanOrEqual(box.left)
+      await expect(label.right).toBeLessThanOrEqual(box.right)
+    }
+    const twoWords = slot(canvas.getByRole('button', { name: 'Workspace settings' }), 'label')
+    await expect(twoWords.getBoundingClientRect().height).toBeGreaterThan(Number.parseFloat(getComputedStyle(twoWords).lineHeight) * 1.5)
+    await expect(nav.scrollWidth).toBe(nav.clientWidth)
   },
 }

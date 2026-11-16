@@ -10,6 +10,7 @@ const Root = withRootProvider(ArkDialog.Root)
 const Backdrop = withContext(ArkDialog.Backdrop, 'backdrop')
 const Positioner = withContext(ArkDialog.Positioner, 'positioner')
 const Content = withContext(ArkDialog.Content, 'content')
+const Grabber = withContext('div', 'grabber')
 const Header = withContext('div', 'header')
 const Title = withContext(ArkDialog.Title, 'title')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
@@ -34,7 +35,7 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
 }
 
 /**
- * A sheet at the bottom of the window on a scrim: the snooze,
+ * A sheet at the bottom of the window on a scrim, with a grabber at the top: the snooze,
  * sort and chat actions sheets of the phone. It keeps the focus inside while
  * it is open; Escape, a click on the scrim and `BottomSheetClose` close it,
  * and the focus goes back to the trigger.
@@ -67,6 +68,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
           <Content aria-label={title ?? label}>
+            <Grabber aria-hidden="true" />
             {title === undefined ? null : (
               <Header>
                 <Title>{title}</Title>

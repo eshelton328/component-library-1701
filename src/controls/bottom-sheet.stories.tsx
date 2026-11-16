@@ -10,6 +10,7 @@ const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.d
 // Swatches of the expected tokens, so the play functions compare resolved colours.
 const scrimSwatch = css({ bg: 'overlay.scrim' })
 const surfaceSwatch = css({ bg: 'surface.overlay' })
+const borderSwatch = css({ bg: 'border.default' })
 
 const sorts = ['Newest first', 'Oldest first', 'Name']
 
@@ -38,6 +39,7 @@ function OpenSheet() {
       <SortSheet open />
       <span hidden data-swatch="scrim" className={scrimSwatch} />
       <span hidden data-swatch="surface" className={surfaceSwatch} />
+      <span hidden data-swatch="border" className={borderSwatch} />
     </main>
   )
 }
@@ -46,6 +48,12 @@ function swatch(name: string) {
   const el = document.querySelector(`[data-swatch="${name}"]`)
   if (el === null) throw new Error(`no ${name} swatch`)
   return getComputedStyle(el).backgroundColor
+}
+
+function grabberOf(sheet: HTMLElement) {
+  const grabber = sheet.querySelector('.bottom-sheet__grabber')
+  if (!(grabber instanceof HTMLElement)) throw new Error('no grabber')
+  return grabber
 }
 
 const meta = {
@@ -73,6 +81,19 @@ const meta = {
     const title = within(sheet).getByText('Sort by')
     await expect(getComputedStyle(title).fontSize).toBe('17px')
     await expect(within(sheet).queryByRole('button', { name: 'Close' })).toBeNull()
+    // The grabber (Inbox M6 346:10209): 36x5, a pill in border.default, centred 8 below the top
+    // edge (inside the 1 px border), hidden from assistive technology. The title row starts 2 below it.
+    const grabber = grabberOf(sheet)
+    const g = grabber.getBoundingClientRect()
+    await expect([g.width, g.height]).toEqual([36, 5])
+    await expect(g.top - box.top).toBe(9)
+    await expect(g.left + g.width / 2).toBe(box.left + box.width / 2)
+    await expect(getComputedStyle(grabber).borderTopLeftRadius).toBe('999px')
+    await expect(getComputedStyle(grabber).backgroundColor).toBe(swatch('border'))
+    await expect(grabber).toHaveAttribute('aria-hidden', 'true')
+    const header = sheet.querySelector('.bottom-sheet__header')
+    if (header === null) throw new Error('no title row')
+    await expect(header.getBoundingClientRect().top - g.bottom).toBe(2)
     // A scrim covers the page behind the sheet.
     const scrim = document.querySelector('.bottom-sheet__backdrop')
     if (!(scrim instanceof HTMLElement)) throw new Error('no scrim')
@@ -90,6 +111,8 @@ const untitledPlay = async () => {
   const sheet = await body.findByRole('dialog', { name: 'Chat actions' })
   // No title row.
   await expect(sheet.querySelector('.bottom-sheet__header')).toBeNull()
+  // The grabber shows on a sheet with no title too.
+  await expect(grabberOf(sheet).getBoundingClientRect().width).toBe(36)
   await expect(within(sheet).getByRole('button', { name: 'Rename' })).toBeInTheDocument()
 }
 

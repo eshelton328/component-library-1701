@@ -224,7 +224,6 @@ const meta = {
     for (const { name } of all) {
       const cellEl = canvas.getByTestId(`icon-${name}`)
       const svg = svgIn(cellEl)
-      const style = getComputedStyle(svg)
       // Each icon is drawn on the 24 grid and defaults to 24 px.
       await expect(svg.getAttribute('viewBox')).toBe('0 0 24 24')
       await expect(svg.getBoundingClientRect().width).toBe(24)
@@ -243,17 +242,22 @@ const meta = {
         await expect(box.x + box.width).toBeLessThanOrEqual(24)
         await expect(box.y + box.height).toBeLessThanOrEqual(24)
       }
-      if (filled.includes(name)) {
-        // More (346:5607) and Play (346:397) are filled, not stroked, as in Figma.
-        await expect(style.fill).toBe(getComputedStyle(cellEl).color)
-        await expect(style.stroke).toBe('none')
-      } else {
-        await expect(style.fill).toBe('none')
-        await expect(style.stroke).toBe(getComputedStyle(cellEl).color)
-        await expect(style.strokeLinecap).toBe('round')
-        await expect(style.strokeLinejoin).toBe('round')
-        const nav = ['home', 'inbox', 'workspaces', 'projects', 'toolkit', 'artifacts'].includes(name)
-        await expect(style.strokeWidth).toBe(nav ? '1.8px' : '2px')
+      // The paint is checked on each path, so a path cannot override it.
+      const text = getComputedStyle(cellEl).color
+      const nav = ['home', 'inbox', 'workspaces', 'projects', 'toolkit', 'artifacts'].includes(name)
+      for (const path of paths) {
+        const style = getComputedStyle(path)
+        if (filled.includes(name)) {
+          // More (346:5607) and Play (346:397) are filled, not stroked, as in Figma.
+          await expect(style.fill).toBe(text)
+          await expect(style.stroke).toBe('none')
+        } else {
+          await expect(style.fill).toBe('none')
+          await expect(style.stroke).toBe(text)
+          await expect(style.strokeLinecap).toBe('round')
+          await expect(style.strokeLinejoin).toBe('round')
+          await expect(style.strokeWidth).toBe(nav ? '1.8px' : '2px')
+        }
       }
     }
     // The size prop maps to the sizes.icon tokens.

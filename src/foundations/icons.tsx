@@ -583,3 +583,58 @@ export function ArtifactsIcon(props: IconProps) {
     </Svg>
   )
 }
+
+// The icons below come from the Toolkit screens: the file tree, the flow
+// diagram (D14 501:62, M12 461:572) and the step chips. The Toolkit page
+// draws them at 1.8 at every size; like the other content icons they take
+// a 2 stroke on the 24 grid.
+
+/** Code or a script: two angle brackets. Figma node 432:2214, drawn at 13 px and scaled to 24. */
+export function CodeIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M16 18L22 12L16 6M8 6L2 12L8 18" />
+    </Svg>
+  )
+}
+
+/** A loop: a circle that turns back on itself. Figma node 459:617, drawn at 12 px and scaled to 24. */
+export function LoopIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21 12C21.002 14.061 20.296 16.06 19.001 17.663C17.706 19.267 15.9 20.377 13.885 20.808C11.869 21.24 9.767 20.967 7.929 20.034C6.091 19.102 4.628 17.567 3.786 15.686C2.944 13.805 2.772 11.692 3.301 9.699C3.83 7.707 5.026 5.957 6.69 4.741C8.354 3.525 10.385 2.917 12.444 3.019C14.502 3.12 16.464 3.926 18 5.3L21 8" />
+      <path d="M21 3V8H16" />
+    </Svg>
+  )
+}
+
+/** A terminal: a prompt and a cursor line. Figma names it term. Figma node 459:622, drawn at 13 px and scaled to 24. */
+export function TerminalIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 17L10 11L4 5M12 19H20" />
+    </Svg>
+  )
+}
+
+/** An arrow that points down, between the steps of a flow. Figma node 461:580, drawn at 12 px and scaled to 24. */
+export function ArrowDownIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 5V19M19 12L12 19L5 12" />
+    </Svg>
+  )
+}
+
+/**
+ * An arrow that points right, between the steps of a path. Figma node
+ * 501:70, drawn at 12 px as the down arrow turned a quarter, exported as
+ * drawn and scaled to 24.
+ */
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M5 12H19M12 5L19 12L12 19" />
+    </Svg>
+  )
+}

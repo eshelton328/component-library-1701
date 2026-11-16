@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { TreeView, type TreeViewNode } from '../controls/tree-view'
+import { CodeIcon } from '../foundations/icons'
 import { FileTree, type FileTreeNode } from './file-tree'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -74,6 +75,9 @@ function Tree() {
         <FileTree nodes={skill} defaultExpanded={['references', 'scripts', 'evals', 'evals/cases']} defaultSelected="scripts/check-values.sh" />
       </div>
       <Swatches />
+      <span hidden data-ref="code">
+        <CodeIcon size="14" />
+      </span>
     </main>
   )
 }
@@ -160,6 +164,17 @@ const meta = {
     await expect(selectedStyle.borderTopColor).toBe(swatch(canvasElement, 'selectedBorder'))
     await expect(selectedStyle.color).toBe(swatch(canvasElement, 'accent'))
     await expect(getComputedStyle(iconOf(selected)).stroke).toBe(swatch(canvasElement, 'accent'))
+
+    // A script row draws the set's CodeIcon (432:2214) at 14 px: the same
+    // paths as a reference CodeIcon, in fg.muted when not selected.
+    const codeRef = canvasElement.querySelector('[data-ref="code"] svg')
+    if (!(codeRef instanceof SVGSVGElement)) throw new Error('no code reference')
+    const script = iconOf(row(canvasElement, 'outline.py'))
+    await expect(script.innerHTML).toBe(codeRef.innerHTML)
+    await expect(iconOf(selected).innerHTML).toBe(codeRef.innerHTML)
+    await expect([script.getBoundingClientRect().width, script.getBoundingClientRect().height]).toEqual([14, 14])
+    await expect(getComputedStyle(script).stroke).toBe(swatch(canvasElement, 'muted'))
+    await expect(getComputedStyle(script).strokeWidth).toBe('2px')
   },
 } satisfies Meta<typeof Tree>
 export default meta

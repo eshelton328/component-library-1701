@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline } from '../controls/layout'
-import { CheckIcon, LockIcon, SparkIcon, WorkflowIcon } from '../foundations/icons'
+import { CheckIcon, LockIcon, LoopIcon, SparkIcon } from '../foundations/icons'
 import { Badge } from './badge'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '16', justifyItems: 'start' })
@@ -34,7 +34,7 @@ function Badges() {
         </span>
         <Badge label="3 of 43 fail" tone="danger" />
         <span data-testid="loop">
-          <Badge label="loop until it passes" variant="tag" tone="needsYou" icon={<WorkflowIcon size="12" />} />
+          <Badge label="loop until it passes" variant="tag" tone="needsYou" icon={<LoopIcon size="12" />} />
         </span>
         <span data-testid="uses">
           <Badge label="link.sh" variant="outline" tone="needsYou" />
@@ -55,6 +55,9 @@ function Badges() {
       {Object.entries(swatch).map(([name, className]) => (
         <span key={name} hidden className={className} data-testid={`swatch-${name}`} />
       ))}
+      <span hidden data-testid="ref-loop">
+        <LoopIcon size="12" />
+      </span>
     </main>
   )
 }
@@ -107,6 +110,13 @@ const meta = {
     await expect(tag.fontFamily).toMatch(/mono/i)
     await expect([tag.paddingLeft, tag.paddingTop, tag.columnGap]).toEqual(['6px', '2px', '4px'])
     await expect(box('loop').height).toBeCloseTo(21, 0)
+    // The loop tag draws the set's LoopIcon (459:617) at 12 px in the tag's colour.
+    const loopIcon = badgeIn('loop').querySelector('svg')
+    const loopRef = canvas.getByTestId('ref-loop').querySelector('svg')
+    if (!(loopIcon instanceof SVGSVGElement) || !(loopRef instanceof SVGSVGElement)) throw new Error('no loop icon')
+    await expect(loopIcon.innerHTML).toBe(loopRef.innerHTML)
+    await expect([loopIcon.getBoundingClientRect().width, loopIcon.getBoundingClientRect().height]).toEqual([12, 12])
+    await expect(getComputedStyle(loopIcon).stroke).toBe(sw('needsYou').color)
 
     // Outline: surface.overlay, a 1 px border.default border, the tone's text, 23 high.
     const outline = style('uses')

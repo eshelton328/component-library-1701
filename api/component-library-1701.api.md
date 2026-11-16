@@ -1240,10 +1240,47 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
 };
 
 // @public
+export function Workbench(input: WorkbenchProps): JSX.Element;
+
+// @public (undocumented)
+export type WorkbenchProps = {
+    label?: string | undefined;
+    workspaces: readonly WorkspaceTab[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    actions?: ReactNode;
+    summary?: string | undefined;
+    hints?: readonly string[] | undefined;
+    alert?: string | undefined;
+};
+
+// @public
 export function WorkflowIcon(props: IconProps): JSX.Element;
 
 // @public
 export function WorkspacesIcon(props: IconProps): JSX.Element;
+
+// @public
+export type WorkspaceTab = {
+    value: string;
+    label: string;
+    count?: number | undefined;
+    content: ReactNode;
+};
+
+// @public
+export function WorkspaceTabs(input: WorkspaceTabsProps): JSX.Element;
+
+// @public (undocumented)
+export type WorkspaceTabsProps = {
+    label: string;
+    items: readonly WorkspaceTab[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    actions?: ReactNode;
+};
 
 // (No @packageDocumentation comment for this package)
 

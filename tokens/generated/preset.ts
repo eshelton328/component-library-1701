@@ -490,7 +490,7 @@ export default definePreset({
               "fg": {
                 "value": {
                   "base": "#4a5675",
-                  "_dark": "#8a97b8"
+                  "_dark": "#9ba7c6"
                 },
                 "description": "Text, icons and solid fills for this status. Nothing is happening."
               }
@@ -687,7 +687,7 @@ export default definePreset({
             "description": "Disabled items."
           },
           "snoozed": {
-            "value": "0.75",
+            "value": "0.85",
             "description": "A snoozed inbox row."
           }
         },

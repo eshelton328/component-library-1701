@@ -105,5 +105,11 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.click(canvas.getByRole('button', { name: 'Disabled' }))
     await expect(onClick).toHaveBeenCalledTimes(1)
     await expect(canvas.getByRole('button', { name: 'Disabled' })).toHaveAttribute('type', 'button')
+    // Keyboard focus draws the focus ring.
+    const save = canvas.getByRole('button', { name: 'Save' })
+    save.blur()
+    await userEvent.tab()
+    await expect(save).toHaveFocus()
+    await expect(getComputedStyle(save).outlineStyle).toBe('solid')
   },
 }

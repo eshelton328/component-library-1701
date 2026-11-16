@@ -54,9 +54,11 @@ import { viewSwitch } from './view-switch'
 import { navBadge } from './nav-badge'
 import { navRail } from './nav-rail'
 import { tabBar } from './tab-bar'
+import { workbench } from './workbench'
+import { workspaceTabs } from './workspace-tabs'
 
 type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch, workbench, workspaceTabs }

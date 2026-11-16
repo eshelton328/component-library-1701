@@ -39,6 +39,7 @@ import { layoutGrid, layoutInline, layoutStack } from './layout'
 import { searchField } from './search-field'
 import { textField } from './text-field'
 import { toolLine } from './tool-line'
+import { treeView } from './tree-view'
 import { statusPill } from './status-pill'
 import { viewSwitch } from './view-switch'
 import { navBadge } from './nav-badge'
@@ -48,4 +49,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, chatPath, checkbox, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, chatPath, checkbox, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, treeView, viewSwitch }

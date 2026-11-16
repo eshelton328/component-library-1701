@@ -46,5 +46,8 @@ export const truncatedText = defineRecipe({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+    // Cut text with its own tab stop sits above a hit area that covers it, such as the one of a card's or a
+    // row's title button, so the pointer reaches it and opens its tooltip.
+    '&[tabindex]': { position: 'relative' },
   },
 })

@@ -316,6 +316,37 @@ export type MetaLineProps = Scalar<MetaLineVariantProps> & {
 };
 
 // @public
+export function MoreDrawer(input: MoreDrawerProps): JSX.Element;
+
+// @public
+export type MoreDrawerGroup = {
+    label?: string | undefined;
+    items: readonly MoreDrawerItem[];
+};
+
+// @public
+export type MoreDrawerItem = {
+    value: string;
+    label: string;
+    description?: string | undefined;
+    icon: ReactNode;
+    count?: number | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type MoreDrawerProps = {
+    groups: readonly MoreDrawerGroup[];
+    selected?: string | undefined;
+    onSelect?: ((value: string) => void) | undefined;
+    title?: string | undefined;
+    trigger?: ReactElement | undefined;
+    open?: boolean | undefined;
+    defaultOpen?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+};
+
+// @public
 export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public

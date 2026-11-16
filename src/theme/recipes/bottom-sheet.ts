@@ -18,11 +18,9 @@ export const bottomSheet = defineSlotRecipe({
     content: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '2',
       w: '100%',
       maxH: '100%',
       overflowY: 'auto',
-      pt: '8',
       px: '12',
       pb: 'token(sizes.shell.safeAreaBottom)',
       bg: 'surface.overlay',
@@ -36,8 +34,8 @@ export const bottomSheet = defineSlotRecipe({
       backdropFilter: 'blur(token(blurs.glass))',
       outline: 'none',
     },
-    header: { display: 'flex', alignItems: 'center', gap: '8', pt: '10', pb: '8', px: '4' },
-    title: { flex: '1', textStyle: 'subtitle', color: 'fg.default' },
+    header: { display: 'flex', alignItems: 'center', gap: '8', px: '4' },
+    title: { flex: '1', color: 'fg.default' },
     // The close button of the tablet side chat (105:1925): an 18 px icon with no box.
     closeTrigger: {
       display: 'inline-flex',
@@ -56,4 +54,13 @@ export const bottomSheet = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
   },
+  variants: {
+    size: {
+      // A sheet: Inbox M6, Artifacts M4, Workbench M9.
+      md: { content: { gap: '2', pt: '8' }, header: { pt: '10', pb: '8' }, title: { textStyle: 'subtitle' } },
+      // The More drawer: Artifacts M8 (415:315) and Toolkit M4 (424:6940). Figma pt 9 takes `10` (d-072).
+      lg: { content: { gap: '4', pt: '10' }, header: { pt: '0', pb: '6' }, title: { textStyle: 'title' } },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

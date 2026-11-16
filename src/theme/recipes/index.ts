@@ -13,6 +13,7 @@ import { icon } from './icon'
 import { itemTabs } from './item-tabs'
 import { listRow } from './list-row'
 import { menu } from './menu'
+import { moreDrawer } from './more-drawer'
 import { panel } from './panel'
 import { kindBadge } from './kind-badge'
 import { metaChip } from './meta-chip'
@@ -32,4 +33,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, layoutStack, layoutInline, layoutGrid, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { bottomSheet, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, listRow, menu, metaChip, metaLine, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { bottomSheet, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, listRow, menu, metaChip, metaLine, moreDrawer, pageHeader, panel, pathBadge, popover, searchField, tagsLine, textField, viewSwitch }

@@ -1,6 +1,7 @@
 import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
 import { Portal } from '@ark-ui/react/portal'
 import type { ReactElement, ReactNode } from 'react'
+import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { dialog, type DialogVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
@@ -72,9 +73,7 @@ export function Dialog({ title, description, children, actions, trigger, open, d
               <Title>{title}</Title>
               {closeButton ? (
                 <CloseTrigger aria-label="Close">
-                  <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                    <path d="M4.5 4.5l9 9M13.5 4.5l-9 9" />
-                  </svg>
+                  <CloseIcon size="18" />
                 </CloseTrigger>
               ) : null}
             </Header>

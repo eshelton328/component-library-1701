@@ -807,6 +807,9 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 };
 
 // @public
+export function Pane(input: PaneProps): JSX.Element;
+
+// @public
 export function Panel(input: PanelProps): JSX.Element;
 
 // @public
@@ -817,6 +820,17 @@ export type PanelProps = Scalar<PanelVariantProps> & {
     title?: string | undefined;
     meta?: ReactNode;
     actions?: ReactNode;
+    children?: ReactNode;
+};
+
+// @public (undocumented)
+export type PaneProps = {
+    title: string;
+    leading?: ReactNode;
+    meta?: ReactNode;
+    actions?: ReactNode;
+    focused?: boolean | undefined;
+    onActivate?: (() => void) | undefined;
     children?: ReactNode;
 };
 
@@ -1020,6 +1034,45 @@ export function SparkleIcon(props: IconProps): JSX.Element;
 
 // @public
 export function SplitIcon(props: IconProps): JSX.Element;
+
+// @public
+export type SplitPane = {
+    id: string;
+    content: ReactNode;
+};
+
+// @public
+export function SplitPanes(input: SplitPanesProps): JSX.Element | null;
+
+// @public (undocumented)
+export type SplitPanesProps = {
+    panes: readonly SplitPane[];
+    sizes?: Partial<Record<SplitPart, readonly number[]>> | undefined;
+    onSizeChange?: ((part: SplitPart, size: number[]) => void) | undefined;
+};
+
+// @public
+export type SplitPart = 'columns' | 'left' | 'right';
+
+// @public
+export function Splitter(input: SplitterProps): JSX.Element;
+
+// @public
+export type SplitterPanel = {
+    id: string;
+    content: ReactNode;
+    minSize?: number | undefined;
+};
+
+// @public (undocumented)
+export type SplitterProps = {
+    orientation?: 'horizontal' | 'vertical' | undefined;
+    panels: readonly SplitterPanel[];
+    size?: readonly number[] | undefined;
+    defaultSize?: readonly number[] | undefined;
+    onSizeChange?: ((size: number[]) => void) | undefined;
+    handleLabel?: string | undefined;
+};
 
 // @public
 export function Stack(props: StackProps): JSX.Element;

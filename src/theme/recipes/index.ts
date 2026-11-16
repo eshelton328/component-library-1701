@@ -39,9 +39,11 @@ import { textField } from './text-field'
 import { toolLine } from './tool-line'
 import { statusPill } from './status-pill'
 import { viewSwitch } from './view-switch'
+import { navBadge } from './nav-badge'
+import { navRail } from './nav-rail'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, navBadge, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, composer, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, message, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, composer, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }

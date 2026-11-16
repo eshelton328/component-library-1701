@@ -15,6 +15,7 @@ const swatches = {
   selected: css({ bg: 'border.selected' }),
   accent: css({ bg: 'accent.default' }),
   muted: css({ bg: 'fg.muted' }),
+  text: css({ bg: 'fg.default' }),
 }
 const swatchRow = (
   <div hidden>
@@ -93,7 +94,14 @@ const meta = {
     await expect(chipStyle.borderRadius).toBe('6px')
     await expect([chipStyle.paddingTop, chipStyle.paddingLeft]).toEqual(['4px', '8px'])
     await expect(chipStyle.fontSize).toBe('11px')
-    await expect(within(box).getByRole('button', { name: 'Remove theme-ideas.md' })).toBeInTheDocument()
+    const remove = within(box).getByRole('button', { name: 'Remove theme-ideas.md' })
+    // The clip is fg.default and the remove icon fg.muted, both 12 px.
+    const [clip, cross] = Array.from(chip.querySelectorAll('svg'))
+    if (clip === undefined || cross === undefined) throw new Error('no attachment icons')
+    await expect(getComputedStyle(clip).color).toBe(swatch(canvasElement, 'text'))
+    await expect(getComputedStyle(cross).color).toBe(swatch(canvasElement, 'muted'))
+    await expect([clip.getBoundingClientRect().width, cross.getBoundingClientRect().width]).toEqual([12, 12])
+    await expect(remove.contains(cross)).toBe(true)
     // The needs-you composer has no Stop and no model, and its text has two lines.
     const needs = canvas.getByRole('textbox', { name: 'Needs you' })
     await expect(needs).toHaveValue('Deny it.\nUse the old path.')

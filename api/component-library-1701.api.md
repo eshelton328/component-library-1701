@@ -43,6 +43,9 @@ export function AgentIcon(props: IconProps): JSX.Element;
 export function ApproveIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ArrowUpIcon(props: IconProps): JSX.Element;
+
+// @public
 export function BackRow(input: BackRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -142,6 +145,9 @@ export function ChevronDownIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ChevronRightIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public
 export function CloseIcon(props: IconProps): JSX.Element;
@@ -673,6 +679,9 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
     label: string;
     dot?: boolean | undefined;
 };
+
+// @public
+export function StopIcon(props: IconProps): JSX.Element;
 
 // @public
 export function TagsLine(input: TagsLineProps): JSX.Element | null;

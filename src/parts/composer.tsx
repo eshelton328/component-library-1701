@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { composer } from '../../styled-system/recipes'
+import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon } from '../foundations/icons'
 import { Button } from '../controls/button'
 import { Inline } from '../controls/layout'
 import { TextArea } from '../controls/text-field'
@@ -8,7 +9,7 @@ import { TextArea } from '../controls/text-field'
 const { withProvider, withContext } = createSlotRecipeContext(composer)
 const Root = withProvider('div', 'root')
 const Attachment = withContext('span', 'attachment')
-const AttachmentIcon = withContext('svg', 'attachmentIcon')
+const AttachmentIcon = withContext('span', 'attachmentIcon')
 const AttachmentName = withContext('span', 'attachmentName')
 const AttachmentRemove = withContext('button', 'attachmentRemove')
 
@@ -96,8 +97,8 @@ export function Composer({
         <Inline gap="6" wrap>
           {attachments.map((file) => (
             <Attachment key={file.id}>
-              <AttachmentIcon viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M13 7.5l-5.2 5.2a3.2 3.2 0 01-4.5-4.5l5.6-5.6a2.1 2.1 0 013 3l-5.6 5.6a1 1 0 01-1.5-1.5L10 4.5" />
+              <AttachmentIcon aria-hidden="true">
+                <ClipIcon size="12" />
               </AttachmentIcon>
               <AttachmentName>{file.name}</AttachmentName>
               {onRemoveAttachment === undefined ? null : (
@@ -109,9 +110,7 @@ export function Composer({
                     onRemoveAttachment(file.id)
                   }}
                 >
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                    <path d="M4 4l8 8M12 4l-8 8" />
-                  </svg>
+                  <CloseIcon size="12" />
                 </AttachmentRemove>
               )}
             </Attachment>
@@ -134,9 +133,7 @@ export function Composer({
         <Inline gap="6">
           {onAttach === undefined ? null : (
             <Button size="sm" iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M13 7.5l-5.2 5.2a3.2 3.2 0 01-4.5-4.5l5.6-5.6a2.1 2.1 0 013 3l-5.6 5.6a1 1 0 01-1.5-1.5L10 4.5" />
-              </svg>
+              <ClipIcon size="16" />
             </Button>
           )}
           {model}
@@ -144,16 +141,12 @@ export function Composer({
         <Inline gap="6">
           {running ? (
             <Button size="sm" onClick={onStop}>
-              <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
-              </svg>
+              <StopIcon size="16" />
               Stop
             </Button>
           ) : null}
           <Button variant="primary" size="sm" iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" />
-            </svg>
+            <ArrowUpIcon size="16" />
           </Button>
         </Inline>
       </Inline>

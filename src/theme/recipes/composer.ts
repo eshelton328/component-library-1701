@@ -46,7 +46,8 @@ export const composer = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
     },
-    attachmentIcon: { w: 'icon.12', h: 'icon.12', flexShrink: '0', color: 'fg.muted' },
+    // The clip is fg.default and the remove icon fg.muted, as Figma draws them (105:891, 105:894).
+    attachmentIcon: { display: 'inline-flex', flexShrink: '0', color: 'fg.default' },
     attachmentName: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     attachmentRemove: {
       display: 'inline-flex',
@@ -60,7 +61,6 @@ export const composer = defineSlotRecipe({
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
       _disabled: { cursor: 'not-allowed' },
-      '& svg': { w: 'icon.12', h: 'icon.12' },
     },
   },
 })

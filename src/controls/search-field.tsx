@@ -2,6 +2,7 @@ import { Field } from '@ark-ui/react/field'
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { searchField, type SearchFieldVariantProps } from '../../styled-system/recipes'
+import type { Scalar } from './scalar'
 
 const { withProvider, withContext } = createSlotRecipeContext(searchField)
 const Root = withProvider(Field.Root, 'root')
@@ -9,7 +10,7 @@ const Input = withContext(Field.Input, 'input')
 const Icon = withContext('span', 'icon')
 const Clear = withContext('button', 'clear')
 
-export type SearchFieldProps = SearchFieldVariantProps & {
+export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
   /** The accessible name of the field, such as "Search the inbox". */
   label: string
   /** The text. Set it with `onValueChange` to control the field. */

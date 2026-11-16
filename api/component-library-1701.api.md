@@ -42,7 +42,7 @@ export type Scalar<T> = {
 export function SearchField(input: SearchFieldProps): JSX.Element;
 
 // @public (undocumented)
-export type SearchFieldProps = SearchFieldVariantProps & {
+export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
     label: string;
     value?: string | undefined;
     defaultValue?: string | undefined;

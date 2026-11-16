@@ -24,6 +24,12 @@ function Arrow({ open }: { open: boolean }) {
   )
 }
 
+// React renders nothing for null, undefined, booleans and the empty string,
+// so a slot holding one of them is left out with its gap.
+function present(node: ReactNode): boolean {
+  return node !== null && node !== undefined && typeof node !== 'boolean' && node !== ''
+}
+
 export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
   /** The group name, such as "Needs you". The header shows it in capitals. */
   label: string
@@ -61,7 +67,7 @@ export function GroupHeader({ label, count, dot, open = true, onOpenChange, cont
   )
   return (
     <Root variant={variant} dot={dot} data-state={collapsible ? (open ? 'open' : 'closed') : undefined}>
-      {leading === undefined ? null : <Leading>{leading}</Leading>}
+      {present(leading) ? <Leading>{leading}</Leading> : null}
       {!collapsible ? (
         <Static>{body}</Static>
       ) : (
@@ -76,7 +82,7 @@ export function GroupHeader({ label, count, dot, open = true, onOpenChange, cont
           {body}
         </Toggle>
       )}
-      {actions === undefined ? null : <Actions>{actions}</Actions>}
+      {present(actions) ? <Actions>{actions}</Actions> : null}
     </Root>
   )
 }

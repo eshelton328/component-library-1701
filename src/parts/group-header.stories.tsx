@@ -93,7 +93,9 @@ function Headers({ onOpenChange = () => undefined, onMenu = () => undefined }: {
             count={3}
             dot="needsYou"
             open
-            onOpenChange={() => undefined}
+            onOpenChange={(next) => {
+              onOpenChange('sidebar', next)
+            }}
             leading={<Grip />}
             actions={
               <button type="button" className={more} aria-label="Workspace actions" onClick={onMenu}>
@@ -104,6 +106,9 @@ function Headers({ onOpenChange = () => undefined, onMenu = () => undefined }: {
         </div>
         <div className={pane} data-testid="static">
           <GroupHeader label="Kind" />
+        </div>
+        <div className={pane} data-testid="empty-slots">
+          <GroupHeader variant="sidebar" label="Workspace" leading={false} actions={null} />
         </div>
       </Stack>
       <div hidden>
@@ -169,6 +174,10 @@ const meta = {
     await expect(within(staticRoot).queryByRole('button')).toBeNull()
     await expect(staticRoot.querySelector('.group-header__chevron')).toBeNull()
     await expect(staticRoot).toHaveTextContent('Kind')
+    // Empty leading and actions leave no box, so the name starts at the padding.
+    const emptyRoot = one(canvas.getByTestId('empty-slots'), '.group-header__root')
+    await expect(emptyRoot.querySelector('.group-header__leading, .group-header__actions')).toBeNull()
+    await expect(one(emptyRoot, '.group-header__label').getBoundingClientRect().left - emptyRoot.getBoundingClientRect().left).toBe(4)
   },
 } satisfies Meta<typeof Headers>
 export default meta
@@ -201,9 +210,12 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard(' ')
     await expect(args.onOpenChange).toHaveBeenLastCalledWith('snoozed', true)
     await expect(args.onOpenChange).toHaveBeenCalledTimes(3)
-    // The actions sit outside the toggle: pressing one does not open or close the group.
+    // The actions sit outside the toggle: pressing one does not open or close its group.
     await userEvent.click(canvas.getByRole('button', { name: 'Workspace actions' }))
     await expect(args.onMenu).toHaveBeenCalledOnce()
     await expect(args.onOpenChange).toHaveBeenCalledTimes(3)
+    // The sidebar header's own toggle does report through the same spy.
+    await userEvent.click(canvas.getByRole('button', { name: /omni-brain/i }))
+    await expect(args.onOpenChange).toHaveBeenLastCalledWith('sidebar', false)
   },
 }

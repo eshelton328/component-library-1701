@@ -1,6 +1,7 @@
+import { Fieldset } from '@ark-ui/react/fieldset'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { SearchField } from './search-field'
 
@@ -88,8 +89,30 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(input).toHaveValue('')
     await expect(input).toHaveFocus()
     await expect(onValueChange).toHaveBeenLastCalledWith('')
+    // Escape during IME composition keeps the text.
+    await userEvent.type(input, '東京')
+    await fireEvent.keyDown(input, { key: 'Escape', isComposing: true })
+    await expect(input).toHaveValue('東京')
+    await userEvent.type(input, '{Escape}')
+    await expect(input).toHaveValue('')
     await userEvent.type(input, 'abc{Escape}')
     await expect(input).toHaveValue('')
+    await expect(canvas.queryByRole('button', { name: 'Clear search' })).toBeNull()
+  },
+}
+
+/** A disabled Fieldset disables the field and hides its clear button. */
+export const InDisabledFieldset: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Fieldset.Root disabled>
+        <SearchField label="Search the inbox" defaultValue="sync" icon={<Magnifier />} />
+      </Fieldset.Root>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('searchbox', { name: 'Search the inbox' })).toBeDisabled()
     await expect(canvas.queryByRole('button', { name: 'Clear search' })).toBeNull()
   },
 }

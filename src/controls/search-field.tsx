@@ -52,7 +52,8 @@ export function SearchField({
     onValueChange?.(next)
   }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape' && text !== '') {
+    // Escape during IME composition cancels the candidate, not the search.
+    if (e.key === 'Escape' && text !== '' && !e.nativeEvent.isComposing) {
       e.preventDefault()
       change('')
     }
@@ -71,18 +72,23 @@ export function SearchField({
         }}
         onKeyDown={onKeyDown}
       />
-      {text === '' || disabled === true ? null : (
-        <Clear
-          type="button"
-          aria-label={clearLabel}
-          onClick={() => {
-            change('')
-            input.current?.focus()
-          }}
-        >
-          {clearIcon ?? '×'}
-        </Clear>
-      )}
+      {/* The field can be disabled by its prop or by a disabled Fieldset. */}
+      <Field.Context>
+        {(field) =>
+          text === '' || field.disabled ? null : (
+            <Clear
+              type="button"
+              aria-label={clearLabel}
+              onClick={() => {
+                change('')
+                input.current?.focus()
+              }}
+            >
+              {clearIcon ?? '×'}
+            </Clear>
+          )
+        }
+      </Field.Context>
     </Root>
   )
 }

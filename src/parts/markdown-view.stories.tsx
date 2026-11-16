@@ -248,6 +248,14 @@ const meta = {
     const note = pick(explain, '.script-explanation__note')
     await expect(font(note)).toEqual(['12px', 17, '400'])
     await expect(getComputedStyle(note).color).toBe(swatch(canvasElement, 'muted'))
+    // The spark before the note (440:1480): 14 px, 6 before the text, hidden from assistive technology.
+    const spark = note.querySelector('svg')
+    if (!(spark instanceof SVGSVGElement)) throw new Error('no spark')
+    await expect(spark.getBoundingClientRect().width).toBe(14)
+    await expect(spark.getAttribute('aria-hidden')).toBe('true')
+    const noteText = document.createRange()
+    noteText.selectNode(note.lastChild ?? note)
+    await expect(noteText.getBoundingClientRect().left - spark.getBoundingClientRect().right).toBe(6)
   },
 } satisfies Meta<typeof Content>
 export default meta

@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { scriptExplanation } from '../../styled-system/recipes'
+import { SparkIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(scriptExplanation)
 const Root = withProvider('div', 'root')
@@ -75,7 +76,12 @@ export function ScriptExplanation({ summary, facts, steps, note, summaryLabel = 
           </Step>
         ))}
       </Steps>
-      {note === undefined ? null : <Note>{note}</Note>}
+      {note === undefined ? null : (
+        <Note>
+          <SparkIcon size="14" />
+          {note}
+        </Note>
+      )}
     </Root>
   )
 }

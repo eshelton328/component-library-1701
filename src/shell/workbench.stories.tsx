@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Workbench } from './workbench'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const frame = css({ h: 'shell.dialogLg', bg: 'bg.canvas' })
 const panes = css({ flex: '1', bg: 'surface.pane', borderWidth: 'default', borderColor: 'border.default', borderRadius: 'xl', textStyle: 'body', color: 'fg.default', p: '12' })
@@ -184,5 +185,22 @@ export const ChangingWorkspaces: StoryObj<typeof meta> = {
     await userEvent.click(canvas.getByRole('button', { name: 'Restore the-bridge' }))
     await expect(tab(/x-ray/)).toHaveAttribute('aria-selected', 'true')
     await expect(tab(/the-bridge/)).toHaveAttribute('aria-selected', 'false')
+  },
+}
+
+const narrowFrame = css({ h: 'shell.dialogLg', w: 'shell.popoverLg', bg: 'bg.canvas' })
+
+const longHint = 'Cmd+Shift+Option+D split the focused pane down and keep the chat'
+
+/** A hint that does not fit in the status bar is cut and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongHint: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={narrowFrame}>
+      <Workbench workspaces={workspaces} summary="omni-brain · 2 panes" hints={[longHint]} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectCutText(find(canvasElement, '.workbench__hint'), longHint)
   },
 }

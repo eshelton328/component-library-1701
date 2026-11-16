@@ -2,6 +2,7 @@ import { Children, Fragment, isValidElement, useId, type ReactNode } from 'react
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { toolLine, type ToolLineVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 import { ChevronDownIcon, ChevronRightIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(toolLine)
@@ -59,7 +60,9 @@ export function ToolLine({ name, target, state = 'done', stateLabel, open = fals
   const body = (
     <>
       <Dot role="img" aria-label={stateLabel ?? stateNames[state]} />
-      <Text title={text}>{text}</Text>
+      <Text>
+        <TruncatedText>{text}</TruncatedText>
+      </Text>
       {expandable ? <Chevron>{open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}</Chevron> : null}
     </>
   )

@@ -35,7 +35,8 @@ export const toolLine = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
-    text: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long tool and target and shows it whole in a tooltip.
+    text: { minW: '0' },
     chevron: { display: 'inline-flex', flexShrink: '0' },
     output: {
       display: 'flex',

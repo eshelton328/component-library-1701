@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { workbench } from '../../styled-system/recipes'
 import { WorkspaceTabs, type WorkspaceTab } from '../controls/workspace-tabs'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(workbench)
 const Root = withProvider('div', 'root')
@@ -47,7 +48,9 @@ export function Workbench({ label = 'Workspaces', workspaces, value, defaultValu
         <Status>
           {hasSummary ? <Summary>{summary}</Summary> : null}
           {hints.map((hint) => (
-            <Hint key={hint}>{hint}</Hint>
+            <Hint key={hint}>
+              <TruncatedText>{hint}</TruncatedText>
+            </Hint>
           ))}
           {hasAlert ? <Alert>{alert}</Alert> : null}
         </Status>

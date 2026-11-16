@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { Composer, type ComposerAttachment } from './composer'
 import { ModelChip } from './model-chip'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', w: 'shell.dialogLg' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -86,7 +87,8 @@ const meta = {
     await expect(within(box).getByRole('button', { name: 'Model: Opus 5.5' })).toBeInTheDocument()
     // The attachment chip: surface.overlay, a border.default border, radius.sm and 4 × 8 padding.
     const name = within(box).getByText('theme-ideas.md')
-    const chip = name.parentElement
+    // The TruncatedText inside the name holds the text.
+    const chip = name.closest('.composer__attachment')
     if (chip === null) throw new Error('no attachment')
     const chipStyle = getComputedStyle(chip)
     await expect(chipStyle.backgroundColor).toBe(swatch(canvasElement, 'overlay'))
@@ -209,5 +211,26 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.type(controlled, 'Kept{Enter}')
     await expect(onSubmit).toHaveBeenLastCalledWith('Kept')
     await expect(controlled).toHaveValue('Kept')
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+const longFile = 'skill-eval-round-with-held-out-cases-and-a-trigger-set-notes-from-the-review.md'
+
+/** A long attachment name is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+export const LongAttachment: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={narrowBox}>
+        <Composer label="Message" attachments={[{ id: 'a', name: longFile }]} onRemoveAttachment={() => undefined} onSubmit={() => undefined} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const name = canvasElement.querySelector('.composer__attachmentName')
+    if (name === null) throw new Error('no attachment name')
+    await expectCutText(name, longFile)
   },
 }

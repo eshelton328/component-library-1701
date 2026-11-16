@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline, Stack } from '../controls/layout'
 import { ModelChip, type ModelChipOption } from './model-chip'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl' })
@@ -79,7 +80,8 @@ const meta = {
     await expect(getComputedStyle(disabled).opacity).toBe('0.45')
     // Without options, the chip is text: no button and no chevron.
     const text = canvas.getByText('Opus 5.5 · high effort')
-    const staticChip = text.parentElement
+    // The TruncatedText inside the chip's label holds the text.
+    const staticChip = text.closest('.model-chip__root')
     if (!(staticChip instanceof HTMLElement)) throw new Error('no static chip')
     await expect(staticChip.tagName).toBe('SPAN')
     await expect(staticChip.querySelector('svg')).toBeNull()
@@ -150,5 +152,39 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.click(changed)
     await userEvent.click(within(await body.findByRole('menu')).getByRole('menuitemradio', { name: 'Haiku 5' }))
     await expect(onValueChange).toHaveBeenCalledTimes(1)
+  },
+}
+
+const narrowBox = css({ w: 'shell.popoverSm' })
+
+const longEffort = 'high effort with extended thinking'
+
+/**
+ * A long model and effort are cut to one line and show in full in a
+ * tooltip: on the chip's button when it opens a menu, and as its own tab
+ * stop when it is text.
+ */
+export const LongModel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <Stack gap="8">
+        <div className={narrowBox}>
+          <ModelChip model="Opus 5.5" effort={longEffort} options={models} value="opus-high" />
+        </div>
+        <div className={narrowBox} data-testid="static">
+          <ModelChip model="Sonnet 5.5" effort={longEffort} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const chip = canvas.getByRole('button', { name: `Model: Opus 5.5 · ${longEffort}` })
+    const label = chip.querySelector('.model-chip__label')
+    const staticLabel = canvas.getByTestId('static').querySelector('.model-chip__label')
+    if (label === null || staticLabel === null) throw new Error('no label')
+    await expectCutText(label, `Opus 5.5 · ${longEffort}`, chip)
+    await expectCutText(staticLabel, `Sonnet 5.5 · ${longEffort}`)
   },
 }

@@ -2,6 +2,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { modelChip } from '../../styled-system/recipes'
 import { ChevronDownIcon } from '../foundations/icons'
 import { RadioMenu, type RadioMenuOption } from '../controls/menu'
+import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(modelChip)
 const ButtonRoot = withProvider('button', 'root')
@@ -43,7 +44,9 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
   if (options === undefined) {
     return (
       <StaticRoot>
-        <Label>{text}</Label>
+        <Label>
+          <TruncatedText>{text}</TruncatedText>
+        </Label>
       </StaticRoot>
     )
   }
@@ -60,7 +63,9 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
           <Chevron aria-hidden="true">
             <ChevronDownIcon size="12" />
           </Chevron>
-          <Label>{text}</Label>
+          <Label>
+          <TruncatedText>{text}</TruncatedText>
+        </Label>
         </ButtonRoot>
       }
     />

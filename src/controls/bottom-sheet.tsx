@@ -14,12 +14,11 @@ const Header = withContext('div', 'header')
 const Title = withContext(ArkDialog.Title, 'title')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
 
-/** A sheet with a visible title, which also names it for assistive technology. */
-type Titled = { title: string; label?: undefined }
-/** A sheet with no visible title, named by `label`, such as the chat actions sheet. */
-type Untitled = { title?: undefined; label: string }
-
-export type BottomSheetProps = (Titled | Untitled) & {
+/**
+ * Give a sheet either a `title`, which shows in the title row and names the sheet for assistive technology, or a
+ * `label`, which names a sheet that has no visible title, such as the chat actions sheet.
+ */
+export type BottomSheetProps = ({ title: string; label?: undefined } | { title?: undefined; label: string }) & {
   /** The content under the title, such as the rows of a sort or snooze sheet. */
   children?: ReactNode
   /** The element that opens the sheet, such as a `Button`. Leave it out to open the sheet with `open`. */

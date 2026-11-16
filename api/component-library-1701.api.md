@@ -29,11 +29,14 @@ export function BottomSheetClose(input: {
     children: ReactElement;
 }): JSX.Element;
 
-// Warning: (ae-forgotten-export) The symbol "Titled" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "Untitled" needs to be exported by the entry point index.d.ts
-//
-// @public (undocumented)
-export type BottomSheetProps = (Titled | Untitled) & {
+// @public
+export type BottomSheetProps = ({
+    title: string;
+    label?: undefined;
+} | {
+    title?: undefined;
+    label: string;
+}) & {
     children?: ReactNode;
     trigger?: ReactElement | undefined;
     open?: boolean | undefined;

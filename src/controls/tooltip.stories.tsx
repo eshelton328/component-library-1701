@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
+import { Dialog } from './dialog'
 import { Stack } from './layout'
 import { Tooltip, TruncatedText } from './tooltip'
 
@@ -203,5 +204,102 @@ export const TruncatedTextResize: StoryObj<typeof meta> = {
     await userEvent.hover(el)
     await waitFor(() => expect(tooltipOf()).toHaveTextContent(long))
     await userEvent.unhover(el)
+  },
+}
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * The pointer can move from the cut text onto its tooltip, and the tooltip
+ * stays open there (WCAG 1.4.13). This holds for text with its own tab stop
+ * and for a cut label inside a button.
+ */
+export const TruncatedTextHoverable: StoryObj<typeof meta> = {
+  render: () => <Truncation />,
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button', { name: `Open ${long}` })
+    for (const [trigger, full] of [
+      [text(canvasElement, 'cut'), long],
+      [button, `Open ${long}`],
+    ] as const) {
+      await userEvent.hover(trigger)
+      await waitFor(() => expect(tooltipOf()).toHaveTextContent(full))
+      const tip = tooltipOf()
+      if (tip === null) throw new Error('no tooltip')
+      await expect(getComputedStyle(tip).pointerEvents).not.toBe('none')
+      // On the tooltip, past the close delay, it is still open.
+      await userEvent.hover(tip)
+      await wait(500)
+      await expect(tooltipOf()).toHaveTextContent(full)
+      // Leaving the tooltip closes it.
+      await userEvent.unhover(tip)
+      await waitFor(() => expect(tooltipOf()).toBeNull())
+    }
+  },
+}
+
+/** Cut text in a dialog is a tab stop: the dialog's own tabindex="-1" box does not count as its focus owner. */
+export const TruncatedTextInDialog: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Dialog title="Rename" open actions={<Button>Done</Button>}>
+        <div className={narrow} data-testid="cut">
+          <TruncatedText>{long}</TruncatedText>
+        </div>
+      </Dialog>
+    </main>
+  ),
+  play: async () => {
+    const dialog = await within(document.body).findByRole('dialog', { name: 'Rename' })
+    const box = within(dialog).getByTestId('cut')
+    const cut = box.firstElementChild
+    if (!(cut instanceof HTMLElement)) throw new Error('no text')
+    await waitFor(() => expect(cut).toHaveAttribute('tabindex', '0'))
+    // Wait for the dialog to move the focus inside, then Shift+Tab from Done lands on the cut text and opens its tooltip.
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true))
+    const done = within(dialog).getByRole('button', { name: 'Done' })
+    done.focus()
+    await expect(done).toHaveFocus()
+    await userEvent.tab({ shift: true })
+    await expect(cut).toHaveFocus()
+    await waitFor(() => expect(tooltipOf()).toHaveTextContent(long))
+    await userEvent.keyboard('{Escape}')
+  },
+}
+
+/**
+ * A label in a button that stops being cut while its tooltip is open, and is
+ * cut again after the pointer has left, stays closed: no hover and no focus
+ * remain from before.
+ */
+export const TruncatedTextWidenAndNarrow: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <div className={`${narrow} ${column}`} data-testid="box">
+        <Button className={fill}>
+          <TruncatedText>{`Open ${long}`}</TruncatedText>
+        </Button>
+      </div>
+      <p>Outside</p>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const box = canvas.getByTestId('box')
+    const button = canvas.getByRole('button', { name: `Open ${long}` })
+    const label = button.firstElementChild
+    if (!(label instanceof HTMLElement)) throw new Error('no label')
+    await userEvent.hover(button)
+    await waitFor(() => expect(tooltipOf()).toHaveTextContent(`Open ${long}`))
+    // Widen: the label fits, so the tooltip closes.
+    box.className = column
+    await waitFor(() => expect(label.scrollWidth).toBe(label.clientWidth))
+    await waitFor(() => expect(tooltipOf()).toBeNull())
+    // Move away, then narrow again: the label is cut, but nothing opens it.
+    await userEvent.hover(canvas.getByText('Outside'))
+    box.className = `${narrow} ${column}`
+    await waitFor(() => expect(label.scrollWidth).toBeGreaterThan(label.clientWidth))
+    await wait(600)
+    await expect(tooltipOf()).toBeNull()
   },
 }

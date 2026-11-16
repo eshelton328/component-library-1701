@@ -6,8 +6,8 @@ import { defineRecipe, defineSlotRecipe } from '@pandacss/dev'
 // the other overlays: surface.overlay with fg.default text (a pair the
 // contrast check already covers), a border.default border, the overlay
 // shadow and radius md, with small text in a 4 × 8 box no wider than
-// shell.popover. A long text wraps. No arrow. It never takes the pointer, so
-// it does not block what is under it.
+// shell.popover. A long text wraps. No arrow. The pointer can move onto it
+// and it stays open there (WCAG 1.4.13), so it takes pointer events.
 export const tooltip = defineSlotRecipe({
   className: 'tooltip',
   jsx: ['Tooltip', 'TruncatedText'],
@@ -27,7 +27,6 @@ export const tooltip = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
       boxShadow: 'overlay',
-      pointerEvents: 'none',
       _closed: { display: 'none' },
     },
   },

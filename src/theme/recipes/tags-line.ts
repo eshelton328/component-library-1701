@@ -23,7 +23,7 @@ export const tagsLine = defineSlotRecipe({
     icon: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.12', h: 'icon.12' },
+      '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
     tag: { display: 'inline-flex', alignItems: 'center', gap: '6', minW: '0', overflowWrap: 'anywhere' },
     separator: { flexShrink: '0' },

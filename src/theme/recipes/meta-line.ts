@@ -22,20 +22,18 @@ export const metaLine = defineSlotRecipe({
       m: '0',
       p: '0',
     },
-    leading: {
-      display: 'inline-flex',
-      flexShrink: '0',
-      '& svg': { w: 'icon.12', h: 'icon.12' },
-    },
+    leading: { display: 'inline-flex', flexShrink: '0' },
     item: { minW: '0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
     separator: { flexShrink: '0' },
     trailing: { flexShrink: '0', ms: 'auto', whiteSpace: 'nowrap' },
   },
   variants: {
-    // The card draws a 14 px kind mark; rows draw a 12 px one.
+    // The card draws a 14 px kind mark; rows draw a 12 px one. Both sizes
+    // are here, not one in base: `!` wins over the icon's own size, and an
+    // important base style would also win over the variant.
     icon: {
-      sm: {},
-      md: { leading: { '& svg': { w: 'icon.14', h: 'icon.14' } } },
+      sm: { leading: { '& svg': { w: 'icon.12!', h: 'icon.12!' } } },
+      md: { leading: { '& svg': { w: 'icon.14!', h: 'icon.14!' } } },
     },
   },
   defaultVariants: { icon: 'sm' },

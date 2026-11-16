@@ -33,7 +33,7 @@ export const searchField = defineSlotRecipe({
     input: {
       flex: '1',
       minWidth: '0',
-      height: 'full',
+      height: '100%',
       bg: 'transparent',
       color: 'fg.default',
       textStyle: 'body',

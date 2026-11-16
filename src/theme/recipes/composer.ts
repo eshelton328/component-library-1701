@@ -35,7 +35,7 @@ export const composer = defineSlotRecipe({
       alignItems: 'center',
       gap: '6',
       minW: '0',
-      maxW: 'full',
+      maxW: '100%',
       py: '4',
       px: '8',
       bg: 'surface.overlay',

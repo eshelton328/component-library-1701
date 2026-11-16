@@ -24,7 +24,7 @@ export const kindBadge = defineSlotRecipe({
     icon: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.14', h: 'icon.14' },
+      '& svg': { w: 'icon.14!', h: 'icon.14!' },
     },
   },
   variants: {

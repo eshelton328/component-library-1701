@@ -30,7 +30,7 @@ export const viewSwitch = defineSlotRecipe({
       alignItems: 'center',
       justifyContent: 'center',
       gap: '6',
-      h: 'full',
+      h: '100%',
       px: '10',
       borderRadius: 'sm',
       borderWidth: 'default',

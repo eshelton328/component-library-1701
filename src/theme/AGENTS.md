@@ -18,6 +18,15 @@ from `../../tokens/`.
   an app that uses this package.
 - A state style in `base` (`_expanded`, `_focusVisible`) loses to a
   variant that sets the same property. Set it again in that variant.
+- `full` is a radius token only. For a width or height of the whole
+  box, write `'100%'`; `w: 'full'` writes `width: full`, which the
+  browser drops.
+- A slot's `'& svg'` size loses to the `icon` recipe's own size,
+  because Panda puts slot recipes in the cascade layer before recipe
+  variants. When the component renders the icon, pass `size` to it.
+  When the caller passes the icon in, size it with `!` (`'icon.12!'`).
+  An important style in `base` also wins over one in a variant, so
+  when a variant changes the size, set every size in the variants.
 - Variant values are literals, so Panda can extract them. A theme changes
   tokens, never variant names; a removed or renamed variant is a breaking
   change.

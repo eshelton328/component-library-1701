@@ -3,13 +3,13 @@ import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { HomeIcon, InboxIcon, MoreIcon, ProjectsIcon, WorkspacesIcon } from '../foundations/icons'
+import { Logo } from './logo'
 import type { NavItem } from './nav-item'
 import { NavRail } from './nav-rail'
 
 const page = css({ display: 'flex', overflow: 'hidden', bg: 'bg.canvas', color: 'fg.default', w: 'shell.dialogLg', h: 'shell.dialogLg' })
 // Content as wide as the page, so the rail must keep its own width.
 const wide = css({ flex: '1', minW: 'shell.dialogLg' })
-const logo = css({ display: 'block', w: 'kindTile.sm', h: 'kindTile.sm', borderRadius: 'md', bg: 'accent.default' })
 // Swatches of the expected tokens, so the play functions compare resolved colours.
 const swatches = {
   chrome: css({ bg: 'surface.chrome' }),
@@ -44,7 +44,7 @@ function Swatches() {
 function Rail() {
   return (
     <main className={page}>
-      <NavRail items={items} selected="inbox" logo={<span className={logo} role="img" aria-label="Span" />} />
+      <NavRail items={items} selected="inbox" logo={<Logo title="Span" />} />
       <div className={wide} />
       <Swatches />
     </main>
@@ -78,7 +78,14 @@ const meta = {
     await expect([rail.paddingTop, rail.paddingBottom, rail.paddingLeft, rail.paddingRight]).toEqual(['16px', '16px', '6px', '6px'])
     await expect(rail.rowGap).toBe('6px')
     // The logo, then a line (Figma 28 px; 27 here, as the 1 px border narrows the column) in border.default, 4 px above the items.
-    await expect(canvas.getByRole('img', { name: 'Span' })).toBeInTheDocument()
+    const logo = canvas.getByRole('img', { name: 'Span' })
+    await expect(logo).toBeInTheDocument()
+    // The Span logo (402:15331): 28 px, centred in the rail, the bridge in fg.accent.
+    await expect([logo.getBoundingClientRect().width, logo.getBoundingClientRect().height]).toEqual([28, 28])
+    const logoBox = logo.getBoundingClientRect()
+    const logoSlot = slot(nav, 'logo').getBoundingClientRect()
+    await expect(logoBox.left - logoSlot.left).toBeCloseTo(logoSlot.right - logoBox.right, 1)
+    await expect(getComputedStyle(logo).stroke).toBe(swatch('accent'))
     const divider = slot(nav, 'divider')
     await expect(divider.getBoundingClientRect().width).toBe(27)
     await expect(getComputedStyle(divider).borderTopColor).toBe(swatch('border'))

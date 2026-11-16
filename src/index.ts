@@ -64,6 +64,8 @@ export { Thumbnail } from './parts/thumbnail'
 export type { ThumbnailKind, ThumbnailProps, ThumbnailShape } from './parts/thumbnail'
 export { ListRow } from './parts/list-row'
 export type { ListRowProps } from './parts/list-row'
+export { Logo } from './parts/logo'
+export type { LogoProps, LogoSize } from './parts/logo'
 export {
   ActionIcon,
   AgentIcon,

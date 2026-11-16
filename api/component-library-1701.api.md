@@ -23,6 +23,7 @@ import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
+import { LogoVariantProps } from '../../styled-system/recipes';
 import { MessageVariantProps } from '../../styled-system/recipes';
 import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
@@ -618,6 +619,17 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
 
 // @public
 export function LockIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Logo(input: LogoProps): JSX.Element;
+
+// @public (undocumented)
+export type LogoProps = Scalar<LogoVariantProps> & {
+    title?: string | undefined;
+};
+
+// @public (undocumented)
+export type LogoSize = NonNullable<LogoProps['size']>;
 
 // @public
 export function LoopIcon(props: IconProps): JSX.Element;

@@ -17,7 +17,8 @@ export const pageHeader = defineSlotRecipe({
     title: { color: 'fg.default', m: '0', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     count: { color: 'fg.muted', flexShrink: '0', fontVariantNumeric: 'tabular-nums' },
     countLabel: { srOnly: true },
-    actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto' },
+    // Conditional actions that render nothing leave no slot, so no gap.
+    actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto', _empty: { display: 'none' } },
   },
   variants: {
     size: {

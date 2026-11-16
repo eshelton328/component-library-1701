@@ -48,6 +48,12 @@ function Headers() {
             <Button size="lg">Edit</Button>
           </PageHeader>
         </div>
+        <div className={phone} data-testid="blank">
+          <PageHeader size="phone" title="Runs" count={3} countLabel=" ">
+            {false}
+            <></>
+          </PageHeader>
+        </div>
         <div className={phone} data-testid="long">
           <PageHeader size="phone" title="A title far too long to fit on one phone row" />
         </div>
@@ -106,6 +112,11 @@ const meta = {
     await expect(part('pane', 'countLabel')).toHaveTextContent('7 tasks')
     await expect(part('pane', 'countLabel').getBoundingClientRect().width).toBeLessThanOrEqual(1)
     await expect(part('toolkit', 'count')).not.toHaveAttribute('aria-hidden')
+    // A blank count label leaves the count readable; actions that render nothing take no room.
+    await expect(part('blank', 'count')).not.toHaveAttribute('aria-hidden')
+    await expect(canvas.getByTestId('blank').querySelector('.page-header__countLabel')).toBeNull()
+    await expect(part('blank', 'actions').getBoundingClientRect().width).toBe(0)
+    await expect(getComputedStyle(part('blank', 'actions')).display).toBe('none')
     // No count and no actions render no empty slots; a long title ends in an ellipsis inside the row.
     await expect(canvas.getByTestId('long').querySelector('.page-header__count')).toBeNull()
     await expect(canvas.getByTestId('long').querySelector('.page-header__actions')).toBeNull()

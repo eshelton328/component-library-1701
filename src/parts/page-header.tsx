@@ -17,7 +17,7 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
   title: string
   /** The number shown after the title, such as the number of tasks. */
   count?: number | string | undefined
-  /** What a screen reader reads for the count, such as "7 tasks". The count alone is read when not set. */
+  /** What a screen reader reads for the count, such as "7 tasks". The count alone is read when not set or blank. */
   countLabel?: string | undefined
   /** The heading level of the title; 1 when not set. A list pane inside a page uses 2. */
   level?: 1 | 2 | 3 | undefined
@@ -33,11 +33,13 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 export function PageHeader({ title, count, countLabel, level = 1, size, children }: PageHeaderProps) {
   const Title = level === 1 ? Title1 : level === 2 ? Title2 : Title3
   const hasCount = count !== undefined && count !== ''
+  // A blank label would hide the count and say nothing in its place.
+  const spoken = countLabel !== undefined && countLabel.trim() !== '' ? countLabel : undefined
   return (
     <Root size={size}>
       <Title>{title}</Title>
-      {hasCount ? <Count aria-hidden={countLabel === undefined ? undefined : true}>{count}</Count> : null}
-      {hasCount && countLabel !== undefined ? <CountLabel>{countLabel}</CountLabel> : null}
+      {hasCount ? <Count aria-hidden={spoken === undefined ? undefined : true}>{count}</Count> : null}
+      {hasCount && spoken !== undefined ? <CountLabel>{spoken}</CountLabel> : null}
       {children === undefined || children === null ? null : <Actions>{children}</Actions>}
     </Root>
   )

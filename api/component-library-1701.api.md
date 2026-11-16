@@ -13,6 +13,7 @@ import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
+import { KindTileVariantProps } from '../../styled-system/recipes';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
@@ -288,6 +289,20 @@ export type KindMarkProps = Scalar<KindMarkVariantProps> & {
 
 // @public (undocumented)
 export type KindMarkSize = NonNullable<KindMarkProps['size']>;
+
+// @public
+export function KindTile(input: KindTileProps): JSX.Element;
+
+// @public (undocumented)
+export type KindTileKind = NonNullable<KindTileProps['kind']>;
+
+// @public (undocumented)
+export type KindTileProps = Scalar<KindTileVariantProps> & {
+    title?: string | undefined;
+};
+
+// @public (undocumented)
+export type KindTileSize = NonNullable<KindTileProps['size']>;
 
 // @public
 export function KpiTile(input: KpiTileProps): JSX.Element;

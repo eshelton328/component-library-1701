@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { useState } from 'react'
+import { GridIcon, MoveIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -113,3 +115,79 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(getComputedStyle(save).outlineStyle).toBe('solid')
   },
 }
+
+// Swatches of the expected tokens, so the play function compares resolved colours.
+const swatches = {
+  selected: css({ color: 'surface.selected' }),
+  active: css({ color: 'border.active' }),
+  default: css({ color: 'fg.default' }),
+  accent: css({ color: 'accent.default' }),
+}
+
+function Toggles() {
+  const [sorted, setSorted] = useState(true)
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button>
+          <GridIcon size="16" />
+          Filter
+        </Button>
+        <Button pressed indicator>
+          <GridIcon size="16" />
+          Filter · 1
+        </Button>
+        <Button iconOnly aria-label="Sort by project" pressed={sorted} indicator={sorted} onClick={() => { setSorted(!sorted) }}>
+          <MoveIcon size="16" />
+        </Button>
+        <Button variant="primary">Show 6</Button>
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// A pressed toggle (Inbox D13 359:735, M15 346:12154, Artifacts 403:6453): surface.selected, a
+// border.active border and fg.default, never the primary fill; the dot is 6 px of accent.default.
+const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const off = canvas.getByRole('button', { name: 'Filter' })
+  const on = canvas.getByRole('button', { name: 'Filter · 1' })
+  await expect(off).not.toHaveAttribute('aria-pressed')
+  await expect(on).toHaveAttribute('aria-pressed', 'true')
+  const style = getComputedStyle(on)
+  await expect([style.backgroundColor, style.borderTopColor, style.color]).toEqual([swatch('selected'), swatch('active'), swatch('default')])
+  await expect(style.backgroundColor).not.toBe(getComputedStyle(canvas.getByRole('button', { name: 'Show 6' })).backgroundColor)
+  await expect(style.backgroundColor).not.toBe(getComputedStyle(off).backgroundColor)
+  // The dot after the label: 6 px, round, accent.default, 6 after the label, hidden from screen readers.
+  const dot = on.querySelector('.button__indicator')
+  if (!(dot instanceof HTMLElement)) throw new Error('no dot')
+  await expect(dot).toHaveAttribute('aria-hidden', 'true')
+  const d = getComputedStyle(dot)
+  await expect([d.width, d.height, d.backgroundColor, d.position]).toEqual(['6px', '6px', swatch('accent'), 'static'])
+  await expect(off.querySelector('.button__indicator')).toBeNull()
+  // On an icon-only button the dot sits in the top end corner: 2 from the top, 4 from the end, inside the border.
+  const sort = canvas.getByRole('button', { name: 'Sort by project' })
+  const corner = sort.querySelector('.button__indicator')
+  if (!(corner instanceof HTMLElement)) throw new Error('no corner dot')
+  await expect([corner.offsetTop, sort.clientWidth - corner.offsetLeft - corner.offsetWidth]).toEqual([2, 4])
+  // Click and keyboard toggle it; aria-pressed follows.
+  await userEvent.click(sort)
+  await expect(sort).toHaveAttribute('aria-pressed', 'false')
+  await expect(sort.querySelector('.button__indicator')).toBeNull()
+  await expect(getComputedStyle(sort).backgroundColor).toBe(getComputedStyle(off).backgroundColor)
+  await userEvent.keyboard(' ')
+  await expect(sort).toHaveAttribute('aria-pressed', 'true')
+}
+
+export const PressedDark: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'dark' }, play: pressedPlay }
+export const PressedLight: StoryObj<typeof meta> = { render: () => <Toggles />, globals: { mode: 'light' }, play: pressedPlay }

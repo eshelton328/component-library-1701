@@ -89,3 +89,5 @@ export type {
 } from './parts/proposal-block'
 export { Message } from './parts/message'
 export type { MessageFrom, MessageProps } from './parts/message'
+export { Composer } from './parts/composer'
+export type { ComposerAttachment, ComposerProps } from './parts/composer'

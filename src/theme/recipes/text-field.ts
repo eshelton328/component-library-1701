@@ -28,6 +28,16 @@ const box = {
   _readOnly: { bg: 'transparent' },
 } as const
 
+// No fill, border or padding. The box around it may be surface.raised,
+// where fg.subtle is not allowed, so the placeholder is fg.muted.
+const bare = {
+  p: '0',
+  bg: 'transparent',
+  borderWidth: '0',
+  _placeholder: { color: 'fg.muted' },
+  _readOnly: { bg: 'transparent' },
+} as const
+
 export const textField = defineSlotRecipe({
   className: 'text-field',
   jsx: ['TextField', 'TextArea'],
@@ -43,6 +53,20 @@ export const textField = defineSlotRecipe({
     errorText: { textStyle: 'small', color: 'status.danger.fg' },
   },
   variants: {
+    // `bare`: a field set inside a box that draws the fill and border, such
+    // as the text area of the composer (Workbench D2 105:897).
+    variant: {
+      field: {},
+      bare: {
+        root: { gap: '0' },
+        input: bare,
+        textarea: { ...bare, minH: '0', resize: 'none' },
+      },
+    },
+    labelHidden: {
+      true: { label: { srOnly: true } },
+      false: {},
+    },
     size: {
       sm: { input: { h: 'control.sm' } },
       md: { input: { h: 'control.md' } },
@@ -50,5 +74,5 @@ export const textField = defineSlotRecipe({
       xl: { input: { h: 'control.xl' } },
     },
   },
-  defaultVariants: { size: 'md' },
+  defaultVariants: { size: 'md', variant: 'field', labelHidden: false },
 })

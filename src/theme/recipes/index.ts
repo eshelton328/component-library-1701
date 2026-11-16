@@ -8,6 +8,7 @@ import { backRow } from './back-row'
 import { button } from './button'
 import { card } from './card'
 import { checkbox } from './checkbox'
+import { composer } from './composer'
 import { contextMeter } from './context-meter'
 import { dialog } from './dialog'
 import { filterChips } from './filter-chips'
@@ -43,4 +44,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, icon, kindMark, kindTile, layoutGrid, layoutInline, layoutStack, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, message, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { backRow, bottomSheet, card, checkbox, composer, contextMeter, dialog, filterChips, groupHeader, itemTabs, kindBadge, kpiTile, listRow, menu, message, metaChip, metaLine, modelChip, moreDrawer, pageHeader, panel, pathBadge, popover, proposalBlock, proposalSection, searchField, tagsLine, textField, toolLine, viewSwitch }

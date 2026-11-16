@@ -828,6 +828,29 @@ export type NavRailProps = {
 export function NextIcon(props: IconProps): JSX.Element;
 
 // @public
+export function OptionList(input: OptionListProps): JSX.Element;
+
+// @public
+export type OptionListItem = {
+    value: string;
+    label: string;
+    description?: string | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type OptionListProps = {
+    label: string;
+    items: readonly OptionListItem[];
+    value?: string | null | undefined;
+    defaultValue?: string | null | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    onItemSelect?: ((value: string) => void) | undefined;
+    disabled?: boolean | undefined;
+    name?: string | undefined;
+};
+
+// @public
 export function PageHeader(input: PageHeaderProps): JSX.Element;
 
 // @public (undocumented)

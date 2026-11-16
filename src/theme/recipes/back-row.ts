@@ -4,7 +4,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (chevron and the name of the list it returns to) and, at the end of the
 // row, the screen's actions. Inbox M3 346:9418, Artifacts T2 405:414,
 // Toolkit T3 428:543 and M2 429:285: rows with gap 8, centred; the back
-// button has a 20 px chevron and a 4 px gap, in the accent colour.
+// button has a 20 px chevron and a 4 px gap, in the accent colour. Its label
+// is Medium 16 (Inbox, Artifacts) or Regular 17 (Toolkit); d-074 merges both
+// into `labelLg`.
 export const backRow = defineSlotRecipe({
   className: 'back-row',
   jsx: ['BackRow'],
@@ -23,7 +25,7 @@ export const backRow = defineSlotRecipe({
       borderWidth: '0',
       borderRadius: 'sm',
       color: 'fg.accent',
-      textStyle: 'label',
+      textStyle: 'labelLg',
       cursor: 'pointer',
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },

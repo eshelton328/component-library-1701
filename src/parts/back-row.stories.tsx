@@ -66,7 +66,7 @@ const meta = {
     const back = canvas.getByRole('button', { name: 'Back to Inbox' })
     await expect(back).toHaveAttribute('type', 'button')
     await expect(canvas.getByRole('button', { name: 'Back to the toolkit' })).toBeInTheDocument()
-    // A 20 px chevron, 4 px before the label, both in fg.accent; the label is Medium 14/20.
+    // A 20 px chevron, 4 px before the label, both in fg.accent; the label is labelLg, Medium 16/24 (d-074).
     const icon = part('inbox', 'icon').getBoundingClientRect()
     await expect([icon.width, icon.height]).toEqual([20, 20])
     const label = part('inbox', 'label')
@@ -76,8 +76,8 @@ const meta = {
     await expect(getComputedStyle(label).color).toBe(swatch('accent'))
     await expect(getComputedStyle(part('inbox', 'icon')).stroke).toBe(swatch('accent'))
     const text = getComputedStyle(label)
-    await expect([text.fontSize, text.fontWeight]).toEqual(['14px', '500'])
-    await expect(parseFloat(text.lineHeight)).toBeCloseTo(20, 0)
+    await expect([text.fontSize, text.fontWeight]).toEqual(['16px', '500'])
+    await expect(parseFloat(text.lineHeight)).toBeCloseTo(24, 0)
     // The back button has no fill or border, and is at least 28 px tall.
     await expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)')
     await expect(style.borderTopWidth).toBe('0px')

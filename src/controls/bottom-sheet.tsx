@@ -33,7 +33,12 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
   closeButton?: boolean | undefined
   /** The element that gets the focus when the sheet opens. When not set, Ark picks the first element that takes the focus. */
   initialFocus?: (() => HTMLElement | null) | undefined
+  /** `md` (the default) has a 17 px title, as the snooze and sort sheets do. `sm` has a 15 px title, as the Workbench chat actions sheet does. */
+  size?: 'sm' | 'md' | undefined
 }
+
+// Omit `size` from each member of the union, so the title or label choice stays.
+type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
 
 /**
  * A sheet at the bottom of the window on a scrim, with a grabber at the top: the snooze,
@@ -46,11 +51,11 @@ export function BottomSheet(input: BottomSheetProps) {
 }
 
 /**
- * The bottom sheet with a size, for the parts built on it: `md` is the
- * sheet, `lg` the More drawer, with a larger title. The package does not
- * export it, so `BottomSheetProps` stays as it is.
+ * The bottom sheet with every size, for the parts built on it: `sm` and
+ * `md` are the sheets, `lg` the More drawer, with a larger title. The
+ * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, initialFocus, size }: BottomSheetProps & Scalar<BottomSheetVariantProps>) {
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, initialFocus, size }: WithoutSize<BottomSheetProps> & Scalar<BottomSheetVariantProps>) {
   return (
     <Root
       size={size}

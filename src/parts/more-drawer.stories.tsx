@@ -106,7 +106,10 @@ const meta = {
     await expect(tile.getBoundingClientRect().height).toBe(36)
     await expect(getComputedStyle(tile).borderTopLeftRadius).toBe('8px')
     await expect(getComputedStyle(tile).backgroundColor).toBe(swatch('tile'))
-    await expect(getComputedStyle(within(artifacts).getByText('Artifacts')).fontSize).toBe('14px')
+    // The item label is labelLg, Medium 16/24 (d-074).
+    const itemLabel = getComputedStyle(within(artifacts).getByText('Artifacts'))
+    await expect([itemLabel.fontSize, itemLabel.fontWeight]).toEqual(['16px', '500'])
+    await expect(parseFloat(itemLabel.lineHeight)).toBeCloseTo(24, 0)
     const description = within(artifacts).getByText('Every Claude artifact and Codex site')
     await expect(getComputedStyle(description).fontSize).toBe('12px')
     await expect(getComputedStyle(description).color).toBe(swatch('muted'))

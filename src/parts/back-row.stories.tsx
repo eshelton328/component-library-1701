@@ -32,6 +32,12 @@ function Rows() {
         <div className={phone} data-testid="toolkit">
           <BackRow label="Toolkit" backLabel="Back to the toolkit" />
         </div>
+        <div className={phone} data-testid="empty">
+          <BackRow label="Runs">
+            {false}
+            {[]}
+          </BackRow>
+        </div>
       </Stack>
       <div hidden>
         {Object.entries(swatches).map(([name, className]) => (
@@ -67,6 +73,7 @@ const meta = {
     await expect(label.getBoundingClientRect().left - icon.right).toBe(4)
     const style = getComputedStyle(back)
     await expect(style.color).toBe(swatch('accent'))
+    await expect(getComputedStyle(label).color).toBe(swatch('accent'))
     await expect(getComputedStyle(part('inbox', 'icon')).stroke).toBe(swatch('accent'))
     const text = getComputedStyle(label)
     await expect([text.fontSize, text.fontWeight]).toEqual(['14px', '500'])
@@ -81,6 +88,9 @@ const meta = {
     await expect(actions.getBoundingClientRect().right).toBe(root.right)
     await expect(getComputedStyle(actions).columnGap).toBe('8px')
     await expect(canvas.getByTestId('toolkit').querySelector('.back-row__actions')).toBeNull()
+    // Actions that render nothing take no room.
+    await expect(getComputedStyle(part('empty', 'actions')).display).toBe('none')
+    await expect(part('empty', 'actions').getBoundingClientRect().width).toBe(0)
   },
 } satisfies Meta<typeof Rows>
 export default meta

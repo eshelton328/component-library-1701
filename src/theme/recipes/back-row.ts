@@ -30,6 +30,7 @@ export const backRow = defineSlotRecipe({
     },
     icon: { w: 'icon.20', h: 'icon.20', flexShrink: '0' },
     label: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto' },
+    // Conditional actions that render nothing leave no slot, so no gap.
+    actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto', _empty: { display: 'none' } },
   },
 })

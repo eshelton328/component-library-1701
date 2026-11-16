@@ -11,6 +11,7 @@ import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
+import type { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
@@ -52,6 +53,37 @@ export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
     value?: string | undefined;
     defaultValue?: string | undefined;
     onValueChange?: ((value: string) => void) | undefined;
+};
+
+// @public
+export function Menu(input: MenuProps): JSX.Element;
+
+// @public
+export type MenuAction = {
+    type?: 'action' | undefined;
+    value: string;
+    label: string;
+    icon?: ReactNode;
+    tone?: 'danger' | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public (undocumented)
+export type MenuEntry = MenuAction | MenuSeparator;
+
+// @public (undocumented)
+export type MenuProps = {
+    trigger: ReactElement;
+    items: readonly MenuEntry[];
+    onSelect?: ((value: string) => void) | undefined;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+};
+
+// @public
+export type MenuSeparator = {
+    type: 'separator';
 };
 
 // @public

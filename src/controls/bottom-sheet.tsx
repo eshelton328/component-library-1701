@@ -2,7 +2,8 @@ import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
 import { Portal } from '@ark-ui/react/portal'
 import type { ReactElement, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
-import { bottomSheet } from '../../styled-system/recipes'
+import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
+import type { Scalar } from './scalar'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(bottomSheet)
 const Root = withRootProvider(ArkDialog.Root)
@@ -38,9 +39,19 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
  * it is open; Escape, a click on the scrim and `BottomSheetClose` close it,
  * and the focus goes back to the trigger.
  */
-export function BottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, initialFocus }: BottomSheetProps) {
+export function BottomSheet(input: BottomSheetProps) {
+  return <SizedBottomSheet {...input} />
+}
+
+/**
+ * The bottom sheet with a size, for the parts built on it: `md` is the
+ * sheet, `lg` the More drawer, with a larger title. The package does not
+ * export it, so `BottomSheetProps` stays as it is.
+ */
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, initialFocus, size }: BottomSheetProps & Scalar<BottomSheetVariantProps>) {
   return (
     <Root
+      size={size}
       lazyMount
       unmountOnExit
       {...(initialFocus === undefined ? {} : { initialFocusEl: initialFocus })}

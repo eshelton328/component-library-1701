@@ -194,3 +194,39 @@ export const LongLegend: StoryObj<typeof meta> = {
     await expect(max.getBoundingClientRect().right).toBeLessThanOrEqual(name.parentElement?.getBoundingClientRect().right ?? 0)
   },
 }
+
+const ringSwatch = css({ bg: 'fg.default' })
+
+/** A highlighted day at 0 still shows its mark: the ring on an empty 2 px slot at the baseline. */
+export const HighlightedZero: StoryObj<typeof meta> = {
+  globals: { mode: 'light' },
+  render: () => (
+    <main className={page}>
+      <div className={panel}>
+        <DailyBarChart label="Calls today" valueLabel="calls" data={chats} highlight="2026-11-15" />
+      </div>
+      <span hidden data-swatch="ring" className={ringSwatch} />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const figure = within(canvasElement).getByRole('figure', { name: 'Calls today' })
+    const svg = figure.querySelector('svg')
+    const swatch = canvasElement.querySelector('[data-swatch="ring"]')
+    if (svg === null || swatch === null) throw new Error('no svg')
+    // Six days above 0 draw bars; the highlighted day at 0 adds one marker, and the other zero days draw nothing.
+    const bars = Array.from(figure.querySelectorAll('rect')).slice(0, -1)
+    await expect(bars).toHaveLength(7)
+    const marker = figure.querySelector('[data-highlighted]')
+    if (marker === null) throw new Error('no highlight marker')
+    await expect(marker).toBe(bars[6])
+    await expect(marker).toHaveAttribute('data-empty')
+    const s = getComputedStyle(marker)
+    await expect([s.fill, s.stroke, s.strokeWidth]).toEqual(['none', getComputedStyle(swatch).backgroundColor, '1.5px'])
+    // The marker stands 2 px over the baseline in the last slot, which ends at the right edge.
+    const r = marker.getBoundingClientRect()
+    const box = svg.getBoundingClientRect()
+    await expect(Math.round(box.bottom - 1 - r.top)).toBe(2)
+    await expect(Math.abs(r.right - box.right)).toBeLessThan(0.5)
+    await expect(within(figure).getByRole('row', { name: 'Nov 15 0' })).toHaveAttribute('aria-current', 'date')
+  },
+}

@@ -85,7 +85,8 @@ const swatchTones = {
 // as SVG coordinates. Figma rounds the bar tops 3 px; no radius token is
 // 3 px, so the bars take radii.xs (4 px), the larger of the two nearest
 // (d-072). Figma draws no highlighted day; a highlighted bar gets a
-// 1.5 px fg.default ring (borderWidths.strong), our choice.
+// 1.5 px fg.default ring (borderWidths.strong), our choice; a
+// highlighted day at 0 gets the ring on an empty 2 px slot at the baseline.
 export const dailyBarChart = defineSlotRecipe({
   className: 'daily-bar-chart',
   jsx: ['DailyBarChart'],
@@ -104,6 +105,8 @@ export const dailyBarChart = defineSlotRecipe({
       rx: 'token(radii.xs)',
       ...tones,
       '&[data-highlighted]': { stroke: 'fg.default', strokeWidth: 'token(borderWidths.strong)' },
+      // A highlighted day at 0: an empty outline on the baseline, so the ring still shows.
+      '&[data-empty]': { fill: 'none' },
     },
     baseline: { fill: 'border.default' },
     axis: { display: 'flex', justifyContent: 'space-between', gap: '8', textStyle: 'mono', color: 'fg.muted' },

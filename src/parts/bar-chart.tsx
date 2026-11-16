@@ -292,13 +292,17 @@ export function DailyBarChart({
       <DailySvg width="100%" height={DAY_PLOT} aria-hidden="true" focusable="false">
         {data.map((day, i) => {
           const share = Math.min(finite(day.value), top) / top
-          if (share <= 0) return null
-          const h = Math.max(DAY_MIN_BAR, Math.round(share * DAY_TALLEST))
+          const highlighted = day.date === highlight
+          // A day at 0 draws no bar, unless it is highlighted: then an empty
+          // 2 px outline on the baseline carries the ring, so the mark still shows.
+          if (share <= 0 && !highlighted) return null
+          const h = share > 0 ? Math.max(DAY_MIN_BAR, Math.round(share * DAY_TALLEST)) : DAY_MIN_BAR
           return (
             <DailyBarRect
               key={day.date}
               data-tone={tone}
-              data-highlighted={day.date === highlight ? '' : undefined}
+              data-highlighted={highlighted ? '' : undefined}
+              data-empty={share > 0 ? undefined : ''}
               x={percent(i * pitch)}
               y={plot - h}
               width={percent(pitch * DAY_BAR_SHARE)}

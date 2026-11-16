@@ -1,5 +1,5 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
-import { groupedBarChart, horizontalBarChart } from '../../styled-system/recipes'
+import { dailyBarChart, groupedBarChart, horizontalBarChart } from '../../styled-system/recipes'
 import { TruncatedText } from '../controls/tooltip'
 
 /** The colour of a series or a bar: the accent, grey, or a status colour. */
@@ -181,5 +181,163 @@ export function HorizontalBarChart({ label, rows, max, tone = 'accent', formatVa
         )
       })}
     </HorizontalRoot>
+  )
+}
+
+// The geometry of Toolkit D17 "calls per day" (bars 444:592), in px: a
+// 78 px plot whose tallest bar is 64 px, standing on a 1 px baseline. Each
+// day takes an equal slot, and a bar fills 26 of every 40.93 px of it, so
+// the first bar starts at the left edge and the last ends at the right.
+const DAY_PLOT = 78
+const DAY_TALLEST = 64
+const DAY_BASELINE = 1
+const DAY_BAR_SHARE = 26 / (614 / 15)
+// A bar above 0 is at least 2 px tall, as Figma draws 44 of 1777 (444:595).
+const DAY_MIN_BAR = 2
+// The bar is drawn this much below the baseline, where the plot clips it,
+// so only its top corners show the radii.xs rounding.
+const DAY_RADIUS = 4
+
+const daily = createSlotRecipeContext(dailyBarChart)
+const DailyRoot = daily.withProvider('div', 'root')
+const Legend = daily.withContext('div', 'legend')
+const Swatch = daily.withContext('span', 'swatch')
+const LegendName = daily.withContext('span', 'name')
+const LegendMax = daily.withContext('span', 'max')
+const DailySvg = daily.withContext('svg', 'svg')
+const DailyBarRect = daily.withContext('rect', 'bar')
+const Baseline = daily.withContext('rect', 'baseline')
+const Axis = daily.withContext('div', 'axis')
+const DailyAxisLabel = daily.withContext('span', 'axisLabel')
+const DailyData = daily.withContext('div', 'data')
+
+export type DailyBar = {
+  /** The day, unique in the chart, such as "2026-11-09". `highlight` names a day by it. */
+  date: string
+  /** The value of the day, such as its number of calls. */
+  value: number
+  /** The day as the axis and the data table write it, such as "Nov 9". Defaults to `date`. */
+  label?: string | undefined
+}
+
+/** Which days the axis under the bars names: the first and last, those and the middle one, or none. */
+export type DailyAxisLabels = 'ends' | 'endsAndMiddle' | 'none'
+
+export type DailyBarChartProps = {
+  /** The accessible name of the chart, such as "Headless runs per day". */
+  label: string
+  /** The days, oldest first, one bar each. A day with no value is a 0. */
+  data: readonly DailyBar[]
+  /** The value of a full-height bar. Defaults to the largest value. */
+  max?: number | undefined
+  /** The unit of a value, read as the data table's column header, such as "calls". Defaults to "value". */
+  valueLabel?: string | undefined
+  /** The `date` of the day to mark, such as today or the selected day. */
+  highlight?: string | undefined
+  /** The bar colour. Defaults to `accent`. */
+  tone?: BarTone | undefined
+  /** The series name shown above the bars with its colour and "max N", such as "Headless runs". No legend when absent. */
+  legend?: string | undefined
+  /** The days the axis names. Defaults to `ends`; `none` when charts stacked above one another share the axis of the last. */
+  axisLabels?: DailyAxisLabels | undefined
+  /** Writes a value in the legend and the data table. Defaults to the number as it is. */
+  formatValue?: ((value: number) => string) | undefined
+}
+
+function axisDays(data: readonly DailyBar[], axisLabels: DailyAxisLabels): DailyBar[] {
+  const first = data[0]
+  const last = data[data.length - 1]
+  if (axisLabels === 'none' || first === undefined || last === undefined) return []
+  if (data.length === 1) return [first]
+  const middle = data[Math.floor((data.length - 1) / 2)]
+  if (axisLabels === 'endsAndMiddle' && middle !== undefined && data.length > 2) return [first, middle, last]
+  return [first, last]
+}
+
+/**
+ * Vertical bars, one per day, such as the toolkit calls on each of the last
+ * 16 days. The bars fill the width they are given. The chart is drawn in SVG
+ * and hidden from assistive technology; a visually hidden table holds the
+ * same data and marks the highlighted day as the current date.
+ */
+export function DailyBarChart({
+  label,
+  data,
+  max,
+  valueLabel = 'value',
+  highlight,
+  tone = 'accent',
+  legend,
+  axisLabels = 'ends',
+  formatValue = String,
+}: DailyBarChartProps) {
+  const top = scaleMax(
+    max,
+    data.map((d) => d.value),
+  )
+  const plot = DAY_PLOT - DAY_BASELINE
+  const pitch = 100 / Math.max(1, data.length - 1 + DAY_BAR_SHARE)
+  const percent = (n: number) => `${String(Math.round(n * 1000) / 1000)}%`
+  return (
+    <DailyRoot role="figure" aria-label={label}>
+      {legend === undefined ? null : (
+        <Legend>
+          <Swatch data-tone={tone} />
+          <LegendName>
+            <TruncatedText>{legend}</TruncatedText>
+          </LegendName>
+          <LegendMax>max {formatValue(top)}</LegendMax>
+        </Legend>
+      )}
+      <DailySvg width="100%" height={DAY_PLOT} aria-hidden="true" focusable="false">
+        {data.map((day, i) => {
+          const share = Math.min(finite(day.value), top) / top
+          const highlighted = day.date === highlight
+          // A day at 0 draws no bar, unless it is highlighted: then an empty
+          // 2 px outline on the baseline carries the ring, so the mark still shows.
+          if (share <= 0 && !highlighted) return null
+          const h = share > 0 ? Math.max(DAY_MIN_BAR, Math.round(share * DAY_TALLEST)) : DAY_MIN_BAR
+          return (
+            <DailyBarRect
+              key={day.date}
+              data-tone={tone}
+              data-highlighted={highlighted ? '' : undefined}
+              data-empty={share > 0 ? undefined : ''}
+              x={percent(i * pitch)}
+              y={plot - h}
+              width={percent(pitch * DAY_BAR_SHARE)}
+              height={h + DAY_RADIUS}
+            />
+          )
+        })}
+        <Baseline x="0" y={plot} width="100%" height={DAY_BASELINE} />
+      </DailySvg>
+      {axisLabels === 'none' ? null : (
+        <Axis aria-hidden="true">
+          {axisDays(data, axisLabels).map((day) => (
+            <DailyAxisLabel key={day.date}>{day.label ?? day.date}</DailyAxisLabel>
+          ))}
+        </Axis>
+      )}
+      <DailyData>
+        <table>
+          <caption>{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">day</th>
+              <th scope="col">{valueLabel}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((day) => (
+              <tr key={day.date} aria-current={day.date === highlight ? 'date' : undefined}>
+                <th scope="row">{day.label ?? day.date}</th>
+                <td>{formatValue(day.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DailyData>
+    </DailyRoot>
   )
 }

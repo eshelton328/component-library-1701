@@ -56,7 +56,8 @@ export const navRail = defineSlotRecipe({
     icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24!', h: 'icon.24!' } },
     // The badge count for screen readers; the badge itself is hidden from them.
     hint: { srOnly: true },
-    // As in Figma, a label wider than its 51 px item ("Workspaces" is 55 px) extends past the item, centred, and stays inside the 64 px rail.
-    label: { textStyle: 'railLabel', color: 'inherit', whiteSpace: 'nowrap' },
+    // As in Figma, a one-word label wider than its item ("Workspaces" is 55 px) extends past the item, centred.
+    // Longer labels wrap between words, and no label is wider than the rail; a word wider than the rail breaks.
+    label: { textStyle: 'railLabel', color: 'inherit', textAlign: 'center', maxW: 'shell.rail', overflowWrap: 'break-word' },
   },
 })

@@ -160,6 +160,8 @@ function Selectable() {
           { value: 'home', label: 'Home', icon: <HomeIcon /> },
           { value: 'inbox', label: 'Inbox', icon: <InboxIcon />, badge: 1 },
           { value: 'more', label: 'More', icon: <MoreIcon /> },
+          { value: 'settings', label: 'Workspace settings', icon: <WorkspacesIcon /> },
+          { value: 'long', label: 'Superlongsinglewordlabel', icon: <ProjectsIcon /> },
         ]}
         selected={selected}
         onSelect={(value) => {
@@ -193,5 +195,15 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Enter}')
     await expect(onSelect).toHaveBeenLastCalledWith('more')
     await expect(onSelect).toHaveBeenCalledTimes(2)
+    // Long labels stay inside the rail: two words wrap to two lines, and a word wider than the rail breaks.
+    const box = nav.getBoundingClientRect()
+    for (const name of ['Workspace settings', 'Superlongsinglewordlabel']) {
+      const label = slot(canvas.getByRole('button', { name }), 'label').getBoundingClientRect()
+      await expect(label.left).toBeGreaterThanOrEqual(box.left)
+      await expect(label.right).toBeLessThanOrEqual(box.right)
+    }
+    const twoWords = slot(canvas.getByRole('button', { name: 'Workspace settings' }), 'label')
+    await expect(twoWords.getBoundingClientRect().height).toBeGreaterThan(Number.parseFloat(getComputedStyle(twoWords).lineHeight) * 1.5)
+    await expect(nav.scrollWidth).toBe(nav.clientWidth)
   },
 }

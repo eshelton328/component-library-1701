@@ -5,11 +5,17 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (407:814) and Workbench M9 chat actions (146:273). A full-width box on a
 // scrim, flush with the bottom of the window, with a grabber, an optional
 // title row and content. The radius merges 18 and 24 into `2xl`.
+//
+// Header actions: Inbox T8 (346:7175) and M7 (346:10487), Artifacts M6
+// (407:1097) and T3 (407:1620) put Done or Clear at the end of the title row,
+// 8 after a spacer, centred on the title. Artifacts M7 (408:706) puts Cancel
+// at the start and Add at the end, with the title centred between them by
+// two equal spacers. The caller passes the buttons; the row keeps its gap 8.
 export const bottomSheet = defineSlotRecipe({
   className: 'bottom-sheet',
   jsx: ['BottomSheet'],
   staticCss: ['*'],
-  slots: [...dialogAnatomy.keys(), 'grabber', 'header'],
+  slots: [...dialogAnatomy.keys(), 'grabber', 'header', 'headerLeading', 'headerActions'],
   base: {
     backdrop: { position: 'fixed', inset: '0', bg: 'overlay.scrim' },
     // The top padding keeps a strip of scrim above a tall sheet, so a click there can close it.
@@ -38,7 +44,9 @@ export const bottomSheet = defineSlotRecipe({
     // `radius.full` does. Figma fills it #24314f, or #8a97b8 at 0.5 or 0.6; d-074 sets `border.default`.
     grabber: { flexShrink: '0', alignSelf: 'center', w: 'grabber.width', h: 'grabber.height', borderRadius: 'full', bg: 'border.default' },
     header: { display: 'flex', alignItems: 'center', gap: '8', px: '4' },
-    title: { flex: '1', color: 'fg.default' },
+    title: { flex: '1', color: 'fg.default', '[data-leading] > &': { textAlign: 'center' } },
+    headerLeading: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },
+    headerActions: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },
     // The close button of the tablet side chat (105:1925): an 18 px icon with no box.
     closeTrigger: {
       display: 'inline-flex',

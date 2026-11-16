@@ -143,6 +143,8 @@ export type BottomSheetProps = ({
     defaultOpen?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     closeButton?: boolean | undefined;
+    actions?: ReactNode;
+    leading?: ReactNode;
     initialFocus?: (() => HTMLElement | null) | undefined;
     size?: 'sm' | 'md' | undefined;
 };

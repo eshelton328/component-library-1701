@@ -12,8 +12,12 @@ const swatch = {
   overlay: css({ bg: 'surface.overlay' }),
   border: css({ color: 'border.default' }),
   muted: css({ color: 'fg.muted' }),
-  needsYou: css({ color: 'status.needsYou.fg', bg: 'status.needsYou.bg' }),
   working: css({ color: 'status.working.fg', bg: 'status.working.bg' }),
+  running: css({ color: 'status.running.fg', bg: 'status.running.bg' }),
+  needsYou: css({ color: 'status.needsYou.fg', bg: 'status.needsYou.bg' }),
+  idle: css({ color: 'status.idle.fg', bg: 'status.idle.bg' }),
+  done: css({ color: 'status.done.fg', bg: 'status.done.bg' }),
+  danger: css({ color: 'status.danger.fg', bg: 'status.danger.bg' }),
 }
 
 const tones = ['working', 'running', 'needsYou', 'idle', 'done', 'danger'] as const
@@ -69,8 +73,11 @@ const meta = {
     const sw = (name: string) => getComputedStyle(canvas.getByTestId(`swatch-${name}`))
     const box = (id: string) => badgeIn(id).getBoundingClientRect()
 
-    // Each tone has its own text colour and tint.
-    await expect(new Set(tones.map((t) => style(`tone-${t}`).color)).size).toBe(6)
+    // Each tone takes its own status colour and tint.
+    for (const t of tones) {
+      await expect(style(`tone-${t}`).color).toBe(sw(t).color)
+      await expect(style(`tone-${t}`).backgroundColor).toBe(sw(t).backgroundColor)
+    }
     await expect(new Set(tones.map((t) => style(`tone-${t}`).backgroundColor)).size).toBe(6)
 
     // Pill: the working tint and colour, no border, pill text, 8 / 4 padding, gap 6.
@@ -108,6 +115,8 @@ const meta = {
     await expect(outline.borderTopWidth).toBe('1px')
     await expect(outline.color).toBe(sw('needsYou').color)
     await expect(outline.borderTopLeftRadius).toBe('6px')
+    await expect([outline.fontSize, outline.paddingLeft, outline.paddingTop, outline.columnGap]).toEqual(['12px', '6px', '2px', '6px'])
+    await expect(outline.fontFamily).toMatch(/mono/i)
     await expect(box('uses').height).toBeCloseTo(23, 0)
 
     // Quiet: a bordered surface.overlay pill, fg.muted small text, 14 px icon.
@@ -116,7 +125,10 @@ const meta = {
     await expect(quiet.borderTopColor).toBe(sw('border').color)
     await expect(quiet.color).toBe(sw('muted').color)
     await expect([quiet.fontSize, quiet.fontWeight]).toEqual(['12px', '400'])
-    await expect([quiet.paddingLeft, quiet.paddingTop]).toEqual(['10px', '6px'])
+    await expect([quiet.paddingLeft, quiet.paddingTop, quiet.columnGap]).toEqual(['10px', '6px', '6px'])
+    await expect(quiet.borderTopWidth).toBe('1px')
+    await expect(parseFloat(quiet.borderTopLeftRadius)).toBeGreaterThanOrEqual(box('read-only').height / 2)
+    await expect(box('read-only').height).toBeCloseTo(31, 0)
     const lock = badgeIn('read-only').querySelector('svg')
     if (!(lock instanceof SVGSVGElement)) throw new Error('no lock')
     await expect(lock.getBoundingClientRect().width).toBe(14)

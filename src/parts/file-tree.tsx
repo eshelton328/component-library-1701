@@ -1,28 +1,5 @@
-import { icon } from '../../styled-system/recipes'
-import { FileIcon, FolderIcon } from '../foundations/icons'
+import { CodeIcon, FileIcon, FolderIcon } from '../foundations/icons'
 import { TreeView, type TreeViewNode, type TreeViewProps } from '../controls/tree-view'
-
-// The icon set has no code icon yet, so the `< >` of Toolkit D6 (432:2214)
-// is drawn here on the 24 grid, in the set's stroke of 2, until it moves to
-// foundations/icons.tsx.
-function CodeGlyph() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={icon({ size: '14' })}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M8.5 7L3.5 12L8.5 17" />
-      <path d="M15.5 7L20.5 12L15.5 17" />
-    </svg>
-  )
-}
 
 /** A folder or a file in a `FileTree`. */
 export type FileTreeNode = {
@@ -48,7 +25,7 @@ export type FileTreeProps = Omit<TreeViewProps, 'nodes' | 'label'> & {
 
 function toTreeNode(node: FileTreeNode): TreeViewNode {
   const type = node.type ?? 'file'
-  const glyph = type === 'folder' ? <FolderIcon size="14" /> : type === 'code' ? <CodeGlyph /> : <FileIcon size="14" />
+  const glyph = type === 'folder' ? <FolderIcon size="14" /> : type === 'code' ? <CodeIcon size="14" /> : <FileIcon size="14" />
   return {
     value: node.path,
     label: node.name,

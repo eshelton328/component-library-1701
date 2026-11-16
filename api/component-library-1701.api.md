@@ -61,6 +61,12 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
 };
 
 // @public
+export function ArrowDownIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ArrowRightIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ArrowUpIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -240,6 +246,9 @@ export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public
 export function CloseIcon(props: IconProps): JSX.Element;
+
+// @public
+export function CodeIcon(props: IconProps): JSX.Element;
 
 // @public
 export function CodeLines(input: CodeLinesProps): JSX.Element;
@@ -571,6 +580,9 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
 
 // @public
 export function LockIcon(props: IconProps): JSX.Element;
+
+// @public
+export function LoopIcon(props: IconProps): JSX.Element;
 
 // @public
 export function MapGraph(input: MapGraphProps): JSX.Element;
@@ -1136,6 +1148,9 @@ export type TagsLineProps = {
     icon?: ReactNode;
     label?: string | undefined;
 };
+
+// @public
+export function TerminalIcon(props: IconProps): JSX.Element;
 
 // @public
 export function TextArea(input: TextAreaProps): JSX.Element;

@@ -97,7 +97,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.working.bg@surface.pane"
+    "status.working.bg@surface.pane",
+    "status.working.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."
@@ -108,7 +109,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.running.bg@surface.pane"
+    "status.running.bg@surface.pane",
+    "status.running.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."
@@ -119,7 +121,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.needsYou.bg@surface.pane"
+    "status.needsYou.bg@surface.pane",
+    "status.needsYou.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."
@@ -130,7 +133,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.idle.bg@surface.pane"
+    "status.idle.bg@surface.pane",
+    "status.idle.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."
@@ -141,7 +145,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.done.bg@surface.pane"
+    "status.done.bg@surface.pane",
+    "status.done.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."
@@ -152,7 +157,8 @@
     "bg.canvas",
     "surface.pane",
     "surface.raised",
-    "status.danger.bg@surface.pane"
+    "status.danger.bg@surface.pane",
+    "status.danger.bg"
    ],
    "min": 4.5,
    "why": "Status text, alone or on its tint."

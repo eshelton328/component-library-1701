@@ -1033,27 +1033,27 @@
             "$type": "color",
             "$value": {
               "colorSpace": "srgb",
-              "components": [0.7529, 0.1569, 0.2471],
+              "components": [0.7373, 0.1529, 0.2431],
               "alpha": 1,
-              "hex": "#c0283f"
+              "hex": "#bc273e"
             }
           },
           "bg": {
             "$type": "color",
             "$value": {
               "colorSpace": "srgb",
-              "components": [0.7529, 0.1569, 0.2471],
+              "components": [0.7373, 0.1529, 0.2431],
               "alpha": 0.12,
-              "hex": "#c0283f"
+              "hex": "#bc273e"
             }
           },
           "border": {
             "$type": "color",
             "$value": {
               "colorSpace": "srgb",
-              "components": [0.7529, 0.1569, 0.2471],
+              "components": [0.7373, 0.1529, 0.2431],
               "alpha": 0.5,
-              "hex": "#c0283f"
+              "hex": "#bc273e"
             }
           }
         }

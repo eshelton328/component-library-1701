@@ -27,7 +27,8 @@ export const navRail = defineSlotRecipe({
       overflowY: 'auto',
     },
     logo: { display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' },
-    // A 28 px line: the 52 px between the paddings less 12 on each side.
+    // Figma draws a 28 px line: the 52 px between the paddings less 12 on
+    // each side. Here the rail's 1 px end border leaves 51 px, so it is 27.
     // The 4 px below it is Figma's spacer 346:113.
     divider: { flexShrink: '0', h: '0', mx: '12', mb: '4', borderTopWidth: 'default', borderTopStyle: 'solid', borderTopColor: 'border.default' },
     list: { display: 'flex', flexDirection: 'column', gap: '6', listStyle: 'none', m: '0', p: '0' },

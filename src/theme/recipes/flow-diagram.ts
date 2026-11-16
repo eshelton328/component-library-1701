@@ -100,8 +100,10 @@ export const flowDiagram = defineSlotRecipe({
 // The shorter path a chat answer takes (D14 501:62): a box with a title, a
 // line of text and the steps it keeps as pills in a wrapping row, with an
 // arrow between them. A pill (501:66) has a 1 px cyan border, radius 8, a
-// number circle on surface.selected and the step name; a pill may add a
-// short note in muted text (501:94).
+// number box on surface.selected and the step name; a pill may add a
+// short note in muted text (501:94). The number box (501:67) is not a
+// circle: radius 8, padding 1 by 7 (24 x 21 for a digit), here 2 by 8
+// (d-072).
 export const chatPath = defineSlotRecipe({
   className: 'chat-path',
   jsx: ['ChatPath'],

@@ -12,7 +12,8 @@ export const tabBar = defineSlotRecipe({
     root: {
       display: 'block',
       w: '100%',
-      // 77 high with the home-indicator area: Figma 7 + a 42 tab + 28 left empty.
+      // 77 high with the home-indicator area: Figma 7 + a 42 tab + 28 left
+      // empty. Here the 1 px top border and the 8 px top leave 26 empty.
       h: 'shell.tabBar',
       // Keep the height beside a scrolling page in a flex column.
       flexShrink: '0',

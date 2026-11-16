@@ -13,6 +13,11 @@ from `../../tokens/`.
   import allowed here.
 - Use semantic tokens only. Status colours use `colorPalette`, so one
   recipe serves every status (d-069).
+- Set `staticCss: ['*']` in every recipe. Panda writes CSS only for the
+  variant values it finds in the source, and it never reads the code of
+  an app that uses this package.
+- A state style in `base` (`_expanded`, `_focusVisible`) loses to a
+  variant that sets the same property. Set it again in that variant.
 - Variant values are literals, so Panda can extract them. A theme changes
   tokens, never variant names; a removed or renamed variant is a breaking
   change.

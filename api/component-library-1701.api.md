@@ -123,6 +123,9 @@ export type BarSeries = {
 export type BarTone = 'accent' | 'muted' | 'running' | 'needsYou' | 'done' | 'danger';
 
 // @public
+export function BookIcon(props: IconProps): JSX.Element;
+
+// @public
 export function BottomSheet(input: BottomSheetProps): JSX.Element;
 
 // @public
@@ -151,6 +154,9 @@ export type BottomSheetProps = ({
 };
 
 // @public
+export function BrainIcon(props: IconProps): JSX.Element;
+
+// @public
 export function BranchIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -176,6 +182,9 @@ export type CardProps = {
     meta?: ReactNode;
     onSelect?: (() => void) | undefined;
 };
+
+// @public
+export function ChartIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ChatIcon(props: IconProps): JSX.Element;
@@ -248,6 +257,9 @@ export function ChevronRightIcon(props: IconProps): JSX.Element;
 export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ClockIcon(props: IconProps): JSX.Element;
+
+// @public
 export function CloseIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -318,6 +330,9 @@ export type ContextMeterProps = {
 export function CopyIcon(props: IconProps): JSX.Element;
 
 // @public
+export function CpuIcon(props: IconProps): JSX.Element;
+
+// @public
 export type DailyAxisLabels = 'ends' | 'endsAndMiddle' | 'none';
 
 // @public (undocumented)
@@ -370,6 +385,9 @@ export type DialogProps = Scalar<DialogVariantProps> & {
 export function EditIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ExternalLinkIcon(props: IconProps): JSX.Element;
+
+// @public
 export function FeatureIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -419,6 +437,9 @@ export type FilterChipsProps = {
     multiple?: boolean | undefined;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function FilterIcon(props: IconProps): JSX.Element;
 
 // @public
 export function FlowDiagram(input: FlowDiagramProps): JSX.Element;
@@ -599,6 +620,9 @@ export function LinearIcon(props: IconProps): JSX.Element;
 
 // @public
 export function LinkIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ListIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ListRow(input: ListRowProps): JSX.Element;
@@ -1075,6 +1099,9 @@ export type RadioMenuProps = {
 };
 
 // @public
+export function RefreshIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ResetIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -1140,6 +1167,9 @@ export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public
 export function SnoozeIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SortIcon(props: IconProps): JSX.Element;
 
 // @public
 export function SparkIcon(props: IconProps): JSX.Element;
@@ -1357,6 +1387,9 @@ export type TruncatedTextProps = {
     children: string;
     placement?: TooltipProps['placement'];
 };
+
+// @public
+export function UndoIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

@@ -4,8 +4,6 @@
 
 ```ts
 
-import { BackdropVariantProps } from '../../styled-system/recipes';
-import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
@@ -13,7 +11,6 @@ import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
-import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { KindTileVariantProps } from '../../styled-system/recipes';
@@ -21,7 +18,6 @@ import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
-import { MessageVariantProps } from '../../styled-system/recipes';
 import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
 import { PageHeaderVariantProps } from '../../styled-system/recipes';
@@ -32,6 +28,7 @@ import { ReactNode } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
+import { ThumbnailVariantProps } from '../../styled-system/recipes';
 import { ToolLineVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
@@ -45,20 +42,6 @@ export function AgentIcon(props: IconProps): JSX.Element;
 export function ApproveIcon(props: IconProps): JSX.Element;
 
 // @public
-export function ArrowUpIcon(props: IconProps): JSX.Element;
-
-// @public
-export function ArtifactsIcon(props: IconProps): JSX.Element;
-
-// @public
-export function Backdrop(input: BackdropProps): JSX.Element;
-
-// @public (undocumented)
-export type BackdropProps = Scalar<BackdropVariantProps> & {
-    children?: ReactNode;
-};
-
-// @public
 export function BackRow(input: BackRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -68,36 +51,6 @@ export type BackRowProps = {
     onBack?: (() => void) | undefined;
     children?: ReactNode;
 };
-
-// @public
-export function Badge(input: BadgeProps): JSX.Element;
-
-// @public (undocumented)
-export type BadgeProps = Scalar<BadgeVariantProps> & {
-    label: string;
-    icon?: ReactNode;
-};
-
-// @public (undocumented)
-export type BarGroup = {
-    label: string;
-    values: readonly number[];
-};
-
-// @public (undocumented)
-export type BarRow = {
-    label: string;
-    value: number;
-};
-
-// @public (undocumented)
-export type BarSeries = {
-    name: string;
-    tone?: BarTone | undefined;
-};
-
-// @public
-export type BarTone = 'accent' | 'muted' | 'running' | 'needsYou' | 'done' | 'danger';
 
 // @public
 export function BottomSheet(input: BottomSheetProps): JSX.Element;
@@ -122,14 +75,7 @@ export type BottomSheetProps = ({
     onOpenChange?: ((open: boolean) => void) | undefined;
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
-    size?: 'sm' | 'md' | undefined;
 };
-
-// @public
-export function BranchIcon(props: IconProps): JSX.Element;
-
-// @public
-export function BubbleIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Button(input: ButtonProps): JSX.Element;
@@ -150,26 +96,6 @@ export type CardProps = {
     description?: string | undefined;
     meta?: ReactNode;
     onSelect?: (() => void) | undefined;
-};
-
-// @public
-export function ChatIcon(props: IconProps): JSX.Element;
-
-// @public
-export function ChatPath(input: ChatPathProps): JSX.Element;
-
-// @public (undocumented)
-export type ChatPathProps = {
-    title: string;
-    description?: string | undefined;
-    steps: readonly ChatPathStep[];
-};
-
-// @public (undocumented)
-export type ChatPathStep = {
-    number: string;
-    label: string;
-    note?: string | undefined;
 };
 
 // @public
@@ -214,51 +140,10 @@ export function CheckIcon(props: IconProps): JSX.Element;
 export function ChevronDownIcon(props: IconProps): JSX.Element;
 
 // @public
-export function ChevronLeftIcon(props: IconProps): JSX.Element;
-
-// @public
 export function ChevronRightIcon(props: IconProps): JSX.Element;
 
 // @public
-export function ClipIcon(props: IconProps): JSX.Element;
-
-// @public
 export function CloseIcon(props: IconProps): JSX.Element;
-
-// @public
-export function CodeLines(input: CodeLinesProps): JSX.Element;
-
-// @public (undocumented)
-export type CodeLinesProps = {
-    lines: readonly string[];
-    start?: number | undefined;
-};
-
-// @public
-export function Composer(input: ComposerProps): JSX.Element;
-
-// @public
-export type ComposerAttachment = {
-    id: string;
-    name: string;
-};
-
-// @public (undocumented)
-export type ComposerProps = {
-    label?: string | undefined;
-    placeholder?: string | undefined;
-    value?: string | undefined;
-    defaultValue?: string | undefined;
-    onValueChange?: ((value: string) => void) | undefined;
-    onSubmit?: ((text: string) => void) | undefined;
-    running?: boolean | undefined;
-    onStop?: (() => void) | undefined;
-    attachments?: readonly ComposerAttachment[] | undefined;
-    onRemoveAttachment?: ((id: string) => void) | undefined;
-    onAttach?: (() => void) | undefined;
-    model?: ReactNode;
-    disabled?: boolean | undefined;
-};
 
 // @public
 export function ContextMeter(input: ContextMeterProps): JSX.Element;
@@ -269,9 +154,6 @@ export type ContextMeterProps = {
     high?: boolean | undefined;
     label?: string | undefined;
 };
-
-// @public
-export function CopyIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Dialog(input: DialogProps): JSX.Element;
@@ -294,34 +176,6 @@ export type DialogProps = Scalar<DialogVariantProps> & {
     role?: 'dialog' | 'alertdialog' | undefined;
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
-};
-
-// @public
-export function EditIcon(props: IconProps): JSX.Element;
-
-// @public
-export function FeatureIcon(props: IconProps): JSX.Element;
-
-// @public
-export function FileIcon(props: IconProps): JSX.Element;
-
-// @public
-export function FileTree(input: FileTreeProps): JSX.Element;
-
-// @public
-export type FileTreeNode = {
-    path: string;
-    name: string;
-    type?: 'folder' | 'file' | 'code' | undefined;
-    count?: number | string | undefined;
-    caption?: string | undefined;
-    children?: readonly FileTreeNode[] | undefined;
-};
-
-// @public (undocumented)
-export type FileTreeProps = Omit<TreeViewProps, 'nodes' | 'label'> & {
-    label?: string | undefined;
-    nodes: readonly FileTreeNode[];
 };
 
 // @public
@@ -351,59 +205,10 @@ export type FilterChipsProps = {
 };
 
 // @public
-export function FlowDiagram(input: FlowDiagramProps): JSX.Element;
-
-// @public (undocumented)
-export type FlowDiagramProps = {
-    label: string;
-    steps: readonly FlowStep[];
-};
-
-// @public (undocumented)
-export type FlowStep = {
-    id?: string | undefined;
-    title: string;
-    description?: string | undefined;
-    uses?: readonly FlowUse[] | undefined;
-    loop?: string | undefined;
-};
-
-// @public (undocumented)
-export type FlowUse = {
-    label: string;
-    kind?: FlowUseKind | undefined;
-    icon?: ReactNode;
-};
-
-// @public
-export type FlowUseKind = 'file' | 'code' | ToolkitKind;
-
-// @public
-export function FolderIcon(props: IconProps): JSX.Element;
-
-// @public
 export function Grid(props: GridProps): JSX.Element;
 
 // @public
-export function GridIcon(props: IconProps): JSX.Element;
-
-// @public
 export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
-
-// @public
-export function GripIcon(props: IconProps): JSX.Element;
-
-// @public
-export function GroupedBarChart(input: GroupedBarChartProps): JSX.Element;
-
-// @public (undocumented)
-export type GroupedBarChartProps = {
-    label: string;
-    series: readonly BarSeries[];
-    groups: readonly BarGroup[];
-    max?: number | undefined;
-    formatValue?: ((value: number) => string) | undefined;
-};
 
 // @public
 export function GroupHeader(input: GroupHeaderProps): JSX.Element;
@@ -424,18 +229,6 @@ export function HomeIcon(props: IconProps): JSX.Element;
 
 // @public
 export function HookIcon(props: IconProps): JSX.Element;
-
-// @public
-export function HorizontalBarChart(input: HorizontalBarChartProps): JSX.Element;
-
-// @public (undocumented)
-export type HorizontalBarChartProps = {
-    label: string;
-    rows: readonly BarRow[];
-    max?: number | undefined;
-    tone?: BarTone | undefined;
-    formatValue?: ((value: number) => string) | undefined;
-};
 
 // @public (undocumented)
 export type IconProps = {
@@ -525,12 +318,6 @@ export type KpiTileProps = {
 };
 
 // @public
-export function LinearIcon(props: IconProps): JSX.Element;
-
-// @public
-export function LinkIcon(props: IconProps): JSX.Element;
-
-// @public
 export function ListRow(input: ListRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -546,108 +333,6 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     snoozed?: boolean | undefined;
     onSelect?: (() => void) | undefined;
 };
-
-// @public
-export function LockIcon(props: IconProps): JSX.Element;
-
-// @public
-export function MapGraph(input: MapGraphProps): JSX.Element;
-
-// @public (undocumented)
-export type MapGraphColumn = {
-    label: string;
-    x: number;
-    y: number;
-};
-
-// @public (undocumented)
-export type MapGraphEdge = {
-    from: string;
-    to: string;
-};
-
-// @public (undocumented)
-export type MapGraphNode = {
-    id: string;
-    label: string;
-    kind: ToolkitKind;
-    meta?: string | undefined;
-    x: number;
-    y: number;
-};
-
-// @public (undocumented)
-export type MapGraphProps = {
-    label: string;
-    width: number;
-    height: number;
-    nodes: readonly MapGraphNode[];
-    edges?: readonly MapGraphEdge[] | undefined;
-    columns?: readonly MapGraphColumn[] | undefined;
-    nodeSize?: {
-        width: number;
-        height: number;
-    } | undefined;
-    selectedId?: string | null | undefined;
-    onSelect?: ((id: string | null) => void) | undefined;
-    legend?: ReactNode;
-    card?: ReactNode;
-};
-
-// @public
-export function MapIcon(props: IconProps): JSX.Element;
-
-// @public
-export function MapLegend(input: MapLegendProps): JSX.Element;
-
-// @public (undocumented)
-export type MapLegendProps = {
-    kinds?: readonly ToolkitKind[] | undefined;
-    hint?: string | undefined;
-};
-
-// @public
-export function MapNode(input: MapNodeProps): JSX.Element;
-
-// @public (undocumented)
-export type MapNodeProps = {
-    label: string;
-    kind: ToolkitKind;
-    meta?: string | undefined;
-    state?: MapNodeState | undefined;
-    onClick?: (() => void) | undefined;
-    onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
-    describedBy?: string | undefined;
-};
-
-// @public
-export type MapNodeState = 'lit' | 'dim' | 'selected';
-
-// @public
-export function MapSelectionCard(input: MapSelectionCardProps): JSX.Element;
-
-// @public (undocumented)
-export type MapSelectionCardProps = {
-    name: string;
-    kind: ToolkitKind;
-    description?: string | undefined;
-    linksTo?: number | undefined;
-    linkedFrom?: number | undefined;
-    actionLabel?: string | undefined;
-    onAction?: (() => void) | undefined;
-    onClose?: (() => void) | undefined;
-};
-
-// @public
-export function MarkdownView(input: MarkdownViewProps): JSX.Element;
-
-// @public (undocumented)
-export type MarkdownViewProps = {
-    children: ReactNode;
-};
-
-// @public
-export function MaximizeIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Menu(input: MenuProps): JSX.Element;
@@ -678,22 +363,6 @@ export type MenuProps = {
 // @public
 export type MenuSeparator = {
     type: 'separator';
-};
-
-// @public
-export function Message(input: MessageProps): JSX.Element;
-
-// @public
-export type MessageFrom = NonNullable<MessageProps['from']>;
-
-// @public (undocumented)
-export type MessageProps = Scalar<MessageVariantProps> & {
-    name?: string | undefined;
-    kind?: KindMarkKind | undefined;
-    time?: string | undefined;
-    dateTime?: string | undefined;
-    children: ReactNode;
-    actions?: ReactNode;
 };
 
 // @public
@@ -768,29 +437,6 @@ export type MoreDrawerProps = {
 export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public
-export function MoveIcon(props: IconProps): JSX.Element;
-
-// @public
-export type NavItem = {
-    value: string;
-    label: string;
-    icon: ReactNode;
-    badge?: number | undefined;
-};
-
-// @public
-export function NavRail(input: NavRailProps): JSX.Element;
-
-// @public (undocumented)
-export type NavRailProps = {
-    items: readonly NavItem[];
-    selected?: string | undefined;
-    onSelect?: ((value: string) => void) | undefined;
-    logo?: ReactNode;
-    label?: string | undefined;
-};
-
-// @public
 export function NextIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -807,9 +453,6 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 
 // @public
 export function Panel(input: PanelProps): JSX.Element;
-
-// @public
-export function PanelIcon(props: IconProps): JSX.Element;
 
 // @public (undocumented)
 export type PanelProps = Scalar<PanelVariantProps> & {
@@ -828,12 +471,6 @@ export type PathBadgeProps = {
     icon?: ReactNode;
     trailing?: ReactNode;
 };
-
-// @public
-export function PlayIcon(props: IconProps): JSX.Element;
-
-// @public
-export function PlusIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Popover(input: PopoverProps): JSX.Element;
@@ -945,9 +582,6 @@ export type RadioMenuProps = {
 };
 
 // @public
-export function ResetIcon(props: IconProps): JSX.Element;
-
-// @public
 export function ReviewIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -958,32 +592,6 @@ export type Scalar<T> = {
     [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
         readonly [key: string]: unknown;
     }>;
-};
-
-// @public
-export function ScriptExplanation(input: ScriptExplanationProps): JSX.Element;
-
-// @public (undocumented)
-export type ScriptExplanationProps = {
-    summary: string;
-    facts?: readonly ScriptFact[] | undefined;
-    steps: readonly ScriptStep[];
-    note?: string | undefined;
-    summaryLabel?: string | undefined;
-    stepsLabel?: string | undefined;
-    onLineSelect?: ((line: number) => void) | undefined;
-};
-
-// @public
-export type ScriptFact = {
-    key: string;
-    value: string;
-};
-
-// @public
-export type ScriptStep = {
-    text: ReactNode;
-    line?: number | undefined;
 };
 
 // @public
@@ -1009,18 +617,6 @@ export function SearchIcon(props: IconProps): JSX.Element;
 export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public
-export function SnoozeIcon(props: IconProps): JSX.Element;
-
-// @public
-export function SparkIcon(props: IconProps): JSX.Element;
-
-// @public
-export function SparkleIcon(props: IconProps): JSX.Element;
-
-// @public
-export function SplitIcon(props: IconProps): JSX.Element;
-
-// @public
 export function Stack(props: StackProps): JSX.Element;
 
 // @public
@@ -1034,23 +630,6 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
     label: string;
     dot?: boolean | undefined;
 };
-
-// @public
-export function StopIcon(props: IconProps): JSX.Element;
-
-// @public
-export function TabBar(input: TabBarProps): JSX.Element;
-
-// @public (undocumented)
-export type TabBarProps = {
-    items: readonly NavItem[];
-    selected?: string | undefined;
-    onSelect?: ((value: string) => void) | undefined;
-    label?: string | undefined;
-};
-
-// @public
-export function TagIcon(props: IconProps): JSX.Element;
 
 // @public
 export function TagsLine(input: TagsLineProps): JSX.Element | null;
@@ -1069,9 +648,6 @@ export function TextArea(input: TextAreaProps): JSX.Element;
 export type TextAreaProps = TextFieldBaseProps & {
     autoresize?: boolean | undefined;
     rows?: number | undefined;
-    variant?: 'field' | 'bare' | undefined;
-    labelHidden?: boolean | undefined;
-    onKeyDown?: ((event: KeyboardEvent_2<HTMLTextAreaElement>) => void) | undefined;
 };
 
 // @public
@@ -1098,7 +674,20 @@ export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> 
 };
 
 // @public
-export function ToolkitIcon(props: IconProps): JSX.Element;
+export function Thumbnail(input: ThumbnailProps): JSX.Element;
+
+// @public
+export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui';
+
+// @public (undocumented)
+export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
+    kind?: ThumbnailKind | undefined;
+    shape?: ThumbnailShape | undefined;
+    label?: string | undefined;
+};
+
+// @public
+export type ThumbnailShape = 'wide' | 'compact' | 'banner';
 
 // @public
 export type ToolkitKind = NonNullable<Scalar<KindBadgeVariantProps>['kind']>;
@@ -1118,35 +707,6 @@ export type ToolLineProps = Scalar<ToolLineVariantProps> & {
 
 // @public
 export type ToolLineState = NonNullable<ToolLineProps['state']>;
-
-// @public
-export function TrashIcon(props: IconProps): JSX.Element;
-
-// @public
-export function TreeView(input: TreeViewProps): JSX.Element;
-
-// @public
-export type TreeViewNode = {
-    value: string;
-    label: string;
-    icon?: ReactNode;
-    trailing?: ReactNode;
-    caption?: string | undefined;
-    children?: readonly TreeViewNode[] | undefined;
-    disabled?: boolean | undefined;
-};
-
-// @public (undocumented)
-export type TreeViewProps = {
-    label: string;
-    nodes: readonly TreeViewNode[];
-    selected?: string | null | undefined;
-    defaultSelected?: string | undefined;
-    onSelect?: ((value: string) => void) | undefined;
-    expanded?: readonly string[] | undefined;
-    defaultExpanded?: readonly string[] | undefined;
-    onExpandedChange?: ((values: string[]) => void) | undefined;
-};
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

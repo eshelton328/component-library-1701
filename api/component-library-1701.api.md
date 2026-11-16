@@ -60,6 +60,16 @@ export type CheckboxProps = {
 };
 
 // @public
+export function ContextMeter(input: ContextMeterProps): JSX.Element;
+
+// @public (undocumented)
+export type ContextMeterProps = {
+    value: number;
+    high?: boolean | undefined;
+    label?: string | undefined;
+};
+
+// @public
 export type FilterChip = {
     value: string;
     label: string;

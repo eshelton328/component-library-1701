@@ -7,6 +7,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // button has a 20 px chevron and a 4 px gap, in the accent colour. Its label
 // is Medium 16 (Inbox, Artifacts) or Regular 17 (Toolkit); d-074 merges both
 // into `labelLg`.
+//
+// The design ideas draw the button with no padding, and no focus ring. The
+// chevron's path starts 6.67 px inside its 20 px box, so with no padding the
+// ring sat about 9 px from the chevron but 2 px from the end of the label.
+// `pe: '6'` (6.67 rounds to the `6` token, d-072) evens the two sides.
 export const backRow = defineSlotRecipe({
   className: 'back-row',
   jsx: ['BackRow'],
@@ -21,6 +26,7 @@ export const backRow = defineSlotRecipe({
       minW: '0',
       minH: 'control.sm',
       p: '0',
+      pe: '6',
       bg: 'transparent',
       borderWidth: '0',
       borderRadius: 'sm',

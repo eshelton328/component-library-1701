@@ -6,6 +6,7 @@
 
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
+import { DialogVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
 import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
@@ -67,6 +68,29 @@ export type ContextMeterProps = {
     value: number;
     high?: boolean | undefined;
     label?: string | undefined;
+};
+
+// @public
+export function Dialog(input: DialogProps): JSX.Element;
+
+// @public
+export function DialogClose(input: {
+    children: ReactElement;
+}): JSX.Element;
+
+// @public (undocumented)
+export type DialogProps = Scalar<DialogVariantProps> & {
+    title: string;
+    description?: ReactNode;
+    children?: ReactNode;
+    actions?: ReactNode;
+    trigger?: ReactElement | undefined;
+    open?: boolean | undefined;
+    defaultOpen?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    role?: 'dialog' | 'alertdialog' | undefined;
+    closeButton?: boolean | undefined;
+    initialFocus?: (() => HTMLElement | null) | undefined;
 };
 
 // @public

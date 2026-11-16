@@ -272,6 +272,71 @@
    ],
    "min": 3,
    "why": "Primary buttons and checked boxes must stand out from the surface."
+  },
+  {
+   "fg": "code.keyword",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "code.string",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "code.comment",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "code.number",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "code.function",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.inset@surface.overlay",
+    "surface.well@surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
   }
  ]
 }

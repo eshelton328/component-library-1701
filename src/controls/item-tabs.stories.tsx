@@ -97,3 +97,45 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(canvas.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true')
   },
 }
+
+const onLateChange = fn<(value: string) => void>()
+
+function LateItems() {
+  const [items, setItems] = useState<readonly { value: string; label: string; content: string; disabled?: boolean }[]>([])
+  return (
+    <main className={page}>
+      <button type="button" onClick={() => { setItems([{ value: '', label: 'Home', content: 'Home panel' }, { value: 'files', label: 'Files', content: 'Files panel' }]) }}>
+        Load
+      </button>
+      <button type="button" onClick={() => { setItems([{ value: '', label: 'Home', content: 'Home panel', disabled: true }, { value: 'files', label: 'Files', content: 'Files panel' }]) }}>
+        Disable Home
+      </button>
+      <ItemTabs label="Late sections" items={items} onValueChange={onLateChange} />
+    </main>
+  )
+}
+
+/** Items that arrive after the first render, an empty value, and a selected tab that becomes disabled. */
+export const ChangingItems: StoryObj<typeof meta> = {
+  render: () => <LateItems />,
+  play: async ({ canvasElement }) => {
+    onLateChange.mockClear()
+    const canvas = within(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Load' }))
+    // The first tab, whose value is '', is selected and in the tab order.
+    await expect(canvas.getByRole('tab', { name: 'Home' })).toHaveAttribute('aria-selected', 'true')
+    await expect(canvas.getByRole('tab', { name: 'Home' })).toHaveAttribute('tabindex', '0')
+    await expect(canvas.getByRole('tabpanel')).toHaveTextContent('Home panel')
+    canvas.getByRole('tab', { name: 'Home' }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    await waitFor(() => expect(onLateChange).toHaveBeenLastCalledWith('files'))
+    await userEvent.keyboard('{ArrowLeft}')
+    await waitFor(() => expect(onLateChange).toHaveBeenLastCalledWith(''))
+    await expect(canvas.getByRole('tab', { name: 'Home' })).toHaveAttribute('aria-selected', 'true')
+    // When the selected tab is disabled, Files is selected and in the tab order.
+    await userEvent.click(canvas.getByRole('button', { name: 'Disable Home' }))
+    await expect(canvas.getByRole('tab', { name: 'Files' })).toHaveAttribute('aria-selected', 'true')
+    await expect(canvas.getByRole('tab', { name: 'Files' })).toHaveAttribute('tabindex', '0')
+    await expect(canvas.getByRole('tabpanel')).toHaveTextContent('Files panel')
+  },
+}

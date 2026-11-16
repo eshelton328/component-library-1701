@@ -10,6 +10,8 @@ import { JSX } from 'react';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
+import { ReactNode } from 'react';
+import { SearchFieldVariantProps } from '../../styled-system/recipes';
 
 // @public
 export function Button(input: ButtonProps): JSX.Element;
@@ -34,6 +36,22 @@ export type Scalar<T> = {
     [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
         readonly [key: string]: unknown;
     }>;
+};
+
+// @public
+export function SearchField(input: SearchFieldProps): JSX.Element;
+
+// @public (undocumented)
+export type SearchFieldProps = SearchFieldVariantProps & {
+    label: string;
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    placeholder?: string | undefined;
+    icon?: ReactNode;
+    clearIcon?: ReactNode;
+    clearLabel?: string | undefined;
+    disabled?: boolean | undefined;
 };
 
 // @public

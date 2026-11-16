@@ -5,9 +5,10 @@
 import type { Config } from '@pandacss/dev'
 import { button } from './button'
 import { layoutGrid, layoutInline, layoutStack } from './layout'
+import { searchField } from './search-field'
 
 type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = {}
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { searchField }

@@ -28,9 +28,10 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
 }
 
 // The drawing is laid out on Figma's 334 × 188 frame (402:15435 and its
-// siblings). Each shape keeps that height and centres the 334-wide content.
+// siblings). Each shape keeps that height, takes the exact width of its
+// ratio and centres the 334-wide content.
 const height = 188
-const widths: Record<ThumbnailShape, number> = { wide: 334, compact: 304, banner: 376 }
+const widths: Record<ThumbnailShape, number> = { wide: (height * 16) / 9, compact: (height * 8) / 5, banner: height * 2 }
 
 type Fill = 'muted' | 'title' | 'well' | 'inset' | 'accent' | 'violet' | 'amber' | 'green' | 'accentTint' | 'violetTint' | 'accentEdge' | 'violetEdge' | 'amberEdge' | 'greenEdge'
 
@@ -48,9 +49,11 @@ function Chart() {
   return (
     <>
       <Rect x={27} y={32} w={112} h={8} fill="accent" />
-      {bars.map((h, i) => (
-        <Rect key={String(i)} x={32.6 + i * 31.11} y={169 - h} w={19.911} h={h} fill={i % 3 === 2 ? 'violet' : 'accent'} />
-      ))}
+      <g data-bars="">
+        {bars.map((h, i) => (
+          <Rect key={String(i)} x={32.6 + i * 31.11} y={169 - h} w={19.911} h={h} fill={i % 3 === 2 ? 'violet' : 'accent'} />
+        ))}
+      </g>
       <Rect x={27} y={169} w={280} h={1} r={0} fill="muted" />
     </>
   )
@@ -67,7 +70,8 @@ function Diagram() {
   return (
     <>
       <Rect x={83} y={79.95} w={70} h={1.5} r={0} fill="muted" />
-      <Rect x={181} y={100.5} w={70} h={1.5} r={0} fill="muted" />
+      {/* Figma starts this line at 181, 7 short of the vertical line; it is drawn from the vertical line here. */}
+      <Rect x={172.6} y={100.5} w={78.4} h={1.5} r={0} fill="muted" />
       <Rect x={172.6} y={73.1} w={1.5} h={47.95} r={0} fill="muted" />
       {nodes.map(([x, y]) => (
         <g key={`${String(x)}-${String(y)}`}>

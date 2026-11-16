@@ -19,6 +19,7 @@ export const thumbnail = defineSlotRecipe({
   slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge'],
   base: {
     root: {
+      position: 'relative',
       display: 'block',
       w: '100%',
       overflow: 'hidden',
@@ -46,7 +47,22 @@ export const thumbnail = defineSlotRecipe({
   },
   variants: {
     framed: {
-      true: { root: { borderWidth: 'default', borderStyle: 'solid', borderColor: 'border.default', borderRadius: 'sm' } },
+      // The frame is drawn over the edge, so it does not change the size.
+      true: {
+        root: {
+          borderRadius: 'sm',
+          _after: {
+            content: '""',
+            position: 'absolute',
+            inset: '0',
+            borderWidth: 'default',
+            borderStyle: 'solid',
+            borderColor: 'border.default',
+            borderRadius: 'inherit',
+            pointerEvents: 'none',
+          },
+        },
+      },
       false: {},
     },
   },

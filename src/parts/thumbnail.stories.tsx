@@ -43,6 +43,15 @@ function Thumbnails() {
           </div>
         ))}
       </div>
+      <span className={heading}>Compact unframed, and a framed banner</span>
+      <div className={row}>
+        <div className={w334} data-testid="compact-wide">
+          <Thumbnail kind="doc" shape="compact" framed={false} />
+        </div>
+        <div className={w334} data-testid="banner-framed">
+          <Thumbnail kind="ui" shape="banner" />
+        </div>
+      </div>
       <span className={heading}>Banner</span>
       <div className={css({ w: 'shell.dialogLg' })} data-testid="banner">
         <Thumbnail kind="chart" shape="banner" framed={false} label="Chart preview" />
@@ -96,19 +105,32 @@ const meta = {
       const cbox = compact.root.getBoundingClientRect()
       const cstyle = getComputedStyle(compact.root)
       await expect(cbox.width).toBe(64)
-      await expect(cbox.height).toBeCloseTo(40, 0)
-      await expect(cstyle.borderTopWidth).toBe('1px')
-      await expect(cstyle.borderTopColor).toBe(swatch(canvasElement, 'border'))
+      await expect(cbox.height).toBe(40)
+      const frame = getComputedStyle(compact.root, '::after')
+      await expect(cstyle.borderTopWidth).toBe('0px')
+      await expect(frame.borderTopWidth).toBe('1px')
+      await expect(frame.borderTopColor).toBe(swatch(canvasElement, 'border'))
       await expect(cstyle.borderTopLeftRadius).toBe('6px')
+      await expect(frame.borderTopLeftRadius).toBe('6px')
     }
-    // Chart: nine bars, every third violet.
+    // The ratio holds at any width, framed or not: 8:5 and 2:1 at 320.
+    await expect(thumb(canvas.getByTestId('compact-wide')).root.getBoundingClientRect().height).toBe(200)
+    await expect(thumb(canvas.getByTestId('banner-framed')).root.getBoundingClientRect().height).toBe(160)
+    // Chart: nine visible bars, every third violet.
     const chart = thumb(canvas.getByTestId('wide-chart')).svg
-    const accentBars = shapes(chart, 'accent')
-    const violetBars = shapes(chart, 'violet')
-    await expect([accentBars.length, violetBars.length]).toEqual([7, 3])
-    const [violetBar] = violetBars
-    if (violetBar === undefined) throw new Error('no violet bar')
-    await expect(getComputedStyle(violetBar).fill).toBe(swatch(canvasElement, 'violet'))
+    const bars = Array.from(chart.querySelectorAll('[data-bars] rect'))
+    await expect(bars.length).toBe(9)
+    for (const [i, bar] of bars.entries()) {
+      const b = bar.getBoundingClientRect()
+      await expect(b.width).toBeGreaterThan(0)
+      await expect(b.height).toBeGreaterThan(10)
+      await expect(getComputedStyle(bar).fill).toBe(swatch(canvasElement, i % 3 === 2 ? 'violet' : 'accent'))
+    }
+    // Diagram: the right-hand line meets the vertical line.
+    const diagram = thumb(canvas.getByTestId('wide-diagram')).svg
+    const [, right, vertical] = shapes(diagram, 'muted').map((el) => el.getBoundingClientRect())
+    if (right === undefined || vertical === undefined) throw new Error('no lines')
+    await expect(right.left).toBeLessThanOrEqual(vertical.right)
     // Doc: the chips use the accent and violet tints.
     const doc = thumb(canvas.getByTestId('wide-doc')).svg
     const [accentChip] = shapes(doc, 'accentTint')

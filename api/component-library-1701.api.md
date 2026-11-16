@@ -1259,6 +1259,19 @@ export type ToolLineProps = Scalar<ToolLineVariantProps> & {
 export type ToolLineState = NonNullable<ToolLineProps['state']>;
 
 // @public
+export function Tooltip(input: TooltipProps): JSX.Element;
+
+// @public (undocumented)
+export type TooltipProps = {
+    children: ReactElement;
+    content: ReactNode;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    placement?: 'top' | 'top-start' | 'bottom' | 'bottom-start' | undefined;
+    disabled?: boolean | undefined;
+};
+
+// @public
 export function TrashIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -1285,6 +1298,15 @@ export type TreeViewProps = {
     expanded?: readonly string[] | undefined;
     defaultExpanded?: readonly string[] | undefined;
     onExpandedChange?: ((values: string[]) => void) | undefined;
+};
+
+// @public
+export function TruncatedText(input: TruncatedTextProps): JSX.Element;
+
+// @public (undocumented)
+export type TruncatedTextProps = {
+    children: string;
+    placement?: TooltipProps['placement'];
 };
 
 // @public

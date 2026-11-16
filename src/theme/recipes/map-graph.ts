@@ -36,10 +36,8 @@ export const mapNode = defineSlotRecipe({
     icon: { display: 'inline-flex', flexShrink: '0', '[data-state=dim] > &': { opacity: 'disabled' } },
     label: {
       textStyle: 'mono',
+      // TruncatedText inside cuts a long label and shows it whole in a tooltip.
       minW: '0',
-      overflowX: 'hidden',
-      whiteSpace: 'nowrap',
-      textOverflow: 'ellipsis',
       // Figma fades a dim label to 0.42; muted text keeps 4.5:1 contrast.
       '[data-state=dim] > &': { color: 'fg.muted' },
       '[data-state=selected] > &': { color: 'fg.accent' },
@@ -155,7 +153,8 @@ export const mapSelectionCard = defineSlotRecipe({
     },
     title: { display: 'flex', alignItems: 'center', gap: '8' },
     icon: { display: 'inline-flex', flexShrink: '0' },
-    name: { textStyle: 'label', color: 'fg.default', minW: '0', overflowX: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+    // TruncatedText inside cuts a long name and shows it whole in a tooltip.
+    name: { textStyle: 'label', color: 'fg.default', minW: '0', m: '0' },
     kind: { textStyle: 'mono', flexShrink: '0' },
     close: { ms: 'auto', flexShrink: '0' },
     description: { textStyle: 'small', color: 'fg.muted', m: '0' },

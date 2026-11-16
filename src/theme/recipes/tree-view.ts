@@ -61,7 +61,8 @@ export const treeView = defineSlotRecipe({
       _closed: { transform: 'rotate(-90deg)' },
       transformOrigin: 'center',
     },
-    branchText: { textStyle: 'mono', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    // TruncatedText inside cuts a long name and shows it whole in a tooltip.
+    branchText: { textStyle: 'mono', minW: '0' },
     branchTrigger: {},
     item: {
       display: 'flex',
@@ -82,7 +83,7 @@ export const treeView = defineSlotRecipe({
     },
     // The label and the caption under it, in one column.
     body: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0' },
-    itemText: { textStyle: 'mono', minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+    itemText: { textStyle: 'mono', minW: '0' },
     itemIndicator: {},
     icon: {
       display: 'inline-flex',

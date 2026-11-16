@@ -211,3 +211,65 @@ const selectedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 }
 export const SelectedDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, args: { initial: 'writer' }, play: selectedPlay }
 export const SelectedLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, args: { initial: 'writer' }, play: selectedPlay }
+
+const longLabel = 'skill-eval-round-with-held-out-cases'
+
+/**
+ * A label too long for its node ends with an ellipsis and shows in full in a
+ * tooltip, on hover and when the node has the keyboard focus. The button's
+ * name is still the whole label. A label that fits gets no tooltip, and the
+ * selection card does the same for a long name.
+ */
+export const LongLabel: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <MapGraph
+        label="Toolkit map"
+        width={640}
+        height={240}
+        nodes={[
+          { id: 'long', label: longLabel, kind: 'workflow', meta: 'weekly', x: 40, y: 40 },
+          { id: 'writer', label: 'writer', kind: 'skill', x: 360, y: 40 },
+        ]}
+        edges={[{ from: 'long', to: 'writer' }]}
+        selectedId="long"
+        card={<MapSelectionCard name={`${longLabel}-and-a-trigger-set`} kind="workflow" description="Runs one eval round." />}
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const map = within(canvasElement).getByRole('group', { name: 'Toolkit map' })
+    const tip = () => within(document.body).queryByRole('tooltip')
+    const node = within(map).getByRole('button', { name: `${longLabel} weekly` })
+    const label = within(node).getByText(longLabel)
+    // The label is cut with an ellipsis, but the element holds the whole text.
+    await expect(getComputedStyle(label).textOverflow).toBe('ellipsis')
+    await waitFor(() => expect(label.scrollWidth).toBeGreaterThan(label.clientWidth))
+    // It is no tab stop of its own: the node button takes the focus.
+    await expect(label).not.toHaveAttribute('tabindex')
+    await userEvent.hover(label)
+    await waitFor(() => expect(tip()).toHaveTextContent(longLabel))
+    await userEvent.unhover(label)
+    await waitFor(() => expect(tip()).toBeNull())
+    // Keyboard focus on the node shows it too.
+    await userEvent.tab()
+    await expect(node).toHaveFocus()
+    await waitFor(() => expect(tip()).toHaveTextContent(longLabel))
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(tip()).toBeNull())
+    // A label that fits shows no tooltip.
+    const short = within(map).getByRole('button', { name: 'writer' })
+    await userEvent.hover(within(short).getByText('writer'))
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    await expect(tip()).toBeNull()
+    await userEvent.unhover(within(short).getByText('writer'))
+    // The card's long name is cut and shows in full on hover.
+    const card = within(map).getByRole('region', { name: `${longLabel}-and-a-trigger-set` })
+    const name = within(card).getByText(`${longLabel}-and-a-trigger-set`)
+    await waitFor(() => expect(name.scrollWidth).toBeGreaterThan(name.clientWidth))
+    await userEvent.hover(name)
+    await waitFor(() => expect(tip()).toHaveTextContent(`${longLabel}-and-a-trigger-set`))
+    await userEvent.unhover(name)
+  },
+}

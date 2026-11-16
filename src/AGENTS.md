@@ -45,6 +45,9 @@ groups and the bans that the lint reads. Read it before you add a file.
   report through callbacks. Ark keeps its own interaction state, and each
   state has a controlled prop pair. No fetch, storage, router, URL or
   state library, or a subpath of one; the lint blocks them.
+- A name or label that a user must read and that can be cut to one line
+  uses `TruncatedText` (`controls/tooltip.tsx`), not an ellipsis in the
+  recipe: it shows the whole text in a tooltip when the text is cut.
 - `fg.subtle` is allowed only on the surfaces its description names. On
   `surface.raised` or `surface.selected`, use `fg.muted`.
 - If a design needs a value that no token has, stop and name the missing

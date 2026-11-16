@@ -110,7 +110,8 @@ const meta = {
     // A selected row is not dimmed, also when it is snoozed.
     await expect(getComputedStyle(rowOf('Open and snoozed')).opacity).toBe('1')
     // A selected row without onSelect still marks the current item.
-    await expect(canvas.getByText('Current, no select')).toHaveAttribute('aria-current', 'true')
+    // The title element, which holds the sidebar row's TruncatedText, marks it.
+    await expect(canvas.getByText('Current, no select').closest('.list-row__title')).toHaveAttribute('aria-current', 'true')
     await expect(within(snoozed).getByText('Snoozed until 9:00')).toBeInTheDocument()
     await expect(within(running).getByText('Working')).toBeInTheDocument()
     // The age is fg.subtle (Figma #4a5675), but fg.muted on a selected or running row (surface.selected)
@@ -132,8 +133,11 @@ const meta = {
     const chat = rowOf(/^Build the list row/)
     await expect(getComputedStyle(chat).paddingLeft).toBe('24px')
     const chatTitle = canvas.getByRole('button', { name: /^Build the list row/ })
-    await expect(getComputedStyle(chatTitle).textOverflow).toBe('ellipsis')
-    await expect(chatTitle.scrollWidth).toBeGreaterThan(chatTitle.clientWidth)
+    // The TruncatedText in the title button cuts it.
+    const chatText = chatTitle.querySelector('.truncated-text')
+    if (chatText === null) throw new Error('no truncated text')
+    await expect(getComputedStyle(chatText).textOverflow).toBe('ellipsis')
+    await expect(chatText.scrollWidth).toBeGreaterThan(chatText.clientWidth)
     await expect(chatTitle.getBoundingClientRect().height).toBe(20)
     // A row with no onSelect has no button.
     await expect(canvas.queryByRole('button', { name: 'A row with no select' })).toBeNull()

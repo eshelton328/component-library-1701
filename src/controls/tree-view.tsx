@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { treeView } from '../../styled-system/recipes'
 import { ChevronDownIcon } from '../foundations/icons'
+import { TruncatedText } from './tooltip'
 
 type Inner = { id: string; label: string; source: TreeViewNode; disabled?: boolean; children?: Inner[] }
 
@@ -84,7 +85,9 @@ function Node({ node, indexPath }: { node: Inner; indexPath: number[] }) {
         <Item>
           {icon}
           <Body>
-            <ItemText>{node.label}</ItemText>
+            <ItemText>
+              <TruncatedText>{node.label}</TruncatedText>
+            </ItemText>
             {caption}
           </Body>
           {trailing}
@@ -97,7 +100,9 @@ function Node({ node, indexPath }: { node: Inner; indexPath: number[] }) {
             </BranchIndicator>
             {icon}
             <Body>
-              <BranchText>{node.label}</BranchText>
+              <BranchText>
+                <TruncatedText>{node.label}</TruncatedText>
+              </BranchText>
               {caption}
             </Body>
             {trailing}

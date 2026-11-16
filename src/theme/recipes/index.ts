@@ -48,6 +48,7 @@ import { searchField } from './search-field'
 import { splitter } from './splitter'
 import { textField } from './text-field'
 import { toolLine } from './tool-line'
+import { tooltip, truncatedText } from './tooltip'
 import { treeView } from './tree-view'
 import { thumbnail } from './thumbnail'
 import { statusPill } from './status-pill'
@@ -61,6 +62,6 @@ import { workspaceTabs } from './workspace-tabs'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill }
+export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, icon, kindMark, kindTile, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dialog, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

@@ -3,6 +3,7 @@
 // typed recipe function and variant props for each one in
 // styled-system/recipes. Add a recipe as its own file and list it below.
 import type { Config } from '@pandacss/dev'
+import { bottomSheet } from './bottom-sheet'
 import { button } from './button'
 import { checkbox } from './checkbox'
 import { contextMeter } from './context-meter'
@@ -23,4 +24,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { button, layoutStack, layoutInline, layoutGrid, statusPill }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { checkbox, contextMeter, dialog, filterChips, itemTabs, listRow, menu, panel, popover, searchField, textField, viewSwitch }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { bottomSheet, checkbox, contextMeter, dialog, filterChips, itemTabs, listRow, menu, panel, popover, searchField, textField, viewSwitch }

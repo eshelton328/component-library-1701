@@ -22,6 +22,28 @@ import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ViewSwitchVariantProps } from '../../styled-system/recipes';
 
 // @public
+export function BottomSheet(input: BottomSheetProps): JSX.Element;
+
+// @public
+export function BottomSheetClose(input: {
+    children: ReactElement;
+}): JSX.Element;
+
+// Warning: (ae-forgotten-export) The symbol "Titled" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Untitled" needs to be exported by the entry point index.d.ts
+//
+// @public (undocumented)
+export type BottomSheetProps = (Titled | Untitled) & {
+    children?: ReactNode;
+    trigger?: ReactElement | undefined;
+    open?: boolean | undefined;
+    defaultOpen?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    closeButton?: boolean | undefined;
+    initialFocus?: (() => HTMLElement | null) | undefined;
+};
+
+// @public
 export function Button(input: ButtonProps): JSX.Element;
 
 // @public

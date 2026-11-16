@@ -6,28 +6,58 @@ import {
   AgentIcon,
   ApproveIcon,
   ArrowUpIcon,
+  ArtifactsIcon,
+  BranchIcon,
+  BubbleIcon,
+  ChatIcon,
   CheckIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ClipIcon,
   CloseIcon,
+  CopyIcon,
+  EditIcon,
+  FeatureIcon,
+  FileIcon,
+  FolderIcon,
+  GridIcon,
+  GripIcon,
   HomeIcon,
   HookIcon,
   InboxIcon,
+  LinearIcon,
+  LinkIcon,
+  LockIcon,
+  MapIcon,
+  MaximizeIcon,
   MoreIcon,
+  MoveIcon,
   NextIcon,
+  PanelIcon,
+  PlayIcon,
+  PlusIcon,
   ProjectsIcon,
   QuestionIcon,
+  ResetIcon,
   ReviewIcon,
   RuleIcon,
   SearchIcon,
   SkillIcon,
+  SnoozeIcon,
+  SparkIcon,
+  SparkleIcon,
+  SplitIcon,
   StopIcon,
+  TagIcon,
+  ToolkitIcon,
+  TrashIcon,
   WorkflowIcon,
   WorkspacesIcon,
   type IconProps,
   type IconSize,
 } from './icons'
+import * as iconModule from './icons'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24', color: 'fg.default' })
 const group = css({ display: 'grid', gap: '12' })
@@ -67,6 +97,8 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'inbox', Icon: InboxIcon },
       { name: 'workspaces', Icon: WorkspacesIcon },
       { name: 'projects', Icon: ProjectsIcon },
+      { name: 'toolkit', Icon: ToolkitIcon },
+      { name: 'artifacts', Icon: ArtifactsIcon },
       { name: 'more', Icon: MoreIcon },
     ],
   },
@@ -86,6 +118,48 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'clip', Icon: ClipIcon },
       { name: 'stop', Icon: StopIcon },
       { name: 'arrowUp', Icon: ArrowUpIcon },
+    ],
+  },
+  {
+    title: 'Actions',
+    icons: [
+      { name: 'plus', Icon: PlusIcon },
+      { name: 'edit', Icon: EditIcon },
+      { name: 'copy', Icon: CopyIcon },
+      { name: 'trash', Icon: TrashIcon },
+      { name: 'play', Icon: PlayIcon },
+      { name: 'reset', Icon: ResetIcon },
+      { name: 'snooze', Icon: SnoozeIcon },
+      { name: 'move', Icon: MoveIcon },
+      { name: 'maximize', Icon: MaximizeIcon },
+      { name: 'grip', Icon: GripIcon },
+      { name: 'chevronLeft', Icon: ChevronLeftIcon },
+    ],
+  },
+  {
+    title: 'Objects',
+    icons: [
+      { name: 'spark', Icon: SparkIcon },
+      { name: 'sparkle', Icon: SparkleIcon },
+      { name: 'file', Icon: FileIcon },
+      { name: 'folder', Icon: FolderIcon },
+      { name: 'tag', Icon: TagIcon },
+      { name: 'link', Icon: LinkIcon },
+      { name: 'lock', Icon: LockIcon },
+      { name: 'branch', Icon: BranchIcon },
+      { name: 'chat', Icon: ChatIcon },
+      { name: 'bubble', Icon: BubbleIcon },
+      { name: 'map', Icon: MapIcon },
+      { name: 'linear', Icon: LinearIcon },
+      { name: 'feature', Icon: FeatureIcon },
+    ],
+  },
+  {
+    title: 'Views',
+    icons: [
+      { name: 'panel', Icon: PanelIcon },
+      { name: 'split', Icon: SplitIcon },
+      { name: 'grid', Icon: GridIcon },
     ],
   },
 ]
@@ -129,6 +203,8 @@ function Icons() {
   )
 }
 
+const filled = ['more', 'play']
+
 const svgIn = (el: HTMLElement) => {
   const svg = el.querySelector('svg')
   if (!(svg instanceof SVGSVGElement)) throw new Error('no svg')
@@ -141,6 +217,10 @@ const meta = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const all = groups.flatMap((g) => g.icons)
+    // Every icon the module exports is shown here, so the checks below cover it.
+    const shown = new Set<unknown>(all.map(({ Icon }) => Icon))
+    const missing = Object.entries(iconModule).filter(([key, value]) => key.endsWith('Icon') && !shown.has(value))
+    await expect(missing.map(([key]) => key)).toEqual([])
     for (const { name } of all) {
       const cellEl = canvas.getByTestId(`icon-${name}`)
       const svg = svgIn(cellEl)
@@ -163,8 +243,8 @@ const meta = {
         await expect(box.x + box.width).toBeLessThanOrEqual(24)
         await expect(box.y + box.height).toBeLessThanOrEqual(24)
       }
-      if (name === 'more') {
-        // More is three filled dots, as in Figma 346:5607.
+      if (filled.includes(name)) {
+        // More (346:5607) and Play (346:397) are filled, not stroked, as in Figma.
         await expect(style.fill).toBe(getComputedStyle(cellEl).color)
         await expect(style.stroke).toBe('none')
       } else {
@@ -172,7 +252,7 @@ const meta = {
         await expect(style.stroke).toBe(getComputedStyle(cellEl).color)
         await expect(style.strokeLinecap).toBe('round')
         await expect(style.strokeLinejoin).toBe('round')
-        const nav = ['home', 'inbox', 'workspaces', 'projects'].includes(name)
+        const nav = ['home', 'inbox', 'workspaces', 'projects', 'toolkit', 'artifacts'].includes(name)
         await expect(style.strokeWidth).toBe(nav ? '1.8px' : '2px')
       }
     }

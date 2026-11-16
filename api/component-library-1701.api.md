@@ -46,6 +46,9 @@ export function ApproveIcon(props: IconProps): JSX.Element;
 export function ArrowUpIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ArtifactsIcon(props: IconProps): JSX.Element;
+
+// @public
 export function BackRow(input: BackRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -82,6 +85,12 @@ export type BottomSheetProps = ({
 };
 
 // @public
+export function BranchIcon(props: IconProps): JSX.Element;
+
+// @public
+export function BubbleIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Button(input: ButtonProps): JSX.Element;
 
 // @public
@@ -101,6 +110,9 @@ export type CardProps = {
     meta?: ReactNode;
     onSelect?: (() => void) | undefined;
 };
+
+// @public
+export function ChatIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Checkbox(input: CheckboxProps): JSX.Element;
@@ -142,6 +154,9 @@ export function CheckIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ChevronDownIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ChevronLeftIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ChevronRightIcon(props: IconProps): JSX.Element;
@@ -189,6 +204,9 @@ export type ContextMeterProps = {
 };
 
 // @public
+export function CopyIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Dialog(input: DialogProps): JSX.Element;
 
 // @public
@@ -210,6 +228,15 @@ export type DialogProps = Scalar<DialogVariantProps> & {
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
 };
+
+// @public
+export function EditIcon(props: IconProps): JSX.Element;
+
+// @public
+export function FeatureIcon(props: IconProps): JSX.Element;
+
+// @public
+export function FileIcon(props: IconProps): JSX.Element;
 
 // @public
 export type FilterChip = {
@@ -238,10 +265,19 @@ export type FilterChipsProps = {
 };
 
 // @public
+export function FolderIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Grid(props: GridProps): JSX.Element;
 
 // @public
+export function GridIcon(props: IconProps): JSX.Element;
+
+// @public
 export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>;
+
+// @public
+export function GripIcon(props: IconProps): JSX.Element;
 
 // @public
 export function GroupHeader(input: GroupHeaderProps): JSX.Element;
@@ -351,6 +387,12 @@ export type KpiTileProps = {
 };
 
 // @public
+export function LinearIcon(props: IconProps): JSX.Element;
+
+// @public
+export function LinkIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ListRow(input: ListRowProps): JSX.Element;
 
 // @public (undocumented)
@@ -366,6 +408,15 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     snoozed?: boolean | undefined;
     onSelect?: (() => void) | undefined;
 };
+
+// @public
+export function LockIcon(props: IconProps): JSX.Element;
+
+// @public
+export function MapIcon(props: IconProps): JSX.Element;
+
+// @public
+export function MaximizeIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Menu(input: MenuProps): JSX.Element;
@@ -486,6 +537,9 @@ export type MoreDrawerProps = {
 export function MoreIcon(props: IconProps): JSX.Element;
 
 // @public
+export function MoveIcon(props: IconProps): JSX.Element;
+
+// @public
 export type NavItem = {
     value: string;
     label: string;
@@ -523,6 +577,9 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 // @public
 export function Panel(input: PanelProps): JSX.Element;
 
+// @public
+export function PanelIcon(props: IconProps): JSX.Element;
+
 // @public (undocumented)
 export type PanelProps = Scalar<PanelVariantProps> & {
     title?: string | undefined;
@@ -540,6 +597,12 @@ export type PathBadgeProps = {
     icon?: ReactNode;
     trailing?: ReactNode;
 };
+
+// @public
+export function PlayIcon(props: IconProps): JSX.Element;
+
+// @public
+export function PlusIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Popover(input: PopoverProps): JSX.Element;
@@ -651,6 +714,9 @@ export type RadioMenuProps = {
 };
 
 // @public
+export function ResetIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ReviewIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -686,6 +752,18 @@ export function SearchIcon(props: IconProps): JSX.Element;
 export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public
+export function SnoozeIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SparkIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SparkleIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SplitIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Stack(props: StackProps): JSX.Element;
 
 // @public
@@ -702,6 +780,9 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 
 // @public
 export function StopIcon(props: IconProps): JSX.Element;
+
+// @public
+export function TagIcon(props: IconProps): JSX.Element;
 
 // @public
 export function TagsLine(input: TagsLineProps): JSX.Element | null;
@@ -749,6 +830,9 @@ export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> 
 };
 
 // @public
+export function ToolkitIcon(props: IconProps): JSX.Element;
+
+// @public
 export type ToolkitKind = NonNullable<Scalar<KindBadgeVariantProps>['kind']>;
 
 // @public
@@ -766,6 +850,9 @@ export type ToolLineProps = Scalar<ToolLineVariantProps> & {
 
 // @public
 export type ToolLineState = NonNullable<ToolLineProps['state']>;
+
+// @public
+export function TrashIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ViewSwitch(input: ViewSwitchProps): JSX.Element;

@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { BottomSheet, BottomSheetClose } from './bottom-sheet'
 import { Button } from './button'
 import { Stack } from './layout'
+import { OptionList } from './option-list'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 // Swatches of the expected tokens, so the play functions compare resolved colours.
@@ -12,23 +13,31 @@ const scrimSwatch = css({ bg: 'overlay.scrim' })
 const surfaceSwatch = css({ bg: 'surface.overlay' })
 const borderSwatch = css({ bg: 'border.default' })
 
-const sorts = ['Newest first', 'Oldest first', 'Name']
+const sorts = [
+  { value: 'newest', label: 'Newest first', description: 'Most recently found at the top' },
+  { value: 'oldest', label: 'Oldest first', description: 'Earliest found at the top' },
+  { value: 'name', label: 'Name', description: 'A to Z' },
+]
 
+// The Artifacts M4 sort sheet (407:814): an OptionList whose pick closes the sheet.
 function SortSheet({ open, onOpenChange }: { open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [shown, setShown] = useState(false)
+  const [sort, setSort] = useState('newest')
+  const change = (next: boolean) => {
+    setShown(next)
+    onOpenChange?.(next)
+  }
   return (
-    <BottomSheet
-      title="Sort by"
-      trigger={<Button>Sort</Button>}
-      {...(open === undefined ? {} : { open })}
-      {...(onOpenChange === undefined ? {} : { onOpenChange })}
-    >
-      <Stack gap="2">
-        {sorts.map((label) => (
-          <BottomSheetClose key={label}>
-            <Button size="xl">{label}</Button>
-          </BottomSheetClose>
-        ))}
-      </Stack>
+    <BottomSheet title="Sort by" trigger={<Button>Sort</Button>} open={open ?? shown} onOpenChange={change}>
+      <OptionList
+        label="Sort by"
+        items={sorts}
+        value={sort}
+        onValueChange={setSort}
+        onItemSelect={() => {
+          change(false)
+        }}
+      />
     </BottomSheet>
   )
 }
@@ -192,12 +201,19 @@ export const LateTitleDark: StoryObj<typeof meta> = {
 
 const onOpenChange = fn<(open: boolean) => void>()
 
-/** A click opens the sheet with the focus inside; Escape, a click on the scrim, a row and the close button close it. */
+/** A click opens the sheet with the focus inside; Escape, a click on the scrim, a pick in the sort list, a `BottomSheetClose` row and the close button close it. */
 export const Behaviour: StoryObj<typeof meta> = {
   render: () => (
     <main className={page}>
       <Stack gap="12">
         <SortSheet onOpenChange={onOpenChange} />
+        <BottomSheet title="Snooze" trigger={<Button>Snooze</Button>}>
+          <Stack gap="2">
+            <BottomSheetClose>
+              <Button size="xl">Tomorrow</Button>
+            </BottomSheetClose>
+          </Stack>
+        </BottomSheet>
         <BottomSheet title="Side chat" closeButton trigger={<Button>Side chat</Button>}>
           <Button>Send</Button>
         </BottomSheet>
@@ -232,9 +248,26 @@ export const Behaviour: StoryObj<typeof meta> = {
     if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
     await userEvent.click(above)
     await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
-    // A row wrapped in BottomSheetClose closes it.
+    // A pick in the sort list closes it, and the focus goes back to the trigger.
     await userEvent.click(trigger)
-    await userEvent.click(within(await body.findByRole('dialog', { name: 'Sort by' })).getByRole('button', { name: 'Name' }))
+    const sorted = await body.findByRole('dialog', { name: 'Sort by' })
+    await userEvent.click(within(sorted).getByText('Name'))
+    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await expect(onOpenChange).toHaveBeenLastCalledWith(false)
+    await waitFor(() => expect(trigger).toHaveFocus())
+    // The pick stays chosen, and an arrow key moves the choice without closing the sheet.
+    await userEvent.click(trigger)
+    const reopened = await body.findByRole('dialog', { name: 'Sort by' })
+    await expect(within(reopened).getByRole('radio', { name: 'Name' })).toBeChecked()
+    within(reopened).getByRole('radio', { name: 'Name' }).focus()
+    await userEvent.keyboard('{ArrowUp}')
+    await expect(within(reopened).getByRole('radio', { name: 'Oldest first' })).toBeChecked()
+    await expect(body.getByRole('dialog', { name: 'Sort by' })).toBeInTheDocument()
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    // A row wrapped in BottomSheetClose closes its sheet.
+    await userEvent.click(canvas.getByRole('button', { name: 'Snooze' }))
+    await userEvent.click(within(await body.findByRole('dialog', { name: 'Snooze' })).getByRole('button', { name: 'Tomorrow' }))
     await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
     // The close button closes the side chat.
     await userEvent.click(canvas.getByRole('button', { name: 'Side chat' }))

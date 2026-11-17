@@ -224,6 +224,7 @@ export type CheckboxGroupItem = {
     label: string;
     disabled?: boolean | undefined;
     trailing?: ReactNode;
+    labelStyle?: 'text' | 'mono' | undefined;
 };
 
 // @public (undocumented)
@@ -247,6 +248,7 @@ export type CheckboxProps = {
     value?: string | undefined;
     name?: string | undefined;
     trailing?: ReactNode;
+    labelStyle?: 'text' | 'mono' | undefined;
 };
 
 // @public

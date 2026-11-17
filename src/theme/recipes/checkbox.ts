@@ -7,6 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `trailing` sits at the end of the row, such as the count of each row in the
 // Inbox Filter menu (D4 346:1747: Geist Mono 11 pushed to the end; `mono`,
 // fg.muted, as the popover's labels on surface.overlay are).
+// `labelStyle="mono"` sets the label in `mono`, as the project and tag rows
+// of that menu are (346:1787 and 346:1824: Geist Mono 12); the kind rows
+// keep `body`.
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
@@ -45,4 +48,11 @@ export const checkbox = defineSlotRecipe({
     group: { display: 'flex', flexDirection: 'column', gap: '2' },
     groupLabel: { textStyle: 'small', color: 'fg.muted', pb: '4' },
   },
+  variants: {
+    labelStyle: {
+      text: {},
+      mono: { label: { textStyle: 'mono' } },
+    },
+  },
+  defaultVariants: { labelStyle: 'text' },
 })

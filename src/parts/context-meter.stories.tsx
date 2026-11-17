@@ -92,3 +92,53 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// Figma's meter (D2b 402:5378, 83 wide): the percentage is one text layer
+// (402:5381) in 11 px mono, 4 px after the segments (Figma 5, on the 4 px
+// grid), so the meter fits the 83 px a compact sidebar row gives it.
+function Percent() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <Stack gap="12">
+          <ContextMeter value={42} label="Sidebar chat" />
+          <ContextMeter value={78} high label="High chat" />
+          <ContextMeter value={100} label="Full chat" />
+        </Stack>
+      </div>
+      <div hidden>
+        <span data-swatch="muted" className={swatches.muted} />
+      </div>
+    </main>
+  )
+}
+
+const percentPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const meter = canvas.getByRole('meter', { name: 'Sidebar chat' })
+  const value = meter.querySelector<HTMLElement>('.context-meter__value')
+  const segments = meter.querySelector<HTMLElement>('.context-meter__segments')
+  if (value === null || segments === null) throw new Error('no value or segments')
+  // One text node, "42%", as Figma's one text layer.
+  await expect(Array.from(value.childNodes).map((n) => [n.nodeType, n.textContent])).toEqual([[Node.TEXT_NODE, '42%']])
+  // Screen readers keep the meter's value text.
+  await expect(meter).toHaveAttribute('aria-valuetext', '42%')
+  // The monoSm text style: 11 px Geist Mono, 400, 16 px line height, in fg.muted.
+  const style = getComputedStyle(value)
+  await expect(style.fontSize).toBe('11px')
+  await expect(Math.round(Number.parseFloat(style.lineHeight))).toBe(16)
+  await expect(style.fontWeight).toBe('400')
+  await expect(style.fontFamily).toContain('Geist Mono')
+  const swatch = canvasElement.querySelector('[data-swatch="muted"]')
+  await expect(style.color).toBe(swatch === null ? '' : getComputedStyle(swatch).backgroundColor)
+  // Ten 4 px segments 2 apart (58), a 4 px gap, then the number: inside Figma's 83.
+  await expect(segments.getBoundingClientRect().width).toBe(58)
+  await expect(value.getBoundingClientRect().left - segments.getBoundingClientRect().right).toBe(4)
+  await expect(value.getBoundingClientRect().right - segments.getBoundingClientRect().left).toBeLessThanOrEqual(83)
+  // "100%" is one text node too.
+  await expect(canvas.getByRole('meter', { name: 'Full chat' }).querySelector('.context-meter__value')?.childNodes).toHaveLength(1)
+  await expect(canvas.getByRole('meter', { name: 'High chat' })).toHaveTextContent('78%')
+}
+
+export const PercentDark: StoryObj<typeof meta> = { render: () => <Percent />, play: percentPlay, globals: { mode: 'dark' } }
+export const PercentLight: StoryObj<typeof meta> = { render: () => <Percent />, play: percentPlay, globals: { mode: 'light' } }

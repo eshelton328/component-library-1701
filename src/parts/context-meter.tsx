@@ -20,7 +20,9 @@ export type ContextMeterProps = {
 
 /**
  * Shows how much of a chat's context window is in use: ten segments and
- * the percentage. Each segment is ten per cent.
+ * the percentage. Each segment is ten per cent. The percentage is one text
+ * node ("42%"), as Figma's one text layer, and the meter is about 82 px
+ * wide at "42%", inside Figma's 83.
  */
 export function ContextMeter({ value, high = false, label = 'Context used' }: ContextMeterProps) {
   const percent = Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 0
@@ -32,7 +34,7 @@ export function ContextMeter({ value, high = false, label = 'Context used' }: Co
           <Segment key={i} data-filled={i < filled ? '' : undefined} />
         ))}
       </Segments>
-      <Value aria-hidden="true">{percent}%</Value>
+      <Value aria-hidden="true">{`${String(percent)}%`}</Value>
     </Root>
   )
 }

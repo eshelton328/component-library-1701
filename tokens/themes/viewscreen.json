@@ -52,7 +52,7 @@
             "alpha": 1,
             "hex": "#17213a"
           },
-          "$description": "Secondary buttons, inputs, message bubbles, the composer and step cards, and the opaque fill of a Popover or MetaChip with surface raised (the Inbox popovers and task chips). Text on it uses fg.default or fg.muted, never fg.subtle."
+          "$description": "Secondary buttons, inputs, message bubbles, the composer and step cards, and the opaque fill of a MetaChip with surface raised (the Inbox task chips). Text on it uses fg.default or fg.muted, never fg.subtle."
         },
         "inset": {
           "$type": "color",

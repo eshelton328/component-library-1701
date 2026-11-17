@@ -271,16 +271,19 @@ function ProjectHeadings() {
   )
 }
 
-// Padding 8/0/2/10, gap 6, a 12 px folder, and the name in Geist Mono 11 in #8a97b8, as written (346:4606, 346:4610).
+// Padding 6/0/2/10, gap 6, a 12 px folder, and the name in Geist Mono 11 in #8a97b8, as written (346:4606, 346:4610).
+// Figma pads 8 above a 14 px line; the 16 px monoSm line pads 6 above, so the heading is Figma's 24.
 const projectPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const name = canvas.getByText('ncc-1701')
   const header = name.closest('.group-header__root')
   if (!(header instanceof HTMLElement)) throw new Error('no project header')
   const h = getComputedStyle(header)
-  await expect([h.paddingTop, h.paddingBottom, h.paddingLeft, h.columnGap]).toEqual(['8px', '2px', '10px', '6px'])
-  // 8 + the 16 px monoSm line + 2; Figma's 14 px line makes it 24.
-  await expect(header.getBoundingClientRect().height).toBe(26)
+  await expect([h.paddingTop, h.paddingBottom, h.paddingLeft, h.columnGap]).toEqual(['6px', '2px', '10px', '6px'])
+  // 6 + the 16 px monoSm line + 2 = 24, as Figma's 8 + 14 + 2. The name's centre is 14 down, 1 above Figma's 15.
+  await expect(header.getBoundingClientRect().height).toBe(24)
+  const nameBox = name.getBoundingClientRect()
+  await expect(nameBox.top + nameBox.height / 2 - header.getBoundingClientRect().top).toBe(14)
   const n = getComputedStyle(name)
   await expect(n.fontFamily).toMatch(/Mono/)
   await expect(n.fontSize).toBe('11px')

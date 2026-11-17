@@ -52,9 +52,11 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
 /**
  * A row in a list: an Inbox item (`inbox`, the default) or a chat in the
  * Workbench sidebar (`sidebar`). With `onSelect`, the title is a button and
- * a click anywhere on the row selects it.
+ * a click anywhere on the row selects it. `density="compact"` draws the
+ * title in `labelSm` and the meta and age in `monoSm`, as the Inbox list
+ * does; the default keeps `label` and `mono`.
  */
-export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, level = 0, onSelect, variant }: ListRowProps) {
+export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, level = 0, onSelect, variant, density }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -72,7 +74,7 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
   }
   return (
-    <Root variant={variant} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>

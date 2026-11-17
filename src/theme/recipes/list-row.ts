@@ -8,6 +8,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // started it (Workbench D18 417:1204, D16 417:483): the row keeps its start
 // padding (Figma 27, nearest token 24) and starts with a ↳ in Inter 13
 // #8a97b8 (`body`, fg.muted), 10 before the kind mark (the row gap).
+// A compact row (`density`) has the smaller text of the Inbox D1 list: the
+// title Geist Medium 13 (346:202, `labelSm`, 17 tall in Figma, 16 here),
+// the meta and the age Geist Mono 11 (346:203, 346:218, `monoSm`, 14 tall
+// in Figma, 16 here). A title and meta row is 58 tall with its 1 px border;
+// Figma's (346:237) is 55, with no border.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -72,6 +77,10 @@ export const listRow = defineSlotRecipe({
         meta: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:has(> .truncated-text)': { overflow: 'visible' } },
       },
     },
+    density: {
+      default: {},
+      compact: { title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
+    },
   },
-  defaultVariants: { variant: 'inbox' },
+  defaultVariants: { variant: 'inbox', density: 'default' },
 })

@@ -39,6 +39,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // the layer widths (7.2 px a character, "/pr-description" 108 wide, 16
 // tall) are Geist Mono 12, so `labelStyle="mono"` takes `mono` (12/16).
 // `check={false}` hides the check and its space on every row.
+// `density="compact"` is the picker's row (105:412, 105:415, 105:418):
+// 146 wide and 44 tall, padded 6 by 8, the name (16) over the description
+// (Regular 11, 14 tall). On the 4 px grid the description is `smallSm`
+// (11/16) right under the name: 6 + 16 + 16 + 6 = 44, Figma's height, and
+// in a compact Popover (padding 6) the text column is Figma's 130, so the
+// descriptions stay on one line. A mono description is `monoSm`.
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -130,6 +136,10 @@ export const optionList = defineSlotRecipe({
       text: {},
       mono: { itemText: { textStyle: 'mono' } },
     },
+    density: {
+      default: {},
+      compact: { item: { px: '8', py: '6' }, itemBody: { gap: '0' }, itemDescription: { textStyle: 'smallSm' } },
+    },
     check: {
       true: {},
       false: { itemControl: { display: 'none', _checked: { display: 'none' } } },
@@ -139,6 +149,7 @@ export const optionList = defineSlotRecipe({
     { size: 'sm', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } },
     // A mono label keeps `mono` at either size.
     { size: 'sm', labelStyle: 'mono', css: { itemText: { textStyle: 'mono' } } },
+    { density: 'compact', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } },
   ],
-  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md', labelStyle: 'text', check: true },
+  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md', labelStyle: 'text', check: true, density: 'default' },
 })

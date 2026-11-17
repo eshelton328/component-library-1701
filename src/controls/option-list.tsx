@@ -84,6 +84,12 @@ export type OptionListProps = {
    * space, so pair it with `selectedFill`, as the Workbench skill picker fills its highlighted row (D1 105:412).
    */
   check?: boolean | undefined
+  /**
+   * The row spacing: `default` pads each row 8 by 12 with its lines 2 apart; `compact` pads it 6 by 8 with the
+   * description right under the label, in `smallSm` (Regular 11/16; a `mono` description in `monoSm`), so a row
+   * with a label and a description is 44 tall, as the Workbench skill picker draws it (D1 105:412).
+   */
+  density?: 'default' | 'compact' | undefined
 }
 
 /**
@@ -92,7 +98,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size, labelStyle, check }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size, labelStyle, check, density }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -137,6 +143,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       size={size}
       labelStyle={labelStyle}
       check={check}
+      density={density}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}

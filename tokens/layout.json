@@ -171,6 +171,11 @@
         "$value": { "value": 240, "unit": "px" },
         "$description": "Width of a small menu."
       },
+      "submenu": {
+        "$type": "dimension",
+        "$value": { "value": 200, "unit": "px" },
+        "$description": "Width of a menu's submenu, the list that opens beside a row such as Move to workspace (Workbench D1 105:473). Not for a menu a button opens, which is at least popoverSm (240)."
+      },
       "popoverSort": {
         "$type": "dimension",
         "$value": { "value": 280, "unit": "px" },

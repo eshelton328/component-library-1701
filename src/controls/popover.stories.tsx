@@ -214,5 +214,59 @@ const placementPlay: StoryObj<typeof meta>['play'] = async () => {
   await expect(flips).not.toHaveAttribute('data-fidelity')
 }
 
+// `surface="raised"`: the opaque fill Figma gives the Inbox popovers (D4 346:1737, #17213a: surface.raised); the default
+// keeps surface.overlay.
+const surfaces = {
+  raised: css({ color: 'surface.raised' }),
+  overlay: css({ color: 'surface.overlay' }),
+}
+
+function Surfaces() {
+  return (
+    <main className={page}>
+      <Inline justify="between">
+        <Popover trigger={<Button>Opaque</Button>} label="Opaque" placement="bottom-start" surface="raised" open>
+          <PopoverSection label="Kind">
+            <Checkbox label="Approval" size="sm" defaultChecked />
+          </PopoverSection>
+        </Popover>
+        <Popover trigger={<Button>Default</Button>} label="Default" open>
+          <Checkbox label="A row" />
+        </Popover>
+      </Inline>
+      <div hidden>
+        <span data-swatch="raised" className={surfaces.raised} />
+        <span data-swatch="overlay" className={surfaces.overlay} />
+      </div>
+    </main>
+  )
+}
+
+/** `surface="raised"` fills the box with the opaque surface.raised; a popover without it keeps surface.overlay. */
+const surfacePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const opaque = await body.findByRole('dialog', { name: 'Opaque' })
+  const fallback = await body.findByRole('dialog', { name: 'Default' })
+  await expect(getComputedStyle(opaque).backgroundColor).toBe(swatch('raised'))
+  // Opaque: no alpha in the computed colour.
+  await expect(getComputedStyle(opaque).backgroundColor).toMatch(/^rgb\(/)
+  await expect(getComputedStyle(fallback).backgroundColor).toBe(swatch('overlay'))
+  await expect(getComputedStyle(fallback).backgroundColor).not.toBe(getComputedStyle(opaque).backgroundColor)
+  // The rest of the box stays as it was: radius 12, padding 8, the border and the shadow.
+  for (const box of [opaque, fallback]) {
+    const style = getComputedStyle(box)
+    await expect([style.borderTopLeftRadius, style.paddingTop, style.borderTopWidth]).toEqual(['12px', '8px', '1px'])
+    await expect(style.boxShadow).not.toBe('none')
+  }
+}
+
+export const SurfaceDark: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'dark' }, play: surfacePlay }
+export const SurfaceLight: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'light' }, play: surfacePlay }
+
 export const PlacementDark: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'dark' }, play: placementPlay }
 export const PlacementLight: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'light' }, play: placementPlay }

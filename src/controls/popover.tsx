@@ -41,6 +41,12 @@ export type PopoverProps = {
    * not set. With `false` it keeps `placement`, and a long popover scrolls in the room it has.
    */
   flip?: boolean | undefined
+  /**
+   * The box fill: `overlay` (the default) is `surface.overlay`, nearly opaque, so what lies under the popover shows
+   * faintly; `raised` is the opaque `surface.raised` (#17213a in dark mode), as Figma fills the Inbox popovers, such as the
+   * Filter menu (D4 346:1737).
+   */
+  surface?: 'overlay' | 'raised' | undefined
   /** A class added to the popover's box, after its own. */
   className?: string | undefined
 } & PopoverDataAttributes
@@ -57,10 +63,11 @@ export type PopoverDataAttributes = { [key: `data-${string}`]: string | number |
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, className, ...rest }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, className, ...rest }: PopoverProps) {
   return (
     <Root
       width={width}
+      surface={surface}
       positioning={{ placement, gutter: 6, flip }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {

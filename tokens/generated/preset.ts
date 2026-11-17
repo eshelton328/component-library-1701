@@ -720,7 +720,7 @@ export default definePreset({
                 "base": "#ffffff",
                 "_dark": "#17213a"
               },
-              "description": "Secondary buttons, inputs, message bubbles, the composer and step cards, and the opaque fill of a MetaChip with surface raised (the Inbox task chips). Text on it uses fg.default or fg.muted, never fg.subtle."
+              "description": "Secondary buttons, inputs, message bubbles, the composer and step cards, and the opaque fill of a MetaChip with surface raised (the Inbox task chips) and of a Popover with surface raised (the Inbox popovers, which Figma fills opaque). Text on it uses fg.default or fg.muted, never fg.subtle."
             },
             "selected": {
               "value": {

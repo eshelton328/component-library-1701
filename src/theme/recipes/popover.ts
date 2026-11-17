@@ -7,6 +7,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `width` picks the box width: sm 240 (a small menu), filter 300 (the Inbox
 // Filter menu, D4 346:1737), md 320 (the default), lg 360 (the skill picker)
 // and picker 380 (the Run in picker, D3 346:1234).
+// `surface` picks the fill. `overlay` (the default) keeps surface.overlay,
+// #0f1626 at 0.98, so the list under the box shows faintly. Figma fills the
+// Inbox popovers opaque #17213a (the Filter menu, D4 346:1737): `raised`
+// takes surface.raised, which is that value (d-100 rule 4: an existing
+// token, no new one). Text on it stays fg.default and fg.muted, as
+// surface.raised allows.
 export const popover = defineSlotRecipe({
   className: 'popover',
   jsx: ['Popover'],
@@ -46,6 +52,10 @@ export const popover = defineSlotRecipe({
       lg: { content: { w: 'shell.popoverLg' } },
       picker: { content: { w: 'shell.popoverPicker' } },
     },
+    surface: {
+      overlay: {},
+      raised: { content: { bg: 'surface.raised' } },
+    },
   },
-  defaultVariants: { width: 'md' },
+  defaultVariants: { width: 'md', surface: 'overlay' },
 })

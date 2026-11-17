@@ -737,6 +737,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodySm": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
+            },
             "code": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
@@ -757,6 +761,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
+            "labelSm": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
             "mono": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -764,6 +772,10 @@ export default definePreset({
             "monoCaps": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
+            "monoSm": {
+              "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
+              "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
@@ -872,6 +884,10 @@ export default definePreset({
               "value": "14px",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodySm": {
+              "value": "13px",
+              "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
+            },
             "code": {
               "value": "14px",
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
@@ -892,6 +908,10 @@ export default definePreset({
               "value": "16px",
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
+            "labelSm": {
+              "value": "13px",
+              "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
             "mono": {
               "value": "12px",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -899,6 +919,10 @@ export default definePreset({
             "monoCaps": {
               "value": "12px",
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
+            "monoSm": {
+              "value": "11px",
+              "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
               "value": "10px",
@@ -940,6 +964,10 @@ export default definePreset({
               "value": "1.4286",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodySm": {
+              "value": "1.5385",
+              "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
+            },
             "code": {
               "value": "1.4286",
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
@@ -960,6 +988,10 @@ export default definePreset({
               "value": "1.5",
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
+            "labelSm": {
+              "value": "1.2308",
+              "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
             "mono": {
               "value": "1.3334",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -967,6 +999,10 @@ export default definePreset({
             "monoCaps": {
               "value": "1.3334",
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
+            "monoSm": {
+              "value": "1.4546",
+              "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
               "value": "1.2",
@@ -1008,6 +1044,10 @@ export default definePreset({
               "value": "400",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodySm": {
+              "value": "400",
+              "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
+            },
             "code": {
               "value": "400",
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
@@ -1028,6 +1068,10 @@ export default definePreset({
               "value": "500",
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
+            "labelSm": {
+              "value": "500",
+              "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
             "mono": {
               "value": "400",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -1035,6 +1079,10 @@ export default definePreset({
             "monoCaps": {
               "value": "400",
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
+            "monoSm": {
+              "value": "400",
+              "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
               "value": "500",
@@ -1076,6 +1124,10 @@ export default definePreset({
               "value": "0px",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodySm": {
+              "value": "0px",
+              "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
+            },
             "code": {
               "value": "0px",
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
@@ -1096,6 +1148,10 @@ export default definePreset({
               "value": "0px",
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
+            "labelSm": {
+              "value": "0px",
+              "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
             "mono": {
               "value": "0px",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
@@ -1103,6 +1159,10 @@ export default definePreset({
             "monoCaps": {
               "value": "0px",
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
+            "monoSm": {
+              "value": "0px",
+              "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
               "value": "0px",
@@ -1156,6 +1216,16 @@ export default definePreset({
             "letterSpacing": "text.body"
           }
         },
+        "bodySm": {
+          "description": "Compact body text: the Inbox detail sections and their suggested prompt, and a MarkdownView with size sm, as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
+          "value": {
+            "fontFamily": "text.bodySm",
+            "fontSize": "text.bodySm",
+            "lineHeight": "text.bodySm",
+            "fontWeight": "text.bodySm",
+            "letterSpacing": "text.bodySm"
+          }
+        },
         "code": {
           "description": "Code in rendered Markdown.",
           "value": {
@@ -1207,6 +1277,16 @@ export default definePreset({
             "letterSpacing": "text.labelLg"
           }
         },
+        "labelSm": {
+          "description": "Compact row titles: a ListRow with density compact, as the Inbox list draws them at 13 px. Not for buttons, tabs or chips, which use label.",
+          "value": {
+            "fontFamily": "text.labelSm",
+            "fontSize": "text.labelSm",
+            "lineHeight": "text.labelSm",
+            "fontWeight": "text.labelSm",
+            "letterSpacing": "text.labelSm"
+          }
+        },
         "mono": {
           "description": "Meta, paths, counts, code lines and axis labels.",
           "value": {
@@ -1226,6 +1306,16 @@ export default definePreset({
             "fontWeight": "text.monoCaps",
             "letterSpacing": "text.monoCaps",
             "textTransform": "uppercase"
+          }
+        },
+        "monoSm": {
+          "description": "Compact meta lines: the meta line of a ListRow with density compact, as the Inbox list draws it at 11 px. Not for group headers (eyebrow) or other meta (mono).",
+          "value": {
+            "fontFamily": "text.monoSm",
+            "fontSize": "text.monoSm",
+            "lineHeight": "text.monoSm",
+            "fontWeight": "text.monoSm",
+            "letterSpacing": "text.monoSm"
           }
         },
         "navLabel": {

@@ -204,7 +204,7 @@ export const SmallTextLight: StoryObj<typeof meta> = { render: () => <SmallText 
 
 // `surface="raised"`: on surface.raised (a raised Popover, such as the Run in picker, D3 346:1235) the placeholder and
 // the clear icon are fg.muted, because fg.subtle is 4.39:1 there; the default keeps fg.subtle.
-const raisedBox = css({ bg: 'surface.raised', p: '16', borderRadius: 'xl', display: 'grid', gap: '16' })
+const raisedBox = css({ bg: 'surface.raised', p: '16', borderRadius: 'xl', display: 'grid', gap: '16', mb: '16' })
 const swatches = { muted: css({ color: 'fg.muted' }), subtle: css({ color: 'fg.subtle' }), raised: css({ color: 'surface.raised' }) }
 
 function Surfaces() {
@@ -213,6 +213,9 @@ function Surfaces() {
       <div className={raisedBox}>
         <SearchField label="Raised, empty" placeholder="Search workspaces and chats" surface="raised" icon={<Magnifier />} />
         <SearchField label="Raised, with text" defaultValue="sync" surface="raised" icon={<Magnifier />} />
+      </div>
+      {/* The default is for a field on the page, where fg.subtle passes. */}
+      <div className={column}>
         <SearchField label="Default, empty" placeholder="Search" icon={<Magnifier />} />
         <SearchField label="Default, with text" defaultValue="sync" icon={<Magnifier />} />
       </div>

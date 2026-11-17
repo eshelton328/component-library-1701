@@ -78,3 +78,41 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The Inbox prompt (M10 `fade` 346:11014, M2 346:9300): five lines, cut by height, with no ellipsis under the fade.
+function Fades() {
+  return (
+    <main className={page}>
+      <div className={box} data-testid="faded">
+        <Clamp lines={5} fade>
+          {prompt}
+        </Clamp>
+      </div>
+      <div className={box} data-testid="ellipsis">
+        <Clamp lines={2}>{prompt}</Clamp>
+      </div>
+    </main>
+  )
+}
+
+const fadePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const faded = clampOf(canvasElement, 'faded')
+  const style = getComputedStyle(faded)
+  const line = parseFloat(style.lineHeight)
+  // A fade cuts at the height of its five lines, not with line-clamp, so Chrome draws no "…" at the end.
+  await expect(style.webkitLineClamp).toBe('none')
+  await expect(style.display).toBe('block')
+  await expect(style.overflow).toBe('hidden')
+  await expect(Math.round(parseFloat(style.maxHeight))).toBe(Math.round(5 * line))
+  await expect(Math.round(faded.getBoundingClientRect().height)).toBe(Math.round(5 * line))
+  await expect(faded.scrollHeight).toBeGreaterThan(faded.clientHeight)
+  await waitFor(() => expect(faded).toHaveAttribute('data-cut'))
+  await expect(getComputedStyle(faded).maskImage).toContain('40px')
+  // Without fade the text still ends in an ellipsis on its last line.
+  const ellipsis = getComputedStyle(clampOf(canvasElement, 'ellipsis'))
+  await expect(ellipsis.webkitLineClamp).toBe('2')
+  await expect(ellipsis.maxHeight).toBe('none')
+}
+
+export const FadeDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Fades />, play: fadePlay }
+export const FadeLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Fades />, play: fadePlay }

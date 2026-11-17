@@ -47,6 +47,17 @@ export type PopoverProps = {
    * Filter menu (D4 346:1737).
    */
   surface?: 'overlay' | 'raised' | undefined
+  /**
+   * The box spacing: `default` pads the box 8; `compact` pads it 6 and gives each section label a 20 px row, as the
+   * Workbench skill picker draws it (D1 105:406), so a 160 px box holds a compact `OptionList` with a 130 px text
+   * column.
+   */
+  density?: 'default' | 'compact' | undefined
+  /**
+   * Whether opening the popover moves the focus to its first control; `true` when not set. With `false` the focus
+   * stays where it was, such as in the message box that opened the skill picker with "/", so typing goes on there.
+   */
+  autoFocus?: boolean | undefined
   /** A class added to the popover's box, after its own. */
   className?: string | undefined
 } & PopoverDataAttributes
@@ -63,11 +74,13 @@ export type PopoverDataAttributes = { [key: `data-${string}`]: string | number |
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, className, ...rest }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, autoFocus = true, className, ...rest }: PopoverProps) {
   return (
     <Root
       width={width}
       surface={surface}
+      density={density}
+      autoFocus={autoFocus}
       positioning={{ placement, gutter: 6, flip }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {
@@ -96,13 +109,20 @@ export type PopoverSectionProps = {
   /** The label of the group, such as "Kind". It shows in capitals. */
   label: string
   children: ReactNode
+  /**
+   * Draw a 1 px rule after the label, to the end of its row, as the Workbench skill picker's SKILLS label has
+   * (D1 105:409). No rule when not set.
+   */
+  rule?: boolean | undefined
 }
 
 /** A labelled group of rows in a `Popover`. */
-export function PopoverSection({ label, children }: PopoverSectionProps) {
+export function PopoverSection({ label, children, rule = false }: PopoverSectionProps) {
   return (
     <Section role="group" aria-label={label}>
-      <SectionLabel aria-hidden="true">{label}</SectionLabel>
+      <SectionLabel aria-hidden="true" data-rule={rule ? '' : undefined}>
+        {label}
+      </SectionLabel>
       {children}
     </Section>
   )

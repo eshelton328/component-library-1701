@@ -216,3 +216,63 @@ const countsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const CountsDark: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'dark' }, play: countsPlay }
 export const CountsLight: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'light' }, play: countsPlay }
+
+// The Toolkit kind chips (D1 425:32, M1 429:61): `padding="none"` puts them flush with the row, 6 apart; each chip
+// is 32 high with the label 11 px from its edge (the 1 px border and 10 px sides, M1 429:63). On the phone the row
+// is 366 wide (360 here, shell.popoverLg) and the fifth chip, Workflows, starts inside it, so the row reads as one
+// that scrolls (M1 429:77 starts at 352).
+const toolkitKinds: readonly FilterChip[] = [
+  { value: 'all', label: 'All', count: 27 },
+  { value: 'skill', label: 'Skills', count: 9, kind: 'skill' },
+  { value: 'agent', label: 'Agents', count: 7, kind: 'agent' },
+  { value: 'rule', label: 'Rules', count: 8, kind: 'rule' },
+  { value: 'workflow', label: 'Workflows', count: 2, kind: 'workflow' },
+  { value: 'hook', label: 'Hooks', count: 1, kind: 'hook' },
+]
+const phoneRow = css({ w: 'shell.popoverLg' })
+
+function Flush() {
+  return (
+    <main className={page}>
+      <FilterChips label="Toolkit kinds" items={toolkitKinds} defaultValue={['all']} multiple={false} padding="none" />
+      <div className={phoneRow}>
+        <FilterChips label="Toolkit kinds on a phone" items={toolkitKinds} defaultValue={['all']} multiple={false} padding="none" />
+      </div>
+      <FilterChips label="Padded" items={toolkitKinds} defaultValue={['all']} multiple={false} />
+    </main>
+  )
+}
+
+const flushPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const row = canvas.getByLabelText('Toolkit kinds')
+  const box = row.getBoundingClientRect()
+  const chips = within(row).getAllByRole('radio')
+  const first = chips[0]
+  if (first === undefined) throw new Error('no chip')
+  // No inset: the row is as high as its chips, and the first chip starts at its edge.
+  await expect(getComputedStyle(row).paddingLeft).toBe('0px')
+  await expect(first.getBoundingClientRect().left).toBe(box.left)
+  await expect(first.getBoundingClientRect().height).toBe(32)
+  await expect(box.height).toBe(32)
+  await expect(getComputedStyle(row).columnGap).toBe('6px')
+  const style = getComputedStyle(first)
+  await expect([style.paddingLeft, style.paddingRight, style.borderLeftWidth]).toEqual(['10px', '10px', '1px'])
+  // The focus ring sits inside the chip, so the row's clip leaves it whole.
+  first.focus()
+  await waitFor(() => expect(getComputedStyle(first).outlineStyle).toBe('solid'))
+  await expect(getComputedStyle(first).outlineOffset).toBe('-2px')
+  // On the phone row the fifth chip starts inside the row, and the row scrolls.
+  const phone = canvas.getByLabelText('Toolkit kinds on a phone')
+  const workflows = within(phone).getByRole('radio', { name: /Workflows/ })
+  await expect(workflows.getBoundingClientRect().left).toBeLessThan(phone.getBoundingClientRect().right)
+  await expect(phone.scrollWidth).toBeGreaterThan(phone.clientWidth)
+  // The default padding stays 2 px around the chips.
+  const padded = canvas.getByLabelText('Padded')
+  await expect(getComputedStyle(padded).paddingLeft).toBe('2px')
+  await expect(padded.getBoundingClientRect().height).toBe(36)
+}
+
+/** `padding="none"`: the Toolkit chip row, flush with no inset; the default row keeps its 2 px. */
+export const FlushDark: StoryObj<typeof meta> = { render: () => <Flush />, globals: { mode: 'dark' }, play: flushPlay }
+export const FlushLight: StoryObj<typeof meta> = { render: () => <Flush />, globals: { mode: 'light' }, play: flushPlay }

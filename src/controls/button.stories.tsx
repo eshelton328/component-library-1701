@@ -492,6 +492,9 @@ function ViewButtons() {
         <Button size="lg" iconOnly pressed aria-label="Pressed, default tone">
           <ListIcon />
         </Button>
+        <Button variant="primary" size="lg" iconOnly pressed pressedTone="accent" aria-label="Pressed primary, accent tone">
+          <ListIcon />
+        </Button>
       </div>
       <div hidden>
         {Object.entries(toneSwatches).map(([name, className]) => (
@@ -522,6 +525,10 @@ const pressedTonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
   // An idle button of the accent tone keeps fg.default, and so does a pressed button of the default tone.
   await expect(getComputedStyle(map).color).toBe(swatch('default'))
   await expect(getComputedStyle(canvas.getByRole('button', { name: 'Pressed, default tone' })).color).toBe(swatch('default'))
+  // A pressed primary keeps fg.onAccent on its accent fill: the accent tone changes only a secondary button.
+  const primary = getComputedStyle(canvas.getByRole('button', { name: 'Pressed primary, accent tone' }))
+  await expect(primary.color).not.toBe(swatch('fgAccent'))
+  await expect(primary.color).not.toBe(primary.backgroundColor)
   // Picking Map moves the cyan to it.
   await userEvent.click(map)
   await expect(getComputedStyle(map).color).toBe(swatch('fgAccent'))

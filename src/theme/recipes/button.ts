@@ -124,10 +124,12 @@ export const button = defineRecipe({
     // fg.accent (#5ee1ff), as the Toolkit phone's view buttons do: List
     // (466:54) has the selected fill, the cyan border and a cyan icon
     // (466:55; Figma's 17 px icon takes icon.16, d-100). It changes only a
-    // pressed button.
+    // pressed `secondary` button (a compound variant below): primary and the
+    // danger variants keep their own label colour on their own fill, so a
+    // pressed primary never draws fg.accent on accent.default.
     pressedTone: {
       default: {},
-      accent: { _pressed: { color: 'fg.accent' } },
+      accent: {},
     },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
@@ -143,6 +145,7 @@ export const button = defineRecipe({
     { iconOnly: true, size: 'md', css: { w: 'control.md' } },
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
+    { variant: 'secondary', pressedTone: 'accent', css: { _pressed: { color: 'fg.accent' } } },
   ],
   defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', iconOnly: false },
 })

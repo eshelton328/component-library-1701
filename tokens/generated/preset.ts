@@ -1371,7 +1371,7 @@ export default definePreset({
           }
         },
         "label": {
-          "description": "Buttons, tabs, chips and row titles.",
+          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high.",
           "value": {
             "fontFamily": "text.label",
             "fontSize": "text.label",
@@ -1381,7 +1381,7 @@ export default definePreset({
           }
         },
         "labelLg": {
-          "description": "Touch rows and back buttons on phone and tablet: drawer items, back row labels.",
+          "description": "Touch rows and back buttons on phone and tablet, such as back row labels. Not for the More drawer items, which use label for their 20 px line.",
           "value": {
             "fontFamily": "text.labelLg",
             "fontSize": "text.labelLg",

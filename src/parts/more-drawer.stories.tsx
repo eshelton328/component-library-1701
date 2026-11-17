@@ -106,17 +106,18 @@ const meta = {
     await expect(tile.getBoundingClientRect().height).toBe(36)
     await expect(getComputedStyle(tile).borderTopLeftRadius).toBe('8px')
     await expect(getComputedStyle(tile).backgroundColor).toBe(swatch('tile'))
-    // The item label is labelLg, Medium 16/24 (d-074).
+    // The item label is label, Medium 14/20: Figma's Medium 15/20 (424:6950) keeps its 20 px line.
     const itemLabel = getComputedStyle(within(artifacts).getByText('Artifacts'))
-    await expect([itemLabel.fontSize, itemLabel.fontWeight]).toEqual(['16px', '500'])
-    await expect(parseFloat(itemLabel.lineHeight)).toBeCloseTo(24, 0)
+    await expect([itemLabel.fontSize, itemLabel.fontWeight]).toEqual(['14px', '500'])
+    await expect(parseFloat(itemLabel.lineHeight)).toBeCloseTo(20, 0)
     const description = within(artifacts).getByText('Every Claude artifact and Codex site')
     await expect(getComputedStyle(description).fontSize).toBe('12px')
     await expect(getComputedStyle(description).color).toBe(swatch('muted'))
-    // An idle item: no fill, a transparent border, no aria-current.
+    // An idle item: no fill, no border, no aria-current.
     const toolkit = item(drawer, /^Toolkit/)
     await expect(toolkit).not.toHaveAttribute('aria-current')
     await expect(getComputedStyle(toolkit).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(getComputedStyle(toolkit).borderTopWidth).toBe('0px')
     // Every element in the drawer has its own id.
     const ids = Array.from(drawer.querySelectorAll('[id]'), (el) => el.id)
     await expect(new Set(ids).size).toBe(ids.length)
@@ -216,3 +217,40 @@ export const Behaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
   },
 }
+
+// Toolkit M4 (424:6940): idle items 62 high (429:512), the selected one 64 (424:6945) with its 1 px border, 4
+// apart; the 36 px tile 12 in on an idle item, 13 on the selected one; the title (20) over the description (16),
+// 22 apart. Figma draws no focus ring when the drawer opens: the drawer itself has the focus, and Tab moves to the
+// first item.
+const spacingPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const drawer = await body.findByRole('dialog', { name: 'More' })
+  await waitFor(() => expect(document.activeElement).toBe(drawer))
+  await expect(drawer.querySelector(':focus-visible')).toBeNull()
+  const artifacts = item(drawer, /^Artifacts/)
+  const toolkit = item(drawer, /^Toolkit/)
+  const brain = item(drawer, /^Brain/)
+  const workflows = item(drawer, /^Workflows/)
+  const a = artifacts.getBoundingClientRect()
+  const t = toolkit.getBoundingClientRect()
+  await expect([a.height, t.height, brain.getBoundingClientRect().height, workflows.getBoundingClientRect().height]).toEqual([64, 62, 62, 62])
+  await expect(t.top - a.bottom).toBe(4)
+  await expect(workflows.getBoundingClientRect().top - brain.getBoundingClientRect().bottom).toBe(4)
+  const tileIn = (el: HTMLElement) => {
+    const tile = el.querySelector('.more-drawer__tile')
+    if (tile === null) throw new Error('no tile')
+    return tile.getBoundingClientRect().left - el.getBoundingClientRect().left
+  }
+  await expect([tileIn(artifacts), tileIn(toolkit)]).toEqual([13, 12])
+  const title = within(toolkit).getByText('Toolkit').getBoundingClientRect()
+  const description = within(toolkit).getByText('Agents, skills, workflows, rules and hooks').getBoundingClientRect()
+  await expect([title.height, description.height, description.top - title.top]).toEqual([20, 16, 22])
+  // Tab moves to the first item, which then draws its ring.
+  await userEvent.tab()
+  await expect(artifacts).toHaveFocus()
+  await expect(getComputedStyle(artifacts).outlineStyle).toBe('solid')
+}
+
+/** The drawer's spacing (Toolkit M4) and its first focus: the drawer itself, with no focus ring on an item. */
+export const SpacingDark: StoryObj<typeof meta> = { play: spacingPlay, globals: { mode: 'dark' } }
+export const SpacingLight: StoryObj<typeof meta> = { play: spacingPlay, globals: { mode: 'light' } }

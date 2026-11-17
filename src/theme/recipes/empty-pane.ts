@@ -7,7 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 380 wide, `shell.popoverPicker`): its label (105:369, `eyebrow`) 2 over
 // the rows, which are 2 apart. The groups are 12 apart (633.5 to 645.5,
 // 662.5 to 674.5, 704.5 to 716.5). The outline's radius is not in the gap
-// row; it takes radius.xl, as the Workbench panes do.
+// row; it takes radius.xl, as the Workbench panes do. The content is
+// centred by auto margins, so in a pane too short for it, it starts at
+// the top and the pane scrolls, and the title stays in reach.
 export const emptyPane = defineSlotRecipe({
   className: 'empty-pane',
   jsx: ['EmptyPane'],
@@ -17,17 +19,16 @@ export const emptyPane = defineSlotRecipe({
     root: {
       display: 'flex',
       flex: '1',
-      alignItems: 'center',
-      justifyContent: 'center',
       minW: '0',
       minH: '0',
+      overflowY: 'auto',
       p: '16',
       borderRadius: 'xl',
       borderWidth: 'default',
       borderStyle: 'dashed',
       borderColor: 'border.default',
     },
-    content: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12', maxW: '100%', textAlign: 'center' },
+    content: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12', flexShrink: '0', m: 'auto', maxW: '100%', textAlign: 'center' },
     title: { m: '0', textStyle: 'paneTitle', color: 'fg.default' },
     description: { m: '0', textStyle: 'bodySm', color: 'fg.muted' },
     actions: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8' },

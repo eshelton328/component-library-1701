@@ -89,3 +89,35 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// A pane too short for ten chats: the content starts at the top and the pane scrolls.
+const short = css({ display: 'flex', flexDirection: 'column', bg: 'surface.pane', w: 'shell.dialogWide', h: 'shell.submenu' })
+
+function Short() {
+  return (
+    <main className={short}>
+      <EmptyPane title="Empty pane" description="Start a chat here" actions={<Button size="sm">Codex</Button>} listLabel="Open in this pane">
+        {Array.from({ length: 10 }, (_, i) => (
+          <ListRow key={i} variant="sidebar" density="compact" title={`chat ${String(i + 1)}`} meta="Opus 5.5" leading={<KindMark kind="claude" size="16" />} />
+        ))}
+      </EmptyPane>
+    </main>
+  )
+}
+
+const shortPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const root = canvas.getByRole('region', { name: 'Empty pane' })
+  // The pane scrolls; at the top, the title and the start button are inside it.
+  await expect(root.scrollHeight).toBeGreaterThan(root.clientHeight)
+  await expect(root.scrollTop).toBe(0)
+  const top = root.getBoundingClientRect().top
+  await expect(canvas.getByText('Empty pane').getBoundingClientRect().top).toBeGreaterThanOrEqual(top)
+  await expect(canvas.getByRole('button', { name: 'Codex' }).getBoundingClientRect().top).toBeGreaterThanOrEqual(top)
+  // Scrolling to the end brings the last chat into the pane.
+  root.scrollTop = root.scrollHeight
+  await expect(within(root).getByText('chat 10').getBoundingClientRect().bottom).toBeLessThanOrEqual(root.getBoundingClientRect().bottom)
+}
+
+export const ShortDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Short />, play: shortPlay }
+export const ShortLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Short />, play: shortPlay }

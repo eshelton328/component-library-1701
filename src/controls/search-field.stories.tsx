@@ -148,3 +148,46 @@ const circleClearPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** The clear button with `CloseCircleIcon` at `clearSize="16"` (Inbox D10). */
 export const CircleClearDark: StoryObj<typeof meta> = { render: () => <CircleClear />, play: circleClearPlay, globals: { mode: 'dark' } }
 export const CircleClearLight: StoryObj<typeof meta> = { render: () => <CircleClear />, play: circleClearPlay, globals: { mode: 'light' } }
+
+// The Inbox search fields (T7 346:6800, and the T12 Run in picker) set the placeholder in Geist Regular 13; the
+// default field beside it keeps `body`.
+function SmallText() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <SearchField label="Search the inbox" placeholder="Search tasks" icon={<SearchIcon />} textSize="sm" />
+        <SearchField label="Search, small text" defaultValue="f-005" icon={<SearchIcon />} textSize="sm" size="sm" />
+        <SearchField label="Search, default text" placeholder="Search tasks" icon={<SearchIcon />} />
+      </div>
+    </main>
+  )
+}
+
+const smallTextPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const text = (name: string) => {
+    const s = getComputedStyle(canvas.getByRole('searchbox', { name }))
+    // Line heights are ratios, so Chromium computes 20.0005px; round them.
+    return [s.fontSize, `${Math.round(parseFloat(s.lineHeight))}px`, s.fontWeight]
+  }
+  // The placeholder's computed line height is not resolved, so it checks size and weight.
+  const placeholder = (name: string) => {
+    const s = getComputedStyle(canvas.getByRole('searchbox', { name }), '::placeholder')
+    return [s.fontSize, s.fontWeight]
+  }
+  // textSize="sm" draws the text and the placeholder in bodySm: Regular 13/20, sans.
+  await expect(text('Search the inbox')).toEqual(['13px', '20px', '400'])
+  await expect(placeholder('Search the inbox')).toEqual(['13px', '400'])
+  await expect(text('Search, small text')).toEqual(['13px', '20px', '400'])
+  await expect(getComputedStyle(canvas.getByRole('searchbox', { name: 'Search the inbox' })).fontFamily).not.toMatch(/mono/i)
+  // The height stays the size's: md 32, sm 28.
+  const height = (name: string) => canvas.getByRole('searchbox', { name }).parentElement?.getBoundingClientRect().height
+  await expect([height('Search the inbox'), height('Search, small text')]).toEqual([32, 28])
+  // The default stays body (14/20).
+  await expect(text('Search, default text')).toEqual(['14px', '20px', '400'])
+  await expect(placeholder('Search, default text')).toEqual(['14px', '400'])
+}
+
+/** `textSize="sm"`: the text and placeholder in `bodySm` (13/20), as the Inbox search fields draw them. */
+export const SmallTextDark: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'dark' } }
+export const SmallTextLight: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'light' } }

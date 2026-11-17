@@ -24,6 +24,10 @@ export default definePreset({
             "xl": {
               "value": "44px",
               "description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303)."
+            },
+            "xs": {
+              "value": "24px",
+              "description": "The smallest buttons: a Button with size xs, such as Copy under a reply (Inbox T5 346:6404, 22 in Figma, on the 4 px grid). Not for inputs or touch targets on phone and tablet."
             }
           },
           "grabber": {
@@ -620,6 +624,13 @@ export default definePreset({
                 },
                 "description": "Border for this status. Something waits for Erik: an approval, a question."
               },
+              "faint": {
+                "value": {
+                  "base": "rgba(154, 74, 6, 0.06)",
+                  "_dark": "rgba(255, 184, 107, 0.08)"
+                },
+                "description": "A faint tint over a whole box that waits for Erik: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
+              },
               "fg": {
                 "value": {
                   "base": "#9a4a06",
@@ -745,6 +756,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodyLg": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
+            },
             "bodySm": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
@@ -772,6 +787,18 @@ export default definePreset({
             "labelSm": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
+            "labelSmStrong": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
+            },
+            "labelXs": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
+            },
+            "labelXsStrong": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
@@ -819,6 +846,10 @@ export default definePreset({
           "disabled": {
             "value": "0.45",
             "description": "Disabled items."
+          },
+          "finished": {
+            "value": "0.75",
+            "description": "The kind tile of a finished row that is not open (ListRow finished, Inbox D07 346:2940). Figma fades it to 0.6, which leaves kind icons under 3:1 on their tile (2.4 in light mode); at 0.75 every kind icon keeps 3:1 in both modes with a margin. Not for text or a whole row."
           },
           "snoozed": {
             "value": "0.85",
@@ -892,6 +923,10 @@ export default definePreset({
               "value": "14px",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodyLg": {
+              "value": "15px",
+              "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
+            },
             "bodySm": {
               "value": "13px",
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
@@ -919,6 +954,18 @@ export default definePreset({
             "labelSm": {
               "value": "13px",
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
+            "labelSmStrong": {
+              "value": "13px",
+              "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
+            },
+            "labelXs": {
+              "value": "12px",
+              "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
+            },
+            "labelXsStrong": {
+              "value": "12px",
+              "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
               "value": "12px",
@@ -972,6 +1019,10 @@ export default definePreset({
               "value": "1.4286",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodyLg": {
+              "value": "1.6",
+              "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
+            },
             "bodySm": {
               "value": "1.5385",
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
@@ -999,6 +1050,18 @@ export default definePreset({
             "labelSm": {
               "value": "1.2308",
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
+            "labelSmStrong": {
+              "value": "1.2308",
+              "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
+            },
+            "labelXs": {
+              "value": "1.3334",
+              "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
+            },
+            "labelXsStrong": {
+              "value": "1.3334",
+              "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
               "value": "1.3334",
@@ -1052,6 +1115,10 @@ export default definePreset({
               "value": "400",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodyLg": {
+              "value": "400",
+              "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
+            },
             "bodySm": {
               "value": "400",
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
@@ -1079,6 +1146,18 @@ export default definePreset({
             "labelSm": {
               "value": "500",
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
+            "labelSmStrong": {
+              "value": "600",
+              "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
+            },
+            "labelXs": {
+              "value": "500",
+              "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
+            },
+            "labelXsStrong": {
+              "value": "600",
+              "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
               "value": "400",
@@ -1132,6 +1211,10 @@ export default definePreset({
               "value": "0px",
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
+            "bodyLg": {
+              "value": "0px",
+              "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
+            },
             "bodySm": {
               "value": "0px",
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
@@ -1159,6 +1242,18 @@ export default definePreset({
             "labelSm": {
               "value": "0px",
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
+            },
+            "labelSmStrong": {
+              "value": "0px",
+              "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
+            },
+            "labelXs": {
+              "value": "0px",
+              "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
+            },
+            "labelXsStrong": {
+              "value": "0px",
+              "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
               "value": "0px",
@@ -1215,13 +1310,23 @@ export default definePreset({
           }
         },
         "body": {
-          "description": "Descriptions, messages and the prompt.",
+          "description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg.",
           "value": {
             "fontFamily": "text.body",
             "fontSize": "text.body",
             "lineHeight": "text.body",
             "fontWeight": "text.body",
             "letterSpacing": "text.body"
+          }
+        },
+        "bodyLg": {
+          "description": "Regular 15/24 for large reading text and large menu rows: the prompt in the Inbox Read the whole prompt dialog (D08 346:3548, 15/23 in Figma) and the labels of a Menu with size lg (the Snooze menu, D12 346:5303). Not for chat messages or detail text, which use body or bodySm.",
+          "value": {
+            "fontFamily": "text.bodyLg",
+            "fontSize": "text.bodyLg",
+            "lineHeight": "text.bodyLg",
+            "fontWeight": "text.bodyLg",
+            "letterSpacing": "text.bodyLg"
           }
         },
         "bodySm": {
@@ -1293,6 +1398,36 @@ export default definePreset({
             "lineHeight": "text.labelSm",
             "fontWeight": "text.labelSm",
             "letterSpacing": "text.labelSm"
+          }
+        },
+        "labelSmStrong": {
+          "description": "SemiBold 13/16 for the main action of a compact Inbox pair: a Button with textSize smStrong, such as Start and Remove task (D16 403:3928, D21). Not for other buttons, which use label, labelSm or labelXs.",
+          "value": {
+            "fontFamily": "text.labelSmStrong",
+            "fontSize": "text.labelSmStrong",
+            "lineHeight": "text.labelSmStrong",
+            "fontWeight": "text.labelSmStrong",
+            "letterSpacing": "text.labelSmStrong"
+          }
+        },
+        "labelXs": {
+          "description": "Medium 12/16 for the labels of small Inbox buttons: a Button with textSize xs, such as Reset, Edit, Change, Snooze, Dismiss, Allow once, Deny and Open chat (D16 403:1848, 403:1875). Not for row titles or tabs, which use label or labelSm.",
+          "value": {
+            "fontFamily": "text.labelXs",
+            "fontSize": "text.labelXs",
+            "lineHeight": "text.labelXs",
+            "fontWeight": "text.labelXs",
+            "letterSpacing": "text.labelXs"
+          }
+        },
+        "labelXsStrong": {
+          "description": "SemiBold 12/16 for the author name over a reply in the Inbox discussion, such as Discussion (T20 402:11858, T22 402:12372). Not for buttons or body text.",
+          "value": {
+            "fontFamily": "text.labelXsStrong",
+            "fontSize": "text.labelXsStrong",
+            "lineHeight": "text.labelXsStrong",
+            "fontWeight": "text.labelXsStrong",
+            "letterSpacing": "text.labelXsStrong"
           }
         },
         "mono": {

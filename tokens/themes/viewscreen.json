@@ -381,6 +381,16 @@
             },
             "$description": "Tint behind this status, as on a pill. Something waits for Erik: an approval, a question."
           },
+          "faint": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [1.0, 0.7216, 0.4196],
+              "alpha": 0.08,
+              "hex": "#ffb86b"
+            },
+            "$description": "A faint tint over a whole box that waits for Erik: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
+          },
           "border": {
             "$type": "color",
             "$value": {
@@ -1121,6 +1131,15 @@
               "hex": "#9a4a06"
             }
           },
+          "faint": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [0.6039, 0.2902, 0.0235],
+              "alpha": 0.06,
+              "hex": "#9a4a06"
+            }
+          },
           "border": {
             "$type": "color",
             "$value": {
@@ -1589,6 +1608,39 @@
       },
       "$description": "Compact titles at 13 px, as Inbox draws them: a ListRow with density compact, and the labels of an OptionList with size sm (the Run in picker and the question cards), and the label of a Button with textSize sm (Newest, Filter and Keep it). Not for other buttons, tabs or chips, which use label."
     },
+    "labelSmStrong": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 13, "unit": "px" },
+        "fontWeight": 600,
+        "lineHeight": 1.2308,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "SemiBold 13/16 for the main action of a compact Inbox pair: a Button with textSize smStrong, such as Start and Remove task (D16 403:3928, D21). Not for other buttons, which use label, labelSm or labelXs."
+    },
+    "labelXs": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 12, "unit": "px" },
+        "fontWeight": 500,
+        "lineHeight": 1.3334,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Medium 12/16 for the labels of small Inbox buttons: a Button with textSize xs, such as Reset, Edit, Change, Snooze, Dismiss, Allow once, Deny and Open chat (D16 403:1848, 403:1875). Not for row titles or tabs, which use label or labelSm."
+    },
+    "labelXsStrong": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 12, "unit": "px" },
+        "fontWeight": 600,
+        "lineHeight": 1.3334,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "SemiBold 12/16 for the author name over a reply in the Inbox discussion, such as Discussion (T20 402:11858, T22 402:12372). Not for buttons or body text."
+    },
     "body": {
       "$type": "typography",
       "$value": {
@@ -1598,7 +1650,18 @@
         "lineHeight": 1.4286,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
-      "$description": "Descriptions, messages and the prompt."
+      "$description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg."
+    },
+    "bodyLg": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 15, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.6,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Regular 15/24 for large reading text and large menu rows: the prompt in the Inbox Read the whole prompt dialog (D08 346:3548, 15/23 in Figma) and the labels of a Menu with size lg (the Snooze menu, D12 346:5303). Not for chat messages or detail text, which use body or bodySm."
     },
     "bodySm": {
       "$type": "typography",
@@ -1804,6 +1867,11 @@
       "$type": "number",
       "$value": 0.85,
       "$description": "A snoozed inbox row."
+    },
+    "finished": {
+      "$type": "number",
+      "$value": 0.75,
+      "$description": "The kind tile of a finished row that is not open (ListRow finished, Inbox D07 346:2940). Figma fades it to 0.6, which leaves kind icons under 3:1 on their tile (2.4 in light mode); at 0.75 every kind icon keeps 3:1 in both modes with a margin. Not for text or a whole row."
     }
   }
 }

@@ -44,20 +44,51 @@ const declName = /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(
 const memberName = /^(?:readonly\s+)?(?:static\s+)?(?:readonly\s+)?(?:["']([^"']+)["']|([A-Za-z_$][\w$]*))(\?)?\s*[:(<]/
 const isClosing = (t: string) => /^[}\])>;,\s]+$/.test(t)
 const braces = (t: string) => (t.match(/[{]/g)?.length ?? 0) - (t.match(/[}]/g)?.length ?? 0)
-/** Only these declarations are split into members; a type alias stays whole. */
+const brackets = (t: string) => (t.match(/[[(]/g)?.length ?? 0) - (t.match(/[\])]/g)?.length ?? 0)
+/** Interfaces and classes are always split into members. */
 const splitKinds = new Set(['interface', 'class'])
+/** `type Name = {` with no type parameters. */
+const objectAliasOpen = /^(?:export\s+)?(?:declare\s+)?type\s+[A-Za-z_$][\w$]*\s*=\s*\{$/
+/** A mapped type's key line, such as `[K in Keys]: V;`. */
+const mappedKey = /^(?:[-+]?readonly\s+)?\[\s*[A-Za-z_$][\w$]*\s+in\b/
+
+/**
+ * Whether the type alias that opens at `lines[start]` is one plain object
+ * literal: the opening line is `type Name = {`, the line that closes its
+ * brace is exactly `}` or `};`, and no depth-one line is a mapped key. A
+ * union or intersection closes the first brace on a line such as
+ * `} | {`, so it fails the test.
+ */
+function isObjectAlias(lines: readonly string[], start: number): boolean {
+  if (!objectAliasOpen.test(lines[start]?.trim() ?? '')) return false
+  let depth = 0
+  for (const line of lines.slice(start)) {
+    const t = line.trim()
+    if (depth === 1 && mappedKey.test(t)) return false
+    for (const c of t) {
+      if (c === '{') depth++
+      else if (c === '}' && --depth === 0) return t === '}' || t === '};'
+    }
+  }
+  return false
+}
 
 /**
  * Splits a report into declarations and members. A line with no indent
  * that starts with `export` or `declare` opens a declaration. In an
- * interface or a class, a line one brace level inside it is a member,
- * keyed by the declaration name. Every other line joins the item it
+ * interface, a class or a type alias that is one plain object literal
+ * (see `isObjectAlias`), a line one brace level inside it is a member,
+ * keyed by the declaration name, unless a `[` or `(` that an earlier line
+ * of the declaration opened is still open: a line inside such a group,
+ * such as an element of a multi-line tuple, joins the member that opened
+ * the group, up to the line that closes it. Every other line joins the item it
  * belongs to, with nested closing braces kept, so a member moved between
- * nested objects or between the branches of a union changes the text. A
- * type alias is one item, because its depth-one lines can belong to
- * different union branches. A member line the parser cannot name (a call,
- * construct, index or computed signature) counts as required. A repeated
- * key, as for an overloaded function, gets a `#2` suffix.
+ * nested objects changes the text. Any other type alias (a union, an
+ * intersection, a generic or a mapped type) is one item, because its
+ * depth-one lines can belong to different branches. A member line the
+ * parser cannot name (a call, construct, index or computed signature)
+ * counts as required. A repeated key, as for an overloaded function, gets
+ * a `#2` suffix.
  */
 export function apiItems(report: string): ApiItem[] {
   const items: ApiItem[] = []
@@ -68,20 +99,25 @@ export function apiItems(report: string): ApiItem[] {
     return n === 1 ? key : `${key}#${String(n)}`
   }
   let depth = 0
+  // The `[` and `(` groups left open by earlier lines of the declaration.
+  let groups = 0
   let decl: ApiItem | undefined
   let split = false
   let last: ApiItem | undefined
-  for (const line of apiLines(report)) {
+  const lines = apiLines(report)
+  for (const [i, line] of lines.entries()) {
     const t = line.trim()
     if (depth === 0 && /^(export|declare)\b/.test(line)) {
       const m = declName.exec(t)
+      const kind = m?.[1] ?? ''
       decl = { key: unique(m?.[2] ?? t), text: t, required: false }
-      split = splitKinds.has(m?.[1] ?? '')
+      split = splitKinds.has(kind) || (kind === 'type' && isObjectAlias(lines, i))
+      groups = 0
       items.push(decl)
       last = decl
-    } else if (depth === 1 && split && decl && isClosing(t)) {
-      // The end of an interface or class body.
-    } else if (depth === 1 && split && decl) {
+    } else if (depth === 1 && groups === 0 && split && decl && isClosing(t)) {
+      // The end of the body of a split declaration.
+    } else if (depth === 1 && groups === 0 && split && decl) {
       const m = memberName.exec(t)
       const name = m ? (m[1] ?? m[2] ?? t) : t
       last = { key: unique(`${decl.key}.${name}`), text: t, required: !m || !m[3] }
@@ -90,6 +126,7 @@ export function apiItems(report: string): ApiItem[] {
       last.text += ` ${t}`
     }
     depth = Math.max(0, depth + braces(t))
+    groups = Math.max(0, groups + brackets(t))
   }
   return items
 }

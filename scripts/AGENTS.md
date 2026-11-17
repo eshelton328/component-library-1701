@@ -31,8 +31,9 @@ Repository scripts that are not part of the package.
   declarations of `src/index.ts` with `tsconfig.api.json` and compares
   them with `api/` through API Extractor (`api-extractor.json`).
 - `check-api-diff.ts` compares two API reports by declaration and member,
-  and finds removed or changed items and new required members. Interface
-  and class members are items; a type alias is one item. The `api-report`
+  and finds removed or changed items and new required members. Members of
+  an interface, a class or a type alias that is one plain object literal
+  are items; any other type alias is one item. The `api-report`
   workflow runs on `pull_request_target`, so GitHub runs the base
   branch's copy of the workflow and of this script, and reads the PR's
   report as data. A change to either takes effect only after it merges.

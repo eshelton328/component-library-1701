@@ -10,6 +10,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The clear icon is fg.subtle, dimmer than the magnifier's fg.muted, as
 // Figma's dim clear icon (T10) and d-099: Figma's #4a5675 fails AA, and
 // fg.subtle is the nearest approved dim colour, allowed on surface.inset.
+// `surface="raised"` is for a field on surface.raised, such as the Run in
+// picker's search in a raised Popover (D3 346:1235): surface.inset is
+// #17213a at 0.7 there, so the field shows #17213a, where fg.subtle is
+// 4.39:1, below WCAG AA (d-055). The placeholder and the clear icon take
+// fg.muted, which surface.raised allows (d-100 rule 2: the nearest AA pass).
 export const searchField = defineSlotRecipe({
   className: 'search-field',
   jsx: ['SearchField'],
@@ -80,6 +85,10 @@ export const searchField = defineSlotRecipe({
       md: {},
       sm: { input: { textStyle: 'bodySm' } },
     },
+    surface: {
+      default: {},
+      raised: { input: { _placeholder: { color: 'fg.muted' } }, clear: { color: 'fg.muted' } },
+    },
   },
-  defaultVariants: { size: 'md', clearSize: '12', textSize: 'md' },
+  defaultVariants: { size: 'md', clearSize: '12', textSize: 'md', surface: 'default' },
 })

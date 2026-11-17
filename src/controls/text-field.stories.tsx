@@ -98,3 +98,36 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(prompt.getBoundingClientRect().height).toBeGreaterThan(before)
   },
 }
+
+const prompt =
+  'Read f-005-the-bridge/increment-1.md and write one Linear ticket per screen in the NCC project, following toolkit/rules/linear.md.'
+
+/** `textSize="sm"`: the text in bodySm, as the Inbox D3 prompt editor draws it (346:1189, Geist 13). */
+function SmallText() {
+  return (
+    <main className={page}>
+      <TextArea label="Suggested prompt" labelHidden textSize="sm" defaultValue={prompt} rows={1} />
+      <TextField label="Name, small text" textSize="sm" defaultValue="Token sync" />
+      <TextArea label="Prompt, default" labelHidden defaultValue={prompt} rows={1} />
+    </main>
+  )
+}
+
+const smallTextPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const font = (name: string) => {
+    const s = getComputedStyle(canvas.getByRole('textbox', { name }))
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  // bodySm is 13/20 on the 4 px grid; the box keeps its padding and the field its height.
+  await expect(font('Suggested prompt')).toEqual(['13px', 20, '400'])
+  await expect(font('Name, small text')).toEqual(['13px', 20, '400'])
+  await expect(canvas.getByRole('textbox', { name: 'Name, small text' }).getBoundingClientRect().height).toBe(32)
+  const s = getComputedStyle(canvas.getByRole('textbox', { name: 'Suggested prompt' }))
+  await expect([s.paddingTop, s.paddingLeft]).toEqual(['8px', '10px'])
+  // The default stays in body.
+  await expect(font('Prompt, default')).toEqual(['14px', 20, '400'])
+}
+
+export const SmallTextDark: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'dark' } }
+export const SmallTextLight: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'light' } }

@@ -32,12 +32,14 @@ export type TextFieldBaseProps = {
   required?: boolean | undefined
   /** The form field name. */
   name?: string | undefined
+  /** The text size: `md` (the default) for `body`, `sm` for `bodySm`, as the Inbox prompt editor draws it. */
+  textSize?: Scalar<TextFieldVariantProps>['textSize']
 }
 
-function Frame({ label, helperText, error, disabled, readOnly, required, size, variant, labelHidden, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
+function Frame({ label, helperText, error, disabled, readOnly, required, size, variant, labelHidden, textSize, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
   const invalid = error !== undefined && error !== ''
   return (
-    <Root size={size} variant={variant} labelHidden={labelHidden} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
+    <Root size={size} variant={variant} labelHidden={labelHidden} textSize={textSize} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
       <Label>
         {label}
         <RequiredIndicator>*</RequiredIndicator>
@@ -64,7 +66,10 @@ export type TextFieldProps = TextFieldBaseProps &
     type?: 'text' | 'email' | 'url' | 'password' | 'tel' | undefined
   }
 
-/** A one-line text input with a label, such as the rename field or a dialog input. */
+/**
+ * A one-line text input with a label, such as the rename field or a dialog input. `size` sets the height;
+ * `textSize="sm"` sets the text in `bodySm`.
+ */
 export function TextField({ type = 'text', ...props }: TextFieldProps) {
   return (
     <Frame {...props}>
@@ -90,7 +95,10 @@ export type TextAreaProps = TextFieldBaseProps & {
   onKeyDown?: ((event: KeyboardEvent<HTMLTextAreaElement>) => void) | undefined
 }
 
-/** A text input of more than one line with a label, such as the notes field or a prompt. */
+/**
+ * A text input of more than one line with a label, such as the notes field or a prompt. `textSize="sm"` sets the
+ * text in `bodySm`, as the Inbox prompt editor does.
+ */
 export function TextArea({ autoresize, rows, onKeyDown, ...props }: TextAreaProps) {
   return (
     <Frame {...props}>

@@ -4,7 +4,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 346:327 (padding 8/4, gap 5, opaque fill, Mono 11 muted) and Artifacts
 // 403:470 and 403:478 (padding 9/5, gap 6, fill at 0.5, Mono 12). Both have
 // a 1 px #24314f border and radius 6. One chip with two sizes; the fill is
-// `surface.inset`, where the inventory merges the meta chips.
+// `surface.inset`, where the inventory merges the meta chips. The Inbox
+// chip's label is Geist Mono 11 (346:331), so `sm` sets it in `monoSm`;
+// `md` keeps `mono` (12).
 export const metaChip = defineSlotRecipe({
   className: 'meta-chip',
   jsx: ['MetaChip'],
@@ -35,7 +37,7 @@ export const metaChip = defineSlotRecipe({
   },
   variants: {
     size: {
-      sm: { root: { px: '8', py: '4' } },
+      sm: { root: { px: '8', py: '4', textStyle: 'monoSm' } },
       md: { root: { px: '10', py: '6' } },
     },
     // Artifacts draws the chip text in fg.default and the age chip in

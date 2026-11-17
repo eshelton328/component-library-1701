@@ -9,6 +9,7 @@ import {
   type KindBadgeVariantProps,
   type MetaChipVariantProps,
   type MetaLineVariantProps,
+  type TagsLineVariantProps,
 } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { TruncatedText } from '../controls/tooltip'
@@ -70,7 +71,7 @@ export type MetaChipProps = Scalar<MetaChipVariantProps> & {
 
 /**
  * A read-only chip of meta, such as the project of a task. `size` is `sm`
- * (Inbox task) or `md` (Artifacts item, the default). `tone` sets the text:
+ * (Inbox task, `monoSm`) or `md` (Artifacts item, `mono`, the default). `tone` sets the text:
  * `default`, `muted` (an age) or `issue` (an issue ID, such as NCC-28).
  */
 export function MetaChip({ label, icon, size, tone }: MetaChipProps) {
@@ -153,13 +154,15 @@ export type TagsLineProps = {
   icon?: ReactNode
   /** The accessible name of the list; "Tags" when not set. */
   label?: string | undefined
+  /** The text size: `md` (the default) for `mono`, `sm` for `monoSm`, as the Inbox detail draws the tags. */
+  size?: Scalar<TagsLineVariantProps>['size']
 }
 
-/** The tags of an item, in mono text with a "·" between them. */
-export function TagsLine({ tags: list, icon, label = 'Tags' }: TagsLineProps) {
+/** The tags of an item, in mono text with a "·" between them. `size="sm"` sets them in `monoSm`, as the Inbox detail does. */
+export function TagsLine({ tags: list, icon, label = 'Tags', size }: TagsLineProps) {
   if (list.length === 0) return null
   return (
-    <TagsRoot aria-label={label}>
+    <TagsRoot aria-label={label} size={size}>
       {list.map((tag, i) => (
         <Tag key={`${String(i)}:${tag}`}>
           {i === 0 && present(icon) ? <TagsIcon aria-hidden="true">{icon}</TagsIcon> : null}

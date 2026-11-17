@@ -1225,7 +1225,7 @@ export default definePreset({
           }
         },
         "bodySm": {
-          "description": "Compact body text: the Inbox detail sections and their suggested prompt, and a MarkdownView with size sm, as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
+          "description": "Compact body text: the Inbox detail sections and their suggested prompt, a MarkdownView with size sm, and a TextField or TextArea with textSize sm (the prompt editor), as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
           "value": {
             "fontFamily": "text.bodySm",
             "fontSize": "text.bodySm",
@@ -1286,7 +1286,7 @@ export default definePreset({
           }
         },
         "labelSm": {
-          "description": "Compact row titles: a ListRow with density compact, as the Inbox list draws them at 13 px. Not for buttons, tabs or chips, which use label.",
+          "description": "Compact titles at 13 px, as Inbox draws them: a ListRow with density compact, and the labels of an OptionList with size sm (the Run in picker and the question cards). Not for buttons, tabs or chips, which use label.",
           "value": {
             "fontFamily": "text.labelSm",
             "fontSize": "text.labelSm",
@@ -1317,7 +1317,7 @@ export default definePreset({
           }
         },
         "monoSm": {
-          "description": "Compact meta lines: the meta line of a ListRow with density compact, as the Inbox list draws it at 11 px. Not for group headers (eyebrow) or other meta (mono).",
+          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, and the mono description of an OptionList with size sm. Not for group headers (eyebrow) or other meta (mono).",
           "value": {
             "fontFamily": "text.monoSm",
             "fontSize": "text.monoSm",

@@ -102,6 +102,7 @@ function Family({ onCopy = () => undefined }: { onCopy?: () => void }) {
           ))}
         </Inline>
         <TagsLine icon={<Glyph />} tags={['global/planning', 'project/ncc-1701/the-bridge']} />
+        <TagsLine label="Small tags" size="sm" icon={<Glyph />} tags={['global/planning']} />
         <span data-testid="tags-empty">
           <TagsLine tags={[]} />
         </span>
@@ -169,7 +170,10 @@ const meta = {
     const smStyle = getComputedStyle(sm)
     await expect([smStyle.paddingTop, smStyle.paddingLeft, smStyle.borderTopLeftRadius, smStyle.borderTopWidth]).toEqual(['4px', '8px', '6px', '1px'])
     await expect([smStyle.backgroundColor, smStyle.borderTopColor, smStyle.color]).toEqual([swatch('inset'), swatch('border'), swatch('muted')])
-    await expect(smStyle.fontSize).toBe('12px')
+    // The Inbox chip's label is Geist Mono 11 (346:331): monoSm, 11/16, so the chip stays 26 tall.
+    await expect([smStyle.fontSize, Math.round(parseFloat(smStyle.lineHeight))]).toEqual(['11px', 16])
+    await expect(box(sm).height).toBe(26)
+    await expect(getComputedStyle(first('chip-md')).fontSize).toBe('12px')
     const smIcon = sm.querySelector('svg')
     const smLabel = sm.querySelector('.meta-chip__label')
     if (smIcon === null || smLabel === null) throw new Error('no chip icon or label')
@@ -211,6 +215,10 @@ const meta = {
     await expect(list.querySelector('.tags-line__separator')).toHaveAttribute('aria-hidden', 'true')
     // Figma draws the tags in #4a5675 (346:343): fg.subtle.
     await expect(getComputedStyle(list).color).toBe(swatch('subtle'))
+    // The default is mono 12; `size="sm"` is Figma's Geist Mono 11 (346:348), monoSm 11/16.
+    await expect(getComputedStyle(list).fontSize).toBe('12px')
+    const small = getComputedStyle(canvas.getByRole('list', { name: 'Small tags' }))
+    await expect([small.fontSize, Math.round(parseFloat(small.lineHeight))]).toEqual(['11px', 16])
     await expect(canvas.getByTestId('tags-empty')).toBeEmptyDOMElement()
   },
 } satisfies Meta<typeof Family>

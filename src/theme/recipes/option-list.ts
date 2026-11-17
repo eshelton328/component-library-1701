@@ -16,7 +16,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 12), and at the end a check on the chosen row or a status pill on another
 // (`trailing`). A row with a trailing element and no check gives the
 // check's space to it, so the pill ends the row. The title is Medium 13 in
-// Figma; it keeps `label` (14), the larger on a tie (d-072). The chosen
+// Figma (346:1248); `size="sm"` draws it in `labelSm` and the mono meta
+// line (346:1251, Geist Mono 11) in `monoSm`, so a row is 50 tall, against
+// 54 at the default size and Figma's 49. The chosen
 // row is filled #14263f (346:1243, `surface.selected`), where the M4 sort
 // sheet's chosen row has no fill, so the fill is `selectedFill`.
 //
@@ -27,7 +29,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // description (4, d-072), items at the top. Figma's outline is cyan 0.6;
 // the token is border.selected (0.5), as the selected chip's is. The
 // unselected card and the gap between cards were not read; they take
-// border.default and 8.
+// border.default and 8. The card title is Medium 13 (346:793, `labelSm`
+// with `size="sm"`) and the description Regular 12 (346:796, `small` at
+// both sizes).
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -111,6 +115,11 @@ export const optionList = defineSlotRecipe({
       false: {},
       true: { item: { '&[data-state=checked]': { bg: 'surface.selected' } } },
     },
+    size: {
+      md: {},
+      sm: { itemText: { textStyle: 'labelSm' } },
+    },
   },
-  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false },
+  compoundVariants: [{ size: 'sm', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } }],
+  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md' },
 })

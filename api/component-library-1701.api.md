@@ -37,6 +37,7 @@ import { ReactNode } from 'react';
 import { Ref } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
+import { TagsLineVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ThumbnailVariantProps } from '../../styled-system/recipes';
 import { ToastVariantProps } from '../../styled-system/recipes';
@@ -827,6 +828,7 @@ export type MarkdownViewProps = {
     children: ReactNode;
     highlight?: MarkdownHighlight | undefined;
     size?: Scalar<MarkdownViewVariantProps>['size'];
+    padding?: Scalar<MarkdownViewVariantProps>['padding'];
 };
 
 // @public
@@ -1008,6 +1010,7 @@ export type OptionListProps = {
     descriptionStyle?: 'text' | 'mono' | undefined;
     variant?: 'list' | 'card' | undefined;
     selectedFill?: boolean | undefined;
+    size?: 'md' | 'sm' | undefined;
 };
 
 // @public
@@ -1353,6 +1356,7 @@ export type TagsLineProps = {
     tags: readonly string[];
     icon?: ReactNode;
     label?: string | undefined;
+    size?: Scalar<TagsLineVariantProps>['size'];
 };
 
 // @public
@@ -1386,6 +1390,7 @@ export type TextFieldBaseProps = {
     readOnly?: boolean | undefined;
     required?: boolean | undefined;
     name?: string | undefined;
+    textSize?: Scalar<TextFieldVariantProps>['textSize'];
 };
 
 // @public (undocumented)

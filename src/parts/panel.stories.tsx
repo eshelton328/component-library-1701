@@ -370,3 +370,30 @@ const resultPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `tone="done"` and `tone="danger"`: the Inbox result card (D7) and removed task card (D21). */
 export const ResultDark: StoryObj<typeof meta> = { render: () => <Results />, globals: { mode: 'dark' }, play: resultPlay }
 export const ResultLight: StoryObj<typeof meta> = { render: () => <Results />, globals: { mode: 'light' }, play: resultPlay }
+
+// `variant="notice"`: the Inbox waiting card (D2 346:772, M5 346:9897), a one-row card padded 10/12 inside its 1 px
+// border, Figma's 55 high with a 34 px row (it was 64 with the section padding).
+function Notice() {
+  return (
+    <main className={page}>
+      <Panel variant="notice" tone="needsYou">
+        <div className={noticeRow}>hono server is waiting</div>
+      </Panel>
+    </main>
+  )
+}
+
+const noticeRow = css({ h: 'control.md', textStyle: 'label' })
+
+const noticePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const card = canvasElement.querySelector('.panel__root')
+  if (!(card instanceof HTMLElement)) throw new Error('no notice card')
+  const s = getComputedStyle(card)
+  await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['10px', '12px', '10px', '12px'])
+  await expect(s.borderTopLeftRadius).toBe('12px')
+  // 1 + 10 + 32 + 10 + 1: the card is as tall as its row, not stretched.
+  await expect(Math.round(card.getBoundingClientRect().height)).toBe(54)
+}
+
+export const NoticeDark: StoryObj<typeof meta> = { render: () => <Notice />, globals: { mode: 'dark' }, play: noticePlay }
+export const NoticeLight: StoryObj<typeof meta> = { render: () => <Notice />, globals: { mode: 'light' }, play: noticePlay }

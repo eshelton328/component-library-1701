@@ -168,11 +168,15 @@ const meta = {
     // Meta chip: radius 6, a 1 px border.default border, surface.inset fill.
     const sm = first('chip-sm')
     const smStyle = getComputedStyle(sm)
-    await expect([smStyle.paddingTop, smStyle.paddingLeft, smStyle.borderTopLeftRadius, smStyle.borderTopWidth]).toEqual(['4px', '8px', '6px', '1px'])
+    await expect([smStyle.paddingTop, smStyle.paddingLeft, smStyle.borderTopLeftRadius, smStyle.borderTopWidth]).toEqual(['0px', '8px', '6px', '1px'])
     await expect([smStyle.backgroundColor, smStyle.borderTopColor, smStyle.color]).toEqual([swatch('inset'), swatch('border'), swatch('muted')])
     // The Inbox chip's label is Geist Mono 11 (346:331): monoSm, 11/16, so the chip stays 26 tall.
     await expect([smStyle.fontSize, Math.round(parseFloat(smStyle.lineHeight))]).toEqual(['11px', 16])
-    await expect(box(sm).height).toBe(26)
+    // Figma's 24 (M5 346:9875): control.xs, with the 16 px label line centred.
+    await expect(box(sm).height).toBe(24)
+    const smText = sm.querySelector('.meta-chip__label')
+    if (smText === null) throw new Error('no chip label')
+    await expect(Math.round(box(smText).top - box(sm).top)).toBe(4)
     await expect(getComputedStyle(first('chip-md')).fontSize).toBe('12px')
     const smIcon = sm.querySelector('svg')
     const smLabel = sm.querySelector('.meta-chip__label')

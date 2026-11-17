@@ -34,7 +34,21 @@ export const scrollFrame = defineSlotRecipe({
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
-    footer: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', maxH: '30%', overflowY: 'auto', overscrollBehavior: 'contain' },
+    footer: {
+      display: 'flex',
+      flexDirection: 'column',
+      flexShrink: '0',
+      minW: '0',
+      maxH: '30%',
+      overflowY: 'auto',
+      overscrollBehavior: 'contain',
+      // A footer that scrolls clips what reaches past its box. Its 4 px of padding, taken back by the margin, keep a
+      // child's focus ring (2 px, 2 out) inside it, and the content stays where it was.
+      p: '4',
+      m: '-4',
+      // As in the body: a child that clips (a Card) keeps its height, so the footer scrolls instead of cutting it.
+      '& > *': { flexShrink: '0' },
+    },
   },
   variants: {
     gap: {

@@ -61,6 +61,13 @@ const meta = {
     await expect(back.getBoundingClientRect().top).toBe(top)
     await expect(inside(back)).toBe(true)
     await expect(inside(reply)).toBe(true)
+    // The footer scrolls past its cap, so it clips: it leaves 4 px around the reply button for its focus ring.
+    const footerBox = reply.parentElement?.getBoundingClientRect()
+    if (footerBox === undefined) throw new Error('no footer')
+    const button = reply.getBoundingClientRect()
+    await expect(footerBox.top).toBeLessThanOrEqual(button.top - 4)
+    await expect(footerBox.left).toBeLessThanOrEqual(button.left - 4)
+    await expect(footerBox.bottom).toBeGreaterThanOrEqual(button.bottom + 4)
     // The last line is in view above the reply box, the first has scrolled out.
     const last = canvas.getByText('Message 30').getBoundingClientRect()
     await expect(last.bottom).toBeLessThanOrEqual(reply.getBoundingClientRect().top)
@@ -71,6 +78,8 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 
+// The draft clips, as a Card does: in the footer it keeps its height and the footer scrolls.
+const clip = css({ overflow: 'hidden' })
 const draft = Array.from({ length: 30 }, (_, i) => `Draft line ${String(i + 1)}`).join('\n')
 
 function LongFooter() {
@@ -81,7 +90,7 @@ function LongFooter() {
           gap="12"
           header={<Button size="sm">Back to the inbox</Button>}
           footer={
-            <div data-testid="draft">
+            <div data-testid="draft" className={clip}>
               <TextArea label="Reply" labelHidden rows={30} defaultValue={draft} />
             </div>
           }
@@ -114,6 +123,7 @@ export const LongFooterDark: StoryObj<typeof meta> = {
     const frame = root.getBoundingClientRect().height
     await expect(footer.getBoundingClientRect().height).toBeLessThanOrEqual(frame * 0.3 + 1)
     await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
+    await expect(draft.clientHeight).toBe(draft.scrollHeight)
     // The body keeps more room than the footer: the header, the two gaps and the capped footer leave it the rest.
     await expect(body.getBoundingClientRect().height).toBeGreaterThan(footer.getBoundingClientRect().height)
     // The end of the draft can be reached by scrolling the footer.

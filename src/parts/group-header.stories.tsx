@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
-import { MoreIcon } from '../foundations/icons'
+import { FolderIcon, MoreIcon } from '../foundations/icons'
 import { GroupHeader } from './group-header'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -246,3 +246,50 @@ export const LongLabel: StoryObj<typeof meta> = {
     await expectCutText(staticLabel, 'static-skill-eval-round-with-held-out-cases-and-a-trigger-set')
   },
 }
+
+const mutedSwatch = css({ color: 'fg.muted' })
+
+// The project headings of Inbox D11 (346:4606): with the sort by project, each group has a heading per project.
+function ProjectHeadings() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <GroupHeader label="Needs you" count={2} dot="needsYou" />
+        <GroupHeader variant="project" label="ncc-1701" leading={<FolderIcon />} />
+        <div className={row}>Answer the client question</div>
+        <GroupHeader variant="project" label="omni-brain" leading={<FolderIcon />} />
+        <div className={row}>Review the drift check</div>
+      </div>
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+    </main>
+  )
+}
+
+// Padding 8/0/2/10, gap 6, a 12 px folder, and the name in Geist Mono 11 in #8a97b8, as written (346:4606, 346:4610).
+const projectPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const name = canvas.getByText('ncc-1701')
+  const header = name.closest('.group-header__root')
+  if (!(header instanceof HTMLElement)) throw new Error('no project header')
+  const h = getComputedStyle(header)
+  await expect([h.paddingTop, h.paddingBottom, h.paddingLeft, h.columnGap]).toEqual(['8px', '2px', '10px', '6px'])
+  // 8 + the 16 px monoSm line + 2; Figma's 14 px line makes it 24.
+  await expect(header.getBoundingClientRect().height).toBe(26)
+  const n = getComputedStyle(name)
+  await expect(n.fontFamily).toMatch(/Mono/)
+  await expect(n.fontSize).toBe('11px')
+  await expect(n.textTransform).toBe('none')
+  await expect(n.letterSpacing).not.toBe('0.44px')
+  const swatch = canvasElement.querySelector('[data-swatch="muted"]')
+  if (swatch === null) throw new Error('no swatch')
+  await expect(n.color).toBe(getComputedStyle(swatch).color)
+  const folder = header.querySelector('svg')
+  if (folder === null) throw new Error('no folder')
+  await expect([folder.getBoundingClientRect().width, folder.getBoundingClientRect().height]).toEqual([12, 12])
+  // The group header above keeps its capitals.
+  await expect(getComputedStyle(canvas.getByText('Needs you')).textTransform).toBe('uppercase')
+}
+
+/** `variant="project"`: a project heading inside a group (Inbox D11). */
+export const ProjectDark: StoryObj<typeof meta> = { render: () => <ProjectHeadings />, play: projectPlay, globals: { mode: 'dark' } }
+export const ProjectLight: StoryObj<typeof meta> = { render: () => <ProjectHeadings />, play: projectPlay, globals: { mode: 'light' } }

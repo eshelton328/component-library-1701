@@ -8,6 +8,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The grip, chevrons and more icon take 12 px, on the 4 px icon scale.
 // The chevrons are drawn in #8a97b8 (fg.muted), the count in #4a5675 (fg.subtle).
 // The inventory merges every group header label into `eyebrow`.
+// `project` is the project heading inside an Inbox group when the list is
+// sorted by project (D11 346:4606): padding 8/0/2/10, gap 6, a 12 px folder
+// in the leading slot and the name as written in Geist Mono 11 #8a97b8
+// (`monoSm`, fg.muted). It is 26 tall; Figma's 14 px line makes it 24.
 export const groupHeader = defineSlotRecipe({
   className: 'group-header',
   jsx: ['GroupHeader'],
@@ -62,10 +66,11 @@ export const groupHeader = defineSlotRecipe({
     },
   },
   variants: {
-    // `list` is the Inbox list header; `sidebar` the Workbench sidebar one.
+    // `list` is the Inbox list header; `sidebar` the Workbench sidebar one; `project` a project heading in a group.
     variant: {
       list: { root: { pt: '16', pr: '4' } },
       sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' } },
+      project: { root: { pt: '8', pb: '2', pl: '10', textStyle: 'monoSm' }, label: { textTransform: 'none' } },
     },
     // The dot takes a status colour: amber on Inbox "Needs you" (346:194) and
     // Workbench (105:635), cyan on Inbox "Next steps" (346:265).

@@ -8,7 +8,10 @@ const Card = withContext('div', 'card')
 const Hint = withContext('span', 'hint')
 
 export type DragPreviewProps = {
-  /** The copy of the dragged item, such as its `ListRow`. It is hidden from assistive technology. */
+  /**
+   * The copy of the dragged item, such as its `ListRow`. It is inert: hidden from assistive technology, and no
+   * button or tooltip trigger in it takes the focus or a click.
+   */
   children: ReactNode
   /** Turn the copy 3° clockwise, as a chat dragged from the Workbench sidebar is (D2 105:960). Straight when not set. */
   tilt?: boolean | undefined
@@ -26,7 +29,9 @@ export type DragPreviewProps = {
 export function DragPreview({ children, tilt, hint }: DragPreviewProps) {
   return (
     <Root tilt={tilt}>
-      <Card aria-hidden="true">{children}</Card>
+      <Card aria-hidden="true" inert>
+        {children}
+      </Card>
       {hint === undefined || hint === null || hint === '' ? null : <Hint>{hint}</Hint>}
     </Root>
   )

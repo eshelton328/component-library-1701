@@ -15,7 +15,9 @@ const swatches = {
   lift: css({ boxShadow: 'lift' }),
 }
 
-const row = (title: string) => <ListRow variant="sidebar" density="compact" title={title} meta="GPT-5.5" leading={<KindMark kind="codex" size="16" />} />
+const row = (title: string) => (
+  <ListRow variant="sidebar" density="compact" title={title} meta="GPT-5.5" leading={<KindMark kind="codex" size="16" />} onSelect={() => undefined} />
+)
 
 function Previews() {
   return (
@@ -71,6 +73,15 @@ const meta = {
     // offsetTop ignores the turn, so this is the gap between the straight boxes.
     await expect(hint.offsetTop - card('tilted').offsetTop - card('tilted').offsetHeight).toBe(4)
     await expect(canvas.getByTestId('straight').querySelector('.drag-preview__hint')).toBeNull()
+    // The copy is inert: its row's title button, and anything else in it, cannot take the focus.
+    for (const id of ['tilted', 'straight']) {
+      const inside = card(id).querySelectorAll('button, [href], input, [tabindex]')
+      await expect(inside.length).toBeGreaterThan(0)
+      for (const el of inside) {
+        if (el instanceof HTMLElement) el.focus()
+        await expect(card(id).contains(document.activeElement)).toBe(false)
+      }
+    }
   },
 } satisfies Meta<typeof Previews>
 export default meta

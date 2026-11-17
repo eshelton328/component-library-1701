@@ -65,13 +65,13 @@ const meta = {
     const turn = new DOMMatrix(getComputedStyle(card('tilted')).transform)
     await expect(Math.round((Math.atan2(turn.b, turn.a) * 180) / Math.PI)).toBe(3)
     await expect(getComputedStyle(card('straight')).transform).toBe('none')
-    // The hint: a 24 px pill of pill text (11/16) in fg.accent on the overlay fill, outlined in border.active, 4 under the copy.
+    // The hint: a 24 px pill of pill text (11/16) in fg.accent on the overlay fill, outlined in border.active, 4 under the turned copy.
     const hint = within(canvas.getByTestId('tilted')).getByText('Drop to move drift check into the-bridge')
     const pill = getComputedStyle(hint)
     await expect([pill.fontSize, Math.round(parseFloat(pill.lineHeight)), pill.fontWeight, pill.color]).toEqual(['11px', 16, '500', swatch('accent')])
     await expect([pill.backgroundColor, pill.borderTopColor, hint.getBoundingClientRect().height]).toEqual([swatch('overlay'), swatch('active'), 24])
-    // offsetTop ignores the turn, so this is the gap between the straight boxes.
-    await expect(hint.offsetTop - card('tilted').offsetTop - card('tilted').offsetHeight).toBe(4)
+    // The client rects hold the turn: 4 from the turned copy's bounding box to the pill, so its low corner never meets the pill.
+    await expect(Math.round(hint.getBoundingClientRect().top - card('tilted').getBoundingClientRect().bottom)).toBe(4)
     await expect(canvas.getByTestId('straight').querySelector('.drag-preview__hint')).toBeNull()
     // The copy is inert: its row's title button, and anything else in it, cannot take the focus.
     for (const id of ['tilted', 'straight']) {

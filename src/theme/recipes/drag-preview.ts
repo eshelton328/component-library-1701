@@ -10,6 +10,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // with a border.active outline, 24 tall (`control.xs`), padded 12 at the
 // sides (Figma about 11). Neither takes the pointer, so the drop reaches
 // the target under them.
+// The hint sits 4 (spacing 4) under the copy's box as drawn: under a
+// turned copy, under its turned bounding box, so the copy's low corner
+// never meets the pill. The turn adds half of width × sin 3° under the
+// straight box; a percentage margin is a share of the width the copy
+// fills, so `tilt` adds 50% × sin 3° to the hint's top margin. (The
+// height's share, h × (1 − cos 3°) / 2, is under 0.1 px.) Figma draws
+// the hint 2.5 under the straight copy (105:960 turned box 351 to 418.1,
+// straight 358.5 to 410.5; 105:976 from 413), so the pill crosses the
+// turned box and touches the copy's corner; this keeps the 4 of the
+// straight copy instead.
 export const dragPreview = defineSlotRecipe({
   className: 'drag-preview',
   jsx: ['DragPreview'],
@@ -43,7 +53,7 @@ export const dragPreview = defineSlotRecipe({
   variants: {
     tilt: {
       false: {},
-      true: { card: { transform: 'rotate(3deg)' } },
+      true: { card: { transform: 'rotate(3deg)' }, hint: { mt: 'calc(50% * sin(3deg))' } },
     },
   },
   defaultVariants: { tilt: false },

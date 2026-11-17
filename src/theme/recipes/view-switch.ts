@@ -16,6 +16,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // nav rail's selected item. The items have no border, so each is 10 + icon +
 // 6 + label + 10 wide, as Figma's (65 for List). `default` keeps the
 // border.selected border and the fg.default label.
+//
+// `iconOnly` is the Artifacts Grid or List switch (402:15419, D4 403:7820):
+// 68 x 32 with two 30 x 26 items (402:15421, 402:15424) that draw only a 15
+// px icon, which takes icon.16 (d-100). Each item is 1 + 6 + 16 + 6 + 1
+// wide: a transparent 1 px border and 6 px sides, so `md` gives Figma's 30
+// and the switch Figma's 68 (1 + 2 + 30 + 2 + 30 + 2 + 1). With `tone`
+// `accent` the item keeps that border, transparent also when selected.
+// Every size draws 16 px icons (`sm` 30 x 22 items, `lg` 30 x 30).
 export const viewSwitch = defineSlotRecipe({
   className: 'view-switch',
   jsx: ['ViewSwitch'],
@@ -70,6 +78,14 @@ export const viewSwitch = defineSlotRecipe({
       default: {},
       accent: { item: { borderWidth: '0', _checked: { color: 'fg.accent' } } },
     },
+    iconOnly: {
+      // The icon sits in a span, so this selector beats the size's own important icon size at every size.
+      true: { item: { px: '6', gap: '0', '& span svg': { width: 'icon.16!', height: 'icon.16!' } } },
+      false: {},
+    },
   },
-  defaultVariants: { size: 'md', tone: 'default' },
+  compoundVariants: [
+    { iconOnly: true, tone: 'accent', css: { item: { borderWidth: 'default', _checked: { borderColor: 'transparent' } } } },
+  ],
+  defaultVariants: { size: 'md', tone: 'default', iconOnly: false },
 })

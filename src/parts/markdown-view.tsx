@@ -1,6 +1,7 @@
 import { Children, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 import { styled } from '../../styled-system/jsx'
-import { markdownView } from '../../styled-system/recipes'
+import { markdownView, type MarkdownViewVariantProps } from '../../styled-system/recipes'
+import type { Scalar } from '../controls/scalar'
 import { codePieces, type CodeSegment } from './code-lines'
 
 const Root = styled('div', markdownView)
@@ -32,6 +33,8 @@ export type MarkdownViewProps = {
    * not parse code; the caller's highlighter splits it.
    */
   highlight?: MarkdownHighlight | undefined
+  /** The text size: `md` (the default) for `body` and `label`, `sm` for `bodySm` and `labelSm`, as the Inbox detail draws them. */
+  size?: Scalar<MarkdownViewVariantProps>['size']
 }
 
 /**
@@ -39,10 +42,12 @@ export type MarkdownViewProps = {
  * preview. The blocks are 10 apart: a title for `h1`, a label for the
  * other headings, muted body text, lists with their markers inside the
  * text column, and code in the `code` style. Pass `highlight` to colour
- * the code in fenced blocks.
+ * the code in fenced blocks. `size="sm"` draws the body text in `bodySm`
+ * and the subheadings in `labelSm`, as the Inbox detail does; the default
+ * (`md`) keeps `body` and `label`.
  */
-export function MarkdownView({ children, highlight }: MarkdownViewProps) {
-  return <Root>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
+export function MarkdownView({ children, highlight, size }: MarkdownViewProps) {
+  return <Root size={size}>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
 }
 
 type WithChildren = { children?: ReactNode }

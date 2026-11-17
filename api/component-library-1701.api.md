@@ -25,6 +25,7 @@ import { LayoutInlineVariantProps } from '../../styled-system/recipes';
 import { LayoutStackVariantProps } from '../../styled-system/recipes';
 import { ListRowVariantProps } from '../../styled-system/recipes';
 import { LogoVariantProps } from '../../styled-system/recipes';
+import { MarkdownViewVariantProps } from '../../styled-system/recipes';
 import { MessageVariantProps } from '../../styled-system/recipes';
 import { MetaChipVariantProps } from '../../styled-system/recipes';
 import { MetaLineVariantProps } from '../../styled-system/recipes';
@@ -815,6 +816,7 @@ export function MarkdownView(input: MarkdownViewProps): JSX.Element;
 export type MarkdownViewProps = {
     children: ReactNode;
     highlight?: MarkdownHighlight | undefined;
+    size?: Scalar<MarkdownViewVariantProps>['size'];
 };
 
 // @public

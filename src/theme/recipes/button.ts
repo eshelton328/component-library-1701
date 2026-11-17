@@ -2,7 +2,8 @@ import { defineRecipe } from '@pandacss/dev'
 
 // The button of every page. The design inventory found 8 variants drawn
 // with 8 padding sets and three label sizes; this recipe merges them into
-// one label style, the four control heights and the variants below. The
+// the `label` style (with `textSize` for the 13 px labels of Inbox), the four
+// control heights and the variants below. The
 // discuss toggle and the text link with a chevron come later.
 export const button = defineRecipe({
   className: 'button',
@@ -29,7 +30,9 @@ export const button = defineRecipe({
     // The button of an open menu (aria-expanded). A variant with its own
     // border sets this again, because the variant's border wins over base.
     _expanded: { borderColor: 'border.active' },
-    _disabled: { opacity: 'disabled', cursor: 'not-allowed' },
+    // Each variant draws its own disabled look: most fade the whole button
+    // (opacity.disabled), and secondary mutes only its label.
+    _disabled: { cursor: 'not-allowed' },
     // A toggle that is on (aria-pressed), such as Sort or Filter while a sort or
     // filter applies: Inbox D13 359:735, M15 346:12154, Artifacts D3 403:6453.
     // Fill #14263f (surface.selected), 1 px rgba(94,225,255,0.7)
@@ -47,13 +50,17 @@ export const button = defineRecipe({
   },
   variants: {
     variant: {
-      primary: { bg: 'accent.default', color: 'fg.onAccent' },
+      primary: { bg: 'accent.default', color: 'fg.onAccent', _disabled: { opacity: 'disabled' } },
+      // A disabled secondary button keeps its fill and its border.default
+      // border and draws its label and icon in #8a97b8 (fg.muted), with no
+      // fade: Reset in Inbox M2 346:9287, T19 402:11597 and D16.
       secondary: {
         bg: 'surface.raised',
         color: 'fg.default',
         borderColor: 'border.default',
         _expanded: { borderColor: 'border.active' },
         _pressed: { bg: 'surface.selected', borderColor: 'border.active' },
+        _disabled: { color: 'fg.muted' },
       },
       // Deny in an approval row (Inbox D1 346:213): the secondary box
       // (#17213a surface.raised, 1 px #24314f border.default) with a #ff6b80
@@ -63,10 +70,17 @@ export const button = defineRecipe({
         color: 'status.danger.fg',
         borderColor: 'border.default',
         _expanded: { borderColor: 'border.active' },
+        _disabled: { opacity: 'disabled' },
       },
-      danger: { bg: 'status.danger.fg', color: 'fg.onAccent' },
-      dangerSoft: { bg: 'status.danger.bg', color: 'status.danger.fg', borderColor: 'status.danger.border', _expanded: { borderColor: 'border.active' } },
-      dangerText: { color: 'status.danger.fg' },
+      danger: { bg: 'status.danger.fg', color: 'fg.onAccent', _disabled: { opacity: 'disabled' } },
+      dangerSoft: {
+        bg: 'status.danger.bg',
+        color: 'status.danger.fg',
+        borderColor: 'status.danger.border',
+        _expanded: { borderColor: 'border.active' },
+        _disabled: { opacity: 'disabled' },
+      },
+      dangerText: { color: 'status.danger.fg', _disabled: { opacity: 'disabled' } },
       // The action in a sheet header, such as Done, Clear, Cancel or Add:
       // Inbox T8 346:7178 (Geist Medium 15), Inbox M7 346:10490, Artifacts M7
       // 408:707 (Regular 14) and 408:711 (SemiBold 15), all #5ee1ff (fg.accent)
@@ -79,7 +93,7 @@ export const button = defineRecipe({
         color: 'fg.accent',
         textStyle: 'labelLg',
         _hover: { bg: 'accent.faint' },
-        _disabled: { _hover: { bg: 'transparent' } },
+        _disabled: { opacity: 'disabled', _hover: { bg: 'transparent' } },
       },
     },
     size: {
@@ -87,6 +101,14 @@ export const button = defineRecipe({
       md: { h: 'control.md', px: '12' },
       lg: { h: 'control.lg', px: '16' },
       xl: { h: 'control.xl', px: '20' },
+    },
+    // The label's text style. `md` keeps `label` (Medium 14/20), or the
+    // `labelLg` of the text variant. `sm` sets `labelSm` (Medium 13/16) on every
+    // variant, as Inbox draws Newest and Filter (403:1663, 403:1671) and Keep it
+    // (403:1884). The size variant keeps the height and padding.
+    textSize: {
+      md: {},
+      sm: { textStyle: 'labelSm' },
     },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
@@ -102,5 +124,5 @@ export const button = defineRecipe({
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', iconOnly: false },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', iconOnly: false },
 })

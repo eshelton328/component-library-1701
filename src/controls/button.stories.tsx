@@ -278,3 +278,88 @@ const secondaryDangerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElemen
 
 export const SecondaryDangerDark: StoryObj<typeof meta> = { render: () => <Approval />, globals: { mode: 'dark' }, play: secondaryDangerPlay }
 export const SecondaryDangerLight: StoryObj<typeof meta> = { render: () => <Approval />, globals: { mode: 'light' }, play: secondaryDangerPlay }
+
+// The 13 px labels of Inbox: Newest and Filter (403:1663, 403:1671) and Keep it (403:1884), Geist Medium 13.
+function SmallLabels() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button textSize="sm">
+            <GridIcon size="16" />
+            Filter
+          </Button>
+          <Button textSize="sm" variant="primary">
+            Keep it
+          </Button>
+          <Button>Default</Button>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+// `textSize="sm"` sets labelSm (Medium 13/16) and keeps the height of `size`; the default stays label (Medium 14/20).
+const smallLabelPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const filter = canvas.getByRole('button', { name: 'Filter' })
+  const keep = canvas.getByRole('button', { name: 'Keep it' })
+  const plain = canvas.getByRole('button', { name: 'Default' })
+  const f = getComputedStyle(filter)
+  const d = getComputedStyle(plain)
+  const type = (s: CSSStyleDeclaration) => [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  await expect(type(f)).toEqual(['13px', 16, '500'])
+  await expect(f.fontFamily).toBe(d.fontFamily)
+  await expect(getComputedStyle(keep).fontSize).toBe('13px')
+  await expect(type(d)).toEqual(['14px', 20, '500'])
+  // The height and padding stay those of size md: 32 px (control.md), 12 px each side.
+  await expect([filter.getBoundingClientRect().height, plain.getBoundingClientRect().height]).toEqual([32, 32])
+  await expect(f.paddingLeft).toBe(d.paddingLeft)
+}
+
+export const SmallLabelDark: StoryObj<typeof meta> = { render: () => <SmallLabels />, globals: { mode: 'dark' }, play: smallLabelPlay }
+export const SmallLabelLight: StoryObj<typeof meta> = { render: () => <SmallLabels />, globals: { mode: 'light' }, play: smallLabelPlay }
+
+// A disabled Reset (Inbox M2 346:9287, T19 402:11597, D16): the secondary box and border, the label and icon in fg.muted.
+function DisabledButtons() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button size="sm" disabled>
+            <GridIcon size="16" />
+            Reset
+          </Button>
+          <Button size="sm">Edit</Button>
+          <Button size="sm" variant="primary" disabled>
+            Start
+          </Button>
+        </div>
+      </div>
+      <span hidden data-swatch="muted" className={css({ color: 'fg.muted' })} />
+    </main>
+  )
+}
+
+const disabledPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const muted = getComputedStyle(canvasElement.querySelector('[data-swatch="muted"]') ?? canvasElement).color
+  const reset = canvas.getByRole('button', { name: 'Reset' })
+  const r = getComputedStyle(reset)
+  const edit = getComputedStyle(canvas.getByRole('button', { name: 'Edit' }))
+  await expect(reset).toBeDisabled()
+  // No fade: the fill and the border.default border stay as an enabled secondary button draws them.
+  await expect(r.opacity).toBe('1')
+  await expect([r.backgroundColor, r.borderTopColor, r.borderTopWidth]).toEqual([edit.backgroundColor, edit.borderTopColor, '1px'])
+  // The label and the icon are fg.muted; an enabled one keeps fg.default.
+  await expect(r.color).toBe(muted)
+  await expect(edit.color).not.toBe(muted)
+  const icon = reset.querySelector('svg')
+  if (icon === null) throw new Error('no icon')
+  await expect(getComputedStyle(icon).color).toBe(muted)
+  // The other variants still fade the whole button (opacity.disabled).
+  await expect(getComputedStyle(canvas.getByRole('button', { name: 'Start' })).opacity).toBe('0.45')
+}
+
+export const DisabledDark: StoryObj<typeof meta> = { render: () => <DisabledButtons />, globals: { mode: 'dark' }, play: disabledPlay }
+export const DisabledLight: StoryObj<typeof meta> = { render: () => <DisabledButtons />, globals: { mode: 'light' }, play: disabledPlay }

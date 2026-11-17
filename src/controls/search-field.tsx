@@ -34,6 +34,9 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
  * Escape empty the field and keep the focus in it. `size` sets the height;
  * `textSize` the text and placeholder: `md` (the default) in `body` (14/20),
  * `sm` in `bodySm` (13/20), as the Inbox search fields draw them.
+ * `surface` names what lies under the field: `raised` (on `surface.raised`,
+ * such as a raised `Popover`) draws the placeholder and the clear icon in
+ * `fg.muted`, because `fg.subtle` fails WCAG AA there.
  */
 export function SearchField({
   label,
@@ -48,6 +51,7 @@ export function SearchField({
   size,
   clearSize,
   textSize,
+  surface,
 }: SearchFieldProps) {
   const [own, setOwn] = useState(defaultValue)
   const input = useRef<HTMLInputElement>(null)
@@ -64,7 +68,7 @@ export function SearchField({
     }
   }
   return (
-    <Root size={size} clearSize={clearSize} textSize={textSize} disabled={disabled}>
+    <Root size={size} clearSize={clearSize} textSize={textSize} surface={surface} disabled={disabled}>
       {icon === undefined ? null : <Icon aria-hidden="true">{icon}</Icon>}
       <Input
         ref={input}

@@ -201,3 +201,65 @@ const smallTextPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 /** `textSize="sm"`: the text and placeholder in `bodySm` (13/20), as the Inbox search fields draw them. */
 export const SmallTextDark: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'dark' } }
 export const SmallTextLight: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'light' } }
+
+// `surface="raised"`: on surface.raised (a raised Popover, such as the Run in picker, D3 346:1235) the placeholder and
+// the clear icon are fg.muted, because fg.subtle is 4.39:1 there; the default keeps fg.subtle.
+const raisedBox = css({ bg: 'surface.raised', p: '16', borderRadius: 'xl', display: 'grid', gap: '16', mb: '16' })
+const swatches = { muted: css({ color: 'fg.muted' }), subtle: css({ color: 'fg.subtle' }), raised: css({ color: 'surface.raised' }) }
+
+function Surfaces() {
+  return (
+    <main className={page}>
+      <div className={raisedBox}>
+        <SearchField label="Raised, empty" placeholder="Search workspaces and chats" surface="raised" icon={<Magnifier />} />
+        <SearchField label="Raised, with text" defaultValue="sync" surface="raised" icon={<Magnifier />} />
+      </div>
+      {/* The default is for a field on the page, where fg.subtle passes. */}
+      <div className={column}>
+        <SearchField label="Default, empty" placeholder="Search" icon={<Magnifier />} />
+        <SearchField label="Default, with text" defaultValue="sync" icon={<Magnifier />} />
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+/** The WCAG contrast ratio of two `rgb()` colours. */
+function contrast(a: string, b: string): number {
+  const lum = (c: string) => {
+    const [r = 0, g = 0, bl = 0] = (c.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number)
+    const lin = (v: number) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4)
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(bl)
+  }
+  const [hi = 0, lo = 0] = [lum(a), lum(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+const surfacePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const placeholder = (name: string) => getComputedStyle(canvas.getByRole('searchbox', { name }), '::placeholder').color
+  const clear = (name: string) => {
+    const button = canvas.getByRole('searchbox', { name }).parentElement?.querySelector('button')
+    if (button === null || button === undefined) throw new Error(`no clear button in ${name}`)
+    return getComputedStyle(button).color
+  }
+  await expect(placeholder('Raised, empty')).toBe(swatch('muted'))
+  await expect(clear('Raised, with text')).toBe(swatch('muted'))
+  await expect(contrast(placeholder('Raised, empty'), swatch('raised'))).toBeGreaterThanOrEqual(4.5)
+  await expect(contrast(clear('Raised, with text'), swatch('raised'))).toBeGreaterThanOrEqual(3)
+  // The default stays fg.subtle, for surface.inset on the page.
+  await expect(placeholder('Default, empty')).toBe(swatch('subtle'))
+  await expect(clear('Default, with text')).toBe(swatch('subtle'))
+}
+
+export const SurfaceDark: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'dark' }, play: surfacePlay }
+export const SurfaceLight: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'light' }, play: surfacePlay }

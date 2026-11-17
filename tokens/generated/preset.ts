@@ -23,7 +23,7 @@ export default definePreset({
             },
             "xl": {
               "value": "44px",
-              "description": "Sheet rows and full-width phone buttons."
+              "description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303)."
             }
           },
           "grabber": {
@@ -77,6 +77,10 @@ export default definePreset({
               "value": "540px",
               "description": "Width of the New chat dialog."
             },
+            "dialogWide": {
+              "value": "720px",
+              "description": "Width of a dialog that shows a long text to read, such as the Inbox suggested prompt (D8 346:3543). Not for a confirm dialog or a form."
+            },
             "listPane": {
               "value": "420px",
               "description": "Width of a list pane: Inbox, Artifacts and Toolkit."
@@ -100,6 +104,10 @@ export default definePreset({
             "popoverSm": {
               "value": "240px",
               "description": "Width of a small menu."
+            },
+            "popoverSort": {
+              "value": "280px",
+              "description": "Width of a menu whose choices have a description line, such as the Inbox Sort menu (D9 346:4000). Not for a popover of controls, which takes popover (320)."
             },
             "rail": {
               "value": "64px",

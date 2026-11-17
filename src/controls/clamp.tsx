@@ -12,7 +12,11 @@ export type ClampProps = {
   children: ReactNode
   /** How many lines show before the text is cut; 4 when not set. */
   lines?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | undefined
-  /** Whether a cut text fades out at its end instead of ending in an ellipsis. A text that fits does not fade. */
+  /**
+   * How a text longer than its lines is cut. `false` (the default) cuts it with line-clamp, so the last
+   * line ends in an ellipsis. `true` cuts it at the height of its lines, mid-sentence and with no
+   * ellipsis, and fades the last 40 px out, as Figma draws the Inbox prompt. A text that fits does not fade.
+   */
   fade?: boolean | undefined
   /** Called with `true` when the text is longer than the lines, and `false` when it fits, such as to show a "Read the whole prompt" link. */
   onCutChange?: ((cut: boolean) => void) | undefined
@@ -20,7 +24,7 @@ export type ClampProps = {
 
 /**
  * Shows the first `lines` lines of a text and cuts the rest, such as a
- * long prompt in the Inbox task. With `fade` the end fades out. It does not
+ * long prompt in the Inbox task. With `fade` the end fades out with no ellipsis. It does not
  * open the rest; the caller shows a link or button that does.
  */
 export function Clamp({ children, lines = 4, fade = false, onCutChange }: ClampProps) {

@@ -65,6 +65,10 @@ export default definePreset({
             }
           },
           "shell": {
+            "detail": {
+              "value": "748px",
+              "description": "Most content width of a detail column, such as the Inbox task (D1 346:306). Use it through Container size detail; not for a pane or a dialog."
+            },
             "dialog": {
               "value": "440px",
               "description": "Width of a confirm dialog."
@@ -81,9 +85,17 @@ export default definePreset({
               "value": "320px",
               "description": "Width of a filter or snooze popover."
             },
+            "popoverFilter": {
+              "value": "300px",
+              "description": "Width of the Inbox Filter menu (D4 346:1737). Other filter and snooze popovers take popover (320)."
+            },
             "popoverLg": {
               "value": "360px",
               "description": "Width of the skill picker."
+            },
+            "popoverPicker": {
+              "value": "380px",
+              "description": "Width of the Run in picker (Inbox D3 346:1234). Not for the Workbench side chat, which takes sidePane."
             },
             "popoverSm": {
               "value": "240px",

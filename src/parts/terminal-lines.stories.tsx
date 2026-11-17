@@ -92,3 +92,23 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// A blank line in the output keeps its height: three lines, the middle one empty.
+function Blank() {
+  return (
+    <main className={pane}>
+      <TerminalLines label="shell" lines={[{ text: 'first' }, { text: '' }, { text: 'third' }]} />
+    </main>
+  )
+}
+
+const blankPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const log = within(canvasElement).getByRole('log', { name: 'shell' })
+  const first = within(log).getByText('first')
+  const third = within(log).getByText('third')
+  // Two lines of 16 and two gaps of 4: the third line starts 40 under the first.
+  await expect(Math.round(third.getBoundingClientRect().top - first.getBoundingClientRect().top)).toBe(40)
+}
+
+export const BlankLineDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Blank />, play: blankPlay }
+export const BlankLineLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Blank />, play: blankPlay }

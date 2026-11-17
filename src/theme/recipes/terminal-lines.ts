@@ -18,6 +18,8 @@ export const terminalLines = defineSlotRecipe({
     root: { display: 'flex', flexDirection: 'column', gap: '4', m: '0', p: '12', textStyle: 'mono', color: 'fg.default' },
     line: {
       whiteSpace: 'pre',
+      // An empty line keeps a full line height, as a terminal shows a blank line.
+      _empty: { _before: { content: '"\\200b"' } },
       '&[data-tone=modified]': { color: 'status.needsYou.fg' },
       '&[data-tone=deleted]': { color: 'status.danger.fg' },
       '&[data-tone=untracked]': { color: 'status.done.fg' },

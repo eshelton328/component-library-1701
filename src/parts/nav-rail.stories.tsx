@@ -93,17 +93,20 @@ const meta = {
     // Each item is a button in a list, in order.
     const buttons = within(nav).getAllByRole('button')
     await expect(buttons.map((b) => b.textContent)).toEqual(['Home', '3Inbox, 3 need you', 'Workspaces', '9+Projects, 120 need you', 'More'])
-    // The selected item: 51 wide, radius 10, padding 8 / 6, surface.selected, label in fg.accent.
+    // The selected item: 51 wide, 50 high (Figma 424:115), radius 10, padding 6 / 6 with 2 between the icon and
+    // the label, surface.selected, label in fg.accent. The items are 56 apart, as Figma's (424:115 to 424:144).
     const inbox = canvas.getByRole('button', { name: /^Inbox ?, 3 need you$/ })
     await expect(inbox).toHaveAttribute('aria-current', 'page')
     await expect(inbox).toHaveAttribute('type', 'button')
     const box = inbox.getBoundingClientRect()
     await expect(box.width).toBe(51)
-    await expect(box.height).toBe(54)
+    await expect(box.height).toBe(50)
+    const tops = buttons.map((b) => b.getBoundingClientRect().top)
+    await expect(tops.slice(1).map((t, i) => t - (tops[i] ?? 0))).toEqual([56, 56, 56, 56])
     const s = getComputedStyle(inbox)
     await expect(s.borderTopLeftRadius).toBe('10px')
-    await expect([s.paddingTop, s.paddingBottom]).toEqual(['8px', '6px'])
-    await expect(s.rowGap).toBe('4px')
+    await expect([s.paddingTop, s.paddingBottom]).toEqual(['6px', '6px'])
+    await expect(s.rowGap).toBe('2px')
     await expect(s.backgroundColor).toBe(swatch('selected'))
     const label = slot(inbox, 'label')
     const l = getComputedStyle(label)

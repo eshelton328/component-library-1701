@@ -27,6 +27,16 @@ const fade =
 // Medium 12 (d-050): the label takes `small` (Regular 12, the same size and
 // line), and the count keeps `mono` (12).
 //
+// `md` is the Toolkit chip row: 32 high with the label 11 px from the chip's
+// edge (T1 428:25, M1 429:62, D3 427:65), which the 1 px border and 10 px
+// sides give. D1's chips (425:33) are 34 high with 12 px insets; 34 lies
+// between control.md and control.lg, and md keeps 32, as the Toolkit's other
+// frames draw it (d-100).
+//
+// `padding="none"` puts the chips flush with the row, as Toolkit's
+// `filter · chips` (D1 425:32, M1 429:61) has no inset around them. The
+// row still clips, so the focus ring moves inside the chip.
+//
 // The count is fg.subtle, the inventory's colour for counts (#4a5675, which
 // d-055 lifts to #7986a6): Inbox D1 draws the chip counts dimmer than the
 // labels (346:152). On a selected chip (surface.selected, where fg.subtle
@@ -62,7 +72,7 @@ export const filterChips = defineSlotRecipe({
       gap: '6',
       flexShrink: '0',
       h: 'control.md',
-      px: '12',
+      px: '10',
       textStyle: 'label',
       whiteSpace: 'nowrap',
       bg: 'surface.inset',
@@ -91,6 +101,10 @@ export const filterChips = defineSlotRecipe({
       md: {},
       compact: { item: { h: 'auto', py: '6', px: '8', textStyle: 'small' } },
     },
+    padding: {
+      default: {},
+      none: { root: { p: '0' }, item: { _focusVisible: { outlineOffset: '-2' } } },
+    },
   },
-  defaultVariants: { size: 'md' },
+  defaultVariants: { size: 'md', padding: 'default' },
 })

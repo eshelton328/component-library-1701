@@ -91,12 +91,15 @@ function DrawerGroup({ group, selected, onSelect }: { group: MoreDrawerGroup; se
 /**
  * The phone's More drawer: the pages that do not fit in the tab bar, as a
  * bottom sheet with a list of items. Picking an item calls `onSelect` and
- * closes the drawer. The app does the navigation.
+ * closes the drawer. The app does the navigation. When it opens, the drawer
+ * itself takes the focus, so no item draws a focus ring (Figma M4 draws
+ * none); Tab moves to the first item.
  */
 export function MoreDrawer({ groups, selected, onSelect, title = 'More', trigger, open, defaultOpen, onOpenChange }: MoreDrawerProps) {
   return (
     <SizedBottomSheet
       size="lg"
+      focusSheet
       title={title}
       trigger={trigger}
       {...(open === undefined ? {} : { open })}

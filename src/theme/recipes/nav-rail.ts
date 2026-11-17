@@ -36,11 +36,15 @@ export const navRail = defineSlotRecipe({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      // Figma 3 takes `4`, the larger of 2 and 4 (d-072).
-      gap: '4',
+      // Figma's items (Inbox D16 403:1598 to 403:1629, Toolkit D1 424:115 to
+      // 424:144) are 50 high and 56 apart: top 7, a 22 px icon, 3, the 12 px
+      // label and bottom 6. The inventory draws the icon at 24 (+2), so the
+      // ties go to the smaller token to keep the item 50 high: top 7 takes `6`
+      // (the icon's centre stays 18 down, as Figma's) and the gap 3 takes `2`
+      // (the label starts 32 down, as Figma's). 6 + 24 + 2 + 12 + 6 = 50.
+      gap: '2',
       w: '100%',
-      // Figma top 7 takes `8`, the larger of 6 and 8 (d-072); bottom 6.
-      pt: '8',
+      pt: '6',
       pb: '6',
       px: '0',
       borderRadius: 'lg',

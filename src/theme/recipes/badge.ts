@@ -6,7 +6,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - `pill`: a status tint, no border, the pill text style. New 403:450 and
 //   402:15454 (cyan, `working`), "43 of 43 pass" 492:2167 (`done`), Running
 //   479:14 (`running`). Figma padding 7-8 / 3 and gap 5 take 8 / 4 and 6,
-//   the larger of each pair of tokens (d-072).
+//   the larger of each pair of tokens (d-072), so the pill is 24 high.
+//   `size="sm"` pads it 8 / 2 for Figma's 20 px pills of the Inbox
+//   (Recommended T2 346:5764, T3 346:5976; Working T5 346:6381): the 16 px
+//   pill line and 2 above and below. The other variants have one size.
 // - `tag`: a status tint in a radius.sm box, mono text. Loop 460:59; Figma
 //   tints it at 0.12, which the inventory merges into the 0.14 status tint,
 //   and draws radius 5, which it merges into radius.sm. Padding 6 / 2, gap 4.
@@ -49,10 +52,15 @@ export const badge = defineSlotRecipe({
       done: { root: { color: 'status.done.fg', bg: 'status.done.bg' } },
       danger: { root: { color: 'status.danger.fg', bg: 'status.danger.bg' } },
     },
+    size: {
+      md: {},
+      sm: {},
+    },
   },
   compoundVariants: [
+    { variant: 'pill', size: 'sm', css: { root: { py: '2' } } },
     { variant: ['outline', 'quiet'], css: { root: { bg: 'surface.overlay' } } },
     { variant: 'quiet', css: { root: { color: 'fg.muted' } } },
   ],
-  defaultVariants: { variant: 'pill', tone: 'idle' },
+  defaultVariants: { variant: 'pill', tone: 'idle', size: 'md' },
 })

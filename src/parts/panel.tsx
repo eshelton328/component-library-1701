@@ -36,7 +36,8 @@ export type PanelProps = Scalar<PanelVariantProps> & {
  * eyebrow title, the default). A `list` or `sidebar` panel fills the
  * height of its parent and its body scrolls; a `section` panel is as tall
  * as its content. `tone="needsYou"` gives it the needs-you border and
- * tint, for a box that waits for the user.
+ * tint, for a box that waits for the user; `tone="accent"` the cyan border
+ * and selected fill of a running item, such as the Inbox run card.
  */
 export function Panel({ title, meta, actions, children, variant, tone }: PanelProps) {
   const titleId = useId()

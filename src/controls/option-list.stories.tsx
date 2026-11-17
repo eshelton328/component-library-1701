@@ -12,6 +12,10 @@ const sheet = css({ bg: 'surface.overlay', px: '12', py: '8', borderRadius: 'xl'
 const defaultSwatch = css({ color: 'fg.default' })
 const mutedSwatch = css({ color: 'fg.muted' })
 const accentSwatch = css({ color: 'fg.accent' })
+const selectedSwatch = css({ color: 'surface.selected' })
+const outlineSwatch = css({ color: 'border.selected' })
+const borderSwatch = css({ color: 'border.default' })
+const radioSwatch = css({ color: 'accent.default' })
 
 // The rows of the Artifacts M4 sort sheet (407:790, 407:797, 407:802, 407:807).
 const sorts: readonly OptionListItem[] = [
@@ -382,3 +386,60 @@ const pickerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** The Run in picker rows (Inbox D3): a leading mark, a mono meta line and a trailing status pill. */
 export const PickerDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Picker />, play: pickerPlay }
 export const PickerLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Picker />, play: pickerPlay }
+
+// The options of a question (Inbox D2 346:789), at the width of the question's column.
+const column = css({ bg: 'surface.pane', p: '16', w: 'shell.dialogLg' })
+
+function Cards() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <OptionList label="Choose one" items={choices} defaultValue="rpc" variant="card" />
+      </div>
+      <span hidden data-swatch="selected" className={selectedSwatch} />
+      <span hidden data-swatch="outline" className={outlineSwatch} />
+      <span hidden data-swatch="border" className={borderSwatch} />
+      <span hidden data-swatch="radio" className={radioSwatch} />
+    </main>
+  )
+}
+
+const cardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rpcRadio = canvas.getByRole('radio', { name: 'Hono RPC client' })
+  const fetchRadio = canvas.getByRole('radio', { name: 'Plain fetch with zod schemas' })
+  const [rpc, plain] = [rowOf(rpcRadio), rowOf(fetchRadio)]
+  const radioOf = (row: HTMLElement) => {
+    const el = row.querySelector('.option-list__itemRadio')
+    if (!(el instanceof HTMLElement)) throw new Error('no radio')
+    return el
+  }
+  // A bordered card: padding 12 by 16, radius 10, 1 px border, 8 between cards.
+  const s = getComputedStyle(plain)
+  await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['12px', '16px', '12px', '16px'])
+  await expect([s.borderTopLeftRadius, s.borderTopWidth, s.borderTopColor]).toEqual(['10px', '1px', swatch('border')])
+  await expect(plain.getBoundingClientRect().top - rpc.getBoundingClientRect().bottom).toBe(8)
+  // The chosen card is outlined in cyan on the selected fill.
+  const c = getComputedStyle(rpc)
+  await expect([c.backgroundColor, c.borderTopColor]).toEqual([swatch('selected'), swatch('outline')])
+  // A 16 px radio leads, at the top, 12 before the text; the trailing check is gone.
+  const radio = radioOf(rpc)
+  await expect(rpc.firstElementChild).toBe(radio)
+  await expect([radio.getBoundingClientRect().width, radio.getBoundingClientRect().height]).toEqual([16, 16])
+  await expect(radio.getBoundingClientRect().top - rpc.getBoundingClientRect().top).toBe(13)
+  const body = rpc.querySelector('.option-list__itemBody')
+  if (body === null) throw new Error('no text column')
+  await expect(body.getBoundingClientRect().left - radio.getBoundingClientRect().right).toBe(12)
+  await expect(getComputedStyle(rpc.querySelector('.option-list__itemControl') ?? rpc).display).toBe('none')
+  await expect(getComputedStyle(radio).borderTopColor).toBe(swatch('radio'))
+  await expect(getComputedStyle(radioOf(plain)).borderTopColor).not.toBe(swatch('radio'))
+  // Picking another card moves the outline.
+  await userEvent.click(within(plain).getByText('Plain fetch with zod schemas'))
+  await expect(fetchRadio).toBeChecked()
+  await waitFor(() => expect(getComputedStyle(plain).borderTopColor).toBe(swatch('outline')))
+  await expect(getComputedStyle(rpc).borderTopColor).toBe(swatch('border'))
+}
+
+/** Choice cards (Inbox D2 346:789): a bordered card per option with a leading radio; the chosen one is outlined. */
+export const CardDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Cards />, play: cardPlay }
+export const CardLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Cards />, play: cardPlay }

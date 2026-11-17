@@ -15,6 +15,7 @@ const ItemBadge = withContext('span', 'itemBadge')
 const ItemDescription = withContext('span', 'itemDescription')
 const ItemControl = withContext(ArkRadioGroup.ItemControl, 'itemControl')
 const ItemTrailing = withContext('span', 'itemTrailing')
+const ItemRadio = withContext('span', 'itemRadio')
 
 // A slot given as `false`, `null` or an empty string is left out, as React leaves it out.
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
@@ -61,6 +62,11 @@ export type OptionListProps = {
   name?: string | undefined
   /** `text` (the default) draws the description in `small`; `mono` in `mono`, as the Run in picker's meta lines are. */
   descriptionStyle?: 'text' | 'mono' | undefined
+  /**
+   * `list` (the default): flat rows with a check at the end on the chosen row. `card`: a bordered card per option
+   * with a radio at the start, the chosen card outlined in cyan, as the options of a question are.
+   */
+  variant?: 'list' | 'card' | undefined
 }
 
 /**
@@ -69,7 +75,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -109,6 +115,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       aria-label={label}
       aria-labelledby={undefined}
       descriptionStyle={descriptionStyle}
+      variant={variant}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}
@@ -135,6 +142,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
         return (
           // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
           <Item key={item.value} value={item.value} disabled={item.disabled === true ? true : undefined}>
+            {variant === 'card' ? <ItemRadio aria-hidden="true" /> : null}
             {shown(item.leading) ? <ItemLeading aria-hidden="true">{item.leading}</ItemLeading> : null}
             <ItemBody>
               {hasBadge ? (

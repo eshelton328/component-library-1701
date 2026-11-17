@@ -978,6 +978,7 @@ export type OptionListProps = {
     disabled?: boolean | undefined;
     name?: string | undefined;
     descriptionStyle?: 'text' | 'mono' | undefined;
+    variant?: 'list' | 'card' | undefined;
 };
 
 // @public

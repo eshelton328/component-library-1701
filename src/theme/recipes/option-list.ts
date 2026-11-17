@@ -17,11 +17,20 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (`trailing`). A row with a trailing element and no check gives the
 // check's space to it, so the pill ends the row. The title is Medium 13 in
 // Figma; it keeps `label` (14), the larger on a tie (d-072).
+//
+// `variant="card"` is the options of a question (Inbox D2 346:789): a
+// bordered card per option with a leading 16 px radio, the chosen card
+// outlined in cyan on the selected fill. Padding 12 by 14 (16, d-072),
+// radius 10 (`lg`), 12 from the radio to the text, 3 from the title to the
+// description (4, d-072), items at the top. Figma's outline is cyan 0.6;
+// the token is border.selected (0.5), as the selected chip's is. The
+// unselected card and the gap between cards were not read; they take
+// border.default and 8.
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
   staticCss: ['*'],
-  slots: [...radioGroupAnatomy.keys(), 'itemLeading', 'itemBody', 'itemHeading', 'itemBadge', 'itemDescription', 'itemTrailing'],
+  slots: [...radioGroupAnatomy.keys(), 'itemLeading', 'itemBody', 'itemHeading', 'itemBadge', 'itemDescription', 'itemTrailing', 'itemRadio'],
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '2', w: '100%' },
     item: {
@@ -40,6 +49,22 @@ export const optionList = defineSlotRecipe({
     },
     itemLeading: { display: 'inline-flex', flexShrink: '0', color: 'fg.default' },
     itemTrailing: { display: 'inline-flex', alignItems: 'center', flexShrink: '0' },
+    itemRadio: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: '0',
+      w: 'icon.16',
+      h: 'icon.16',
+      borderRadius: 'full',
+      borderWidth: 'strong',
+      borderStyle: 'solid',
+      borderColor: 'border.control',
+      '[data-state=checked] > &': {
+        borderColor: 'accent.default',
+        _after: { content: '""', w: '8', h: '8', borderRadius: 'full', bg: 'accent.default' },
+      },
+    },
     itemBody: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     itemHeading: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
     itemText: { textStyle: 'label', color: 'fg.default' },
@@ -54,10 +79,29 @@ export const optionList = defineSlotRecipe({
     },
   },
   variants: {
+    variant: {
+      list: {},
+      card: {
+        root: { gap: '8' },
+        item: {
+          alignItems: 'flex-start',
+          gap: '12',
+          py: '12',
+          px: '16',
+          borderRadius: 'lg',
+          borderWidth: 'default',
+          borderStyle: 'solid',
+          borderColor: 'border.default',
+          '&[data-state=checked]': { bg: 'surface.selected', borderColor: 'border.selected' },
+        },
+        itemBody: { gap: '4' },
+        itemControl: { display: 'none' },
+      },
+    },
     descriptionStyle: {
       text: {},
       mono: { itemDescription: { textStyle: 'mono' } },
     },
   },
-  defaultVariants: { descriptionStyle: 'text' },
+  defaultVariants: { variant: 'list', descriptionStyle: 'text' },
 })

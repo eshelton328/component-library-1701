@@ -16,11 +16,20 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // takes the same style. The time (346:5310) is Mono 13 in #4a5675: `mono`
 // (Mono 12, the inventory's style for meta and counts; there is no Mono 13
 // style) in `fg.muted`.
+// `width` sets the box width: sm 240, sort 280 (D9 346:4000) or md 320 (D12
+// 346:5300); without it the box takes its content's width, at least 240.
+// `size="lg"` is the D12 row (346:5303): 42 tall in Figma, control.xl (44)
+// here, padding 8, gap 12, radius 10 and 18 px icons, which take 20 on the
+// icon scale; the box has padding 6/12/8. Figma sets its label in Regular
+// 15, which has no text style, so the row keeps `label`.
+// RadioMenu's note (D9 346:4025) sits under a line: padding 14/12/4 (14
+// takes 16, d-072) and Regular 11 in #4a5675: `small` and `fg.muted`, as the
+// heading.
 export const menu = defineSlotRecipe({
   className: 'menu',
   jsx: ['Menu'],
   staticCss: ['*'],
-  slots: [...menuAnatomy.keys(), 'itemBody', 'itemDescription', 'itemTrailing'],
+  slots: [...menuAnatomy.keys(), 'itemBody', 'itemDescription', 'itemTrailing', 'footer'],
   base: {
     content: {
       display: 'flex',
@@ -54,7 +63,7 @@ export const menu = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       outline: 'none',
-      '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0', color: 'fg.muted' },
+      '& svg': { flexShrink: '0', color: 'fg.muted' },
       // The check of a picked choice is the accent colour, not the icon colour.
       '& [data-part=item-indicator] svg': { color: 'accent.default' },
       _highlighted: { bg: 'surface.selected' },
@@ -72,5 +81,28 @@ export const menu = defineSlotRecipe({
     itemGroup: { display: 'flex', flexDirection: 'column', gap: '2' },
     itemGroupLabel: { px: '4', pt: '10', pb: '4', textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
     separator: { borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default', my: '4', mx: '0' },
+    footer: { pt: '16', px: '12', pb: '4', borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default', textStyle: 'small', color: 'fg.muted' },
   },
+  variants: {
+    width: {
+      sm: { content: { w: 'shell.popoverSm' } },
+      sort: { content: { w: 'shell.popoverSort' } },
+      md: { content: { w: 'shell.popover' } },
+    },
+    // An important size in `base` would beat the one here, so each size sets its own icon size.
+    size: {
+      md: { item: { '& svg': { width: 'icon.16!', height: 'icon.16!' } } },
+      lg: {
+        content: { pt: '6', px: '12', pb: '8' },
+        item: {
+          h: 'control.xl',
+          px: '8',
+          gap: '12',
+          '& svg': { width: 'icon.20!', height: 'icon.20!' },
+          '& [data-part=item-indicator] svg': { width: 'icon.16!', height: 'icon.16!' },
+        },
+      },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

@@ -3,6 +3,8 @@ import { Portal } from '@ark-ui/react/portal'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { menu } from '../../styled-system/recipes'
+import { dataAttributesOf } from './data-attributes'
+import type { PopoverDataAttributes } from './popover'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(menu)
 const Root = withRootProvider(ArkMenu.Root)
@@ -16,6 +18,7 @@ const ItemGroupLabel = withContext(ArkMenu.ItemGroupLabel, 'itemGroupLabel')
 const ItemBody = withContext('span', 'itemBody')
 const ItemDescription = withContext('span', 'itemDescription')
 const ItemTrailing = withContext('span', 'itemTrailing')
+const Footer = withContext('div', 'footer')
 const RadioItemGroup = withContext(ArkMenu.RadioItemGroup, 'itemGroup')
 const RadioItem = withContext(ArkMenu.RadioItem, 'item')
 const ItemIndicator = withContext(ArkMenu.ItemIndicator, 'itemIndicator')
@@ -53,7 +56,19 @@ export type MenuProps = {
    * capitals and names that group of actions for assistive technology.
    */
   heading?: string | undefined
-}
+  /**
+   * The box width: `sm` 240, `sort` 280 (a menu whose choices have a description, as Inbox D9 Sort) or `md` 320 (the
+   * Inbox D12 Snooze menu). When not set, the menu is as wide as its content and at least 240.
+   */
+  width?: 'sm' | 'sort' | 'md' | undefined
+  /** The row size: `md` 32 (the default) or `lg` 44, with 20 px icons, as the Inbox D12 Snooze menu. */
+  size?: 'md' | 'lg' | undefined
+  /** A class added to the menu's box, after its own. */
+  className?: string | undefined
+} & PopoverDataAttributes
+
+// A note given as `false`, `null` or an empty string is left out, as React leaves it out.
+const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
 // Ark treats an empty string as no value, so each value gets a prefix.
 const toArk = (v: string) => `menu:${v}`
@@ -64,7 +79,7 @@ const fromArk = (v: string) => (v.startsWith('menu:') ? v.slice(5) : undefined)
  * menu. The arrow keys move between actions, Enter picks one, and Escape
  * closes the menu and returns the focus to the trigger.
  */
-export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading }: MenuProps) {
+export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, className, ...rest }: MenuProps) {
   const renderEntry = (entry: MenuEntry, i: number) =>
     entry.type === 'separator' ? (
       <Separator key={`separator-${String(i)}`} />
@@ -80,6 +95,8 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
   const groupEnd = heading === undefined ? 0 : firstSeparator === -1 ? items.length : firstSeparator
   return (
     <Root
+      width={width}
+      size={size}
       positioning={{ placement, gutter: 4 }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {
@@ -93,7 +110,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
       <Portal>
         <Positioner>
-          <Content>
+          <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
             {heading === undefined ? null : (
               <ItemGroup>
                 <ItemGroupLabel>{heading}</ItemGroupLabel>
@@ -134,19 +151,32 @@ export type RadioMenuProps = {
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined
   /** A heading over the choices, such as "Sort by", shown in capitals. When set, it names the list instead of `label`. */
   heading?: string | undefined
-}
+  /** A note at the end under a line, such as "Sorting applies inside each group." It describes the menu. */
+  note?: ReactNode
+  /**
+   * The box width: `sm` 240, `sort` 280 (a menu whose choices have a description, as Inbox D9 Sort) or `md` 320 (the
+   * Inbox D12 Snooze menu). When not set, the menu is as wide as its content and at least 240.
+   */
+  width?: 'sm' | 'sort' | 'md' | undefined
+  /** The row size: `md` 32 (the default) or `lg` 44, with 20 px icons, as the Inbox D12 Snooze menu. */
+  size?: 'md' | 'lg' | undefined
+  /** A class added to the menu's box, after its own. */
+  className?: string | undefined
+} & PopoverDataAttributes
 
 /**
  * A menu in which the user picks one value, such as the sort menu. The
  * picked value has a check. Picking a value closes the menu. A choice can
  * have a description line, and the list a heading, as Inbox D9 Sort does.
  */
-export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start', heading }: RadioMenuProps) {
+export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start', heading, note, width, size, className, ...rest }: RadioMenuProps) {
   const [picked, setPicked] = useState(defaultValue)
   const baseId = useId()
   const selected = value ?? picked
   return (
     <Root
+      width={width}
+      size={size}
       positioning={{ placement, gutter: 4 }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {
@@ -156,7 +186,11 @@ export function RadioMenu({ trigger, label, options, value, defaultValue, onValu
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
       <Portal>
         <Positioner>
-          <Content>
+          <Content
+            {...dataAttributesOf(rest)}
+            {...(className === undefined ? {} : { className })}
+            {...(shown(note) ? { 'aria-describedby': `${baseId}-note` } : {})}
+          >
             <RadioItemGroup
               aria-label={label}
               value={selected === undefined ? '' : toArk(selected)}
@@ -198,6 +232,7 @@ export function RadioMenu({ trigger, label, options, value, defaultValue, onValu
                 </RadioItem>
               ))}
             </RadioItemGroup>
+            {shown(note) ? <Footer id={`${baseId}-note`}>{note}</Footer> : null}
           </Content>
         </Positioner>
       </Portal>

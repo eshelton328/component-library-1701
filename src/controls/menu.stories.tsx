@@ -3,7 +3,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { useState } from 'react'
-import { CheckIcon, CloseIcon, SnoozeIcon } from '../foundations/icons'
+import { CalendarIcon, CheckIcon, CloseIcon, SnoozeIcon } from '../foundations/icons'
 import { Menu, RadioMenu, type MenuEntry, type RadioMenuOption } from './menu'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -404,3 +404,105 @@ export const DescribedSortBehaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
   },
 }
+
+// The note, the width and the key of the Inbox sort menu (D9 346:4000): 280 wide, with "Sorting applies inside each
+// group." under a line at the end (346:4025).
+const borderSwatch = css({ borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default' })
+
+function NotedSort() {
+  return (
+    <main className={page}>
+      <RadioMenu
+        open
+        trigger={<Button>Sort</Button>}
+        label="Sort tasks"
+        heading="Sort by"
+        options={describedSorts}
+        defaultValue="newest"
+        width="sort"
+        note="Sorting applies inside each group."
+        data-figma="menu · Sort"
+        className="app-sort-menu"
+      />
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="border" className={borderSwatch} />
+    </main>
+  )
+}
+
+const notedSortPlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await within(document.body).findByRole('menu')
+  // The box takes the app's key and class, and keeps Ark's own data attributes.
+  await expect(menu).toHaveAttribute('data-figma', 'menu · Sort')
+  await expect(menu).toHaveClass('app-sort-menu')
+  await expect(menu).toHaveAttribute('data-scope', 'menu')
+  await expect(menu).toHaveAttribute('data-part', 'content')
+  // shell.popoverSort: 280 wide.
+  await expect(menu.getBoundingClientRect().width).toBe(280)
+  // The note sits after the last choice, under a line, in small fg.muted; it describes the menu.
+  const note = within(menu).getByText('Sorting applies inside each group.')
+  await expect(menu).toHaveAccessibleDescription('Sorting applies inside each group.')
+  const kind = within(menu).getByRole('menuitemradio', { name: 'Kind' })
+  await expect(note.getBoundingClientRect().top).toBeGreaterThan(kind.getBoundingClientRect().bottom)
+  // The note is the footer's only text, so the element found is the footer itself.
+  const f = getComputedStyle(note)
+  const borderEl = document.querySelector('[data-swatch="border"]')
+  if (borderEl === null) throw new Error('no border swatch')
+  await expect([f.borderTopWidth, f.borderTopStyle, f.borderTopColor]).toEqual(['1px', 'solid', getComputedStyle(borderEl).borderTopColor])
+  // Padding 14/12/4 in Figma; 14 takes 16 (d-072).
+  await expect([f.paddingTop, f.paddingRight, f.paddingBottom, f.paddingLeft]).toEqual(['16px', '12px', '4px', '12px'])
+  const n = getComputedStyle(note)
+  await expect([n.fontSize, n.fontWeight]).toEqual(['12px', '400'])
+  await expect(n.color).toBe(swatch())
+}
+
+/** The sort menu with a note at the end, the sort width and an app's key (Inbox D9). */
+export const NotedSortDark: StoryObj<typeof meta> = { render: () => <NotedSort />, play: notedSortPlay, globals: { mode: 'dark' } }
+export const NotedSortLight: StoryObj<typeof meta> = { render: () => <NotedSort />, play: notedSortPlay, globals: { mode: 'light' } }
+
+// The Inbox snooze menu at its Figma size (D12 346:5300): 320 wide, with 44 px rows (346:5303) and 18 px icons, which
+// take 20 on the icon scale.
+const largeSnooze: readonly MenuEntry[] = [
+  { value: 'hour', label: 'In 1 hour', icon: <SnoozeIcon />, trailing: '11:40' },
+  { value: 'evening', label: 'This evening', icon: <SnoozeIcon />, trailing: '20:00' },
+  { value: 'morning', label: 'Tomorrow morning', icon: <SnoozeIcon />, trailing: '9:00' },
+  { value: 'pick', label: 'Pick a date and time…', icon: <CalendarIcon /> },
+  { type: 'separator' },
+  { value: 'done', label: 'Mark done', icon: <CheckIcon /> },
+  { value: 'dismiss', label: 'Dismiss with a reason…', icon: <CloseIcon />, tone: 'danger' },
+]
+
+function LargeSnooze() {
+  return (
+    <main className={page}>
+      <Menu open trigger={<Button>Snooze</Button>} heading="Snooze" items={largeSnooze} width="md" size="lg" data-figma="menu · Snooze or dismiss" className="app-snooze-menu" />
+    </main>
+  )
+}
+
+const largeSnoozePlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await within(document.body).findByRole('menu')
+  await expect(menu).toHaveAttribute('data-figma', 'menu · Snooze or dismiss')
+  await expect(menu).toHaveClass('app-snooze-menu')
+  // shell.popover: 320 wide; padding 6/12/8 (346:5300).
+  await expect(menu.getBoundingClientRect().width).toBe(320)
+  const m = getComputedStyle(menu)
+  await expect([m.paddingTop, m.paddingRight, m.paddingBottom, m.paddingLeft]).toEqual(['6px', '12px', '8px', '12px'])
+  // Rows: control.xl (44), padding 8, gap 12, icons 20, radius 10 (346:5303).
+  for (const name of ['In 1 hour 11:40', 'Pick a date and time…', 'Dismiss with a reason…']) {
+    const item = within(menu).getByRole('menuitem', { name })
+    await expect(item.getBoundingClientRect().height).toBe(44)
+    const r = getComputedStyle(item)
+    await expect([r.paddingLeft, r.paddingRight, r.columnGap, r.borderTopLeftRadius]).toEqual(['8px', '8px', '12px', '10px'])
+    const icon = item.querySelector('svg')
+    if (icon === null) throw new Error(`no icon in ${name}`)
+    await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([20, 20])
+  }
+  // The time stays at the end of the row.
+  const hour = within(menu).getByRole('menuitem', { name: 'In 1 hour 11:40' })
+  await expect(Math.round(hour.getBoundingClientRect().right - within(hour).getByText('11:40').getBoundingClientRect().right)).toBe(8)
+}
+
+/** The snooze menu at the Inbox D12 size: `width="md"` and `size="lg"`, with a calendar on "Pick a date and time…". */
+export const LargeSnoozeDark: StoryObj<typeof meta> = { render: () => <LargeSnooze />, play: largeSnoozePlay, globals: { mode: 'dark' } }
+export const LargeSnoozeLight: StoryObj<typeof meta> = { render: () => <LargeSnooze />, play: largeSnoozePlay, globals: { mode: 'light' } }

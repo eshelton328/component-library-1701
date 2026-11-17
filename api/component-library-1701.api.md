@@ -854,7 +854,10 @@ export type MenuProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     heading?: string | undefined;
-};
+    width?: 'sm' | 'sort' | 'md' | undefined;
+    size?: 'md' | 'lg' | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export type MenuSeparator = {
@@ -1176,7 +1179,11 @@ export type RadioMenuProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     heading?: string | undefined;
-};
+    note?: ReactNode;
+    width?: 'sm' | 'sort' | 'md' | undefined;
+    size?: 'md' | 'lg' | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export function RefreshIcon(props: IconProps): JSX.Element;

@@ -221,6 +221,7 @@ export const LongTitle: StoryObj<typeof meta> = {
 const needsSwatches = {
   needsBorder: css({ color: 'status.needsYou.border' }),
   plainBorder: css({ color: 'border.default' }),
+  muted: css({ color: 'fg.muted' }),
 }
 
 // The "waiting for this answer" box of Inbox D2 (346:772), beside a default panel.
@@ -234,6 +235,9 @@ function Waiting() {
         </Panel>
         <Panel title="Context" meta="3 files">
           <div className={row}>web/src/api.ts</div>
+        </Panel>
+        <Panel variant="list" title="Needs you" meta="2" tone="needsYou">
+          <div className={row}>Answer the client question</div>
         </Panel>
       </Grid>
       <div hidden>
@@ -256,6 +260,10 @@ const needsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(waiting.backgroundColor).toBe(plain.backgroundColor)
   await expect(plain.borderTopColor).toBe(color('plainBorder'))
   await expect(plain.backgroundImage).toBe('none')
+  // A needs-you list keeps its count readable on the tint: fg.muted, not the list's fg.subtle.
+  const list = canvas.getByRole('region', { name: 'Needs you' })
+  const count = within(list).getByText('2')
+  await expect(getComputedStyle(count).color).toBe(color('muted'))
 }
 
 export const NeedsYouDark: StoryObj<typeof meta> = { render: () => <Waiting />, globals: { mode: 'dark' }, play: needsPlay }

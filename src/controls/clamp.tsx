@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { styled } from '../../styled-system/jsx'
 import { clamp } from '../../styled-system/recipes'
 
@@ -37,10 +37,7 @@ export function Clamp({ children, lines = 4, fade = false, onCutChange }: ClampP
     const update = () => {
       // One pixel of slack: a zoomed page can leave a fractional height.
       const next = box.scrollHeight - box.clientHeight > 1
-      setCut((now) => {
-        if (now !== next) report.current?.(next)
-        return next
-      })
+      setCut(next)
     }
     update()
     const sizes = new ResizeObserver(update)
@@ -49,6 +46,13 @@ export function Clamp({ children, lines = 4, fade = false, onCutChange }: ClampP
       sizes.disconnect()
     }
   }, [children, lines])
+  // Tell the caller outside the state updater, which Strict Mode runs twice.
+  const told = useRef(false)
+  useEffect(() => {
+    if (told.current === cut) return
+    told.current = cut
+    report.current?.(cut)
+  }, [cut])
   return (
     <Root ref={ref} lines={lineVariants[lines]} fade={fade} data-cut={cut ? '' : undefined}>
       {children}

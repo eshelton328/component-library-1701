@@ -73,5 +73,8 @@ export const panel = defineSlotRecipe({
       },
     },
   },
+  // The list meta is fg.subtle, which falls below 4.5:1 on the needs-you
+  // tint in dark mode, so a needs-you list takes fg.muted.
+  compoundVariants: [{ tone: 'needsYou', variant: 'list', css: { meta: { color: 'fg.muted' } } }],
   defaultVariants: { variant: 'section', tone: 'default' },
 })

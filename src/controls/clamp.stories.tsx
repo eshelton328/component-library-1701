@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, waitFor } from 'storybook/test'
 import { css } from '../../styled-system/css'
@@ -15,6 +16,7 @@ const onFits = fn<(cut: boolean) => void>()
 
 function Clamps() {
   return (
+    <StrictMode>
     <main className={page}>
       <div className={box} data-testid="faded">
         <Clamp lines={4} fade onCutChange={onCut}>
@@ -30,6 +32,7 @@ function Clamps() {
         </Clamp>
       </div>
     </main>
+    </StrictMode>
   )
 }
 
@@ -42,6 +45,10 @@ const clampOf = (root: HTMLElement, id: string) => {
 const meta = {
   title: 'Data display/Clamp',
   component: Clamps,
+  beforeEach: () => {
+    onCut.mockClear()
+    onFits.mockClear()
+  },
   play: async ({ canvasElement }) => {
     const faded = clampOf(canvasElement, 'faded')
     const line = parseFloat(getComputedStyle(faded).lineHeight)
@@ -54,6 +61,8 @@ const meta = {
     await expect(getComputedStyle(faded).maskImage).toContain('linear-gradient')
     await expect(getComputedStyle(faded).maskImage).toContain('40px')
     await waitFor(() => expect(onCut).toHaveBeenLastCalledWith(true))
+    // Once per change, also under Strict Mode, which runs state updaters twice.
+    await expect(onCut).toHaveBeenCalledTimes(1)
     // Without fade it is cut to its lines with no mask.
     const ellipsis = clampOf(canvasElement, 'ellipsis')
     await expect(Math.round(ellipsis.getBoundingClientRect().height)).toBe(Math.round(2 * line))

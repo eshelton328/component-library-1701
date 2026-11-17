@@ -6,7 +6,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // a 1 px #24314f border and radius 6. One chip with two sizes; the fill is
 // `surface.inset`, where the inventory merges the meta chips. The Inbox
 // chip's label is Geist Mono 11 (346:331), so `sm` sets it in `monoSm`;
-// `md` keeps `mono` (12).
+// `md` keeps `mono` (12). The `sm` chip is 24 high in Figma (M5 346:9875,
+// D1 346:327), with its 14 px text line 4 inside the 1 px border. The
+// `monoSm` line is 16, so 4 above and below made it 26; `sm` takes
+// control.xs (24) as its height and centres the label (d-100 rule 3: a size
+// on the 4 px grid).
 // `surface="raised"` fills the chip with the opaque #17213a of the Inbox
 // chips (346:327, the NCC chip 346:342): surface.raised (d-100). The default
 // `inset` keeps the merged surface.inset.
@@ -40,7 +44,7 @@ export const metaChip = defineSlotRecipe({
   },
   variants: {
     size: {
-      sm: { root: { px: '8', py: '4', textStyle: 'monoSm' } },
+      sm: { root: { h: 'control.xs', px: '8', py: '0', textStyle: 'monoSm' } },
       md: { root: { px: '10', py: '6' } },
     },
     // Artifacts draws the chip text in fg.default and the age chip in

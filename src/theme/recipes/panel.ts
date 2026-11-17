@@ -8,6 +8,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // A `list` or `sidebar` panel fills the height of its parent, as a pane
 // does; a `section` panel is as tall as its content.
 // Every variant is glass (d-044): `surface.pane` with the `glass` blur.
+// - `notice`: a card of one row, such as the Inbox waiting card (D2 346:772,
+//   T3, M5 346:9897): 55 high in Figma, its text 10 under the 1 px border and
+//   its icon 12 in from the side. The `section` padding (12/16) made it 64.
 // `tone="needsYou"` marks a panel that waits for the user, such as the
 // "waiting for this answer" box of Inbox D2 (346:772): Figma draws a 1 px
 // border in #ffb86b at 0.35 and a 0.08 tint. The tint is
@@ -77,6 +80,12 @@ export const panel = defineSlotRecipe({
         title: { textStyle: 'paneTitle' },
         meta: { textStyle: 'mono' },
         body: { gap: '4' },
+      },
+      notice: {
+        root: { h: 'fit-content', py: '10', px: '12', gap: '8', borderRadius: 'xl' },
+        title: { textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
+        meta: { textStyle: 'small' },
+        body: { gap: '8' },
       },
       section: {
         // fit-content keeps a Grid or a row from stretching it to its neighbours' height.

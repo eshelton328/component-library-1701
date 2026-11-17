@@ -1009,6 +1009,7 @@ export type NavItem = {
     label: string;
     icon: ReactNode;
     badge?: number | undefined;
+    figma?: string | undefined;
 };
 
 // @public
@@ -1406,6 +1407,7 @@ export type TabBarProps = {
     selected?: string | undefined;
     onSelect?: ((value: string) => void) | undefined;
     label?: string | undefined;
+    size?: 'phone' | 'tablet' | undefined;
 };
 
 // @public

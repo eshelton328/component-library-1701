@@ -60,8 +60,11 @@ export const optionList = defineSlotRecipe({
       borderWidth: 'strong',
       borderStyle: 'solid',
       borderColor: 'border.control',
+      // The chosen radio (346:790) is an 8 px cyan dot in a 16 px #070b14 disc, no cyan ring:
+      // accent.default on fg.onAccent, as the checked checkbox pairs them.
       '[data-state=checked] > &': {
-        borderColor: 'accent.default',
+        bg: 'fg.onAccent',
+        borderColor: 'fg.onAccent',
         _after: { content: '""', w: '8', h: '8', borderRadius: 'full', bg: 'accent.default' },
       },
     },

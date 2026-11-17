@@ -1694,7 +1694,7 @@
         "lineHeight": 1.3334,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
-      "$description": "Meta, paths, counts, code lines and axis labels."
+      "$description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, and the names of an OptionList with labelStyle mono (the Workbench skill picker's /names)."
     },
     "monoCaps": {
       "$type": "typography",

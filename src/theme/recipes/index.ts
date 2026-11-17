@@ -14,6 +14,8 @@ import { checkbox } from './checkbox'
 import { composer } from './composer'
 import { contextMeter } from './context-meter'
 import { dialog } from './dialog'
+import { dragPreview } from './drag-preview'
+import { emptyPane } from './empty-pane'
 import { errorState } from './error-state'
 import { filterChips } from './filter-chips'
 import { icon } from './icon'
@@ -26,6 +28,7 @@ import { dailyBarChart, groupedBarChart, horizontalBarChart } from './bar-chart'
 import { listRow } from './list-row'
 import { markdownView } from './markdown-view'
 import { codeLines } from './code-lines'
+import { terminalLines } from './terminal-lines'
 import { scriptExplanation } from './script-explanation'
 import { kindMark } from './kind-mark'
 import { menu } from './menu'
@@ -70,4 +73,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, clamp, highlight, icon, kindMark, kindTile, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, dialog, errorState, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, dialog, dragPreview, emptyPane, errorState, filterChips, flowDiagram, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

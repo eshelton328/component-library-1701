@@ -166,6 +166,11 @@
         "$value": { "value": 420, "unit": "px" },
         "$description": "Width of the Workbench subagents pane."
       },
+      "popoverXs": {
+        "$type": "dimension",
+        "$value": { "value": 160, "unit": "px" },
+        "$description": "Width of the Workbench skill picker, the short list of skills a composer opens after \"/\" (Workbench D1 105:406). Not for a menu or a filter, which is at least popoverSm (240)."
+      },
       "popoverSm": {
         "$type": "dimension",
         "$value": { "value": 240, "unit": "px" },

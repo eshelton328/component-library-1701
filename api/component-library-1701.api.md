@@ -426,7 +426,29 @@ export type DialogProps = Scalar<DialogVariantProps> & {
 } & PopoverDataAttributes;
 
 // @public
+export function DragPreview(input: DragPreviewProps): JSX.Element;
+
+// @public (undocumented)
+export type DragPreviewProps = {
+    children: ReactNode;
+    tilt?: boolean | undefined;
+    hint?: ReactNode;
+};
+
+// @public
 export function EditIcon(props: IconProps): JSX.Element;
+
+// @public
+export function EmptyPane(input: EmptyPaneProps): JSX.Element;
+
+// @public (undocumented)
+export type EmptyPaneProps = {
+    title: string;
+    description?: ReactNode;
+    actions?: ReactNode;
+    listLabel?: string | undefined;
+    children?: ReactNode;
+};
 
 // @public
 export function ErrorState(input: ErrorStateProps): JSX.Element;
@@ -1032,6 +1054,8 @@ export type OptionListProps = {
     variant?: 'list' | 'card' | undefined;
     selectedFill?: boolean | undefined;
     size?: 'md' | 'sm' | undefined;
+    labelStyle?: 'text' | 'mono' | undefined;
+    check?: boolean | undefined;
 };
 
 // @public
@@ -1108,7 +1132,7 @@ export type PopoverProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
-    width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
+    width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
     flip?: boolean | undefined;
     surface?: 'overlay' | 'raised' | undefined;
     className?: string | undefined;
@@ -1395,6 +1419,22 @@ export type TagsLineProps = {
 
 // @public
 export function TerminalIcon(props: IconProps): JSX.Element;
+
+// @public
+export type TerminalLine = {
+    text: string;
+    tone?: 'plain' | 'modified' | 'deleted' | 'untracked' | undefined;
+};
+
+// @public
+export function TerminalLines(input: TerminalLinesProps): JSX.Element;
+
+// @public (undocumented)
+export type TerminalLinesProps = {
+    label: string;
+    lines: readonly TerminalLine[];
+    prompt?: string | undefined;
+};
 
 // @public
 export function TextArea(input: TextAreaProps): JSX.Element;

@@ -4,7 +4,8 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The filter popovers of Inbox (D4 346:1737, T14 346:8876) and Artifacts
 // (D3 403:6852): a box under its button, with labelled sections of rows and
 // a footer row with a note and the buttons. No arrow and no title.
-// `width` picks the box width: sm 240 (a small menu), filter 300 (the Inbox
+// `width` picks the box width: xs 160 (the Workbench skill picker, D1
+// 105:406), sm 240 (a small menu), filter 300 (the Inbox
 // Filter menu, D4 346:1737), md 320 (the default), lg 360 (the skill picker)
 // and picker 380 (the Run in picker, D3 346:1234).
 // `surface` picks the fill. `overlay` (the default) keeps surface.overlay,
@@ -46,6 +47,7 @@ export const popover = defineSlotRecipe({
   },
   variants: {
     width: {
+      xs: { content: { w: 'shell.popoverXs' } },
       sm: { content: { w: 'shell.popoverSm' } },
       filter: { content: { w: 'shell.popoverFilter' } },
       md: { content: { w: 'shell.popover' } },

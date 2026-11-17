@@ -113,6 +113,10 @@ export default definePreset({
               "value": "280px",
               "description": "Width of a menu whose choices have a description line, such as the Inbox Sort menu (D9 346:4000). Not for a popover of controls, which takes popover (320)."
             },
+            "popoverXs": {
+              "value": "160px",
+              "description": "Width of the Workbench skill picker, the short list of skills a composer opens after \"/\" (Workbench D1 105:406). Not for a menu or a filter, which is at least popoverSm (240)."
+            },
             "rail": {
               "value": "64px",
               "description": "Width of the desktop nav rail."
@@ -1435,7 +1439,7 @@ export default definePreset({
           }
         },
         "mono": {
-          "description": "Meta, paths, counts, code lines and axis labels.",
+          "description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, and the names of an OptionList with labelStyle mono (the Workbench skill picker's /names).",
           "value": {
             "fontFamily": "text.mono",
             "fontSize": "text.mono",

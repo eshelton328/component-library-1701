@@ -32,8 +32,9 @@ export type PanelProps = Scalar<PanelVariantProps> & {
 /**
  * The bordered glass box that holds a list or side content, with an
  * optional header. `variant` picks the build: `list` (the Inbox list pane),
- * `sidebar` (the Workbench sidebar) or `section` (a Toolkit panel with an
- * eyebrow title, the default). A `list` or `sidebar` panel fills the
+ * `sidebar` (the Workbench sidebar), `section` (a Toolkit panel with an
+ * eyebrow title, the default) or `notice` (a one-row card padded 10/12, such
+ * as the Inbox waiting card). A `list` or `sidebar` panel fills the
  * height of its parent and its body scrolls; a `section` panel is as tall
  * as its content. `tone="needsYou"` gives it the needs-you border and
  * tint, for a box that waits for the user; `tone="accent"` the cyan border

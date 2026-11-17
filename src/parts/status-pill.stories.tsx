@@ -56,8 +56,13 @@ const meta = {
     }
     await expect(new Set(tones.map((t) => pillOf(t).color)).size).toBe(6)
     await expect(new Set(tones.map((t) => pillOf(t).backgroundColor)).size).toBe(6)
-    // Fill only, as Figma draws the pills (Inbox D2 346:731, D3 346:1280): the border keeps its 1 px but shows no colour.
-    for (const t of tones) await expect(pillOf(t).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+    // Fill only, as Figma draws the pills (Inbox D2 346:731, D3 346:1280): no border, and a transparent outline for
+    // forced-colours mode. The pill is Figma's 20 high (M5 346:9868).
+    for (const t of tones) {
+      await expect(pillOf(t).borderTopWidth).toBe('0px')
+      await expect([pillOf(t).outlineStyle, pillOf(t).outlineColor]).toEqual(['solid', 'rgba(0, 0, 0, 0)'])
+      await expect(pillOf(t).height).toBe('20px')
+    }
     const dot = canvas.getByText('Running').querySelector('[data-dot]')
     if (!(dot instanceof HTMLElement)) throw new Error('no dot')
     await expect(dot.getBoundingClientRect().width).toBe(6)

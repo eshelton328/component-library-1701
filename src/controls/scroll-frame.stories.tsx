@@ -7,7 +7,8 @@ import { ScrollFrame } from './scroll-frame'
 const page = css({ bg: 'bg.canvas', p: '24' })
 // A box with a bounded height, as the AppShell detail gives the frame.
 const box = css({ display: 'flex', flexDirection: 'column', h: 'shell.listPane', bg: 'surface.pane', borderRadius: 'xl', p: '16' })
-const line = css({ textStyle: 'body', color: 'fg.default', m: '0', py: '8' })
+// Each line clips, as a Card does: in a flex column it would shrink to fit instead of making the body scroll.
+const line = css({ textStyle: 'body', color: 'fg.default', m: '0', py: '8', overflow: 'hidden' })
 const lines = Array.from({ length: 30 }, (_, i) => `Message ${String(i + 1)}`)
 
 function Frame() {
@@ -41,6 +42,8 @@ const meta = {
     const reply = canvas.getByRole('button', { name: 'Send a reply' })
     const body = canvas.getByText('Message 1').parentElement
     if (body === null) throw new Error('no body')
+    // No line shrinks to fit: each keeps the height of its text.
+    for (const el of canvas.getAllByText(/^Message /)) await expect(el.clientHeight).toBe(el.scrollHeight)
     // The box does not grow to its content: the body scrolls inside it.
     await expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
     await expect(box.scrollHeight).toBe(box.clientHeight)

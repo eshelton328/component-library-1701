@@ -24,6 +24,9 @@ export const scrollFrame = defineSlotRecipe({
       minH: '0',
       overflowY: 'auto',
       overscrollBehavior: 'contain',
+      // A flex column shrinks its children to fit; a child that clips (overflow hidden, such as a Card) would lose its
+      // content instead of making the body scroll. The children keep their height.
+      '& > *': { flexShrink: '0' },
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },

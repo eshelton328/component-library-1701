@@ -35,15 +35,16 @@ export type PanelProps = Scalar<PanelVariantProps> & {
  * `sidebar` (the Workbench sidebar) or `section` (a Toolkit panel with an
  * eyebrow title, the default). A `list` or `sidebar` panel fills the
  * height of its parent and its body scrolls; a `section` panel is as tall
- * as its content.
+ * as its content. `tone="needsYou"` gives it the needs-you border and
+ * tint, for a box that waits for the user.
  */
-export function Panel({ title, meta, actions, children, variant }: PanelProps) {
+export function Panel({ title, meta, actions, children, variant, tone }: PanelProps) {
   const titleId = useId()
   const hasTitle = title !== undefined && title !== ''
   const hasMeta = shown(meta)
   const hasActions = shown(actions)
   return (
-    <Root variant={variant} {...(hasTitle ? { 'aria-labelledby': titleId } : {})}>
+    <Root variant={variant} tone={tone} {...(hasTitle ? { 'aria-labelledby': titleId } : {})}>
       {hasTitle || hasMeta || hasActions ? (
         <Header>
           {hasTitle ? <Title id={titleId}>

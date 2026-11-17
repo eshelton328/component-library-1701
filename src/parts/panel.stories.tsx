@@ -217,3 +217,46 @@ export const LongTitle: StoryObj<typeof meta> = {
     await expect(within(canvasElement).getByRole('region', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }
+
+const needsSwatches = {
+  needsBorder: css({ color: 'status.needsYou.border' }),
+  plainBorder: css({ color: 'border.default' }),
+}
+
+// The "waiting for this answer" box of Inbox D2 (346:772), beside a default panel.
+function Waiting() {
+  return (
+    <main className={page}>
+      <Grid columns="2" gap="24">
+        <Panel title="Waiting for this answer" meta="since 2m" tone="needsYou">
+          <div className={row}>Which client should the web app use?</div>
+          <p className={css({ textStyle: 'small', color: 'fg.muted' })}>Answer below to unblock the task.</p>
+        </Panel>
+        <Panel title="Context" meta="3 files">
+          <div className={row}>web/src/api.ts</div>
+        </Panel>
+      </Grid>
+      <div hidden>
+        {Object.entries(needsSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// The needs-you tone: the needs-you border and a tint laid over the pane fill. The axe test checks the text contrast.
+const needsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const color = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  const waiting = getComputedStyle(canvas.getByRole('region', { name: 'Waiting for this answer' }))
+  const plain = getComputedStyle(canvas.getByRole('region', { name: 'Context' }))
+  await expect(waiting.borderTopColor).toBe(color('needsBorder'))
+  await expect(waiting.backgroundImage).toContain('linear-gradient')
+  await expect(waiting.backgroundColor).toBe(plain.backgroundColor)
+  await expect(plain.borderTopColor).toBe(color('plainBorder'))
+  await expect(plain.backgroundImage).toBe('none')
+}
+
+export const NeedsYouDark: StoryObj<typeof meta> = { render: () => <Waiting />, globals: { mode: 'dark' }, play: needsPlay }
+export const NeedsYouLight: StoryObj<typeof meta> = { render: () => <Waiting />, globals: { mode: 'light' }, play: needsPlay }

@@ -8,6 +8,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // A `list` or `sidebar` panel fills the height of its parent, as a pane
 // does; a `section` panel is as tall as its content.
 // Every variant is glass (d-044): `surface.pane` with the `glass` blur.
+// `tone="needsYou"` marks a panel that waits for the user, such as the
+// "waiting for this answer" box of Inbox D2 (346:772): Figma draws a 1 px
+// border in #ffb86b at 0.35 and a 0.08 tint. They take the status tokens
+// status.needsYou.border (0.5) and status.needsYou.bg (0.14), laid over the
+// pane fill; fg.default and fg.muted pass 4.5:1 on it in both modes.
 export const panel = defineSlotRecipe({
   className: 'panel',
   jsx: ['Panel'],
@@ -34,6 +39,15 @@ export const panel = defineSlotRecipe({
     body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto' },
   },
   variants: {
+    tone: {
+      default: {},
+      needsYou: {
+        root: {
+          borderColor: 'status.needsYou.border',
+          backgroundImage: 'linear-gradient(token(colors.status.needsYou.bg), token(colors.status.needsYou.bg))',
+        },
+      },
+    },
     variant: {
       list: {
         root: { h: '100%', py: '16', px: '12', gap: '2' },
@@ -59,5 +73,5 @@ export const panel = defineSlotRecipe({
       },
     },
   },
-  defaultVariants: { variant: 'section' },
+  defaultVariants: { variant: 'section', tone: 'default' },
 })

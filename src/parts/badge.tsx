@@ -23,10 +23,13 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
  * `outline` (a bordered box in mono) or `quiet` (a bordered muted pill, as
  * Read-only). `tone` picks the status colour: `working`, `running`,
  * `needsYou`, `idle` (the default), `done` or `danger`; `quiet` ignores it.
+ * `size` sets a pill's height: `md` (the default) pads it 4 above and below,
+ * 24 high; `sm` pads it 2, 20 high, as the Inbox draws its pills. The `tag`,
+ * `outline` and `quiet` badges have one size and ignore it.
  */
-export function Badge({ label, icon, variant, tone }: BadgeProps) {
+export function Badge({ label, icon, variant, tone, size }: BadgeProps) {
   return (
-    <Root variant={variant} tone={tone}>
+    <Root variant={variant} tone={tone} size={size}>
       {icon === undefined || icon === null || icon === false ? null : <Icon aria-hidden="true">{icon}</Icon>}
       {label}
     </Root>

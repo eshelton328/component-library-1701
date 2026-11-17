@@ -26,6 +26,11 @@ const fade =
 // and the two 1 px borders, so no size token is needed. No text style is
 // Medium 12 (d-050): the label takes `small` (Regular 12, the same size and
 // line), and the count keeps `mono` (12).
+//
+// The count is fg.subtle, the inventory's colour for counts (#4a5675, which
+// d-055 lifts to #7986a6): Inbox D1 draws the chip counts dimmer than the
+// labels (346:152). On a selected chip (surface.selected, where fg.subtle
+// is not allowed) the count stays fg.muted.
 export const filterChips = defineSlotRecipe({
   className: 'filter-chips',
   jsx: ['FilterChips'],
@@ -79,7 +84,7 @@ export const filterChips = defineSlotRecipe({
       borderRadius: 'full',
       ...Object.fromEntries(kinds.map((k) => [`&[data-kind=${k}]`, { bg: `kind.${k}` }])),
     },
-    count: { textStyle: 'mono', color: 'fg.muted' },
+    count: { textStyle: 'mono', color: 'fg.subtle', '[data-state=on] &': { color: 'fg.muted' } },
   },
   variants: {
     size: {

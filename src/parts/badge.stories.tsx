@@ -148,3 +148,52 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The Inbox pills (Recommended T2 346:5764, T3 346:5976; Working T5 346:6381) are 20 high.
+function SmallPills() {
+  return (
+    <main className={page}>
+      <Inline wrap gap="8">
+        <span data-testid="recommended">
+          <Badge label="Recommended" tone="working" size="sm" />
+        </span>
+        <span data-testid="working">
+          <Badge label="Working" tone="running" size="sm" icon={<SparkIcon size="12" />} />
+        </span>
+        <span data-testid="default">
+          <Badge label="Recommended" tone="working" />
+        </span>
+        <span data-testid="tag-sm">
+          <Badge label="loop" variant="tag" tone="needsYou" size="sm" />
+        </span>
+      </Inline>
+    </main>
+  )
+}
+
+const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const badgeIn = (id: string) => {
+    const el = canvas.getByTestId(id).firstElementChild
+    if (!(el instanceof HTMLElement)) throw new Error(`no badge in ${id}`)
+    return el
+  }
+  const height = (id: string) => badgeIn(id).getBoundingClientRect().height
+  // size="sm": 8 / 2 padding around the 16 px pill line, 20 high, with or without an icon.
+  for (const id of ['recommended', 'working']) {
+    const s = getComputedStyle(badgeIn(id))
+    await expect([s.paddingLeft, s.paddingTop, s.paddingBottom]).toEqual(['8px', '2px', '2px'])
+    await expect(parseFloat(s.lineHeight)).toBeCloseTo(16, 0)
+    await expect([s.fontSize, s.fontWeight]).toEqual(['11px', '500'])
+    await expect(height(id)).toBeCloseTo(20, 0)
+  }
+  // The default pill stays 24 high, and a tag ignores the size (20, as always).
+  await expect(getComputedStyle(badgeIn('default')).paddingTop).toBe('4px')
+  await expect(height('default')).toBeCloseTo(24, 0)
+  await expect(getComputedStyle(badgeIn('tag-sm')).paddingTop).toBe('2px')
+  await expect(height('tag-sm')).toBeCloseTo(20, 0)
+}
+
+/** `size="sm"`: the 20 px pill of the Inbox. */
+export const SmallDark: StoryObj<typeof meta> = { render: () => <SmallPills />, play: smallPlay, globals: { mode: 'dark' } }
+export const SmallLight: StoryObj<typeof meta> = { render: () => <SmallPills />, play: smallPlay, globals: { mode: 'light' } }

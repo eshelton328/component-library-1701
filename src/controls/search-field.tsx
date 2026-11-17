@@ -31,7 +31,9 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
 
 /**
  * A search input. The clear button shows when the field has text; it and
- * Escape empty the field and keep the focus in it.
+ * Escape empty the field and keep the focus in it. `size` sets the height;
+ * `textSize` the text and placeholder: `md` (the default) in `body` (14/20),
+ * `sm` in `bodySm` (13/20), as the Inbox search fields draw them.
  */
 export function SearchField({
   label,
@@ -45,6 +47,7 @@ export function SearchField({
   disabled,
   size,
   clearSize,
+  textSize,
 }: SearchFieldProps) {
   const [own, setOwn] = useState(defaultValue)
   const input = useRef<HTMLInputElement>(null)
@@ -61,7 +64,7 @@ export function SearchField({
     }
   }
   return (
-    <Root size={size} clearSize={clearSize} disabled={disabled}>
+    <Root size={size} clearSize={clearSize} textSize={textSize} disabled={disabled}>
       {icon === undefined ? null : <Icon aria-hidden="true">{icon}</Icon>}
       <Input
         ref={input}

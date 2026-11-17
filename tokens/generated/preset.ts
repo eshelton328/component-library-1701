@@ -1225,7 +1225,7 @@ export default definePreset({
           }
         },
         "bodySm": {
-          "description": "Compact body text: the Inbox detail sections and their suggested prompt, a MarkdownView with size sm, and a TextField or TextArea with textSize sm (the prompt editor), as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
+          "description": "Compact body text: the Inbox detail sections and their suggested prompt, a MarkdownView with size sm, and a TextField or TextArea with textSize sm (the prompt editor), a SearchField with textSize sm (the Inbox search fields), as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
           "value": {
             "fontFamily": "text.bodySm",
             "fontSize": "text.bodySm",

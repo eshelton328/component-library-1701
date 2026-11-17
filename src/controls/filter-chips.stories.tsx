@@ -176,3 +176,43 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const CompactDark: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'dark' }, play: compactPlay }
 export const CompactLight: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'light' }, play: compactPlay }
+
+// Hidden swatches of the count colours.
+const subtle = css({ color: 'fg.subtle' })
+const muted = css({ color: 'fg.muted' })
+
+function Counts() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <FilterChips label="Inbox filter" items={inbox} defaultValue={['all']} multiple={false} size="compact" />
+      </div>
+      <FilterChips label="Default size" items={inbox} defaultValue={['all']} multiple={false} />
+      <span hidden className={subtle} data-testid="swatch-subtle" />
+      <span hidden className={muted} data-testid="swatch-muted" />
+    </main>
+  )
+}
+
+/** The counts (Inbox D1 346:152): fg.subtle on an idle chip, dimmer than its fg.muted label; fg.muted on the selected chip. */
+const countsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const sw = (name: string) => getComputedStyle(canvas.getByTestId(`swatch-${name}`)).color
+  await expect(sw('subtle')).not.toBe(sw('muted'))
+  for (const label of ['Inbox filter', 'Default size']) {
+    const row = within(canvas.getByLabelText(label))
+    const count = (name: RegExp) => {
+      const el = row.getByRole('radio', { name }).querySelector('.filter-chips__count')
+      if (el === null) throw new Error(`no count in ${label}`)
+      return getComputedStyle(el)
+    }
+    const idle = row.getByRole('radio', { name: /Needs you/ })
+    await expect(count(/Needs you/).color).toBe(sw('subtle'))
+    await expect(getComputedStyle(idle).color).toBe(sw('muted'))
+    await expect(count(/^All/).color).toBe(sw('muted'))
+    await expect(count(/Needs you/).fontFamily).toMatch(/mono/i)
+  }
+}
+
+export const CountsDark: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'dark' }, play: countsPlay }
+export const CountsLight: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'light' }, play: countsPlay }

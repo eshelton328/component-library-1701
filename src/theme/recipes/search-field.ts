@@ -4,6 +4,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The search field of Inbox, Artifacts and Toolkit. The pages drew three
 // backgrounds; the inventory merges them into surface.inset (inconsistency
 // 9), with fg.subtle placeholders (inconsistency 8).
+// `textSize="sm"` sets the text and placeholder in `bodySm` (13/20), as the
+// Inbox search fields draw their placeholder at 13 px (T7 346:6800, 101 x 17;
+// the T12 Run in picker's field too). The height stays the `size` token's.
 export const searchField = defineSlotRecipe({
   className: 'search-field',
   jsx: ['SearchField'],
@@ -70,6 +73,10 @@ export const searchField = defineSlotRecipe({
       '12': { clear: { '& svg': { width: 'icon.12!', height: 'icon.12!' } } },
       '16': { clear: { '& svg': { width: 'icon.16!', height: 'icon.16!' } } },
     },
+    textSize: {
+      md: {},
+      sm: { input: { textStyle: 'bodySm' } },
+    },
   },
-  defaultVariants: { size: 'md', clearSize: '12' },
+  defaultVariants: { size: 'md', clearSize: '12', textSize: 'md' },
 })

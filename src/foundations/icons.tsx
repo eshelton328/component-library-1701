@@ -764,3 +764,32 @@ export function BrainIcon(props: IconProps) {
     </Svg>
   )
 }
+
+/**
+ * A warning: an exclamation mark in a triangle. For an error or a failed
+ * load, as in `ErrorState`. Figma has no drawing of it; it is drawn on the
+ * 24 grid in the set's style (stroke 2, round caps and joins).
+ */
+export function WarningIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21.73 18L13.73 4C13.556 3.693 13.303 3.438 12.998 3.26C12.693 3.082 12.347 2.989 11.995 2.989C11.642 2.989 11.296 3.082 10.991 3.26C10.686 3.438 10.433 3.693 10.26 4L2.26 18C2.083 18.306 1.991 18.653 1.991 19.006C1.992 19.36 2.085 19.707 2.262 20.012C2.439 20.318 2.693 20.571 2.999 20.747C3.306 20.923 3.653 21.014 4.006 21.012H20.006C20.357 21.012 20.702 20.918 21.006 20.743C21.31 20.567 21.562 20.314 21.737 20.01C21.913 19.706 22.005 19.36 22.005 19.009C22.005 18.658 21.912 18.304 21.73 18Z" />
+      <path d="M12 9V13" />
+      <path d="M12 16.9V17.1" />
+    </Svg>
+  )
+}
+
+/**
+ * A compass. For a page or an item that was not found, as in a neutral
+ * `ErrorState`. Figma has no drawing of it; it is drawn on the 24 grid in
+ * the set's style (stroke 2, round caps and joins).
+ */
+export function CompassIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22Z" />
+      <path d="M16.24 7.76L14.12 14.12L7.76 16.24L9.88 9.88L16.24 7.76Z" />
+    </Svg>
+  )
+}

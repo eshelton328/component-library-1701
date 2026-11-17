@@ -23,6 +23,7 @@ import {
   ClockIcon,
   CloseIcon,
   CodeIcon,
+  CompassIcon,
   CopyIcon,
   CpuIcon,
   EditIcon,
@@ -68,6 +69,7 @@ import {
   ToolkitIcon,
   TrashIcon,
   UndoIcon,
+  WarningIcon,
   WorkflowIcon,
   WorkspacesIcon,
   type IconProps,
@@ -184,6 +186,13 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'list', Icon: ListIcon },
       { name: 'externalLink', Icon: ExternalLinkIcon },
       { name: 'undo', Icon: UndoIcon },
+    ],
+  },
+  {
+    title: 'Status',
+    icons: [
+      { name: 'warning', Icon: WarningIcon },
+      { name: 'compass', Icon: CompassIcon },
     ],
   },
   {

@@ -1,6 +1,6 @@
-import { Menu as ArkMenu } from '@ark-ui/react/menu'
+import { Menu as ArkMenu, useMenu } from '@ark-ui/react/menu'
 import { Portal } from '@ark-ui/react/portal'
-import { useId, useState, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { menu } from '../../styled-system/recipes'
 import { ChevronRightIcon } from '../foundations/icons'
@@ -9,6 +9,7 @@ import type { PopoverDataAttributes } from './popover'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(menu)
 const Root = withRootProvider(ArkMenu.Root)
+const RootProvider = withRootProvider(ArkMenu.RootProvider)
 const Positioner = withContext(ArkMenu.Positioner, 'positioner')
 const Content = withContext(ArkMenu.Content, 'content')
 const Item = withContext(ArkMenu.Item, 'item')
@@ -188,23 +189,41 @@ type SubmenuProps = {
 // A submenu level: its own React id names its Ark menu, so its list and items have ids no other level can repeat.
 function Submenu({ triggerId, submenu, row, size, density, onSelect }: SubmenuProps) {
   const id = useId()
+  const { api, service } = useMenu({
+    id,
+    ids: { trigger: triggerId },
+    // Ark puts a submenu right of its row with no gap; the offset sets Figma's place (D1 105:473): 11 past the row's
+    // end (the menu's padding 6 and border 1, then 4) and 7 below its top.
+    positioning: { placement: 'right-start', offset: { mainAxis: 11, crossAxis: 7 } },
+    ...(submenu.open === undefined ? {} : { open: submenu.open }),
+    ...highlightOf(id, submenu.items, submenu.highlightedValue, submenu.onHighlightChange),
+    onOpenChange: (details) => {
+      submenu.onOpenChange?.(details.open)
+    },
+    onSelect,
+  })
+  // Ark closes the whole menu tree on Escape in a submenu. The ARIA menu pattern closes only the submenu and puts the
+  // focus back on its row, as Left Arrow does, so this level takes the key before Ark's document listener and sends
+  // Left Arrow's event. The window's capture phase runs before the document's.
+  const contentId = api.getContentProps().id
+  const open = api.open
+  useEffect(() => {
+    if (!open || contentId === undefined) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      const content = document.getElementById(contentId)
+      if (content === null || !(event.target instanceof Node) || !content.contains(event.target)) return
+      event.preventDefault()
+      event.stopPropagation()
+      service.send({ type: 'ARROW_LEFT' })
+    }
+    window.addEventListener('keydown', onKeyDown, { capture: true })
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, { capture: true })
+    }
+  }, [open, contentId, service])
   return (
-    <Root
-      id={id}
-      ids={{ trigger: triggerId }}
-      width="submenu"
-      size={size}
-      density={density}
-      // Ark puts a submenu right of its row with no gap; the offset sets Figma's place (D1 105:473): 11 past the row's
-      // end (the menu's padding 6 and border 1, then 4) and 7 below its top.
-      positioning={{ placement: 'right-start', offset: { mainAxis: 11, crossAxis: 7 } }}
-      {...(submenu.open === undefined ? {} : { open: submenu.open })}
-      {...highlightOf(id, submenu.items, submenu.highlightedValue, submenu.onHighlightChange)}
-      onOpenChange={(details) => {
-        submenu.onOpenChange?.(details.open)
-      }}
-      onSelect={onSelect}
-    >
+    <RootProvider value={{ api, service }} width="submenu" size={size} density={density}>
       <TriggerItem>{row}</TriggerItem>
       <Portal>
         <Positioner>
@@ -213,7 +232,7 @@ function Submenu({ triggerId, submenu, row, size, density, onSelect }: SubmenuPr
           </Content>
         </Positioner>
       </Portal>
-    </Root>
+    </RootProvider>
   )
 }
 

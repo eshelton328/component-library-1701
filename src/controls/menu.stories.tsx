@@ -843,3 +843,52 @@ export const NestedSubmenuIds: StoryObj<typeof meta> = {
     await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
   },
 }
+
+const onEscapeMoveOpen = fn<(open: boolean) => void>()
+const onEscapeMenuOpen = fn<(open: boolean) => void>()
+
+/** Escape in a submenu closes only the submenu and returns the focus to its row; a second Escape closes the menu. */
+export const SubmenuEscape: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu
+        trigger={<Button>Pane actions</Button>}
+        items={paneActions({ items: workspaces, onOpenChange: onEscapeMoveOpen })}
+        density="compact"
+        onOpenChange={onEscapeMenuOpen}
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onEscapeMoveOpen.mockClear()
+    onEscapeMenuOpen.mockClear()
+    const body = within(document.body)
+    const trigger = within(canvasElement).getByRole('button', { name: 'Pane actions' })
+    await userEvent.click(trigger)
+    const menu = await body.findByRole('menu')
+    await waitFor(() => expect(menu).toHaveFocus())
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}')
+    const move = within(menu).getByRole('menuitem', { name: 'Move to workspace' })
+    await waitFor(() => expect(move).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{ArrowRight}')
+    const list = await waitFor(() => {
+      const el = document.getElementById(move.getAttribute('aria-controls') ?? '')
+      if (el === null) throw new Error('no list')
+      return el
+    })
+    await waitFor(() => expect(list).toHaveFocus())
+    // Escape closes the list only: the menu stays open, with the focus on it and Move to workspace highlighted.
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(move).toHaveAttribute('aria-expanded', 'false'))
+    await expect(onEscapeMoveOpen).toHaveBeenLastCalledWith(false)
+    await expect(menu).toBeVisible()
+    await waitFor(() => expect(menu).toHaveFocus())
+    await expect(move).toHaveAttribute('data-highlighted')
+    await expect(onEscapeMenuOpen).not.toHaveBeenCalledWith(false)
+    // The next Escape closes the menu and returns the focus to its button.
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+    await expect(onEscapeMenuOpen).toHaveBeenLastCalledWith(false)
+    await waitFor(() => expect(trigger).toHaveFocus())
+  },
+}

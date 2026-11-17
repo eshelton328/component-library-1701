@@ -31,6 +31,10 @@ export const proposalBlock = defineSlotRecipe({
     body: { display: 'flex', flexDirection: 'column', gap: '12', minW: '0', _empty: { display: 'none' } },
     // D19 403:3411: Geist Regular 11 in #8a97b8, merged into `small`.
     note: { textStyle: 'small', color: 'fg.muted', m: '0' },
+    // The buttons are Button size="sm" (28) with textSize="xs": Figma sets
+    // every proposal button in Geist Medium 12 (D15 to D20: Apply, Discard,
+    // Edit first, Create 3 tasks, Remove…, Keep it; T20 402:11894 is 16
+    // high), `labelXs` (Medium 12/16), as the approval's Allow once and Deny.
     actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8' },
   },
   variants: {

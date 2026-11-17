@@ -31,6 +31,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // them 6 inside a 1 px border is Figma's 52 (403:2435). The row is then
 // taller than `control.md`, so the 32 px minimum touch height stays and
 // does not add height.
+// `labelTone="muted"` and `inline` draw "Also remove this task" under the
+// new tasks of a discussion proposal (T20 402:11886, D17, M21): the row is
+// 16 high (the 16 px box 402:11887 and the label 402:11889 in Geist 12/16,
+// #8a97b8: `small` at `size="sm"`, fg.muted), with the label 8 after the
+// box (35 to 59, less the 16 px box). `inline` drops the `control.md`
+// minimum and sets that gap; a `::before` reaches 4 above and below the row,
+// so the press area stays 24 high (WCAG 2.5.8) with no layout height.
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
@@ -76,6 +83,21 @@ export const checkbox = defineSlotRecipe({
       text: {},
       mono: { label: { textStyle: 'mono' } },
     },
+    labelTone: {
+      default: {},
+      muted: { label: { color: 'fg.muted' } },
+    },
+    inline: {
+      true: {
+        root: {
+          minH: 'auto',
+          gap: '8',
+          position: 'relative',
+          _before: { content: '""', position: 'absolute', insetInline: '0', top: '-4', bottom: '-4' },
+        },
+      },
+      false: {},
+    },
     tone: {
       accent: {},
       discuss: {
@@ -95,5 +117,5 @@ export const checkbox = defineSlotRecipe({
     { size: 'compact', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
     { size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
   ],
-  defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent' },
+  defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent', labelTone: 'default', inline: false },
 })

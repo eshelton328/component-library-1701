@@ -67,13 +67,25 @@ export type CheckboxProps = {
    * (`accent.discuss`), as the new tasks a discussion proposes are. An unchecked box keeps `border.control`.
    */
   tone?: 'accent' | 'discuss' | undefined
+  /**
+   * The label colour: `default` (the default) is `fg.default`; `muted` is `fg.muted`, for a secondary choice under
+   * the main ones, such as "Also remove this task" under the new tasks of a discussion proposal.
+   */
+  labelTone?: 'default' | 'muted' | undefined
+  /**
+   * Whether the row is as high as its text, for a box set among other content, such as "Also remove this task" in a
+   * discussion proposal: with `size="sm"` the row is 16 px, not the 32 px `control.md` minimum, and the label sits 8
+   * after the box, not 10. The press area still reaches 4 px above and below the row (24 px at `sm`). `false` (the
+   * default) keeps the 32 px row.
+   */
+  inline?: boolean | undefined
 }
 
 /**
  * A checkbox with a label, such as one filter in a filter popover, an optional `description` line under the label and
  * an optional `trailing` count at the end.
  */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, description, labelStyle, size, tone }: CheckboxProps) {
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, description, labelStyle, size, tone, labelTone, inline }: CheckboxProps) {
   const descriptionId = useId()
   const described = shown(description)
   return (
@@ -81,6 +93,8 @@ export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disa
       labelStyle={labelStyle}
       size={size}
       tone={tone}
+      labelTone={labelTone}
+      inline={inline}
       disabled={disabled}
       {...(checked === undefined ? {} : { checked })}
       {...(defaultChecked === undefined ? {} : { defaultChecked })}

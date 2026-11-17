@@ -229,6 +229,44 @@ export const Behaviour: StoryObj<typeof meta> = {
   },
 }
 
+// The buttons: Figma sets every proposal button in Geist Medium 12 (D15 to D20; T20 402:11894), `labelXs` (12/16),
+// on a 28 px `sm` button.
+function Labels() {
+  return (
+    <main className={page}>
+      <Stack gap="24">
+        <Update />
+        <ProposalBlock
+          tone="remove"
+          label="Proposed · Remove this task"
+          title="Write the tickets for increment one"
+          actions={[
+            { label: 'Remove…', variant: 'dangerText', onClick: noop },
+            { label: 'Keep it', onClick: noop },
+          ]}
+        />
+        <ProposalBlock tone="approval" label="Approval needed" actions={[{ label: 'Allow once', variant: 'primary', onClick: noop }, { label: 'Deny', variant: 'dangerText', onClick: noop }]} />
+      </Stack>
+    </main>
+  )
+}
+
+/** Every button label is Medium 12 on a 16 px line, in sans; the button stays 28 px high. */
+const labelsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const names = ['Apply', 'Discard', 'Edit first', 'Remove…', 'Keep it', 'Allow once', 'Deny']
+  for (const name of names) {
+    const button = canvas.getByRole('button', { name })
+    const style = getComputedStyle(button)
+    await expect([style.fontSize, Math.round(Number.parseFloat(style.lineHeight)), style.fontWeight]).toEqual(['12px', 16, '500'])
+    await expect(style.fontFamily).not.toMatch(/Mono/)
+    await expect(button.getBoundingClientRect().height).toBe(28)
+  }
+}
+
+export const ButtonLabelDark: StoryObj<typeof meta> = { render: () => <Labels />, globals: { mode: 'dark' }, play: labelsPlay }
+export const ButtonLabelLight: StoryObj<typeof meta> = { render: () => <Labels />, globals: { mode: 'light' }, play: labelsPlay }
+
 const onCreate = fn()
 
 /** New tasks from a discussion: Inbox D17 403:2430, a checkbox for each task. */

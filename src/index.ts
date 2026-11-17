@@ -38,6 +38,8 @@ export { DailyBarChart, GroupedBarChart, HorizontalBarChart } from './parts/bar-
 export type { BarGroup, BarRow, BarSeries, BarTone, DailyAxisLabels, DailyBar, DailyBarChartProps, GroupedBarChartProps, HorizontalBarChartProps } from './parts/bar-chart'
 export { ContextMeter } from './parts/context-meter'
 export type { ContextMeterProps } from './parts/context-meter'
+export { ErrorState } from './parts/error-state'
+export type { ErrorStateProps } from './parts/error-state'
 export { PageHeader } from './parts/page-header'
 export type { PageHeaderProps } from './parts/page-header'
 export { Dialog, DialogClose } from './controls/dialog'
@@ -92,6 +94,7 @@ export {
   ClockIcon,
   CloseIcon,
   CodeIcon,
+  CompassIcon,
   CopyIcon,
   CpuIcon,
   EditIcon,
@@ -137,6 +140,7 @@ export {
   ToolkitIcon,
   TrashIcon,
   UndoIcon,
+  WarningIcon,
   WorkflowIcon,
   WorkspacesIcon,
 } from './foundations/icons'

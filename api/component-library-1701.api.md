@@ -10,6 +10,7 @@ import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
+import { ErrorStateVariantProps } from '../../styled-system/recipes';
 import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
@@ -32,6 +33,7 @@ import { PanelVariantProps } from '../../styled-system/recipes';
 import { ProposalBlockVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
+import { Ref } from 'react';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
@@ -289,6 +291,9 @@ export type CodeSegment = {
 };
 
 // @public
+export function CompassIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Composer(input: ComposerProps): JSX.Element;
 
 // @public
@@ -390,6 +395,24 @@ export type DialogProps = Scalar<DialogVariantProps> & {
 
 // @public
 export function EditIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ErrorState(input: ErrorStateProps): JSX.Element;
+
+// @public (undocumented)
+export type ErrorStateProps = Scalar<ErrorStateVariantProps> & {
+    title: string;
+    description?: ReactNode;
+    actions?: ReactNode;
+    icon?: ReactNode;
+    details?: string | undefined;
+    detailsLabel?: string | undefined;
+    detailsOpen?: boolean | undefined;
+    defaultDetailsOpen?: boolean | undefined;
+    onDetailsOpenChange?: ((open: boolean) => void) | undefined;
+    level?: 1 | 2 | 3 | 4 | undefined;
+    headingRef?: Ref<HTMLHeadingElement> | undefined;
+};
 
 // @public
 export function ExternalLinkIcon(props: IconProps): JSX.Element;
@@ -1488,6 +1511,9 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
     onValueChange?: ((value: string) => void) | undefined;
     disabled?: boolean | undefined;
 };
+
+// @public
+export function WarningIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Workbench(input: WorkbenchProps): JSX.Element;

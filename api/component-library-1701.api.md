@@ -35,6 +35,7 @@ import { ProposalBlockVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
+import { ScrollFrameVariantProps } from '../../styled-system/recipes';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TagsLineVariantProps } from '../../styled-system/recipes';
@@ -1256,6 +1257,18 @@ export type ScriptFact = {
 export type ScriptStep = {
     text: ReactNode;
     line?: number | undefined;
+};
+
+// @public
+export function ScrollFrame(input: ScrollFrameProps): JSX.Element;
+
+// @public (undocumented)
+export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
+    header?: ReactNode;
+    footer?: ReactNode;
+    children?: ReactNode;
+    className?: string | undefined;
+    bodyClassName?: string | undefined;
 };
 
 // @public

@@ -840,6 +840,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
+            "smallXs": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
+            },
             "subtitle": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
@@ -1007,6 +1011,10 @@ export default definePreset({
               "value": "12px",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
+            "smallXs": {
+              "value": "11px",
+              "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
+            },
             "subtitle": {
               "value": "17px",
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
@@ -1102,6 +1110,10 @@ export default definePreset({
             "small": {
               "value": "1.3334",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "smallXs": {
+              "value": "1.4546",
+              "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
             "subtitle": {
               "value": "1.4118",
@@ -1199,6 +1211,10 @@ export default definePreset({
               "value": "400",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
+            "smallXs": {
+              "value": "400",
+              "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
+            },
             "subtitle": {
               "value": "600",
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
@@ -1294,6 +1310,10 @@ export default definePreset({
             "small": {
               "value": "0px",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
+            },
+            "smallXs": {
+              "value": "0px",
+              "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
             "subtitle": {
               "value": "0px",
@@ -1510,13 +1530,23 @@ export default definePreset({
           }
         },
         "small": {
-          "description": "Captions, helper text and diff lines, and the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px).",
+          "description": "Captions, helper text and diff lines, and the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px). Not for the descriptions and note of a RadioMenu with density compact, which use smallXs.",
           "value": {
             "fontFamily": "text.small",
             "fontSize": "text.small",
             "lineHeight": "text.small",
             "fontWeight": "text.small",
             "letterSpacing": "text.small"
+          }
+        },
+        "smallXs": {
+          "description": "Regular 11/16 for the choice descriptions and the note of a RadioMenu with density compact, as the Artifacts Sort menu (D6 403:8884, 403:8907; Regular 11 on 14 px lines in Figma, 16 on the 4 px grid, d-100). Not for captions or helper text, which use small, or for meta lines and counts, which use monoSm.",
+          "value": {
+            "fontFamily": "text.smallXs",
+            "fontSize": "text.smallXs",
+            "lineHeight": "text.smallXs",
+            "fontWeight": "text.smallXs",
+            "letterSpacing": "text.smallXs"
           }
         },
         "subtitle": {

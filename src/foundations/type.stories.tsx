@@ -9,7 +9,9 @@ import { css } from '../../styled-system/css'
 // and `labelSmStrong` are the small Inbox button labels (D16 403:1848,
 // 403:3928), `labelXsStrong` the discussion's author name (T20 402:11858)
 // and `bodyLg` the Read the whole prompt dialog (D08 346:3548, 15/23 in
-// Figma, 15/24 on the grid).
+// Figma, 15/24 on the grid). `smallXs` is the Artifacts Sort menu's
+// descriptions and note (D6 403:8884, 403:8907: Regular 11 on 14 px lines,
+// 11/16 on the grid).
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '12' })
 const row = css({ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'baseline', gap: '16' })
 const name = css({ textStyle: 'mono', color: 'fg.muted' })
@@ -28,6 +30,7 @@ const styles = [
   { name: 'body', className: css({ textStyle: 'body', color: 'fg.default' }) },
   { name: 'bodySm', className: css({ textStyle: 'bodySm', color: 'fg.default' }) },
   { name: 'small', className: css({ textStyle: 'small', color: 'fg.muted' }) },
+  { name: 'smallXs', className: css({ textStyle: 'smallXs', color: 'fg.muted' }) },
   { name: 'mono', className: css({ textStyle: 'mono', color: 'fg.muted' }) },
   { name: 'monoCaps', className: css({ textStyle: 'monoCaps', color: 'fg.muted' }) },
   { name: 'monoSm', className: css({ textStyle: 'monoSm', color: 'fg.muted' }) },
@@ -69,6 +72,7 @@ const meta = {
     await expect(sample('labelSmStrong')).toEqual({ family: '"Geist Variable"', size: '13px', weight: '600', lineHeight: 16, tracking: 'normal' })
     await expect(sample('labelXs')).toEqual({ family: '"Geist Variable"', size: '12px', weight: '500', lineHeight: 16, tracking: 'normal' })
     await expect(sample('labelXsStrong')).toEqual({ family: '"Geist Variable"', size: '12px', weight: '600', lineHeight: 16, tracking: 'normal' })
+    await expect(sample('smallXs')).toEqual({ family: '"Geist Variable"', size: '11px', weight: '400', lineHeight: 16, tracking: 'normal' })
     await expect(sample('bodyLg')).toEqual({ family: '"Geist Variable"', size: '15px', weight: '400', lineHeight: 24, tracking: 'normal' })
   },
 } satisfies Meta<typeof TypeScale>

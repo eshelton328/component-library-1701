@@ -413,7 +413,9 @@ export type DialogProps = Scalar<DialogVariantProps> & {
     role?: 'dialog' | 'alertdialog' | undefined;
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
-};
+    headerAction?: ReactNode;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export function EditIcon(props: IconProps): JSX.Element;

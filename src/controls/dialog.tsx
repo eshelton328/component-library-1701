@@ -4,6 +4,8 @@ import type { ReactElement, ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { dialog, type DialogVariantProps } from '../../styled-system/recipes'
+import { dataAttributesOf } from './data-attributes'
+import type { PopoverDataAttributes } from './popover'
 import type { Scalar } from './scalar'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(dialog)
@@ -16,6 +18,7 @@ const Title = withContext(ArkDialog.Title, 'title')
 const Description = withContext(ArkDialog.Description, 'description')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
 const Footer = withContext('div', 'footer')
+const HeaderAction = withContext('div', 'headerAction')
 
 export type DialogProps = Scalar<DialogVariantProps> & {
   /** The dialog title. It names the dialog for assistive technology. */
@@ -42,15 +45,22 @@ export type DialogProps = Scalar<DialogVariantProps> & {
    * takes the focus, which can be the close button.
    */
   initialFocus?: (() => HTMLElement | null) | undefined
-}
+  /**
+   * An action at the end of the title row, before the close button, such as a Done `Button variant="text"` wrapped in
+   * `DialogClose` (Inbox D8).
+   */
+  headerAction?: ReactNode
+  /** A class added to the dialog's box, after its own. */
+  className?: string | undefined
+} & PopoverDataAttributes
 
 /**
- * A dialog on a scrim: the confirm dialog of Inbox (`md`) and the New chat
- * form of Workbench (`lg`). It keeps the focus inside while it is open;
+ * A dialog on a scrim: the confirm dialog of Inbox (`md`), the New chat
+ * form of Workbench (`lg`) and the Inbox suggested prompt (`wide`). It keeps the focus inside while it is open;
  * Escape and a click on the scrim close it, and the focus goes back to the
  * trigger.
  */
-export function Dialog({ title, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size }: DialogProps) {
+export function Dialog({ title, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, headerAction, className, ...rest }: DialogProps) {
   return (
     <Root
       size={size}
@@ -68,9 +78,10 @@ export function Dialog({ title, description, children, actions, trigger, open, d
       <Portal>
         <Backdrop />
         <Positioner>
-          <Content>
+          <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
             <Header>
               <Title>{title}</Title>
+              {headerAction === undefined || headerAction === null || typeof headerAction === 'boolean' ? null : <HeaderAction>{headerAction}</HeaderAction>}
               {closeButton ? (
                 <CloseTrigger aria-label="Close">
                   <CloseIcon size="16" />

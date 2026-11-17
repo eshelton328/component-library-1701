@@ -130,6 +130,65 @@ export const FormDark: StoryObj<typeof meta> = {
 }
 export const FormLight: StoryObj<typeof meta> = { ...FormDark, globals: { mode: 'light' } }
 
+// The Inbox suggested prompt (D8 346:3543): a wide dialog that shows a long text, with Done at the end of the title row
+// (346:3547) and the app's key on the box.
+const prompt =
+  'Read f-005-the-bridge/increment-1.md and write one Linear ticket per screen in the NCC project, following toolkit/rules/linear.md. Link each ticket to its requirement IDs and leave them in Backlog for me to review.'
+
+function SuggestedPrompt() {
+  return (
+    <main className={page}>
+      <Dialog
+        open
+        size="wide"
+        title="Suggested prompt"
+        headerAction={
+          <DialogClose>
+            <Button variant="text">Done</Button>
+          </DialogClose>
+        }
+        data-figma="dialog · Suggested prompt"
+        className="app-prompt-dialog"
+        actions={
+          <>
+            <Button>Edit prompt</Button>
+            <Button>Copy</Button>
+          </>
+        }
+      >
+        <p>{prompt}</p>
+      </Dialog>
+    </main>
+  )
+}
+
+const widePlay = async () => {
+  const body = within(document.body)
+  const box = await body.findByRole('dialog', { name: 'Suggested prompt' })
+  // The box takes the app's key and class, and keeps Ark's own data attributes.
+  await expect(box).toHaveAttribute('data-figma', 'dialog · Suggested prompt')
+  await expect(box).toHaveClass('app-prompt-dialog')
+  await expect(box).toHaveAttribute('data-part', 'content')
+  // shell.dialogWide: 720; padding 20/16/34 in Figma, 34 takes 32 (d-072).
+  await expect(box.getBoundingClientRect().width).toBe(720)
+  const b = getComputedStyle(box)
+  await expect([b.paddingTop, b.paddingRight, b.paddingBottom, b.paddingLeft]).toEqual(['20px', '16px', '32px', '16px'])
+  // The title is SemiBold 17 (`subtitle`, 346:3545).
+  const title = within(box).getByText('Suggested prompt')
+  await expect([getComputedStyle(title).fontSize, getComputedStyle(title).fontWeight]).toEqual(['17px', '600'])
+  // Done sits at the end of the title row, centred on the title, and closes the dialog.
+  const done = within(box).getByRole('button', { name: 'Done' })
+  const t = title.getBoundingClientRect()
+  const d = done.getBoundingClientRect()
+  await expect(Math.abs(t.top + t.height / 2 - (d.top + d.height / 2))).toBeLessThanOrEqual(1)
+  await expect(Math.round(box.getBoundingClientRect().right - d.right)).toBe(17)
+  await expect(d.bottom).toBeLessThan(within(box).getByText(prompt).getBoundingClientRect().top)
+}
+
+/** The wide dialog with an action in the title row (Inbox D8). */
+export const WideDark: StoryObj<typeof meta> = { render: () => <SuggestedPrompt />, play: widePlay, globals: { mode: 'dark' } }
+export const WideLight: StoryObj<typeof meta> = { render: () => <SuggestedPrompt />, play: widePlay, globals: { mode: 'light' } }
+
 const onOpenChange = fn<(open: boolean) => void>()
 
 /** A click opens the dialog with the focus inside; Tab stays inside; Escape, Cancel and the close button close it. */

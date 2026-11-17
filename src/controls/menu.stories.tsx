@@ -950,6 +950,10 @@ const compactSortPlay: StoryObj<typeof meta>['play'] = async () => {
   const rows = within(menu).getAllByRole('menuitemradio')
   await expect(rows).toHaveLength(4)
   for (const row of rows) await expect(row.getBoundingClientRect().height).toBe(48)
+  // 52 apart, as Figma's 403:8884 to 403:8901: 48 high, 4 between.
+  const [row1, row2] = rows
+  if (row1 === undefined || row2 === undefined) throw new Error('no rows')
+  await expect(row2.getBoundingClientRect().top - row1.getBoundingClientRect().top).toBe(52)
   const newest = within(menu).getByRole('menuitemradio', { name: 'Newest first' })
   await expect(newest).toHaveAccessibleDescription('Most recently updated at the top')
   const r = getComputedStyle(newest)
@@ -970,13 +974,14 @@ const compactSortPlay: StoryObj<typeof meta>['play'] = async () => {
   await expect(n.fontFamily).not.toMatch(/Mono/)
   await expect(n.color).toBe(swatch())
   await expect(note.clientHeight - Number.parseFloat(n.paddingTop) - Number.parseFloat(n.paddingBottom)).toBe(16)
-  // The default density keeps its look: 54 px rows, a 12 px description 2 under the label, 4 under its trigger.
+  // The default density keeps #119's look: 50 px rows (Inbox D9 346:4003), a 12 px description 2 under the label,
+  // 4 under its trigger.
   const plain = await menuByKey('sort default')
   const plainTrigger = document.querySelector('[data-trigger="default"]')
   if (plainTrigger === null) throw new Error('no default trigger')
   await expect(Math.round(plain.getBoundingClientRect().top - plainTrigger.getBoundingClientRect().bottom)).toBe(4)
   const plainNewest = within(plain).getByRole('menuitemradio', { name: 'Newest first' })
-  await expect(Math.round(plainNewest.getBoundingClientRect().height)).toBe(54)
+  await expect(Math.round(plainNewest.getBoundingClientRect().height)).toBe(50)
   const plainDescription = within(plainNewest).getByText('Most recently updated at the top')
   await expect(getComputedStyle(plainDescription).fontSize).toBe('12px')
   await expect(Math.round(plainDescription.getBoundingClientRect().top - within(plainNewest).getByText('Newest first').getBoundingClientRect().bottom)).toBe(2)

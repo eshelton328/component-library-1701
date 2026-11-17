@@ -344,10 +344,11 @@ export type RadioMenuProps = {
   /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
   /**
-   * The row pitch at `size="md"`. `default` draws a choice with a description 54 high (padding 8/12, the description
-   * in `small`, 2 under the label), the note in `small`, and opens the box 4 under the trigger. `compact` draws it 48
-   * high (padding 6/12, the description in `smallXs`, Regular 11/16, right under the label), the note in `smallXs`,
-   * and opens the box 8 under the trigger, as the Artifacts D6 Sort menu (403:8881). `size="lg"` keeps its own pitch.
+   * The row pitch at `size="md"`. `default` draws a choice with a description 50 high and 2 apart (padding 6/12, the
+   * description in `small`, 2 under the label), the note in `small`, and opens the box 4 under the trigger. `compact`
+   * draws it 48 high and 4 apart (padding 6/12, the description in `smallXs`, Regular 11/16, right under the label),
+   * the note in `smallXs`, and opens the box 8 under the trigger, as the Artifacts D6 Sort menu (403:8881, 283 high).
+   * `size="lg"` keeps its own pitch.
    */
   density?: 'default' | 'compact' | undefined
   /** A class added to the menu's box, after its own. */

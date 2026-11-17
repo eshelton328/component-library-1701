@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { GridIcon, MoveIcon } from '../foundations/icons'
+import { CopyIcon, GridIcon, MoveIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -363,3 +363,93 @@ const disabledPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 
 export const DisabledDark: StoryObj<typeof meta> = { render: () => <DisabledButtons />, globals: { mode: 'dark' }, play: disabledPlay }
 export const DisabledLight: StoryObj<typeof meta> = { render: () => <DisabledButtons />, globals: { mode: 'light' }, play: disabledPlay }
+
+// The 12 px labels of the small Inbox buttons (Reset, Edit, Snooze; D16 403:1848, 403:1875), Geist Medium 12, and
+// Start and Remove task (403:3928), Geist SemiBold 13.
+function CompactLabels() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button size="sm" textSize="xs">
+            Edit
+          </Button>
+          <Button size="sm" textSize="xs" disabled>
+            Reset
+          </Button>
+          <Button textSize="smStrong" variant="primary">
+            Start
+          </Button>
+          <Button textSize="smStrong" variant="danger">
+            Remove task
+          </Button>
+          <Button>Default</Button>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+// `textSize="xs"` sets labelXs (Medium 12/16) and `smStrong` labelSmStrong (SemiBold 13/16), in the family of the
+// default label; both keep the height and padding of `size`, and the default stays label (Medium 14/20).
+const compactLabelPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const edit = canvas.getByRole('button', { name: 'Edit' })
+  const reset = canvas.getByRole('button', { name: 'Reset' })
+  const start = canvas.getByRole('button', { name: 'Start' })
+  const remove = canvas.getByRole('button', { name: 'Remove task' })
+  const plain = canvas.getByRole('button', { name: 'Default' })
+  const d = getComputedStyle(plain)
+  const type = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight, s.fontFamily]
+  }
+  await expect(type(edit)).toEqual(['12px', 16, '500', d.fontFamily])
+  await expect(type(reset)).toEqual(['12px', 16, '500', d.fontFamily])
+  await expect(type(start)).toEqual(['13px', 16, '600', d.fontFamily])
+  await expect(type(remove)).toEqual(['13px', 16, '600', d.fontFamily])
+  await expect(type(plain)).toEqual(['14px', 20, '500', d.fontFamily])
+  // The heights stay those of size sm (28) and md (32); the padding of an md button is unchanged.
+  await expect([edit, start, plain].map((b) => b.getBoundingClientRect().height)).toEqual([28, 32, 32])
+  await expect(getComputedStyle(start).paddingLeft).toBe(d.paddingLeft)
+}
+
+export const CompactLabelDark: StoryObj<typeof meta> = { render: () => <CompactLabels />, globals: { mode: 'dark' }, play: compactLabelPlay }
+export const CompactLabelLight: StoryObj<typeof meta> = { render: () => <CompactLabels />, globals: { mode: 'light' }, play: compactLabelPlay }
+
+// The 24 px button: Copy under a chat reply (Inbox T5 346:6404, 22 high in Figma), with and without a label.
+function ExtraSmall() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button size="xs" textSize="xs">
+            <CopyIcon size="16" />
+            Copy
+          </Button>
+          <Button size="xs" iconOnly aria-label="Move">
+            <MoveIcon size="16" />
+          </Button>
+          <Button size="sm">Small</Button>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+// `size="xs"` is 24 px high (control.xs) with 8 px sides; an icon-only one is 24 square; `sm` stays 28.
+const extraSmallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const copy = canvas.getByRole('button', { name: 'Copy' })
+  const move = canvas.getByRole('button', { name: 'Move' })
+  const small = canvas.getByRole('button', { name: 'Small' })
+  await expect(copy.getBoundingClientRect().height).toBe(24)
+  await expect(getComputedStyle(copy).paddingLeft).toBe('8px')
+  await expect(getComputedStyle(copy).fontSize).toBe('12px')
+  const m = move.getBoundingClientRect()
+  await expect([m.width, m.height]).toEqual([24, 24])
+  await expect(small.getBoundingClientRect().height).toBe(28)
+}
+
+export const ExtraSmallDark: StoryObj<typeof meta> = { render: () => <ExtraSmall />, globals: { mode: 'dark' }, play: extraSmallPlay }
+export const ExtraSmallLight: StoryObj<typeof meta> = { render: () => <ExtraSmall />, globals: { mode: 'light' }, play: extraSmallPlay }

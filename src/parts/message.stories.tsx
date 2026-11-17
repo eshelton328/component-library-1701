@@ -107,11 +107,11 @@ const meta = {
     const actions = slot(canvasElement, 'claude', 'actions')
     await expect(body.getBoundingClientRect().top - author.getBoundingClientRect().bottom).toBe(6)
     await expect(actions.getBoundingClientRect().top - body.getBoundingClientRect().bottom).toBe(6)
-    // The author row: a 14 px Claude mark, 6 px before the name in label (Medium 14) and fg.default, then the time in fg.subtle.
+    // The author row: a 12 px Claude mark, 6 px before the name in label (Medium 14) and fg.default, then the time in fg.subtle.
     const mark = author.querySelector('svg')
     if (mark === null) throw new Error('no mark')
     await expect(mark).toHaveAttribute('aria-hidden', 'true')
-    await expect([mark.getBoundingClientRect().width, mark.getBoundingClientRect().height]).toEqual([14, 14])
+    await expect([mark.getBoundingClientRect().width, mark.getBoundingClientRect().height]).toEqual([12, 12])
     await expect(getComputedStyle(mark).color).toBe(s('claude'))
     const name = slot(canvasElement, 'claude', 'name')
     await expect(name.getBoundingClientRect().left - mark.getBoundingClientRect().right).toBe(6)

@@ -102,7 +102,7 @@ export const Widths: StoryObj<typeof meta> = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await expect(Math.round(rect(slot(canvasElement, 'list')).width)).toBe(330)
+    await expect(Math.round(rect(slot(canvasElement, 'list')).width)).toBe(328)
     await expect(Math.round(rect(canvas.getByRole('complementary')).width)).toBe(420)
     // No rail: the sidebar starts at the left edge.
     await expect(canvasElement.querySelector('.app-shell__rail')).toBeNull()

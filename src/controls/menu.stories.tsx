@@ -380,8 +380,8 @@ const describedPlay: StoryObj<typeof meta>['play'] = async () => {
   await expect([getComputedStyle(description).fontSize, getComputedStyle(description).fontWeight]).toEqual(['12px', '400'])
   await expect(getComputedStyle(description).color).toBe(swatch())
   await expect(Math.round(description.getBoundingClientRect().top - label.getBoundingClientRect().bottom)).toBe(2)
-  // 8 + 20 + 2 + 17 + 8 with the text style line heights.
-  await expect(Math.round(newest.getBoundingClientRect().height)).toBe(55)
+  // 8 + 20 + 2 + 16 + 8 with the text style line heights.
+  await expect(Math.round(newest.getBoundingClientRect().height)).toBe(54)
 }
 
 /** The sort menu with a heading and a description under each choice (Inbox D9, T9). */

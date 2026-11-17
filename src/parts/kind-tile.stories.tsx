@@ -101,13 +101,13 @@ const meta = {
       const { tile, svg } = tileIn(canvas.getByTestId(`tile-lg-${k}`))
       const box = tile.getBoundingClientRect()
       const icon = svg.getBoundingClientRect()
-      // 36 px tile with an 18 px icon at 9, 9 (Figma 429:97).
+      // 36 px tile with a 16 px icon at 10, 10 (Figma 429:97 draws 18 at 9, 9).
       await expect([box.width, box.height]).toEqual([36, 36])
-      await expect([icon.width, icon.height]).toEqual([18, 18])
-      await expect([icon.left - box.left, icon.top - box.top]).toEqual([9, 9])
+      await expect([icon.width, icon.height]).toEqual([16, 16])
+      await expect([icon.left - box.left, icon.top - box.top]).toEqual([10, 10])
     }
     // A title names a tile that stands alone.
-    await expect(canvas.getByRole('img', { name: 'Approval' }).getBoundingClientRect().width).toBe(18)
+    await expect(canvas.getByRole('img', { name: 'Approval' }).getBoundingClientRect().width).toBe(16)
   },
 } satisfies Meta<typeof Tiles>
 export default meta

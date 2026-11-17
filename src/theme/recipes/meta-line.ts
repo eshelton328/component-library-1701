@@ -29,12 +29,13 @@ export const metaLine = defineSlotRecipe({
     trailing: { flexShrink: '0', ms: 'auto', whiteSpace: 'nowrap' },
   },
   variants: {
-    // The card draws a 14 px kind mark; rows draw a 12 px one. Both sizes
-    // are here, not one in base: `!` wins over the icon's own size, and an
-    // important base style would also win over the variant.
+    // Figma draws a 14 px kind mark on the card and a 12 px one in rows;
+    // both take 12, on the 4 px icon scale. Each variant sets the size, not
+    // base: `!` wins over the icon's own size, and an important base style
+    // would also win over the variant.
     icon: {
       sm: { leading: { '& svg': { w: 'icon.12!', h: 'icon.12!' } } },
-      md: { leading: { '& svg': { w: 'icon.14!', h: 'icon.14!' } } },
+      md: { leading: { '& svg': { w: 'icon.12!', h: 'icon.12!' } } },
     },
   },
   defaultVariants: { icon: 'sm' },

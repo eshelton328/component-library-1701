@@ -40,7 +40,7 @@ function Badges() {
           <Badge label="link.sh" variant="outline" tone="needsYou" />
         </span>
         <span data-testid="read-only">
-          <Badge label="Read-only" variant="quiet" icon={<LockIcon size="14" />} />
+          <Badge label="Read-only" variant="quiet" icon={<LockIcon size="12" />} />
         </span>
       </Inline>
       <div className={pane}>
@@ -91,7 +91,7 @@ const meta = {
     await expect([pill.fontSize, pill.fontWeight]).toEqual(['11px', '500'])
     await expect([pill.paddingLeft, pill.paddingTop, pill.columnGap]).toEqual(['8px', '4px', '6px'])
     await expect(parseFloat(pill.borderTopLeftRadius)).toBeGreaterThanOrEqual(box('new').height / 2)
-    await expect(box('new').height).toBeCloseTo(22, 0)
+    await expect(box('new').height).toBeCloseTo(24, 0)
     const icon = badgeIn('new').querySelector('svg')
     if (!(icon instanceof SVGSVGElement)) throw new Error('no icon')
     await expect(icon.getBoundingClientRect().width).toBe(12)
@@ -102,14 +102,14 @@ const meta = {
     // A badge with no icon draws no icon slot.
     await expect(badgeIn('tone-idle').querySelector('.badge__icon')).toBeNull()
 
-    // Tag: the needs-you tint, mono 12/17, radius 6, 6 / 2 padding, gap 4, 21 high.
+    // Tag: the needs-you tint, mono 12/16, radius 6, 6 / 2 padding, gap 4, 20 high.
     const tag = style('loop')
     await expect(tag.backgroundColor).toBe(sw('needsYou').backgroundColor)
     await expect(tag.color).toBe(sw('needsYou').color)
     await expect([tag.fontSize, tag.borderTopLeftRadius, tag.borderTopWidth]).toEqual(['12px', '6px', '0px'])
     await expect(tag.fontFamily).toMatch(/mono/i)
     await expect([tag.paddingLeft, tag.paddingTop, tag.columnGap]).toEqual(['6px', '2px', '4px'])
-    await expect(box('loop').height).toBeCloseTo(21, 0)
+    await expect(box('loop').height).toBeCloseTo(20, 0)
     // The loop tag draws the set's LoopIcon (459:617) at 12 px in the tag's colour.
     const loopIcon = badgeIn('loop').querySelector('svg')
     const loopRef = canvas.getByTestId('ref-loop').querySelector('svg')
@@ -118,7 +118,7 @@ const meta = {
     await expect([loopIcon.getBoundingClientRect().width, loopIcon.getBoundingClientRect().height]).toEqual([12, 12])
     await expect(getComputedStyle(loopIcon).stroke).toBe(sw('needsYou').color)
 
-    // Outline: surface.overlay, a 1 px border.default border, the tone's text, 23 high.
+    // Outline: surface.overlay, a 1 px border.default border, the tone's text, 22 high.
     const outline = style('uses')
     await expect(outline.backgroundColor).toBe(sw('overlay').backgroundColor)
     await expect(outline.borderTopColor).toBe(sw('border').color)
@@ -127,9 +127,9 @@ const meta = {
     await expect(outline.borderTopLeftRadius).toBe('6px')
     await expect([outline.fontSize, outline.paddingLeft, outline.paddingTop, outline.columnGap]).toEqual(['12px', '6px', '2px', '6px'])
     await expect(outline.fontFamily).toMatch(/mono/i)
-    await expect(box('uses').height).toBeCloseTo(23, 0)
+    await expect(box('uses').height).toBeCloseTo(22, 0)
 
-    // Quiet: a bordered surface.overlay pill, fg.muted small text, 14 px icon.
+    // Quiet: a bordered surface.overlay pill, fg.muted small text, 12 px icon.
     const quiet = style('read-only')
     await expect(quiet.backgroundColor).toBe(sw('overlay').backgroundColor)
     await expect(quiet.borderTopColor).toBe(sw('border').color)
@@ -138,10 +138,10 @@ const meta = {
     await expect([quiet.paddingLeft, quiet.paddingTop, quiet.columnGap]).toEqual(['10px', '6px', '6px'])
     await expect(quiet.borderTopWidth).toBe('1px')
     await expect(parseFloat(quiet.borderTopLeftRadius)).toBeGreaterThanOrEqual(box('read-only').height / 2)
-    await expect(box('read-only').height).toBeCloseTo(31, 0)
+    await expect(box('read-only').height).toBeCloseTo(30, 0)
     const lock = badgeIn('read-only').querySelector('svg')
     if (!(lock instanceof SVGSVGElement)) throw new Error('no lock')
-    await expect(lock.getBoundingClientRect().width).toBe(14)
+    await expect(lock.getBoundingClientRect().width).toBe(12)
   },
 } satisfies Meta<typeof Badges>
 export default meta

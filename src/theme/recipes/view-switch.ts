@@ -39,7 +39,7 @@ export const viewSwitch = defineSlotRecipe({
       color: 'fg.muted',
       cursor: 'pointer',
       userSelect: 'none',
-      '& svg': { width: 'icon.14!', height: 'icon.14!', flexShrink: '0' },
+      '& svg': { width: 'icon.12!', height: 'icon.12!', flexShrink: '0' },
       _checked: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.selected' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },

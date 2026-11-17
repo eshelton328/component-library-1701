@@ -279,7 +279,7 @@ export const Behaviour: StoryObj<typeof meta> = {
     const x = closeButton.querySelector('svg')
     if (x === null) throw new Error('no close icon')
     await expect(x.getAttribute('viewBox')).toBe('0 0 24 24')
-    await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([18, 18])
+    await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([16, 16])
     await expect(getComputedStyle(x).stroke).toBe(getComputedStyle(closeButton).color)
     await userEvent.click(within(chat).getByRole('button', { name: 'Close' }))
     await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())

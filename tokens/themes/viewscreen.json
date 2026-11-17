@@ -1496,7 +1496,7 @@
           "system-ui",
           "sans-serif"
         ],
-        "$description": "Text font for every style except mono, code and eyebrow."
+        "$description": "Text font for every style except mono, monoCaps, code and eyebrow."
       },
       "mono": {
         "$type": "fontFamily",
@@ -1507,7 +1507,7 @@
           "SFMono-Regular",
           "monospace"
         ],
-        "$description": "Monospace font for the mono, code and eyebrow styles."
+        "$description": "Monospace font for the mono, monoCaps, code and eyebrow styles."
       }
     }
   },
@@ -1518,7 +1518,7 @@
         "fontFamily": "{font.family.sans}",
         "fontSize": { "value": 28, "unit": "px" },
         "fontWeight": 600,
-        "lineHeight": 1.4643,
+        "lineHeight": 1.4286,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Page titles on tablet and phone, and the toolkit item title."
@@ -1529,7 +1529,7 @@
         "fontFamily": "{font.family.sans}",
         "fontSize": { "value": 20, "unit": "px" },
         "fontWeight": 600,
-        "lineHeight": 1.45,
+        "lineHeight": 1.4,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "The desktop page title, the drawer header and KPI values."
@@ -1595,7 +1595,7 @@
         "fontFamily": "{font.family.sans}",
         "fontSize": { "value": 12, "unit": "px" },
         "fontWeight": 400,
-        "lineHeight": 1.4167,
+        "lineHeight": 1.3334,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Captions, helper text and diff lines."
@@ -1606,10 +1606,24 @@
         "fontFamily": "{font.family.mono}",
         "fontSize": { "value": 12, "unit": "px" },
         "fontWeight": 400,
-        "lineHeight": 1.4167,
+        "lineHeight": 1.3334,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Meta, paths, counts, code lines and axis labels."
+    },
+    "monoCaps": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": { "value": 12, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.3334,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "The mono style in capitals: map graph column labels and the chat path title. Not for group headers, which use eyebrow.",
+      "$extensions": {
+        "com.eshelton328.textTransform": "uppercase"
+      }
     },
     "code": {
       "$type": "typography",
@@ -1628,7 +1642,7 @@
         "fontFamily": "{font.family.mono}",
         "fontSize": { "value": 11, "unit": "px" },
         "fontWeight": 400,
-        "lineHeight": 1.3636,
+        "lineHeight": 1.4546,
         "letterSpacing": { "value": 0.44, "unit": "px" }
       },
       "$description": "Group headers and section labels, in capitals.",
@@ -1675,7 +1689,7 @@
         "fontFamily": "{font.family.sans}",
         "fontSize": { "value": 11, "unit": "px" },
         "fontWeight": 500,
-        "lineHeight": 1.2727,
+        "lineHeight": 1.4546,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Status pill labels. Not for counts or chip labels, which use mono and label."

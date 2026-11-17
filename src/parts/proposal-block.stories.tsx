@@ -55,7 +55,7 @@ function Update({ onApply = noop, onDiscard = noop }: { onApply?: () => void; on
     <ProposalBlock
       label="Proposed · Update this task"
       actions={[
-        { label: 'Apply', variant: 'primary', icon: <CheckIcon size="14" />, onClick: onApply },
+        { label: 'Apply', variant: 'primary', icon: <CheckIcon size="12" />, onClick: onApply },
         { label: 'Discard', onClick: onDiscard },
         { label: 'Edit first', onClick: noop },
       ]}
@@ -239,7 +239,7 @@ function Create() {
         tone="create"
         label="Proposed · Create 3 tasks"
         actions={[
-          { label: 'Create 3 tasks', variant: 'primary', icon: <PlusIcon size="14" />, onClick: () => { onCreate() } },
+          { label: 'Create 3 tasks', variant: 'primary', icon: <PlusIcon size="12" />, onClick: () => { onCreate() } },
           { label: 'Discard', onClick: noop },
         ]}
       >

@@ -155,7 +155,8 @@ const stylesOf = (x: unknown) => Object.fromEntries(Object.entries(record(x)).fi
 
 void test('exports the uppercase transform as the UPPER text case (Codex review of #14)', () => {
   assert.equal(doc.textStyles.find((t) => t.name === 'text/eyebrow')?.textCase, 'UPPER')
-  assert.ok(doc.textStyles.filter((t) => t.name !== 'text/eyebrow').every((t) => t.textCase === 'ORIGINAL'))
+  assert.equal(doc.textStyles.find((t) => t.name === 'text/monoCaps')?.textCase, 'UPPER')
+  assert.ok(doc.textStyles.filter((t) => t.name !== 'text/eyebrow' && t.name !== 'text/monoCaps').every((t) => t.textCase === 'ORIGINAL'))
 })
 
 void test('the written text styles match their expected hashes, text case included', async () => {

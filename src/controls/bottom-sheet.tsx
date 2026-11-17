@@ -95,7 +95,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
                 {present(actions) ? <HeaderActions>{actions}</HeaderActions> : null}
                 {closeButton ? (
                   <CloseTrigger aria-label="Close">
-                    <CloseIcon size="18" />
+                    <CloseIcon size="16" />
                   </CloseTrigger>
                 ) : null}
               </Header>

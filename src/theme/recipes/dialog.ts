@@ -32,7 +32,7 @@ export const dialog = defineSlotRecipe({
     header: { display: 'flex', alignItems: 'flex-start', gap: '8' },
     title: { flex: '1', color: 'fg.default' },
     description: { textStyle: 'body', color: 'fg.muted' },
-    // The close button of the New chat dialog: an 18 px icon with no box.
+    // The close button of the New chat dialog: a 16 px icon with no box (Figma draws 18).
     closeTrigger: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -45,7 +45,7 @@ export const dialog = defineSlotRecipe({
       borderRadius: 'md',
       cursor: 'pointer',
       outline: 'none',
-      '& svg': { w: 'icon.18', h: 'icon.18' },
+      '& svg': { w: 'icon.16', h: 'icon.16' },
       _hover: { color: 'fg.default' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },

@@ -12,7 +12,7 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
   label: string
   /**
    * An icon before the label, such as `<SparkIcon size="12" />`. It takes
-   * the badge's colour. Figma draws it at 12 px, or 14 px in `quiet`.
+   * the badge's colour. Figma draws it at 12 px, or 14 px in `quiet`; both take 12.
    */
   icon?: ReactNode
 }

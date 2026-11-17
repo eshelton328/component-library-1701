@@ -86,12 +86,12 @@ export const flowDiagram = defineSlotRecipe({
       bg: 'status.needsYou.bg',
       borderRadius: 'sm',
     },
-    // The arrow to the next step: a 12 px arrow in a 14 px row (461:579).
+    // The arrow to the next step: a 12 px arrow in a 12 px row (461:579 draws a 14 px row).
     connector: {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      h: 'icon.14',
+      h: 'icon.12',
       color: 'fg.muted',
     },
   },
@@ -122,7 +122,7 @@ export const chatPath = defineSlotRecipe({
       borderColor: 'border.default',
       borderRadius: 'lg',
     },
-    title: { textStyle: 'mono', color: 'fg.muted', textTransform: 'uppercase', m: '0' },
+    title: { textStyle: 'monoCaps', color: 'fg.muted', m: '0' },
     description: { textStyle: 'small', color: 'fg.muted', m: '0' },
     steps: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8', listStyle: 'none', m: '0', p: '0' },
     step: { display: 'inline-flex', alignItems: 'center', gap: '8', maxW: '100%', minW: '0' },

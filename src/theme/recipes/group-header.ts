@@ -5,6 +5,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // in Mono 11 caps with 0.44 tracking, the count and a 6 px dot. Workbench
 // sidebar 105:623: padding 8/6/6/4, radius 8, a 14 px grip, a 13 px
 // chevron, the same label and count, then a 14 px more icon at the end.
+// The grip, chevrons and more icon take 12 px, on the 4 px icon scale.
 // The chevrons are drawn in #8a97b8 (fg.muted), the count in #4a5675 (fg.subtle).
 // The inventory merges every group header label into `eyebrow`.
 export const groupHeader = defineSlotRecipe({
@@ -26,7 +27,7 @@ export const groupHeader = defineSlotRecipe({
     leading: {
       display: 'inline-flex',
       flexShrink: '0',
-      '& svg': { w: 'icon.14!', h: 'icon.14!' },
+      '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
     toggle: {
       display: 'flex',
@@ -57,7 +58,7 @@ export const groupHeader = defineSlotRecipe({
       gap: '4',
       flexShrink: '0',
       ms: 'auto',
-      '& svg': { w: 'icon.14!', h: 'icon.14!' },
+      '& svg': { w: 'icon.12!', h: 'icon.12!' },
     },
   },
   variants: {

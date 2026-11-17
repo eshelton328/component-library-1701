@@ -73,7 +73,7 @@ export function Dialog({ title, description, children, actions, trigger, open, d
               <Title>{title}</Title>
               {closeButton ? (
                 <CloseTrigger aria-label="Close">
-                  <CloseIcon size="18" />
+                  <CloseIcon size="16" />
                 </CloseTrigger>
               ) : null}
             </Header>

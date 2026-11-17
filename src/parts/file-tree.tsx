@@ -25,7 +25,7 @@ export type FileTreeProps = Omit<TreeViewProps, 'nodes' | 'label'> & {
 
 function toTreeNode(node: FileTreeNode): TreeViewNode {
   const type = node.type ?? 'file'
-  const glyph = type === 'folder' ? <FolderIcon size="14" /> : type === 'code' ? <CodeIcon size="14" /> : <FileIcon size="14" />
+  const glyph = type === 'folder' ? <FolderIcon size="12" /> : type === 'code' ? <CodeIcon size="12" /> : <FileIcon size="12" />
   return {
     value: node.path,
     label: node.name,

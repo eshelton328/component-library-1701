@@ -96,7 +96,7 @@ function Node({ node, indexPath }: { node: Inner; indexPath: number[] }) {
         <Branch>
           <BranchControl>
             <BranchIndicator aria-hidden="true">
-              <ChevronDownIcon size="14" />
+              <ChevronDownIcon size="12" />
             </BranchIndicator>
             {icon}
             <Body>

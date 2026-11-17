@@ -41,17 +41,9 @@ export default definePreset({
               "value": "12px",
               "description": "A 12px icon."
             },
-            "14": {
-              "value": "14px",
-              "description": "A 14px icon."
-            },
             "16": {
               "value": "16px",
               "description": "A 16px icon."
-            },
-            "18": {
-              "value": "18px",
-              "description": "A 18px icon."
             },
             "20": {
               "value": "20px",
@@ -106,7 +98,7 @@ export default definePreset({
               "description": "Bottom padding for the phone home indicator."
             },
             "sidebar": {
-              "value": "330px",
+              "value": "328px",
               "description": "Width of the Workbench sidebar and the file tree."
             },
             "sidePane": {
@@ -718,11 +710,11 @@ export default definePreset({
         "fonts": {
           "mono": {
             "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
-            "description": "Monospace font for the mono, code and eyebrow styles."
+            "description": "Monospace font for the mono, monoCaps, code and eyebrow styles."
           },
           "sans": {
             "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
-            "description": "Text font for every style except mono, code and eyebrow."
+            "description": "Text font for every style except mono, monoCaps, code and eyebrow."
           },
           "text": {
             "badge": {
@@ -756,6 +748,10 @@ export default definePreset({
             "mono": {
               "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "monoCaps": {
+              "value": "\"Geist Mono Variable\", \"Geist Mono\", ui-monospace, SFMono-Regular, monospace",
+              "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "navLabel": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
@@ -888,6 +884,10 @@ export default definePreset({
               "value": "12px",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
             },
+            "monoCaps": {
+              "value": "12px",
+              "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
+            },
             "navLabel": {
               "value": "10px",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
@@ -933,11 +933,11 @@ export default definePreset({
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
             },
             "eyebrow": {
-              "value": "1.3636",
+              "value": "1.4546",
               "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
             },
             "heading": {
-              "value": "1.4643",
+              "value": "1.4286",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
             "label": {
@@ -949,8 +949,12 @@ export default definePreset({
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
             "mono": {
-              "value": "1.4167",
+              "value": "1.3334",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "monoCaps": {
+              "value": "1.3334",
+              "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "navLabel": {
               "value": "1.2",
@@ -961,7 +965,7 @@ export default definePreset({
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
             "pill": {
-              "value": "1.2727",
+              "value": "1.4546",
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "railLabel": {
@@ -969,7 +973,7 @@ export default definePreset({
               "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
             "small": {
-              "value": "1.4167",
+              "value": "1.3334",
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
             "subtitle": {
@@ -977,7 +981,7 @@ export default definePreset({
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
             },
             "title": {
-              "value": "1.45",
+              "value": "1.4",
               "description": "Part of the title text style. Use textStyle: 'title', not this token."
             }
           }
@@ -1015,6 +1019,10 @@ export default definePreset({
             "mono": {
               "value": "400",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "monoCaps": {
+              "value": "400",
+              "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "navLabel": {
               "value": "500",
@@ -1079,6 +1087,10 @@ export default definePreset({
             "mono": {
               "value": "0px",
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
+            },
+            "monoCaps": {
+              "value": "0px",
+              "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "navLabel": {
               "value": "0px",
@@ -1191,6 +1203,17 @@ export default definePreset({
             "lineHeight": "text.mono",
             "fontWeight": "text.mono",
             "letterSpacing": "text.mono"
+          }
+        },
+        "monoCaps": {
+          "description": "The mono style in capitals: map graph column labels and the chat path title. Not for group headers, which use eyebrow.",
+          "value": {
+            "fontFamily": "text.monoCaps",
+            "fontSize": "text.monoCaps",
+            "lineHeight": "text.monoCaps",
+            "fontWeight": "text.monoCaps",
+            "letterSpacing": "text.monoCaps",
+            "textTransform": "uppercase"
           }
         },
         "navLabel": {

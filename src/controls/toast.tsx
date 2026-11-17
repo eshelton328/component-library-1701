@@ -34,7 +34,7 @@ export type ToastAction = {
 export type ToastProps = Scalar<ToastVariantProps> & {
   /** The message, such as "Created 3 tasks from a discussion". */
   children: string
-  /** An icon before the message, such as `<CheckIcon size="14" />`. It is drawn in the done colour. */
+  /** An icon before the message, such as `<CheckIcon size="12" />`. It is drawn in the done colour. */
   icon?: ReactNode
   /** A button after the message, such as Undo. */
   action?: ToastAction | undefined
@@ -75,7 +75,7 @@ export function Toast({ children, icon, action, onClose, closeLabel = 'Dismiss',
 export type ToastOptions = {
   /** The message. */
   text: string
-  /** An icon before the message, such as `<CheckIcon size="14" />`. */
+  /** An icon before the message, such as `<CheckIcon size="12" />`. */
   icon?: ReactNode
   /** A button after the message, such as Undo. A click runs it and closes the toast. */
   action?: ToastAction | undefined

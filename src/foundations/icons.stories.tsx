@@ -215,7 +215,7 @@ const groups: { title: string; icons: Entry[] }[] = [
   },
 ]
 
-const sizes = ['12', '14', '16', '18', '20', '24'] as const satisfies readonly IconSize[]
+const sizes = ['12', '16', '20', '24'] as const satisfies readonly IconSize[]
 
 function Icons() {
   return (
@@ -313,8 +313,8 @@ const meta = {
     }
     // The size prop maps to the sizes.icon tokens.
     const sized = Array.from(canvas.getByTestId('sizes').querySelectorAll('svg'))
-    await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 14, 16, 18, 20, 24])
-    await expect(sized.map((s) => s.getBoundingClientRect().height)).toEqual([12, 14, 16, 18, 20, 24])
+    await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 16, 20, 24])
+    await expect(sized.map((s) => s.getBoundingClientRect().height)).toEqual([12, 16, 20, 24])
     // A title names the icon and shows it to assistive technology.
     const named = canvas.getByRole('img', { name: 'Search' })
     await expect(named.getAttribute('aria-hidden')).toBeNull()

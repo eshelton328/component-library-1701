@@ -29,7 +29,7 @@ const LineTrailing = line.withContext('span', 'trailing')
 export type MetaLineProps = Scalar<MetaLineVariantProps> & {
   /** The items, in order, such as the project and the source. A "·" goes between them; empty items (null, false, '') are left out. */
   items: readonly ReactNode[]
-  /** A mark before the items, such as a kind mark. `icon="md"` draws it at 14 px, as on a card. */
+  /** A mark before the items, such as a kind mark. `icon="md"` is the card's mark, which Figma draws at 14 px; both sizes now draw 12 px. */
   leading?: ReactNode
   /** An item pushed to the end of the line, such as the age. */
   trailing?: ReactNode
@@ -126,7 +126,7 @@ export type KindBadgeProps = {
   kind: ToolkitKind
   /** The text; the kind's name, such as "Skill", when not set. */
   label?: string | undefined
-  /** The kind icon, drawn at 14 px in the kind colour. */
+  /** The kind icon, drawn at 12 px in the kind colour (Figma draws 14). */
   icon?: ReactNode
 }
 

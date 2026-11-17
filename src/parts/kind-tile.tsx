@@ -46,13 +46,14 @@ const icons: Record<KindTileKind, (props: IconProps) => React.JSX.Element> = {
  * A square tile with the icon of an Inbox kind (`approval`, `question`,
  * `review`, `action`, `next`) or a toolkit kind (`skill`, `agent`, `rule`,
  * `workflow`, `hook`) on a tint of its colour. `size` is `sm` (28 px with
- * a 16 px icon, the default) or `lg` (36 px with an 18 px icon).
+ * a 16 px icon, the default) or `lg` (36 px with a 16 px icon; Figma draws
+ * 18, and the icon scale is 12, 16, 20 and 24).
  */
 export function KindTile({ kind = 'approval', size = 'sm', title }: KindTileProps) {
   const Icon = icons[kind]
   return (
     <Tile kind={kind} size={size} data-kind={kind}>
-      <Icon size={size === 'lg' ? '18' : '16'} title={title} />
+      <Icon size="16" title={title} />
     </Tile>
   )
 }

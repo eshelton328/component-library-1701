@@ -60,9 +60,9 @@ const widths = (root: ParentNode, selector: string) => Array.from(root.querySele
 const expected = {
   button: [16],
   'item-tabs': [16],
-  'view-switch': [14],
-  'search-field': [16, 14],
-  'group-header': [14, 14],
+  'view-switch': [12],
+  'search-field': [16, 12],
+  'group-header': [12, 12],
   'nav-rail': [24],
   'tab-bar': [24],
   menu: [16],

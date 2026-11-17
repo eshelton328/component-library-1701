@@ -112,7 +112,7 @@ const formPlay = async () => {
   const x = close.querySelector('svg')
   if (x === null) throw new Error('no close icon')
   await expect(x.getAttribute('viewBox')).toBe('0 0 24 24')
-  await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([18, 18])
+  await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([16, 16])
   await expect(getComputedStyle(x).stroke).toBe(getComputedStyle(close).color)
   await expect(x).toHaveAttribute('aria-hidden', 'true')
   await expect(within(box).getByRole('textbox', { name: 'Name' })).toBeInTheDocument()

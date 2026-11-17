@@ -49,11 +49,11 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
  */
 export function GroupHeader({ label, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
   const collapsible = onOpenChange !== undefined
-  // Inbox draws a 12 px chevron (346:189); Workbench a 13 px one (105:631), on the 14 token.
-  const chevronSize = variant === 'sidebar' ? '14' : '12'
+  // Inbox draws a 12 px chevron (346:189) and Workbench a 13 px one
+  // (105:631); both take 12, on the 4 px icon scale.
   const body = (
     <>
-      {collapsible ? <Chevron>{open ? <ChevronDownIcon size={chevronSize} /> : <ChevronRightIcon size={chevronSize} />}</Chevron> : null}
+      {collapsible ? <Chevron>{open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}</Chevron> : null}
       <Label>
         <TruncatedText>{label}</TruncatedText>
       </Label>

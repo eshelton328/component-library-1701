@@ -62,10 +62,10 @@ const meta = {
     await expect(dot.getBoundingClientRect().width).toBe(6)
     await expect(getComputedStyle(dot).backgroundColor).toBe(getComputedStyle(canvas.getByText('Running')).color)
     await expect(canvas.getByText('Idle').querySelector('[data-dot]')).toBeNull()
-    // The pill text style: Medium 11/14.
+    // The pill text style: Medium 11/16.
     const idle = getComputedStyle(canvas.getByText('Idle'))
     await expect([idle.fontSize, idle.fontWeight]).toEqual(['11px', '500'])
-    await expect(parseFloat(idle.lineHeight)).toBeCloseTo(14, 1)
+    await expect(parseFloat(idle.lineHeight)).toBeCloseTo(16, 1)
   },
 } satisfies Meta<typeof Pills>
 export default meta

@@ -193,6 +193,84 @@ void test('a union type alias counts any change as breaking', () => {
   assert.deepEqual(apiItems(after).map((i) => i.key), ['Props'])
 })
 
+const intersected = (tail: string, ...members: string[]) => report(`export type PopoverProps = {\n${members.map((m) => `    ${m}\n`).join('')}}${tail}`)
+
+void test('splits an object literal intersected with named types into members and its tail', () => {
+  const items = apiItems(intersected(' & PopoverDataAttributes;', 'trigger: ReactElement;', 'note?: ReactNode;'))
+  assert.deepEqual(items.map((i) => [i.key, i.text]), [
+    ['PopoverProps', 'export type PopoverProps = {'],
+    ['PopoverProps.trigger', 'trigger: ReactElement;'],
+    ['PopoverProps.note', 'note?: ReactNode;'],
+    ['PopoverProps.&', '& PopoverDataAttributes;'],
+  ])
+})
+
+void test('a new optional member of an object and name intersection is not breaking', () => {
+  const d = diffApi(intersected(' & A;', 'label: string;'), intersected(' & A;', 'label: string;', 'size?: string;'))
+  assert.equal(d.breaking, false)
+  assert.deepEqual(d.removed, [])
+  assert.deepEqual(d.added, ['size?: string;'])
+})
+
+void test('a removed member of an object and name intersection is breaking', () => {
+  const d = diffApi(intersected(' & A;', 'label: string;', 'size?: string;'), intersected(' & A;', 'label: string;'))
+  assert.equal(d.breaking, true)
+  assert.deepEqual(d.removed, ['size?: string;'])
+})
+
+void test('a new required member of an object and name intersection is breaking', () => {
+  const d = diffApi(intersected(' & A;', 'label: string;'), intersected(' & A;', 'label: string;', 'size: string;'))
+  assert.equal(d.breaking, true)
+  assert.deepEqual(d.addedRequired, ['PopoverProps.size'])
+})
+
+void test('any change to the named types of an intersection is breaking', () => {
+  const base = intersected(' & A;', 'label: string;')
+  for (const tail of [' & B;', ' & A & B;', ';', '', ' & A & C;']) {
+    assert.equal(diffApi(base, intersected(tail, 'label: string;')).breaking, true, tail)
+  }
+  assert.equal(diffApi(intersected(' & A & B;', 'label: string;'), base).breaking, true)
+  // Adding an intersection to a plain object alias is breaking too.
+  assert.deepEqual(diffApi(intersected(';', 'label: string;'), base).addedRequired, ['PopoverProps.&'])
+})
+
+void test('an intersection with a union, a second literal or a non-identifier tail stays one item', () => {
+  for (const tail of [' | A;', ' & {\n    size?: string;\n};', ' & A | B;', ' & Pick<A, "x">;', ' & A.B;', ' & A &', ' & typeof a;']) {
+    assert.deepEqual(apiItems(intersected(tail, 'label: string;')).map((i) => i.key), ['PopoverProps'], tail)
+  }
+  // Type parameters on the alias keep it one item.
+  assert.deepEqual(apiItems(report('export type P<T> = {\n    value: T;\n} & A;')).map((i) => i.key), ['P'])
+  // So does a mapped key.
+  assert.deepEqual(apiItems(report('export type P = {\n    [K in Keys]: string;\n} & A;')).map((i) => i.key), ['P'])
+})
+
+// PopoverProps as api/component-library-1701.api.md reports it on 2026-11-17.
+const popoverProps = report(`// @public (undocumented)
+export type PopoverProps = {
+    trigger: ReactElement;
+    label: string;
+    children: ReactNode;
+    note?: ReactNode;
+    actions?: ReactNode;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
+    flip?: boolean | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
+
+// @public
+export function PopoverSection(input: PopoverSectionProps): JSX.Element;`)
+
+void test('the reported PopoverProps splits into members, and a new optional member is not breaking', () => {
+  const keys = apiItems(popoverProps).map((i) => i.key)
+  assert.deepEqual(keys, ['PopoverProps', ...['trigger', 'label', 'children', 'note', 'actions', 'open', 'onOpenChange', 'placement', 'width', 'flip', 'className', '&'].map((k) => `PopoverProps.${k}`), 'PopoverSection'])
+  const after = popoverProps.replace('    className?: string | undefined;\n', '    className?: string | undefined;\n    opaque?: boolean | undefined;\n')
+  assert.equal(diffApi(popoverProps, after).breaking, false)
+  assert.equal(diffApi(popoverProps, popoverProps.replace('& PopoverDataAttributes;', '& PopoverDataProps;')).breaking, true)
+})
+
 void test('a new call or computed signature counts as required (Codex review of #9)', () => {
   const before = report('export interface P {\n    label?: string;\n}')
   for (const member of ['(value: string): string;', '[Symbol.iterator](): Iterator<string>;']) {

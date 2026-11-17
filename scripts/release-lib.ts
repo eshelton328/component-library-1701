@@ -51,15 +51,25 @@ const splitKinds = new Set(['interface', 'class'])
 const objectAliasOpen = /^(?:export\s+)?(?:declare\s+)?type\s+[A-Za-z_$][\w$]*\s*=\s*\{$/
 /** A mapped type's key line, such as `[K in Keys]: V;`. */
 const mappedKey = /^(?:[-+]?readonly\s+)?\[\s*[A-Za-z_$][\w$]*\s+in\b/
+/**
+ * The closing line of an object literal intersected with named types,
+ * such as `} & PopoverDataAttributes;`: only plain identifiers joined by
+ * `&`, with an optional `;`. Group 1 is the tail after the brace.
+ */
+const intersectionClose = /^\}\s*(&\s*[A-Za-z_$][\w$]*(?:\s*&\s*[A-Za-z_$][\w$]*)*\s*;?)$/
 
 /**
- * Whether the type alias that opens at `lines[start]` is one plain object
- * literal: the opening line is `type Name = {`, the line that closes its
- * brace is exactly `}` or `};`, and no depth-one line is a mapped key. A
- * union or intersection closes the first brace on a line such as
- * `} | {`, so it fails the test.
+ * Whether the type alias that opens at `lines[start]` can be split into
+ * members: `false` when it cannot, `'object'` when it is one plain object
+ * literal and `'intersection'` when it is one plain object literal
+ * intersected with named types. The opening line is `type Name = {`, no
+ * depth-one line is a mapped key, and the line that closes the first brace
+ * is exactly `}` or `};` (an object) or `} & A & B;` with plain
+ * identifiers only (an intersection, see `intersectionClose`). A union, a
+ * second object literal or any other tail closes the first brace on a line
+ * such as `} | {` or `} & {`, so it fails the test.
  */
-function isObjectAlias(lines: readonly string[], start: number): boolean {
+function objectAliasShape(lines: readonly string[], start: number): false | 'object' | 'intersection' {
   if (!objectAliasOpen.test(lines[start]?.trim() ?? '')) return false
   let depth = 0
   for (const line of lines.slice(start)) {
@@ -67,7 +77,10 @@ function isObjectAlias(lines: readonly string[], start: number): boolean {
     if (depth === 1 && mappedKey.test(t)) return false
     for (const c of t) {
       if (c === '{') depth++
-      else if (c === '}' && --depth === 0) return t === '}' || t === '};'
+      else if (c === '}' && --depth === 0) {
+        if (t === '}' || t === '};') return 'object'
+        return intersectionClose.test(t) ? 'intersection' : false
+      }
     }
   }
   return false
@@ -76,8 +89,9 @@ function isObjectAlias(lines: readonly string[], start: number): boolean {
 /**
  * Splits a report into declarations and members. A line with no indent
  * that starts with `export` or `declare` opens a declaration. In an
- * interface, a class or a type alias that is one plain object literal
- * (see `isObjectAlias`), a line one brace level inside it is a member,
+ * interface, a class or a type alias that is one plain object literal,
+ * alone or intersected with named types (see `objectAliasShape`), a line
+ * one brace level inside it is a member,
  * keyed by the declaration name, unless a `[` or `(` that an earlier line
  * of the declaration opened is still open: a line inside such a group,
  * such as an element of a multi-line tuple, joins the member that opened
@@ -85,7 +99,10 @@ function isObjectAlias(lines: readonly string[], start: number): boolean {
  * belongs to, with nested closing braces kept, so a member moved between
  * nested objects changes the text. Any other type alias (a union, an
  * intersection, a generic or a mapped type) is one item, because its
- * depth-one lines can belong to different branches. A member line the
+ * depth-one lines can belong to different branches. The tail of an
+ * intersection, such as `& PopoverDataAttributes;`, is one more item,
+ * keyed `Name.&` and required, so adding, removing or renaming an
+ * intersected type is breaking. A member line the
  * parser cannot name (a call, construct, index or computed signature)
  * counts as required. A repeated key, as for an overloaded function, gets
  * a `#2` suffix.
@@ -103,6 +120,8 @@ export function apiItems(report: string): ApiItem[] {
   let groups = 0
   let decl: ApiItem | undefined
   let split = false
+  // Whether the declaration is an object literal intersected with named types.
+  let intersection = false
   let last: ApiItem | undefined
   const lines = apiLines(report)
   for (const [i, line] of lines.entries()) {
@@ -111,12 +130,19 @@ export function apiItems(report: string): ApiItem[] {
       const m = declName.exec(t)
       const kind = m?.[1] ?? ''
       decl = { key: unique(m?.[2] ?? t), text: t, required: false }
-      split = splitKinds.has(kind) || (kind === 'type' && isObjectAlias(lines, i))
+      const shape = kind === 'type' ? objectAliasShape(lines, i) : false
+      split = splitKinds.has(kind) || shape !== false
+      intersection = shape === 'intersection'
       groups = 0
       items.push(decl)
       last = decl
     } else if (depth === 1 && groups === 0 && split && decl && isClosing(t)) {
       // The end of the body of a split declaration.
+    } else if (depth === 1 && groups === 0 && split && intersection && decl && intersectionClose.test(t)) {
+      // The end of an object literal intersected with named types: the
+      // tail is its own item, so any change to the named types shows.
+      last = { key: unique(`${decl.key}.&`), text: t.slice(1).trim(), required: true }
+      items.push(last)
     } else if (depth === 1 && groups === 0 && split && decl) {
       const m = memberName.exec(t)
       const name = m ? (m[1] ?? m[2] ?? t) : t

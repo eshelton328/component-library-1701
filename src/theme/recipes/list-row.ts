@@ -11,8 +11,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // A compact row (`density`) has the smaller text of the Inbox D1 list: the
 // title Geist Medium 13 (346:202, `labelSm`, 17 tall in Figma, 16 here),
 // the meta and the age Geist Mono 11 (346:203, 346:218, `monoSm`, 14 tall
-// in Figma, 16 here). A title and meta row is 58 tall with its 1 px border;
-// Figma's (346:237) is 55, with no border.
+// in Figma, 16 here). Figma's title and meta row (346:237) is 55 tall, with
+// no border: 10 + 17 + 4 + 14 + 10. On the 4 px grid it is 56 (d-100 rule 3),
+// so a compact row puts its lines 2 apart: 1 + 10 + 16 + 2 + 16 + 10 + 1.
+// The same 2 sits between the meta and any more lines or actions.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -83,7 +85,7 @@ export const listRow = defineSlotRecipe({
     },
     density: {
       default: {},
-      compact: { title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
+      compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
   },
   defaultVariants: { variant: 'inbox', density: 'default' },

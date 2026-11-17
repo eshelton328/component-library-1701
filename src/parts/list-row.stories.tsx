@@ -355,12 +355,16 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   await expect(text(compact, 'title')).toEqual(['13px', 16, '500'])
   await expect(text(compact, 'meta')).toEqual(['11px', 16, '400'])
   await expect(text(compact, 'trailing')).toEqual(['11px', 16, '400'])
-  // Title 16 + gap 4 + meta 16, padding 10 and a 1 px border on each side. Figma's row is 55 with no border.
-  await expect(compact.getBoundingClientRect().height).toBe(58)
-  // A default row keeps label and mono.
+  // Title 16 + gap 2 + meta 16, padding 10 and a 1 px border on each side: 56, Figma's 55 (346:237) on the 4 px grid (d-100).
+  await expect(compact.getBoundingClientRect().height).toBe(56)
+  const body = compact.querySelector('.list-row__body')
+  if (body === null) throw new Error('no body')
+  await expect(getComputedStyle(body).rowGap).toBe('2px')
+  // A default row keeps label and mono, its 4 px gap and its height: 1 + 10 + 20 + 4 + 16 + 10 + 1.
   const plain = rowOf('A default row')
   await expect(text(plain, 'title')).toEqual(['14px', 20, '500'])
   await expect(text(plain, 'meta')).toEqual(['12px', 16, '400'])
+  await expect(plain.getBoundingClientRect().height).toBe(62)
   // A compact row selects like any other.
   await userEvent.click(canvas.getByText('Pick the header logo'))
   await expect(onCompact).toHaveBeenLastCalledWith('logo')

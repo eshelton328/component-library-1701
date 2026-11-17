@@ -46,13 +46,19 @@ export type CheckboxProps = {
   trailing?: ReactNode
   /** `text` (the default) draws the label in `body`; `mono` in `mono`, as the project and tag rows of the Inbox Filter menu are. */
   labelStyle?: 'text' | 'mono' | undefined
+  /**
+   * The text size: `md` (the default) draws a text label in `body` and the `trailing` count in `mono`; `sm` draws the
+   * label in `small` and the count in `monoSm`, as the Inbox Filter menu does. A `mono` label stays `mono` at both sizes.
+   */
+  size?: 'md' | 'sm' | undefined
 }
 
 /** A checkbox with a label, such as one filter in a filter popover, and an optional `trailing` count at the end. */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle }: CheckboxProps) {
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle, size }: CheckboxProps) {
   return (
     <Root
       labelStyle={labelStyle}
+      size={size}
       disabled={disabled}
       {...(checked === undefined ? {} : { checked })}
       {...(defaultChecked === undefined ? {} : { defaultChecked })}
@@ -99,10 +105,12 @@ export type CheckboxGroupProps = {
   disabled?: boolean | undefined
   /** The form field name of every box. */
   name?: string | undefined
+  /** The text size of every box: `md` (the default) or `sm`, as the Inbox Filter menu draws it. See `CheckboxProps`. */
+  size?: 'md' | 'sm' | undefined
 }
 
 /** A labelled group of checkboxes that gives the list of checked values. */
-export function CheckboxGroup({ label, items, value, defaultValue, onValueChange, disabled, name }: CheckboxGroupProps) {
+export function CheckboxGroup({ label, items, value, defaultValue, onValueChange, disabled, name, size }: CheckboxGroupProps) {
   const labelId = useId()
   return (
     <Group
@@ -119,7 +127,7 @@ export function CheckboxGroup({ label, items, value, defaultValue, onValueChange
       <GroupLabel id={labelId}>{label}</GroupLabel>
       {items.map((item) => (
         // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} labelStyle={item.labelStyle} />
+        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} labelStyle={item.labelStyle} size={size} />
       ))}
     </Group>
   )

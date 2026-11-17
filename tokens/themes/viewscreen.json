@@ -124,7 +124,7 @@
             "alpha": 1,
             "hex": "#5ee1ff"
           },
-          "$description": "Links and selected labels."
+          "$description": "Links and selected labels, and the icon of a highlighted row in a compact menu (Workbench D1 105:449, D2b)."
         },
         "onAccent": {
           "$type": "color",

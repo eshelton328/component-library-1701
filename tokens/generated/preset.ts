@@ -129,6 +129,10 @@ export default definePreset({
               "value": "380px",
               "description": "Width of the Workbench side chat."
             },
+            "submenu": {
+              "value": "200px",
+              "description": "Width of a menu's submenu, the list that opens beside a row such as Move to workspace (Workbench D1 105:473). Not for a menu a button opens, which is at least popoverSm (240)."
+            },
             "tabBar": {
               "value": "77px",
               "description": "Height of the tablet and phone tab bar, with the home-indicator area."
@@ -425,7 +429,7 @@ export default definePreset({
                 "base": "#0e6a85",
                 "_dark": "#5ee1ff"
               },
-              "description": "Links and selected labels."
+              "description": "Links and selected labels, and the icon of a highlighted row in a compact menu (Workbench D1 105:449, D2b)."
             },
             "default": {
               "value": {

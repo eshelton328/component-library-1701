@@ -25,11 +25,25 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // RadioMenu's note (D9 346:4025) sits under a line: padding 14/12/4 (14
 // takes 16, d-072) and Regular 11 in #4a5675: `small` and `fg.muted`, as the
 // heading.
+//
+// The Workbench pane menu (D1 105:421) and chat actions menu (D2b
+// 402:5486) put 31 px rows 1 apart (105:422 to 105:467, 402:5530 to
+// 402:5518), with padding 8 and an 8 px icon-to-label gap (105:423,
+// 105:429) and 14 px icons. On the 4 px grid (d-100) that is
+// `density="compact"`: control.md (32) rows with no gap, the same 32 px
+// pitch and Figma's box heights (215, 279). The icons stay icon.16, the
+// nearer of 12 and 16 that keeps the 24 grid icons legible. Figma fills
+// the row whose list is open and colours its icon cyan (105:449, D2b):
+// surface.selected and fg.accent.
+// A submenu row (Move to workspace, 105:449) ends with a 12 px chevron
+// (105:459) in the icon colour; its list (105:473) is 200 wide:
+// `width="submenu"` with shell.submenu, set by the component. The row
+// stays filled while its list is open.
 export const menu = defineSlotRecipe({
   className: 'menu',
   jsx: ['Menu'],
   staticCss: ['*'],
-  slots: [...menuAnatomy.keys(), 'itemBody', 'itemDescription', 'itemTrailing', 'footer'],
+  slots: [...menuAnatomy.keys(), 'itemBody', 'itemDescription', 'itemTrailing', 'itemIcon', 'itemChevron', 'footer'],
   base: {
     content: {
       display: 'flex',
@@ -67,6 +81,8 @@ export const menu = defineSlotRecipe({
       // The check of a picked choice is the accent colour, not the icon colour.
       '& [data-part=item-indicator] svg': { color: 'accent.default' },
       _highlighted: { bg: 'surface.selected' },
+      // A submenu row whose list is open (D1 105:449).
+      '&[data-part=trigger-item][data-state=open]': { bg: 'surface.selected' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
       // A danger item, such as Delete.
       '&[data-tone=danger]': { color: 'status.danger.fg', '& svg': { color: 'status.danger.fg' } },
@@ -75,6 +91,8 @@ export const menu = defineSlotRecipe({
     },
     itemBody: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     itemDescription: { textStyle: 'small', color: 'fg.muted', whiteSpace: 'nowrap' },
+    itemIcon: {},
+    itemChevron: { display: 'inline-flex', flexShrink: '0', ms: 'auto' },
     itemTrailing: { flexShrink: '0', ms: 'auto', textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap' },
     itemIndicator: { display: 'inline-flex', ms: 'auto', color: 'accent.default' },
     itemText: { flex: '1', whiteSpace: 'nowrap' },
@@ -88,10 +106,17 @@ export const menu = defineSlotRecipe({
       sm: { content: { w: 'shell.popoverSm' } },
       sort: { content: { w: 'shell.popoverSort' } },
       md: { content: { w: 'shell.popover' } },
+      // A submenu's list (D1 105:473); the component sets it, not the caller.
+      submenu: { content: { w: 'shell.submenu', minW: 'shell.submenu' } },
     },
     // An important size in `base` would beat the one here, so each size sets its own icon size.
     size: {
-      md: { item: { '& svg': { width: 'icon.16!', height: 'icon.16!' } } },
+      md: {
+        item: {
+          '& svg': { width: 'icon.16!', height: 'icon.16!' },
+          '& [data-part=item-chevron] svg': { width: 'icon.12!', height: 'icon.12!' },
+        },
+      },
       lg: {
         content: { pt: '6', px: '12', pb: '8' },
         item: {
@@ -101,9 +126,28 @@ export const menu = defineSlotRecipe({
           textStyle: 'bodyLg',
           '& svg': { width: 'icon.20!', height: 'icon.20!' },
           '& [data-part=item-indicator] svg': { width: 'icon.16!', height: 'icon.16!' },
+          '& [data-part=item-chevron] svg': { width: 'icon.12!', height: 'icon.12!' },
         },
       },
     },
+    // Only `size="md"` has a compact pitch; see the compound variant.
+    density: { default: {}, compact: {} },
   },
-  defaultVariants: { size: 'md' },
+  compoundVariants: [
+    {
+      size: 'md',
+      density: 'compact',
+      css: {
+        content: { gap: '0' },
+        item: {
+          px: '8',
+          gap: '8',
+          '&[data-highlighted] [data-part=item-icon] svg, &[data-part=trigger-item][data-state=open] [data-part=item-icon] svg': { color: 'fg.accent' },
+          // A danger row keeps its colour.
+          '&[data-tone=danger] [data-part=item-icon] svg': { color: 'status.danger.fg' },
+        },
+      },
+    },
+  ],
+  defaultVariants: { size: 'md', density: 'default' },
 })

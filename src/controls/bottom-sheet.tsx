@@ -62,19 +62,33 @@ export function BottomSheet(input: BottomSheetProps) {
   return <SizedBottomSheet {...input} />
 }
 
+type SizedBottomSheetProps = WithoutSize<BottomSheetProps> &
+  Scalar<BottomSheetVariantProps> & {
+    /**
+     * Give the focus to the sheet itself when it opens, not to its first
+     * element, so no item draws a focus ring until the user moves to one (the
+     * More drawer). Tab then moves to the first element. `initialFocus` wins.
+     */
+    focusSheet?: boolean | undefined
+  }
+
 /**
  * The bottom sheet with every size, for the parts built on it: `sm` and
  * `md` are the sheets, `lg` the More drawer, with a larger title. The
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size }: WithoutSize<BottomSheetProps> & Scalar<BottomSheetVariantProps>) {
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, focusSheet = false }: SizedBottomSheetProps) {
   const hasLeading = present(leading)
+  // The sheet's own id, so the focus can find it when it opens.
+  const contentId = useId()
+  const firstFocus = initialFocus ?? (focusSheet ? () => document.getElementById(contentId) : undefined)
   return (
     <Root
       size={size}
       lazyMount
       unmountOnExit
-      {...(initialFocus === undefined ? {} : { initialFocusEl: initialFocus })}
+      {...(focusSheet ? { ids: { content: contentId } } : {})}
+      {...(firstFocus === undefined ? {} : { initialFocusEl: firstFocus })}
       {...(open === undefined ? {} : { open })}
       {...(open === undefined && defaultOpen !== undefined ? { defaultOpen } : {})}
       onOpenChange={(details) => {

@@ -33,11 +33,21 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
   disabled?: boolean | undefined
 }
 
-/** A segmented control that picks one view of a page, such as Grid or List. */
-export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size }: ViewSwitchProps) {
+/**
+ * A segmented control that picks one view of a page, such as Grid or List.
+ * `size` sets the height: `sm` 28, `md` 32 (the default) and `lg` 36; `sm`
+ * and `md` draw 12 px icons, `lg` 16 px icons, as the Toolkit switch does.
+ * `tone` sets the selected item's look: `default` draws the selected fill
+ * with a `border.selected` border and the label in `fg.default`; `accent`
+ * draws the selected fill with no border and the label and icon in
+ * `fg.accent` (cyan), and leaves out the items' border, as the Toolkit
+ * List, Map or Activity switch does.
+ */
+export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size, tone }: ViewSwitchProps) {
   return (
     <Root
       size={size}
+      tone={tone}
       aria-label={label}
       orientation="horizontal"
       disabled={disabled}

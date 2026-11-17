@@ -137,3 +137,80 @@ export const FormReset: StoryObj<typeof meta> = {
     await expect(onFormChange).toHaveBeenCalledTimes(1)
   },
 }
+
+// The Toolkit switch (D1 425:18, T1 428:12): `size="lg"` with icons and `tone="accent"`. Figma's items are 30
+// high with 15 px icons (16 here) and 10 px sides, and the selected List (425:19) has the selected fill with no
+// border and a cyan label and icon. The default tone beside it keeps its border and fg.default label.
+const toneSwatches = {
+  accent: css({ color: 'fg.accent' }),
+  default: css({ color: 'fg.default' }),
+  selected: css({ color: 'surface.selected' }),
+}
+const toolkitViews = [
+  { value: 'list', label: 'List', icon: <ListIcon /> },
+  { value: 'map', label: 'Map', icon: <GridIcon /> },
+  { value: 'activity', label: 'Activity', icon: <GridIcon /> },
+] as const
+
+function Tones() {
+  return (
+    <main className={page}>
+      <ViewSwitch label="Toolkit view, accent" size="lg" tone="accent" items={toolkitViews} defaultValue="list" />
+      <ViewSwitch label="Toolkit view, default" size="lg" items={toolkitViews} defaultValue="list" />
+      <ViewSwitch label="Artifact view, md" items={gridList} defaultValue="grid" />
+      <div hidden>
+        {Object.entries(toneSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+function toneSwatch(name: string) {
+  const el = document.querySelector(`[data-swatch="${name}"]`)
+  if (el === null) throw new Error(`no ${name} swatch`)
+  return getComputedStyle(el).color
+}
+
+function itemOf(group: HTMLElement, name: string) {
+  const label = within(group).getByRole('radio', { name }).closest('label')
+  if (!(label instanceof HTMLElement)) throw new Error(`no ${name} item`)
+  return label
+}
+
+const tonesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const accent = canvas.getByRole('radiogroup', { name: 'Toolkit view, accent' })
+  const plain = canvas.getByRole('radiogroup', { name: 'Toolkit view, default' })
+  await expect(accent.getBoundingClientRect().height).toBe(36)
+  // The selected accent item: the selected fill, no border, the label and icon in fg.accent.
+  const list = itemOf(accent, 'List')
+  const l = getComputedStyle(list)
+  await expect(l.backgroundColor).toBe(toneSwatch('selected'))
+  await expect(l.borderTopWidth).toBe('0px')
+  await expect(l.color).toBe(toneSwatch('accent'))
+  await expect(getComputedStyle(within(list).getByText('List')).color).toBe(toneSwatch('accent'))
+  const icon = list.querySelector('svg')
+  if (icon === null) throw new Error('no icon')
+  await expect(getComputedStyle(icon).stroke).toBe(toneSwatch('accent'))
+  // lg draws 16 px icons; the items are 30 high, with 10 px sides and 6 between the icon and the label.
+  await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([16, 16])
+  await expect(list.getBoundingClientRect().height).toBe(30)
+  await expect([l.paddingLeft, l.paddingRight, l.columnGap]).toEqual(['10px', '10px', '6px'])
+  // An idle accent item has no border and stays fg.muted.
+  await expect(getComputedStyle(itemOf(accent, 'Map')).borderTopWidth).toBe('0px')
+  // The default tone keeps its 1 px border and the fg.default label.
+  const plainList = getComputedStyle(itemOf(plain, 'List'))
+  await expect(plainList.borderTopWidth).toBe('1px')
+  await expect(plainList.color).toBe(toneSwatch('default'))
+  // md keeps its 12 px icons.
+  const md = canvas.getByRole('radiogroup', { name: 'Artifact view, md' })
+  const mdIcon = itemOf(md, 'Grid').querySelector('svg')
+  if (mdIcon === null) throw new Error('no icon')
+  await expect(mdIcon.getBoundingClientRect().width).toBe(12)
+}
+
+/** `size="lg"` with `tone="accent"`: the Toolkit switch, its selected item cyan with no border. */
+export const AccentDark: StoryObj<typeof meta> = { render: () => <Tones />, play: tonesPlay, globals: { mode: 'dark' } }
+export const AccentLight: StoryObj<typeof meta> = { render: () => <Tones />, play: tonesPlay, globals: { mode: 'light' } }

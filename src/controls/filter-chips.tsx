@@ -34,8 +34,15 @@ export type FilterChipsProps = {
   /** Whether more than one chip can be selected; `true` when not set. */
   multiple?: boolean | undefined
   disabled?: boolean | undefined
-  /** `md` (the default): 32 high with the `label` style. `compact`: 30 high with 8 px sides and the `small` style, as the Inbox desktop list pane draws them. */
+  /** `md` (the default): 32 high with 10 px sides and the `label` style, as the Toolkit draws them. `compact`: 30 high with 8 px sides and the `small` style, as the Inbox desktop list pane draws them. */
   size?: 'md' | 'compact' | undefined
+  /**
+   * The space around the chips. `default` pads the row 2 px, so a focused
+   * chip's ring shows outside it. `none` puts the chips flush with the row's
+   * edges, as the Toolkit chip row draws them, and draws the focus ring
+   * inside the chip.
+   */
+  padding?: 'default' | 'none' | undefined
 }
 
 type Overflow = { start: boolean; end: boolean }
@@ -81,7 +88,7 @@ const fromArk = (vs: string[]) => vs.flatMap((v) => (v.startsWith('chip:') ? [v.
  * With `multiple={false}` the row is a radio group: the arrow keys move the
  * choice, and the chosen chip cannot be turned off.
  */
-export function FilterChips({ label, items, value, defaultValue, onValueChange, multiple = true, disabled, size }: FilterChipsProps) {
+export function FilterChips({ label, items, value, defaultValue, onValueChange, multiple = true, disabled, size, padding }: FilterChipsProps) {
   const [picked, setPicked] = useState<readonly string[]>(defaultValue ?? [])
   const selected = value ?? picked
   // The latest selection, so a focus and a click in the same frame see each other's change.
@@ -101,6 +108,7 @@ export function FilterChips({ label, items, value, defaultValue, onValueChange, 
     <Root
       ref={rowRef}
       size={size}
+      padding={padding}
       data-overflow-start={overflow.start ? '' : undefined}
       data-overflow-end={overflow.end ? '' : undefined}
       aria-label={label}

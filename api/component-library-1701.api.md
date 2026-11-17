@@ -498,6 +498,7 @@ export type FilterChipsProps = {
     multiple?: boolean | undefined;
     disabled?: boolean | undefined;
     size?: 'md' | 'compact' | undefined;
+    padding?: 'default' | 'none' | undefined;
 };
 
 // @public

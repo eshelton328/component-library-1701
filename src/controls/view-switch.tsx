@@ -15,7 +15,7 @@ const ItemControl = withContext(SegmentGroup.ItemControl, 'itemControl')
 export type ViewSwitchItem = {
   value: string
   label: string
-  /** An icon before the label. */
+  /** An icon before the label, or the item's only mark when the switch is `iconOnly`. */
   icon?: ReactNode
   disabled?: boolean | undefined
 }
@@ -42,12 +42,17 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
  * draws the selected fill with no border and the label and icon in
  * `fg.accent` (cyan), and leaves out the items' border, as the Toolkit
  * List, Map or Activity switch does.
+ * `iconOnly` draws each item as its icon alone, as the Artifacts Grid or List
+ * switch (402:15419): 16 px icons at every size, and at `md` 30 x 26 items, so
+ * two items make a 68 px switch. Each item's `label` stays its accessible name;
+ * give every item an `icon`. When not set, the items show their labels.
  */
-export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size, tone }: ViewSwitchProps) {
+export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size, tone, iconOnly = false }: ViewSwitchProps) {
   return (
     <Root
       size={size}
       tone={tone}
+      iconOnly={iconOnly}
       aria-label={label}
       orientation="horizontal"
       disabled={disabled}
@@ -62,9 +67,10 @@ export function ViewSwitch({ label, items, value, defaultValue, onValueChange, d
       {items.map((item) => (
         <Item key={item.value} value={item.value} disabled={item.disabled}>
           {item.icon === undefined ? null : <span aria-hidden="true">{item.icon}</span>}
-          <ItemText>{item.label}</ItemText>
+          {iconOnly ? null : <ItemText>{item.label}</ItemText>}
           <ItemControl />
-          <SegmentGroup.ItemHiddenInput />
+          {/* With no visible label, the label names the item's radio. */}
+          <SegmentGroup.ItemHiddenInput {...(iconOnly ? { 'aria-label': item.label } : {})} />
         </Item>
       ))}
     </Root>

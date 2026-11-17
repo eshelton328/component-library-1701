@@ -900,3 +900,94 @@ export const SubmenuEscape: StoryObj<typeof meta> = {
     await waitFor(() => expect(trigger).toHaveFocus())
   },
 }
+
+// The Artifacts Sort menu (D6 403:8881, 280 x 283): `density="compact"`, with four described choices (403:8884 to
+// 403:8901) and the note (403:8907), beside the same menu at the default density.
+const artifactSorts: readonly RadioMenuOption[] = [
+  { value: 'newest', label: 'Newest first', description: 'Most recently updated at the top' },
+  { value: 'oldest', label: 'Oldest first', description: 'Least recently updated at the top' },
+  { value: 'title', label: 'Title', description: 'A to Z' },
+  { value: 'project', label: 'Project', description: 'Grouped by project, then newest' },
+]
+const artifactNote = 'Found since you last looked stays at the top.'
+
+function CompactSort() {
+  return (
+    <main className={page}>
+      <Inline gap="24" align="start">
+        {(['compact', 'default'] as const).map((density) => (
+          <RadioMenu
+            key={density}
+            open
+            trigger={<Button data-trigger={density}>Sort, {density}</Button>}
+            label="Sort artifacts"
+            heading="Sort by"
+            options={artifactSorts}
+            defaultValue="newest"
+            width="sort"
+            density={density}
+            note={artifactNote}
+            data-figma={`sort ${density}`}
+          />
+        ))}
+      </Inline>
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+    </main>
+  )
+}
+
+const lineHeightOf = (el: Element) => Math.round(Number.parseFloat(getComputedStyle(el).lineHeight))
+
+const compactSortPlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await menuByKey('sort compact')
+  const trigger = document.querySelector('[data-trigger="compact"]')
+  if (trigger === null) throw new Error('no compact trigger')
+  // 280 x 283, 8 under the Sort button, as Figma's.
+  await waitFor(() => expect(Math.round(menu.getBoundingClientRect().top - trigger.getBoundingClientRect().bottom)).toBe(8))
+  await expect(menu.getBoundingClientRect().width).toBe(280)
+  await expect(menu.getBoundingClientRect().height).toBe(283)
+  // Rows 48 high (Figma 50, d-100), padding 6/12; the label Medium 14/20 right over a Regular 11/16 sans description.
+  const rows = within(menu).getAllByRole('menuitemradio')
+  await expect(rows).toHaveLength(4)
+  for (const row of rows) await expect(row.getBoundingClientRect().height).toBe(48)
+  // 52 apart, as Figma's 403:8884 to 403:8901: 48 high, 4 between.
+  const [row1, row2] = rows
+  if (row1 === undefined || row2 === undefined) throw new Error('no rows')
+  await expect(row2.getBoundingClientRect().top - row1.getBoundingClientRect().top).toBe(52)
+  const newest = within(menu).getByRole('menuitemradio', { name: 'Newest first' })
+  await expect(newest).toHaveAccessibleDescription('Most recently updated at the top')
+  const r = getComputedStyle(newest)
+  await expect([r.paddingTop, r.paddingRight, r.paddingBottom, r.paddingLeft]).toEqual(['6px', '12px', '6px', '12px'])
+  const label = within(newest).getByText('Newest first')
+  const description = within(newest).getByText('Most recently updated at the top')
+  await expect([getComputedStyle(label).fontSize, getComputedStyle(label).fontWeight, lineHeightOf(label)]).toEqual(['14px', '500', 20])
+  const d = getComputedStyle(description)
+  await expect([d.fontSize, d.fontWeight, lineHeightOf(description)]).toEqual(['11px', '400', 16])
+  await expect(d.fontFamily).not.toMatch(/Mono/)
+  await expect(d.color).toBe(swatch())
+  await expect(Math.round(description.getBoundingClientRect().top - label.getBoundingClientRect().bottom)).toBe(0)
+  // The note: Regular 11/16 on one line, in fg.muted, still the menu's description.
+  const note = within(menu).getByText(artifactNote)
+  await expect(menu).toHaveAccessibleDescription(artifactNote)
+  const n = getComputedStyle(note)
+  await expect([n.fontSize, n.fontWeight, lineHeightOf(note)]).toEqual(['11px', '400', 16])
+  await expect(n.fontFamily).not.toMatch(/Mono/)
+  await expect(n.color).toBe(swatch())
+  await expect(note.clientHeight - Number.parseFloat(n.paddingTop) - Number.parseFloat(n.paddingBottom)).toBe(16)
+  // The default density keeps #119's look: 50 px rows (Inbox D9 346:4003), a 12 px description 2 under the label,
+  // 4 under its trigger.
+  const plain = await menuByKey('sort default')
+  const plainTrigger = document.querySelector('[data-trigger="default"]')
+  if (plainTrigger === null) throw new Error('no default trigger')
+  await expect(Math.round(plain.getBoundingClientRect().top - plainTrigger.getBoundingClientRect().bottom)).toBe(4)
+  const plainNewest = within(plain).getByRole('menuitemradio', { name: 'Newest first' })
+  await expect(Math.round(plainNewest.getBoundingClientRect().height)).toBe(50)
+  const plainDescription = within(plainNewest).getByText('Most recently updated at the top')
+  await expect(getComputedStyle(plainDescription).fontSize).toBe('12px')
+  await expect(Math.round(plainDescription.getBoundingClientRect().top - within(plainNewest).getByText('Newest first').getBoundingClientRect().bottom)).toBe(2)
+  await expect(getComputedStyle(within(plain).getByText(artifactNote)).fontSize).toBe('12px')
+}
+
+/** The Artifacts Sort menu (D6): `RadioMenu density="compact"`, beside the default density. */
+export const CompactSortDark: StoryObj<typeof meta> = { render: () => <CompactSort />, play: compactSortPlay, globals: { mode: 'dark' } }
+export const CompactSortLight: StoryObj<typeof meta> = { render: () => <CompactSort />, play: compactSortPlay, globals: { mode: 'light' } }

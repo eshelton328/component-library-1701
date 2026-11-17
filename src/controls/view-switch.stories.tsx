@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { GridIcon as LibraryGridIcon, ListIcon as LibraryListIcon } from '../foundations/icons'
 import { ViewSwitch } from './view-switch'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '16', justifyItems: 'start' })
@@ -214,3 +215,66 @@ const tonesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `size="lg"` with `tone="accent"`: the Toolkit switch, its selected item cyan with no border. */
 export const AccentDark: StoryObj<typeof meta> = { render: () => <Tones />, play: tonesPlay, globals: { mode: 'dark' } }
 export const AccentLight: StoryObj<typeof meta> = { render: () => <Tones />, play: tonesPlay, globals: { mode: 'light' } }
+
+// The Artifacts Grid or List switch (402:15419, D4 403:7820): `iconOnly` with `tone="accent"`, 68 x 32, two 30 x 26
+// items (402:15421, 402:15424) with Figma's 15 px icons at 16. A default-tone icon-only switch and the labelled
+// switch sit beside it.
+// The first switch takes the library's own icons, as the-bridge passes them; their 24 px default size gives way to 16.
+const libraryGridList = [
+  { value: 'grid', label: 'Grid', icon: <LibraryGridIcon /> },
+  { value: 'list', label: 'List', icon: <LibraryListIcon /> },
+] as const
+
+function IconOnly() {
+  return (
+    <main className={page}>
+      <ViewSwitch label="Artifact view, icons" iconOnly tone="accent" items={libraryGridList} defaultValue="grid" />
+      <ViewSwitch label="Artifact view, icons, default" iconOnly items={gridList} defaultValue="list" />
+      <ViewSwitch label="Artifact view, labels" tone="accent" items={gridList} defaultValue="grid" />
+      <div hidden>
+        {Object.entries(toneSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const iconOnlyPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const group = canvas.getByRole('radiogroup', { name: 'Artifact view, icons' })
+  const box = group.getBoundingClientRect()
+  await expect([box.width, box.height]).toEqual([68, 32])
+  // Each item keeps its label as its name, and draws no text.
+  await expect(within(group).getByRole('radio', { name: 'Grid' })).toBeChecked()
+  await expect(within(group).queryByText('Grid')).toBeNull()
+  await expect(within(group).queryByText('List')).toBeNull()
+  for (const name of ['Grid', 'List']) {
+    const item = itemOf(group, name)
+    const r = item.getBoundingClientRect()
+    await expect([r.width, r.height]).toEqual([30, 26])
+    const icon = item.querySelector('svg')
+    if (icon === null) throw new Error(`no ${name} icon`)
+    await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([16, 16])
+  }
+  // The selected item: the selected fill, the icon in fg.accent, and no visible border.
+  const grid = getComputedStyle(itemOf(group, 'Grid'))
+  await expect(grid.backgroundColor).toBe(toneSwatch('selected'))
+  await expect(grid.color).toBe(toneSwatch('accent'))
+  await expect(grid.borderTopColor).toBe('rgba(0, 0, 0, 0)')
+  // The default tone draws the same 68 x 32 switch.
+  const plain = canvas.getByRole('radiogroup', { name: 'Artifact view, icons, default' }).getBoundingClientRect()
+  await expect([plain.width, plain.height]).toEqual([68, 32])
+  // Without `iconOnly` the switch keeps its labels, 10 px sides and 12 px icons.
+  const labelled = canvas.getByRole('radiogroup', { name: 'Artifact view, labels' })
+  const labelledGrid = itemOf(labelled, 'Grid')
+  await expect(within(labelledGrid).getByText('Grid')).toBeVisible()
+  const l = getComputedStyle(labelledGrid)
+  await expect([l.paddingLeft, l.paddingRight, l.borderTopWidth]).toEqual(['10px', '10px', '0px'])
+  await expect(labelledGrid.querySelector('svg')?.getBoundingClientRect().width).toBe(12)
+  await expect(labelled.getBoundingClientRect().width).toBeGreaterThan(68)
+}
+
+/** `iconOnly` with `tone="accent"`: the Artifacts Grid or List switch, its items named by their labels. */
+export const IconOnlyDark: StoryObj<typeof meta> = { render: () => <IconOnly />, play: iconOnlyPlay, globals: { mode: 'dark' } }
+export const IconOnlyLight: StoryObj<typeof meta> = { render: () => <IconOnly />, play: iconOnlyPlay, globals: { mode: 'light' } }

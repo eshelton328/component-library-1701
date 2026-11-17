@@ -1235,6 +1235,7 @@ export type RadioMenuProps = {
     note?: ReactNode;
     width?: 'sm' | 'sort' | 'md' | undefined;
     size?: 'md' | 'lg' | undefined;
+    density?: 'default' | 'compact' | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;
 

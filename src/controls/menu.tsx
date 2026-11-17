@@ -343,6 +343,14 @@ export type RadioMenuProps = {
   width?: 'sm' | 'sort' | 'md' | undefined
   /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
+  /**
+   * The row pitch at `size="md"`. `default` draws a choice with a description 50 high and 2 apart (padding 6/12, the
+   * description in `small`, 2 under the label), the note in `small`, and opens the box 4 under the trigger. `compact`
+   * draws it 48 high and 4 apart (padding 6/12, the description in `smallXs`, Regular 11/16, right under the label),
+   * the note in `smallXs`, and opens the box 8 under the trigger, as the Artifacts D6 Sort menu (403:8881, 283 high).
+   * `size="lg"` keeps its own pitch.
+   */
+  density?: 'default' | 'compact' | undefined
   /** A class added to the menu's box, after its own. */
   className?: string | undefined
 } & PopoverDataAttributes
@@ -352,15 +360,18 @@ export type RadioMenuProps = {
  * picked value has a check. Picking a value closes the menu. A choice can
  * have a description line, and the list a heading, as Inbox D9 Sort does.
  */
-export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start', heading, note, width, size, className, ...rest }: RadioMenuProps) {
+export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start', heading, note, width, size, density, className, ...rest }: RadioMenuProps) {
   const [picked, setPicked] = useState(defaultValue)
   const baseId = useId()
   const selected = value ?? picked
+  // The compact Artifacts Sort menu opens 8 under its trigger (D6 403:8881); the compact pitch is a `size="md"` one.
+  const gutter = density === 'compact' && size !== 'lg' ? 8 : 4
   return (
     <Root
       width={width}
       size={size}
-      positioning={{ placement, gutter: 4 }}
+      density={density}
+      positioning={{ placement, gutter }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {
         onOpenChange?.(details.open)

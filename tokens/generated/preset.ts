@@ -1330,7 +1330,7 @@ export default definePreset({
           }
         },
         "bodySm": {
-          "description": "Compact body text: the Inbox detail sections and their suggested prompt, a MarkdownView with size sm, and a TextField or TextArea with textSize sm (the prompt editor), a SearchField with textSize sm (the Inbox search fields), as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
+          "description": "Compact body text: the Inbox detail sections and their suggested prompt, a MarkdownView with size sm, and a TextField or TextArea with textSize sm (the prompt editor), a SearchField with textSize sm (the Inbox search fields), and the label of a Checkbox with size compact (a new task in a discussion proposal), as Figma draws them at 13 px. Not for chat messages or the composer, which use body.",
           "value": {
             "fontFamily": "text.bodySm",
             "fontSize": "text.bodySm",
@@ -1452,7 +1452,7 @@ export default definePreset({
           }
         },
         "monoSm": {
-          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, the mono description of an OptionList with size sm, and the trailing count of a Checkbox with size sm. Not for group headers (eyebrow) or other meta (mono).",
+          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, the mono description of an OptionList with size sm, and the trailing count and description of a Checkbox with size sm or compact. Not for group headers (eyebrow) or other meta (mono).",
           "value": {
             "fontFamily": "text.monoSm",
             "fontSize": "text.monoSm",

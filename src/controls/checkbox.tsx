@@ -11,6 +11,8 @@ const Label = withContext(ArkCheckbox.Label, 'label')
 const Group = withProvider(ArkCheckbox.Group, 'group')
 const GroupLabel = withContext('span', 'groupLabel')
 const Trailing = withContext('span', 'trailing')
+const TextColumn = withContext('span', 'text')
+const Description = withContext('span', 'description')
 
 // A slot given as `false`, `null` or an empty string is left out, as React leaves it out; `0` shows.
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
@@ -44,13 +46,22 @@ export type CheckboxProps = {
   name?: string | undefined
   /** Shown at the end of the row, such as the number of items a filter matches. It is not part of the label. */
   trailing?: ReactNode
+  /**
+   * A line under the label, aligned with it, in `fg.muted` mono, such as the project and source of a new task in a
+   * discussion proposal. It describes the box (`aria-describedby`) and is not part of its name. The box is centred
+   * on the label and this line.
+   */
+  description?: ReactNode
   /** `text` (the default) draws the label in `body`; `mono` in `mono`, as the project and tag rows of the Inbox Filter menu are. */
   labelStyle?: 'text' | 'mono' | undefined
   /**
-   * The text size: `md` (the default) draws a text label in `body` and the `trailing` count in `mono`; `sm` draws the
-   * label in `small` and the count in `monoSm`, as the Inbox Filter menu does. A `mono` label stays `mono` at both sizes.
+   * The text size: `md` (the default) draws a text label in `body` (14/20) and the `trailing` count and `description`
+   * in `mono`; `compact` draws the label in `bodySm` (13/20) and the count and description in `monoSm`, as a new task
+   * in a discussion proposal does; `sm` draws the label in `small` (12/16) and the count and description in `monoSm`,
+   * as the Inbox Filter menu does. A `mono` label stays `mono` at every size. The row is at least 32 px high
+   * (`control.md`) at every size, for touch.
    */
-  size?: 'md' | 'sm' | undefined
+  size?: 'md' | 'compact' | 'sm' | undefined
   /**
    * The fill of a checked box: `accent` (the default) is cyan (`accent.default`); `discuss` is violet
    * (`accent.discuss`), as the new tasks a discussion proposes are. An unchecked box keeps `border.control`.
@@ -58,8 +69,13 @@ export type CheckboxProps = {
   tone?: 'accent' | 'discuss' | undefined
 }
 
-/** A checkbox with a label, such as one filter in a filter popover, and an optional `trailing` count at the end. */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle, size, tone }: CheckboxProps) {
+/**
+ * A checkbox with a label, such as one filter in a filter popover, an optional `description` line under the label and
+ * an optional `trailing` count at the end.
+ */
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, description, labelStyle, size, tone }: CheckboxProps) {
+  const descriptionId = useId()
+  const described = shown(description)
   return (
     <Root
       labelStyle={labelStyle}
@@ -82,9 +98,12 @@ export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disa
           <Dash />
         </Indicator>
       </Control>
-      <Label>{label}</Label>
+      <TextColumn>
+        <Label>{label}</Label>
+        {described ? <Description id={descriptionId}>{description}</Description> : null}
+      </TextColumn>
       {shown(trailing) ? <Trailing>{trailing}</Trailing> : null}
-      <ArkCheckbox.HiddenInput />
+      <ArkCheckbox.HiddenInput {...(described ? { 'aria-describedby': descriptionId } : {})} />
     </Root>
   )
 }
@@ -111,8 +130,8 @@ export type CheckboxGroupProps = {
   disabled?: boolean | undefined
   /** The form field name of every box. */
   name?: string | undefined
-  /** The text size of every box: `md` (the default) or `sm`, as the Inbox Filter menu draws it. See `CheckboxProps`. */
-  size?: 'md' | 'sm' | undefined
+  /** The text size of every box: `md` (the default), `compact` or `sm`, as the Inbox Filter menu draws it. See `CheckboxProps`. */
+  size?: 'md' | 'compact' | 'sm' | undefined
 }
 
 /** A labelled group of checkboxes that gives the list of checked values. */

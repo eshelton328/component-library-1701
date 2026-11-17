@@ -301,3 +301,85 @@ const discussPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const DiscussDark: StoryObj<typeof meta> = { render: () => <Discuss />, globals: { mode: 'dark' }, play: discussPlay }
 export const DiscussLight: StoryObj<typeof meta> = { render: () => <Discuss />, globals: { mode: 'light' }, play: discussPlay }
+
+// `description` and `size="compact"`: a new task in a discussion proposal (D17 403:2435, T20 402:11865, M21 402:7278).
+// Figma's box is 52 high: 9 padding inside a 1 px border, the title 13 px on a 17 px line (403:2440) and the meta
+// line Geist Mono 11 on 14 (403:2441), past the 16 px box and its 10 px gap. The box here pads 6 inside its border.
+const taskBox = css({
+  py: '6',
+  px: '10',
+  borderWidth: 'default',
+  borderStyle: 'solid',
+  borderColor: 'border.default',
+  borderRadius: 'lg',
+  w: 'shell.popoverLg',
+})
+
+function Tasks() {
+  return (
+    <main className={page}>
+      <div className={taskBox} data-testid="task">
+        <Checkbox label="Write the Workbench tickets" description="ncc-1701 · f-005 · from NCC-28" tone="discuss" size="compact" defaultChecked />
+      </div>
+      <Checkbox label="With a description" description="the-bridge · from NCC-31" />
+      <Checkbox label="Small with a description" description="omni-brain" size="sm" />
+      <Checkbox label="Only unread" />
+      <span data-swatch="muted" className={css({ color: 'fg.muted' })} hidden />
+    </main>
+  )
+}
+
+/** The compact title is bodySm (13/20), the description monoSm (11/16) in fg.muted under it; the default row is unchanged. */
+const taskPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const part = (name: string, slot: 'root' | 'label' | 'description' | 'control') => {
+    const root = canvas.getByRole('checkbox', { name }).closest('label')
+    const el = slot === 'root' ? root : root?.querySelector(`.checkbox__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot} for ${name}`)
+    return el
+  }
+  const font = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  const box = (el: HTMLElement) => el.getBoundingClientRect()
+  const muted = getComputedStyle(canvasElement.querySelector('[data-swatch="muted"]') ?? canvasElement).color
+  const task = 'Write the Workbench tickets'
+
+  // The description is not part of the name; it is the box's description.
+  const input = canvas.getByRole('checkbox', { name: task })
+  await expect(input).toHaveAccessibleDescription('ncc-1701 · f-005 · from NCC-28')
+  // The title is Regular 13/20 in sans, the description Geist Mono 11/16 in fg.muted.
+  await expect(font(part(task, 'label'))).toEqual(['13px', 20, '400'])
+  await expect(getComputedStyle(part(task, 'label')).fontFamily).not.toMatch(/Mono/)
+  const desc = part(task, 'description')
+  await expect(font(desc)).toEqual(['11px', 16, '400'])
+  await expect(getComputedStyle(desc).fontFamily).toMatch(/Mono/)
+  await expect(getComputedStyle(desc).color).toBe(muted)
+  // The description starts under the title, 2 below it, past the 16 px box and the 10 px gap.
+  const label = box(part(task, 'label'))
+  await expect(box(desc).left).toBe(label.left)
+  await expect(box(desc).top - label.bottom).toBe(2)
+  await expect(label.left - box(part(task, 'control')).left).toBe(26)
+  // The row is 38 high, over the 32 px touch minimum, so the box is Figma's 52 and the 16 px box is centred, 18 down.
+  await expect(box(part(task, 'root')).height).toBe(38)
+  const frame = box(canvas.getByTestId('task'))
+  await expect(frame.height).toBe(52)
+  await expect(box(part(task, 'control')).top - frame.top).toBe(18)
+
+  // At the default size the description is mono (12/16); at sm monoSm (11/16).
+  await expect(font(part('With a description', 'description'))).toEqual(['12px', 16, '400'])
+  await expect(font(part('Small with a description', 'description'))).toEqual(['11px', 16, '400'])
+  // A row without a description keeps body (14/20), the 32 px row and no description.
+  await expect(font(part('Only unread', 'label'))).toEqual(['14px', 20, '400'])
+  await expect(box(part('Only unread', 'root')).height).toBe(32)
+  await expect(part('Only unread', 'root').querySelector('.checkbox__description')).toBeNull()
+  await expect(canvas.getByRole('checkbox', { name: 'Only unread' })).not.toHaveAttribute('aria-describedby')
+
+  // A press on the description toggles the box, as one on the label does.
+  await userEvent.click(desc)
+  await expect(input).not.toBeChecked()
+}
+
+export const TaskDark: StoryObj<typeof meta> = { render: () => <Tasks />, globals: { mode: 'dark' }, play: taskPlay }
+export const TaskLight: StoryObj<typeof meta> = { render: () => <Tasks />, globals: { mode: 'light' }, play: taskPlay }

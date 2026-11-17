@@ -241,7 +241,7 @@ export type CheckboxGroupProps = {
     onValueChange?: ((value: string[]) => void) | undefined;
     disabled?: boolean | undefined;
     name?: string | undefined;
-    size?: 'md' | 'sm' | undefined;
+    size?: 'md' | 'compact' | 'sm' | undefined;
 };
 
 // @public (undocumented)
@@ -254,8 +254,9 @@ export type CheckboxProps = {
     value?: string | undefined;
     name?: string | undefined;
     trailing?: ReactNode;
+    description?: ReactNode;
     labelStyle?: 'text' | 'mono' | undefined;
-    size?: 'md' | 'sm' | undefined;
+    size?: 'md' | 'compact' | 'sm' | undefined;
     tone?: 'accent' | 'discuss' | undefined;
 };
 

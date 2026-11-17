@@ -15,6 +15,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // no border: 10 + 17 + 4 + 14 + 10. On the 4 px grid it is 56 (d-100 rule 3),
 // so a compact row puts its lines 2 apart: 1 + 10 + 16 + 2 + 16 + 10 + 1.
 // The same 2 sits between the meta and any more lines or actions.
+// A compact sidebar row is the Workbench sidebar chat (D2 105:705, selected
+// 105:643): Figma draws its kind mark 22 in, so a top-level row pads 20
+// inside its 1 px border (21, nearest token; 24 drew it 25 in). The 4 px
+// go to the meta, where the model and the 83 px context meter beside a
+// Needs you pill (105:710, 155 wide in a 158 column) were cut 2 px. A
+// nested row keeps 24, so its ↳ stays 25 in (Figma 27, 199:68).
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -88,5 +94,6 @@ export const listRow = defineSlotRecipe({
       compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
   },
+  compoundVariants: [{ variant: 'sidebar', density: 'compact', css: { root: { ps: '20', '&[data-level]': { ps: '24' } } } }],
   defaultVariants: { variant: 'inbox', density: 'default' },
 })

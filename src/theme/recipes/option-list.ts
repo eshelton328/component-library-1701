@@ -39,6 +39,18 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // the layer widths (7.2 px a character, "/pr-description" 108 wide, 16
 // tall) are Geist Mono 12, so `labelStyle="mono"` takes `mono` (12/16).
 // `check={false}` hides the check and its space on every row.
+// `density="compact"` is the picker's row (105:412, 105:415, 105:418):
+// 146 wide and 44 tall, padded 6 by 8, the name (16) over the description
+// (Regular 11, 14 tall). It shares RadioMenu's compact values (#121, the
+// Artifacts Sort menu 403:8881) where Figma allows: the label straight over
+// the description, which is `smallXs` (Regular 11/16; a mono one `monoSm`),
+// in a box padded 6. Figma's skill rows differ from the Sort menu's: they
+// pad 6 by 8 (105:412; the Sort menu 6 by 12), are 2 apart (105:412 to
+// 105:415; the Sort menu 4) and 44 tall with a 16 px mono name (the Sort
+// menu 48 with a 20 px label). In a compact Popover (padding 6) the text
+// column is Figma's 130, and "Write or check a README" (105:417) is 130
+// wide in Figma, so the description stays on one line: a font that draws
+// it wider cuts it with an ellipsis (`TruncatedText`) instead of wrapping.
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -130,6 +142,10 @@ export const optionList = defineSlotRecipe({
       text: {},
       mono: { itemText: { textStyle: 'mono' } },
     },
+    density: {
+      default: {},
+      compact: { item: { px: '8', py: '6' }, itemBody: { gap: '0' }, itemDescription: { textStyle: 'smallXs' } },
+    },
     check: {
       true: {},
       false: { itemControl: { display: 'none', _checked: { display: 'none' } } },
@@ -139,6 +155,7 @@ export const optionList = defineSlotRecipe({
     { size: 'sm', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } },
     // A mono label keeps `mono` at either size.
     { size: 'sm', labelStyle: 'mono', css: { itemText: { textStyle: 'mono' } } },
+    { density: 'compact', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } },
   ],
-  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md', labelStyle: 'text', check: true },
+  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md', labelStyle: 'text', check: true, density: 'default' },
 })

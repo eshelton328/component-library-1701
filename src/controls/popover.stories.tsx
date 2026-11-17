@@ -329,3 +329,93 @@ const skillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const SkillsDark: StoryObj<typeof meta> = { render: () => <Skills />, globals: { mode: 'dark' }, play: skillsPlay }
 export const SkillsLight: StoryObj<typeof meta> = { render: () => <Skills />, globals: { mode: 'light' }, play: skillsPlay }
+
+// The Workbench skill picker as Figma draws it (D1 105:406): a compact 160 px box, the SKILLS label with a rule,
+// and compact rows of a mono /name over a one-line description. "/" in the message box opens it, so the focus stays
+// in the trigger. A default popover beside it takes the focus and keeps its spacing.
+const narrow = css({ w: 'shell.popoverXs' })
+
+function CompactSkills() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Popover trigger={<Button>/</Button>} label="Compact skills" placement="bottom-start" width="xs" density="compact" autoFocus={false}>
+          <PopoverSection label="Skills" rule>
+            <OptionList label="Skills" items={skills} value="writer" labelStyle="mono" check={false} selectedFill density="compact" />
+          </PopoverSection>
+        </Popover>
+        <div className={narrow}>
+          <OptionList label="Long skill" items={[{ value: 'long', label: '/long', description: 'A description much longer than its one line' }]} labelStyle="mono" check={false} density="compact" />
+        </div>
+        <Popover trigger={<Button>Sort</Button>} label="Default skills" placement="bottom-start" width="xs">
+          <PopoverSection label="Skills">
+            <OptionList label="Default list" items={skills} value="writer" labelStyle="mono" check={false} selectedFill />
+          </PopoverSection>
+        </Popover>
+      </Inline>
+    </main>
+  )
+}
+
+const compactSkillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const body = within(document.body)
+  // Measure in Geist, not in a fallback font.
+  await document.fonts.ready
+  // A compact description too long for its line stays on one 16 px line and ends with an ellipsis.
+  const long = canvas.getByText('A description much longer than its one line')
+  await expect(long).toHaveClass('truncated-text')
+  await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
+  await expect(long.getBoundingClientRect().height).toBe(16)
+  // A default popover moves the focus into its box, pads 8 and keeps its rows' spacing and `small` descriptions.
+  await userEvent.click(canvas.getByRole('button', { name: 'Sort' }))
+  const plain = await body.findByRole('dialog', { name: 'Default skills' })
+  await waitFor(() => expect(plain.contains(document.activeElement)).toBe(true))
+  await expect(getComputedStyle(plain).paddingTop).toBe('8px')
+  const plainRow = within(plain).getByRole('radio', { name: '/writer' }).closest('label')
+  if (!(plainRow instanceof HTMLElement)) throw new Error('no default row')
+  await expect([getComputedStyle(plainRow).paddingTop, getComputedStyle(plainRow).paddingLeft]).toEqual(['8px', '12px'])
+  await expect(getComputedStyle(within(plain).getByText('Draft a doc from sources')).fontSize).toBe('12px')
+  const plainLabel = plain.querySelector('.popover__sectionLabel')
+  if (plainLabel === null) throw new Error('no default label')
+  await expect(getComputedStyle(plainLabel, '::after').content).toBe('none')
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('dialog', { name: 'Default skills' })).toBeNull())
+  await waitFor(() => expect(canvas.getByRole('button', { name: 'Sort' })).toHaveFocus())
+  // `autoFocus={false}`: the compact popover opens and the focus stays in its trigger.
+  const trigger = canvas.getByRole('button', { name: '/' })
+  await userEvent.click(trigger)
+  const box = await body.findByRole('dialog', { name: 'Compact skills' })
+  // Ark moves the focus a frame after it opens; wait past that frame.
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  await expect(trigger).toHaveFocus()
+  // 1 + 6 + a 20 px label row + 2 + three 44 px rows 2 apart + 6 + 1: 172, Figma's 160 × 173 on the 4 px grid.
+  await expect([box.getBoundingClientRect().width, box.getBoundingClientRect().height]).toEqual([160, 172])
+  await expect(getComputedStyle(box).paddingTop).toBe('6px')
+  const label = box.querySelector('.popover__sectionLabel')
+  if (!(label instanceof HTMLElement)) throw new Error('no label')
+  await expect(label.getBoundingClientRect().height).toBe(20)
+  // The rule after SKILLS (105:409): 1 px, to the label's end padding.
+  const rule = getComputedStyle(label, '::after')
+  await expect([rule.borderTopWidth, rule.borderTopStyle]).toEqual(['1px', 'solid'])
+  for (const name of ['/writer', '/readme', '/pr-description']) {
+    const row = within(box).getByRole('radio', { name }).closest('label')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    // Figma's rows (105:412): 146 × 44, padded 6 by 8, so the text column is 130.
+    await expect([row.getBoundingClientRect().width, row.getBoundingClientRect().height]).toEqual([146, 44])
+    await expect([getComputedStyle(row).paddingTop, getComputedStyle(row).paddingLeft]).toEqual(['6px', '8px'])
+    const text = row.querySelector('.option-list__itemBody')
+    if (!(text instanceof HTMLElement)) throw new Error('no text')
+    await expect(text.getBoundingClientRect().width).toBe(130)
+    // The description is smallXs, Regular 11/16, on one line.
+    const description = row.querySelector('.option-list__itemDescription')
+    if (!(description instanceof HTMLElement)) throw new Error('no description')
+    const style = getComputedStyle(description)
+    await expect([style.fontSize, style.fontWeight, description.getBoundingClientRect().height]).toEqual(['11px', '400', 16])
+    await expect(style.fontFamily).not.toMatch(/Mono/)
+  }
+}
+
+/** `density="compact"`, `autoFocus={false}` and a section `rule`, with a compact OptionList: the Workbench skill picker. */
+export const CompactSkillsDark: StoryObj<typeof meta> = { render: () => <CompactSkills />, globals: { mode: 'dark' }, play: compactSkillsPlay }
+export const CompactSkillsLight: StoryObj<typeof meta> = { render: () => <CompactSkills />, globals: { mode: 'light' }, play: compactSkillsPlay }

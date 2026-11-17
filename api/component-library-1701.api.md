@@ -1056,6 +1056,7 @@ export type OptionListProps = {
     size?: 'md' | 'sm' | undefined;
     labelStyle?: 'text' | 'mono' | undefined;
     check?: boolean | undefined;
+    density?: 'default' | 'compact' | undefined;
 };
 
 // @public
@@ -1135,6 +1136,8 @@ export type PopoverProps = {
     width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
     flip?: boolean | undefined;
     surface?: 'overlay' | 'raised' | undefined;
+    density?: 'default' | 'compact' | undefined;
+    autoFocus?: boolean | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;
 
@@ -1145,6 +1148,7 @@ export function PopoverSection(input: PopoverSectionProps): JSX.Element;
 export type PopoverSectionProps = {
     label: string;
     children: ReactNode;
+    rule?: boolean | undefined;
 };
 
 // @public

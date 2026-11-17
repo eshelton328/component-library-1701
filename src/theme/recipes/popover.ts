@@ -14,6 +14,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // takes surface.raised, which is that value (d-100 rule 4: an existing
 // token, no new one). Text on it stays fg.default and fg.muted, as
 // surface.raised allows.
+// `density="compact"` is the Workbench skill picker (D1 105:406): its rows
+// start 7 inside the box edge, so the box pads 6 inside its 1 px border,
+// as a Menu or RadioMenu box does (compact Sort menu 403:8881 included),
+// and the SKILLS label row (105:407) is 21 tall, 20 here on the 4 px grid
+// (2 + a 16 px eyebrow line + 2), with the label 8 in, as at the default.
+// A section with `rule` draws the 1 px line after its label (105:409): 6
+// after the text, to the label's end padding, in border.default.
 export const popover = defineSlotRecipe({
   className: 'popover',
   jsx: ['Popover'],
@@ -42,7 +49,20 @@ export const popover = defineSlotRecipe({
     section: { display: 'flex', flexDirection: 'column', gap: '2' },
     // The label of a group of rows, such as KIND. fg.subtle is only for bg.canvas, so the label is fg.muted.
     // Figma's label row is 26 (D4 346:1738: 8 + a 14 px line + 4); the `eyebrow` line is 16, so the top pad is 6.
-    sectionLabel: { px: '8', pt: '6', pb: '4', textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
+    sectionLabel: {
+      px: '8',
+      pt: '6',
+      pb: '4',
+      textStyle: 'eyebrow',
+      textTransform: 'uppercase',
+      color: 'fg.muted',
+      '&[data-rule]': {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6',
+        _after: { content: '""', flex: '1', borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default' },
+      },
+    },
     footer: { display: 'flex', alignItems: 'center', gap: '8', px: '8', pt: '8', pb: '4' },
     note: { flex: '1', textStyle: 'small', color: 'fg.muted' },
   },
@@ -59,6 +79,10 @@ export const popover = defineSlotRecipe({
       overlay: {},
       raised: { content: { bg: 'surface.raised' } },
     },
+    density: {
+      default: {},
+      compact: { content: { p: '6' }, sectionLabel: { pt: '2', pb: '2' } },
+    },
   },
-  defaultVariants: { width: 'md', surface: 'overlay' },
+  defaultVariants: { width: 'md', surface: 'overlay', density: 'default' },
 })

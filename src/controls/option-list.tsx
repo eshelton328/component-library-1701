@@ -3,6 +3,7 @@ import { useId, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } fr
 import { CheckIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { optionList } from '../../styled-system/recipes'
+import { TruncatedText } from './tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(optionList)
 const Root = withProvider(ArkRadioGroup.Root, 'root')
@@ -84,6 +85,14 @@ export type OptionListProps = {
    * space, so pair it with `selectedFill`, as the Workbench skill picker fills its highlighted row (D1 105:412).
    */
   check?: boolean | undefined
+  /**
+   * The row spacing: `default` pads each row 8 by 12 with its lines 2 apart, and a long description wraps.
+   * `compact` pads it 6 by 8 with the description right under the label on one line, in `smallXs` (Regular 11/16;
+   * a `mono` description in `monoSm`), so a row with a label and a description is 44 tall, as the Workbench skill
+   * picker draws it (D1 105:412). A description too long for its line ends with an ellipsis and shows whole in a
+   * tooltip (`TruncatedText`).
+   */
+  density?: 'default' | 'compact' | undefined
 }
 
 /**
@@ -92,7 +101,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size, labelStyle, check }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size, labelStyle, check, density }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -137,6 +146,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       size={size}
       labelStyle={labelStyle}
       check={check}
+      density={density}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}
@@ -174,7 +184,9 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
               ) : (
                 <ItemText>{item.label}</ItemText>
               )}
-              {item.description === undefined ? null : <ItemDescription id={descriptionId}>{item.description}</ItemDescription>}
+              {item.description === undefined ? null : (
+                <ItemDescription id={descriptionId}>{density === 'compact' ? <TruncatedText>{item.description}</TruncatedText> : item.description}</ItemDescription>
+              )}
             </ItemBody>
             {hasTrailing ? <ItemTrailing id={trailingId}>{item.trailing}</ItemTrailing> : null}
             <ItemControl>

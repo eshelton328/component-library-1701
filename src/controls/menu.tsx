@@ -61,7 +61,7 @@ export type MenuProps = {
    * Inbox D12 Snooze menu). When not set, the menu is as wide as its content and at least 240.
    */
   width?: 'sm' | 'sort' | 'md' | undefined
-  /** The row size: `md` 32 (the default) or `lg` 44, with 20 px icons, as the Inbox D12 Snooze menu. */
+  /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
   /** A class added to the menu's box, after its own. */
   className?: string | undefined
@@ -158,7 +158,7 @@ export type RadioMenuProps = {
    * Inbox D12 Snooze menu). When not set, the menu is as wide as its content and at least 240.
    */
   width?: 'sm' | 'sort' | 'md' | undefined
-  /** The row size: `md` 32 (the default) or `lg` 44, with 20 px icons, as the Inbox D12 Snooze menu. */
+  /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
   /** A class added to the menu's box, after its own. */
   className?: string | undefined

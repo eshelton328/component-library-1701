@@ -21,7 +21,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `size="lg"` is the D12 row (346:5303): 42 tall in Figma, control.xl (44)
 // here, padding 8, gap 12, radius 10 and 18 px icons, which take 20 on the
 // icon scale; the box has padding 6/12/8. Figma sets its label in Regular
-// 15, which has no text style, so the row keeps `label`.
+// 15 (346:5303), so the row sets `bodyLg` (Regular 15/24, d-100).
 // RadioMenu's note (D9 346:4025) sits under a line: padding 14/12/4 (14
 // takes 16, d-072) and Regular 11 in #4a5675: `small` and `fg.muted`, as the
 // heading.
@@ -98,6 +98,7 @@ export const menu = defineSlotRecipe({
           h: 'control.xl',
           px: '8',
           gap: '12',
+          textStyle: 'bodyLg',
           '& svg': { width: 'icon.20!', height: 'icon.20!' },
           '& [data-part=item-indicator] svg': { width: 'icon.16!', height: 'icon.16!' },
         },

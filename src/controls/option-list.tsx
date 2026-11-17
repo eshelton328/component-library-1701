@@ -74,6 +74,16 @@ export type OptionListProps = {
    * `monoSm`, as the Inbox Run in picker and question cards do. A `text` description stays `small` at both sizes.
    */
   size?: 'md' | 'sm' | undefined
+  /**
+   * `text` (the default) draws the label in the sans style of `size`; `mono` draws it in `mono` (12/16), as the
+   * Workbench skill picker draws each skill's /name (D1 105:413).
+   */
+  labelStyle?: 'text' | 'mono' | undefined
+  /**
+   * Whether the chosen row shows its check; `true` when not set. With `false` no row draws a check or keeps its
+   * space, so pair it with `selectedFill`, as the Workbench skill picker fills its highlighted row (D1 105:412).
+   */
+  check?: boolean | undefined
 }
 
 /**
@@ -82,7 +92,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill, size, labelStyle, check }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -125,6 +135,8 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       variant={variant}
       selectedFill={selectedFill}
       size={size}
+      labelStyle={labelStyle}
+      check={check}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}

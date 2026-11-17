@@ -32,6 +32,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // border.default and 8. The card title is Medium 13 (346:793, `labelSm`
 // with `size="sm"`) and the description Regular 12 (346:796, `small` at
 // both sizes).
+//
+// The Workbench skill picker (D1 105:406): each row a mono /name (105:413)
+// over a Regular 11 description (105:414, `small`), the highlighted row
+// filled (`selectedFill`) and no check. The row note says the name is 13;
+// the layer widths (7.2 px a character, "/pr-description" 108 wide, 16
+// tall) are Geist Mono 12, so `labelStyle="mono"` takes `mono` (12/16).
+// `check={false}` hides the check and its space on every row.
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -119,7 +126,19 @@ export const optionList = defineSlotRecipe({
       md: {},
       sm: { itemText: { textStyle: 'labelSm' } },
     },
+    labelStyle: {
+      text: {},
+      mono: { itemText: { textStyle: 'mono' } },
+    },
+    check: {
+      true: {},
+      false: { itemControl: { display: 'none', _checked: { display: 'none' } } },
+    },
   },
-  compoundVariants: [{ size: 'sm', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } }],
-  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md' },
+  compoundVariants: [
+    { size: 'sm', descriptionStyle: 'mono', css: { itemDescription: { textStyle: 'monoSm' } } },
+    // A mono label keeps `mono` at either size.
+    { size: 'sm', labelStyle: 'mono', css: { itemText: { textStyle: 'mono' } } },
+  ],
+  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false, size: 'md', labelStyle: 'text', check: true },
 })

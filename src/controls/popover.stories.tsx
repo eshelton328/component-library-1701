@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Checkbox } from './checkbox'
 import { Inline } from './layout'
+import { OptionList } from './option-list'
 import { Popover, PopoverSection } from './popover'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialogLg' })
@@ -129,6 +130,7 @@ export const Behaviour: StoryObj<typeof meta> = {
 }
 
 const widths = [
+  ['xs', 160],
   ['sm', 240],
   ['filter', 300],
   ['md', 320],
@@ -270,3 +272,58 @@ export const SurfaceLight: StoryObj<typeof meta> = { render: () => <Surfaces />,
 
 export const PlacementDark: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'dark' }, play: placementPlay }
 export const PlacementLight: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'light' }, play: placementPlay }
+
+// The Workbench skill picker (D1 105:406): 160 wide, a SKILLS label, then each skill's mono /name over its
+// description, the highlighted row filled and no check.
+const skills = [
+  { value: 'writer', label: '/writer', description: 'Draft a doc from sources' },
+  { value: 'readme', label: '/readme', description: 'Write or check a README' },
+  { value: 'pr', label: '/pr-description', description: 'Write a PR description' },
+]
+
+function Skills() {
+  return (
+    <main className={page}>
+      <Popover trigger={<Button>/</Button>} label="Skills" placement="bottom-start" width="xs" open>
+        <PopoverSection label="Skills">
+          <OptionList label="Skills" items={skills} value="writer" labelStyle="mono" check={false} selectedFill />
+        </PopoverSection>
+      </Popover>
+      <OptionList label="Sort by" items={[{ value: 'newest', label: 'Newest first' }]} value="newest" />
+      <div hidden>
+        <span data-swatch="default" className={css({ color: 'fg.default' })} />
+        <span data-swatch="selected" className={css({ color: 'surface.selected' })} />
+      </div>
+    </main>
+  )
+}
+
+/** `width="xs"` with an OptionList whose `labelStyle="mono"` and `check={false}`; a default list keeps its check. */
+const skillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const box = await body.findByRole('dialog', { name: 'Skills' })
+  await expect(box.getBoundingClientRect().width).toBe(160)
+  const name = getComputedStyle(within(box).getByText('/pr-description'))
+  await expect([name.fontSize, Math.round(parseFloat(name.lineHeight)), name.fontWeight, name.color]).toEqual(['12px', 16, '400', swatch('default')])
+  await expect(name.fontFamily).toMatch(/Mono/)
+  const row = within(box).getByRole('radio', { name: '/writer' }).closest('label')
+  if (!(row instanceof HTMLElement)) throw new Error('no row')
+  await expect(getComputedStyle(row).backgroundColor).toBe(swatch('selected'))
+  // No row draws a check or keeps its space, the chosen one included.
+  for (const check of box.querySelectorAll('.option-list__itemControl')) await expect(getComputedStyle(check).display).toBe('none')
+  // A list without the props keeps its sans label and the check on the chosen row.
+  const plain = within(canvasElement).getByText('Newest first')
+  await expect(getComputedStyle(plain).fontFamily).not.toMatch(/Mono/)
+  const check = plain.closest('label')?.querySelector('.option-list__itemControl')
+  if (!(check instanceof HTMLElement)) throw new Error('no check')
+  await expect(getComputedStyle(check).display).not.toBe('none')
+  await expect(getComputedStyle(check).visibility).toBe('visible')
+}
+
+export const SkillsDark: StoryObj<typeof meta> = { render: () => <Skills />, globals: { mode: 'dark' }, play: skillsPlay }
+export const SkillsLight: StoryObj<typeof meta> = { render: () => <Skills />, globals: { mode: 'light' }, play: skillsPlay }

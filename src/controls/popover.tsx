@@ -31,11 +31,11 @@ export type PopoverProps = {
   /** Where the popover opens next to the trigger; `bottom-end` when not set. */
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined
   /**
-   * The box width: `sm` 240 (a small menu), `filter` 300 (the Inbox Filter menu), `md` 320 (a filter or snooze
-   * popover; the default), `lg` 360 (the skill picker) or `picker` 380 (the Run in picker). It never grows past the
-   * space beside the trigger.
+   * The box width: `xs` 160 (the Workbench skill picker after "/", D1 105:406), `sm` 240 (a small menu), `filter`
+   * 300 (the Inbox Filter menu), `md` 320 (a filter or snooze popover; the default), `lg` 360 (a wide skill list) or
+   * `picker` 380 (the Run in picker). It never grows past the space beside the trigger.
    */
-  width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined
+  width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined
   /**
    * Whether the popover may move to the other side of the trigger when `placement` has too little room; `true` when
    * not set. With `false` it keeps `placement`, and a long popover scrolls in the room it has.

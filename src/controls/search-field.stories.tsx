@@ -168,23 +168,23 @@ const smallTextPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   const text = (name: string) => {
     const s = getComputedStyle(canvas.getByRole('searchbox', { name }))
     // Line heights are ratios, so Chromium computes 20.0005px; round them.
-    return [s.fontSize, `${Math.round(parseFloat(s.lineHeight))}px`, s.fontWeight]
+    return [s.fontSize, Math.round(parseFloat(s.lineHeight)), s.fontWeight]
   }
-  // The placeholder's computed line height is not resolved, so it checks size and weight.
+  // Chromium gives no line height in px for the placeholder, so it checks size and weight.
   const placeholder = (name: string) => {
     const s = getComputedStyle(canvas.getByRole('searchbox', { name }), '::placeholder')
     return [s.fontSize, s.fontWeight]
   }
   // textSize="sm" draws the text and the placeholder in bodySm: Regular 13/20, sans.
-  await expect(text('Search the inbox')).toEqual(['13px', '20px', '400'])
+  await expect(text('Search the inbox')).toEqual(['13px', 20, '400'])
   await expect(placeholder('Search the inbox')).toEqual(['13px', '400'])
-  await expect(text('Search, small text')).toEqual(['13px', '20px', '400'])
+  await expect(text('Search, small text')).toEqual(['13px', 20, '400'])
   await expect(getComputedStyle(canvas.getByRole('searchbox', { name: 'Search the inbox' })).fontFamily).not.toMatch(/mono/i)
   // The height stays the size's: md 32, sm 28.
   const height = (name: string) => canvas.getByRole('searchbox', { name }).parentElement?.getBoundingClientRect().height
   await expect([height('Search the inbox'), height('Search, small text')]).toEqual([32, 28])
   // The default stays body (14/20).
-  await expect(text('Search, default text')).toEqual(['14px', '20px', '400'])
+  await expect(text('Search, default text')).toEqual(['14px', 20, '400'])
   await expect(placeholder('Search, default text')).toEqual(['14px', '400'])
 }
 

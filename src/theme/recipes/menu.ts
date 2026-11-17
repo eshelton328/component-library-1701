@@ -9,6 +9,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // takes padding 8/12, radius 8 and its own height (346:4003), and a Medium
 // 14 label sits 2 above a Regular 11 description in #8a97b8 (346:4004):
 // `label`, `small` (the inventory merges Regular 11 into it), `fg.muted`.
+// Figma's lines are 18 and 14 high, so the row is 8 + 18 + 2 + 14 + 8 = 50;
+// our `label` and `small` lines are 20 and 16, so the row pads 6, not 8,
+// and stays 50 (D9 346:4003 to 346:4020: 50 high, 2 apart).
+// RadioMenu's heading (D9 346:4001) has no group frame: its text sits 2
+// under the box's padding and the first choice 8 under the text (a 4 px
+// spacer, 346:4002, between 2 px gaps), so with the 16 px `eyebrow` line it
+// pads 2 above and keeps 4 below; the Snooze heading (D12 346:5301) keeps 10/4.
 // The Inbox snooze menu (D12 346:5300) adds a group heading and a time at
 // the end of a row. The heading (346:5301) has padding 10/4/4/4 and Mono 11
 // in capitals with 0.44 tracking, #4a5675: `eyebrow`, and `fg.muted`
@@ -87,7 +94,7 @@ export const menu = defineSlotRecipe({
       // A danger item, such as Delete.
       '&[data-tone=danger]': { color: 'status.danger.fg', '& svg': { color: 'status.danger.fg' } },
       // A choice with a description line (Inbox D9 346:4003).
-      '&[data-has-description]': { h: 'auto', py: '8', px: '12', borderRadius: 'md' },
+      '&[data-has-description]': { h: 'auto', py: '6', px: '12', borderRadius: 'md' },
     },
     itemBody: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     itemDescription: { textStyle: 'small', color: 'fg.muted', whiteSpace: 'nowrap' },
@@ -97,7 +104,15 @@ export const menu = defineSlotRecipe({
     itemIndicator: { display: 'inline-flex', ms: 'auto', color: 'accent.default' },
     itemText: { flex: '1', whiteSpace: 'nowrap' },
     itemGroup: { display: 'flex', flexDirection: 'column', gap: '2' },
-    itemGroupLabel: { px: '4', pt: '10', pb: '4', textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
+    itemGroupLabel: {
+      px: '4',
+      pt: '10',
+      pb: '4',
+      textStyle: 'eyebrow',
+      textTransform: 'uppercase',
+      color: 'fg.muted',
+      '&[data-choice-heading]': { pt: '2' },
+    },
     separator: { borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default', my: '4', mx: '0' },
     footer: { pt: '16', px: '12', pb: '4', borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default', textStyle: 'small', color: 'fg.muted' },
   },

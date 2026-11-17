@@ -384,7 +384,7 @@ export function RadioMenu({ trigger, label, options, value, defaultValue, onValu
                 onValueChange?.(next)
               }}
             >
-              {heading === undefined ? null : <ItemGroupLabel>{heading}</ItemGroupLabel>}
+              {heading === undefined ? null : <ItemGroupLabel data-choice-heading="">{heading}</ItemGroupLabel>}
               {options.map((option, index) => (
                 <RadioItem
                   key={option.value}

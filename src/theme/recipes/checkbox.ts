@@ -13,7 +13,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `size="sm"` is the type of that menu: the kind labels are Geist Regular 12
 // (346:1745, `small`) and the counts Geist Mono 11 (346:1747, `monoSm`). A
 // mono label stays `mono` at both sizes: the project rows are Geist Mono 12
-// (346:1787), as at the default size. The box stays 16 (346:1741).
+// (346:1787), as at the default size. The box stays 16 (346:1741). Figma's
+// rows are 28 high, 2 apart (D4 346:1740 to 346:1748, T14 and M7 the same),
+// so `sm` takes control.sm (28) as its minimum height, not control.md: with
+// 32 px rows the menu was 52 px taller and covered the list under it.
 // `tone="discuss"` fills a checked box in violet, as the new tasks a
 // discussion proposes are (M21 402:7278, #9e8fff: accent.discuss); the
 // check stays fg.onAccent, which passes 4.5:1 on it in both modes.
@@ -110,12 +113,19 @@ export const checkbox = defineSlotRecipe({
     size: {
       md: {},
       compact: { label: { textStyle: 'bodySm' }, trailing: { textStyle: 'monoSm' }, description: { textStyle: 'monoSm' } },
-      sm: { label: { textStyle: 'small' }, trailing: { textStyle: 'monoSm' }, description: { textStyle: 'monoSm' } },
+      sm: {
+        root: { minH: 'control.sm' },
+        label: { textStyle: 'small' },
+        trailing: { textStyle: 'monoSm' },
+        description: { textStyle: 'monoSm' },
+      },
     },
   },
   compoundVariants: [
     { size: 'compact', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
     { size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
+    // An inline row keeps no minimum height at the small size too.
+    { size: 'sm', inline: true, css: { root: { minH: 'auto' } } },
   ],
   defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent', labelTone: 'default', inline: false },
 })

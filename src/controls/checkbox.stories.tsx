@@ -252,6 +252,10 @@ const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(getComputedStyle(part('ncc-1701', 'label')).fontFamily).toMatch(mono)
   // The box stays 16; the default size keeps body (14/20) and mono (12) for the count.
   await expect(part('Next step', 'control').getBoundingClientRect().width).toBe(16)
+  // A small row is 28 high, as Figma's Filter menu rows (D4 346:1740); the default row keeps control.md (32).
+  const rowOf = (name: string) => canvas.getByRole('checkbox', { name }).closest('label')?.getBoundingClientRect().height
+  for (const name of ['Approval', 'Question', 'ncc-1701', 'Next step']) await expect(rowOf(name)).toBe(28)
+  await expect(rowOf('Only unread')).toBe(32)
   await expect(font(part('Only unread', 'label'))).toEqual(['14px', 20, '400'])
   await expect(getComputedStyle(part('Only unread', 'trailing')).fontSize).toBe('12px')
   await userEvent.click(canvas.getByText('Question'))
@@ -442,9 +446,9 @@ const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await userEvent.click(row)
   await expect(box).toBeChecked()
 
-  // A row without them keeps the 32 px row, fg.default and the 10 px gap.
+  // A small row without them keeps the small row's 28 px (control.sm, D4 346:1740), fg.default and the 10 px gap.
   const plain = part('Only unread', 'root')
-  await expect(plain.getBoundingClientRect().height).toBe(32)
+  await expect(plain.getBoundingClientRect().height).toBe(28)
   await expect(getComputedStyle(part('Only unread', 'label')).color).toBe(swatch('default'))
   await expect(Math.round(part('Only unread', 'label').getBoundingClientRect().left - part('Only unread', 'control').getBoundingClientRect().right)).toBe(10)
   await expect(getComputedStyle(part('Write the tickets', 'label')).color).toBe(swatch('default'))

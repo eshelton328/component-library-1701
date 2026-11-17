@@ -83,6 +83,8 @@ const meta = {
     const label = within(kind).getByText('Kind')
     await expect(getComputedStyle(label).textTransform).toBe('uppercase')
     await expect(getComputedStyle(label).fontSize).toBe('11px')
+    // The label row is 26 high, as Figma's (D4 346:1738: 8 + a 14 px line + 4).
+    await expect(Math.round(label.getBoundingClientRect().height)).toBe(26)
     await expect(within(box).getByRole('group', { name: 'Project' })).toBeInTheDocument()
     await expect(within(box).getByText('3 filters on')).toBeInTheDocument()
     await expect(within(box).getByRole('button', { name: 'Clear' })).toBeInTheDocument()

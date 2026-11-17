@@ -268,3 +268,47 @@ const needsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const NeedsYouDark: StoryObj<typeof meta> = { render: () => <Waiting />, globals: { mode: 'dark' }, play: needsPlay }
 export const NeedsYouLight: StoryObj<typeof meta> = { render: () => <Waiting />, globals: { mode: 'light' }, play: needsPlay }
+
+const accentSwatches = {
+  accentBorder: css({ color: 'border.selected' }),
+  accentFill: css({ bg: 'surface.selected' }),
+  muted: css({ color: 'fg.muted' }),
+}
+
+// The run card of Inbox D6 (346:2688): a cyan border and the selected fill, as a selected or running row has.
+function RunCard() {
+  return (
+    <main className={page}>
+      <Grid columns="2" gap="24">
+        <Panel title="Running in quiet-nebula" meta="Working" tone="accent">
+          <p className={css({ textStyle: 'mono', color: 'fg.muted' })}>the-bridge · Sonnet 5.5 · Creating 9 issues in NCC…</p>
+        </Panel>
+        <Panel variant="list" title="Running" meta="1" tone="accent">
+          <div className={row}>Write the tickets for increment one</div>
+        </Panel>
+      </Grid>
+      <div hidden>
+        {Object.entries(accentSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// The accent tone: border.selected (Figma #5ee1ff at 0.45) on surface.selected (#14263f). The axe test checks the text contrast.
+const accentPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement)
+  const card = getComputedStyle(canvas.getByRole('region', { name: 'Running in quiet-nebula' }))
+  await expect(card.borderTopColor).toBe(swatch('accentBorder').color)
+  await expect(card.backgroundColor).toBe(swatch('accentFill').backgroundColor)
+  await expect(card.backgroundImage).toBe('none')
+  // An accent list keeps its count readable: fg.subtle is not for surface.selected, so it takes fg.muted.
+  const list = canvas.getByRole('region', { name: 'Running' })
+  await expect(getComputedStyle(within(list).getByText('1')).color).toBe(swatch('muted').color)
+}
+
+/** `tone="accent"`: the Inbox run card (D6, D9–D11), as a section and as a list. */
+export const AccentDark: StoryObj<typeof meta> = { render: () => <RunCard />, globals: { mode: 'dark' }, play: accentPlay }
+export const AccentLight: StoryObj<typeof meta> = { render: () => <RunCard />, globals: { mode: 'light' }, play: accentPlay }

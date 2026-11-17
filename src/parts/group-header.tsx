@@ -44,8 +44,9 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
  * optional count, a dot in the status colour `dot`, and optional actions
  * at the end. With `onOpenChange` it is a button with a chevron that opens
  * and closes the group; the caller holds `open` and hides the rows
- * (d-069). `variant` is `list` (Inbox, the default) or `sidebar`
- * (Workbench).
+ * (d-069). `variant` is `list` (Inbox, the default), `sidebar`
+ * (Workbench) or `project`: a project heading inside a group, with the
+ * name as written in mono and a `FolderIcon` in `leading` (Inbox D11).
  */
 export function GroupHeader({ label, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
   const collapsible = onOpenChange !== undefined

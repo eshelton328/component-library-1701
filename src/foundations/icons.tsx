@@ -231,6 +231,26 @@ export function CloseIcon(props: IconProps) {
   )
 }
 
+/** Clear: an x in a circle, as on the Inbox search clear button. Figma node 346:4201, drawn at 15 px and scaled to 24. */
+export function CloseCircleIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M21 12C21 16.971 16.971 21 12 21C7.029 21 3 16.971 3 12C3 7.029 7.029 3 12 3C16.971 3 21 7.029 21 12Z" />
+      <path d="M9 9L15 15M15 9L9 15" />
+    </Svg>
+  )
+}
+
+/** A calendar: a page with two rings, as on "Pick a date and time…" in the Inbox snooze menu. Figma node 346:5328, drawn at 18 px and scaled to 24. */
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M6 5H18C19.105 5 20 5.895 20 7V18C20 19.105 19.105 20 18 20H6C4.895 20 4 19.105 4 18V7C4 5.895 4.895 5 6 5Z" />
+      <path d="M4 10H20M9 3V7M15 3V7" />
+    </Svg>
+  )
+}
+
 /** A check mark. Figma node 346:1252, drawn at 16 px and scaled to 24. */
 export function CheckIcon(props: IconProps) {
   return (

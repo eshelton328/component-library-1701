@@ -55,7 +55,6 @@ export const searchField = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
-      '& svg': { width: 'icon.12!', height: 'icon.12!' },
     },
   },
   variants: {
@@ -64,6 +63,13 @@ export const searchField = defineSlotRecipe({
       md: { root: { h: 'control.md' } },
       lg: { root: { h: 'control.lg' } },
     },
+    // The clear icon size: 12 (the default), or 16 for the x in a circle of
+    // Inbox D10 (346:4201, 15 in Figma). An important size in `base` would
+    // beat the one here, so each value sets its own.
+    clearSize: {
+      '12': { clear: { '& svg': { width: 'icon.12!', height: 'icon.12!' } } },
+      '16': { clear: { '& svg': { width: 'icon.16!', height: 'icon.16!' } } },
+    },
   },
-  defaultVariants: { size: 'md' },
+  defaultVariants: { size: 'md', clearSize: '12' },
 })

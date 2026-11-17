@@ -369,3 +369,44 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const CompactDark: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'dark' }, play: compactPlay }
 export const CompactLight: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'light' }, play: compactPlay }
+
+const finishedSwatches = { default: css({ color: 'fg.default' }), muted: css({ color: 'fg.muted' }) }
+
+// The done rows of Inbox D7 (346:2940): a finished row that is not open shows its title in #8a97b8.
+function Finished() {
+  return (
+    <main className={page}>
+      <div className={inboxList}>
+        <Stack gap="2">
+          <ListRow density="compact" title="drift check wants to run git mv" meta="omni-brain · drift check" leading={<span className={tile} />} trailing="11:20" finished onSelect={() => undefined} />
+          <ListRow density="compact" title="Write the tickets for increment one" meta="ncc-1701 · f-005 · NCC-28" leading={<span className={tile} />} trailing="10:05" finished selected onSelect={() => undefined} />
+          <ListRow density="compact" title="Pick the header logo" meta="ncc-1701 · f-005 · NCC-36" leading={<span className={tile} />} trailing="1h" onSelect={() => undefined} />
+        </Stack>
+      </div>
+      <div hidden>
+        {Object.entries(finishedSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const finishedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const colour = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  const titleColour = (name: string) => getComputedStyle(canvas.getByRole('button', { name })).color
+  // A finished row that is not open has a fg.muted title; an open one keeps fg.default, as an open row does.
+  await expect(titleColour('drift check wants to run git mv')).toBe(colour('muted'))
+  await expect(titleColour('Write the tickets for increment one')).toBe(colour('default'))
+  await expect(titleColour('Pick the header logo')).toBe(colour('default'))
+  // The meta line keeps its colour, and the row is not faded as a snoozed row is.
+  await expect(getComputedStyle(canvas.getByText('omni-brain · drift check')).color).toBe(colour('muted'))
+  const row = canvas.getByRole('button', { name: 'drift check wants to run git mv' }).closest('.list-row__root')
+  if (!(row instanceof HTMLElement)) throw new Error('no row')
+  await expect(getComputedStyle(row).opacity).toBe('1')
+}
+
+/** `finished`: the done rows of Inbox D7, with a muted title unless the row is open. */
+export const FinishedDark: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'dark' }, play: finishedPlay }
+export const FinishedLight: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'light' }, play: finishedPlay }

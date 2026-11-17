@@ -35,6 +35,9 @@ export const listRow = defineSlotRecipe({
       '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
       // A selected or running row is not dimmed: its text must keep 4.5:1 on the selected colour.
       '&[data-snoozed]:not([data-selected]):not([data-running])': { opacity: 'snoozed' },
+      // A finished row that is not open (Inbox D7 346:2940) draws its title in #8a97b8 (fg.muted). Figma also fades
+      // its kind tile to 0.6, which no opacity token has, so the tile stays as it is.
+      '&[data-finished]:not([data-selected]):not([data-running]) .list-row__title': { color: 'fg.muted' },
       // Figma draws the age and tags in #4a5675 (fg.subtle). On surface.selected fg.subtle is not allowed,
       // and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
       '&:is([data-selected], [data-running], [data-snoozed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },

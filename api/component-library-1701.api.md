@@ -176,6 +176,9 @@ export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps> 
 };
 
 // @public
+export function CalendarIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Card(input: CardProps): JSX.Element;
 
 // @public (undocumented)
@@ -280,6 +283,9 @@ export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ClockIcon(props: IconProps): JSX.Element;
+
+// @public
+export function CloseCircleIcon(props: IconProps): JSX.Element;
 
 // @public
 export function CloseIcon(props: IconProps): JSX.Element;
@@ -407,7 +413,9 @@ export type DialogProps = Scalar<DialogVariantProps> & {
     role?: 'dialog' | 'alertdialog' | undefined;
     closeButton?: boolean | undefined;
     initialFocus?: (() => HTMLElement | null) | undefined;
-};
+    headerAction?: ReactNode;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export function EditIcon(props: IconProps): JSX.Element;
@@ -566,6 +574,7 @@ export type HighlightProps = {
     text: string;
     query: string | readonly string[];
     ignoreCase?: boolean | undefined;
+    variant?: 'strong' | 'colour' | undefined;
 };
 
 // @public
@@ -697,6 +706,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     selected?: boolean | undefined;
     running?: boolean | undefined;
     snoozed?: boolean | undefined;
+    finished?: boolean | undefined;
     level?: 0 | 1 | 2 | undefined;
     onSelect?: (() => void) | undefined;
 };
@@ -848,7 +858,10 @@ export type MenuProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     heading?: string | undefined;
-};
+    width?: 'sm' | 'sort' | 'md' | undefined;
+    size?: 'md' | 'lg' | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export type MenuSeparator = {
@@ -1170,7 +1183,11 @@ export type RadioMenuProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     heading?: string | undefined;
-};
+    note?: ReactNode;
+    width?: 'sm' | 'sort' | 'md' | undefined;
+    size?: 'md' | 'lg' | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export function RefreshIcon(props: IconProps): JSX.Element;

@@ -13,6 +13,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // border in #ffb86b at 0.35 and a 0.08 tint. They take the status tokens
 // status.needsYou.border (0.5) and status.needsYou.bg (0.14), laid over the
 // pane fill; fg.default and fg.muted pass 4.5:1 on it in both modes.
+// `tone="accent"` is the Inbox run card (D6 346:2688, also D9-D11): Figma
+// draws a 1 px border in #5ee1ff at 0.45 on #14263f, the look of a selected
+// or running row: border.selected (0.5) on surface.selected, where
+// fg.default, fg.muted and fg.accent pass 4.5:1 in both modes. D7's result
+// card (346:3067) has a green border instead; this tone does not draw it.
 export const panel = defineSlotRecipe({
   className: 'panel',
   jsx: ['Panel'],
@@ -47,6 +52,7 @@ export const panel = defineSlotRecipe({
           backgroundImage: 'linear-gradient(token(colors.status.needsYou.bg), token(colors.status.needsYou.bg))',
         },
       },
+      accent: { root: { bg: 'surface.selected', borderColor: 'border.selected' } },
     },
     variant: {
       list: {
@@ -74,7 +80,11 @@ export const panel = defineSlotRecipe({
     },
   },
   // The list meta is fg.subtle, which falls below 4.5:1 on the needs-you
-  // tint in dark mode, so a needs-you list takes fg.muted.
-  compoundVariants: [{ tone: 'needsYou', variant: 'list', css: { meta: { color: 'fg.muted' } } }],
+  // tint in dark mode, so a needs-you list takes fg.muted. fg.subtle is not
+  // for surface.selected, so an accent list takes fg.muted too.
+  compoundVariants: [
+    { tone: 'needsYou', variant: 'list', css: { meta: { color: 'fg.muted' } } },
+    { tone: 'accent', variant: 'list', css: { meta: { color: 'fg.muted' } } },
+  ],
   defaultVariants: { variant: 'section', tone: 'default' },
 })

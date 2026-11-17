@@ -3,6 +3,7 @@ import { Portal } from '@ark-ui/react/portal'
 import type { ReactElement, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { popover } from '../../styled-system/recipes'
+import { dataAttributesOf } from './data-attributes'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(popover)
 const Root = withRootProvider(ArkPopover.Root)
@@ -50,9 +51,6 @@ export type PopoverProps = {
  */
 export type PopoverDataAttributes = { [key: `data-${string}`]: string | number | boolean | undefined }
 
-const arkData = new Set(['data-scope', 'data-part', 'data-state'])
-const dataOf = (props: Record<string, unknown>) =>
-  Object.fromEntries(Object.entries(props).filter(([key, value]) => key.startsWith('data-') && !arkData.has(key) && value !== undefined))
 
 /**
  * A box of controls that a button opens, such as the filter popover. A
@@ -72,7 +70,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
       <ArkPopover.Trigger asChild>{trigger}</ArkPopover.Trigger>
       <Portal>
         <Positioner>
-          <Content {...dataOf(rest)} aria-label={label} {...(className === undefined ? {} : { className })}>
+          <Content {...dataAttributesOf(rest)} aria-label={label} {...(className === undefined ? {} : { className })}>
             {children}
             {note === undefined && actions === undefined ? null : (
               <Footer>

@@ -4,11 +4,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The dialogs of Inbox (D20 confirm, 403:3914) and Workbench (D3 New chat,
 // 105:1379): a box on a scrim, with a title, a description, content and a
 // row of buttons at the end. `md` is the confirm dialog and `lg` the form.
+// `wide` is the Inbox suggested prompt (D8 346:3543): 720 wide, padding
+// 20/16/34 (34 takes 32, d-072), gap 4, the title SemiBold 17 (`subtitle`)
+// and Done at the end of the title row (346:3547) in a 10/0 padded row,
+// centred on the title (346:3544).
 export const dialog = defineSlotRecipe({
   className: 'dialog',
   jsx: ['Dialog'],
   staticCss: ['*'],
-  slots: [...dialogAnatomy.keys(), 'header', 'footer'],
+  slots: [...dialogAnatomy.keys(), 'header', 'headerAction', 'footer'],
   base: {
     backdrop: { position: 'fixed', inset: '0', bg: 'overlay.scrim' },
     positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '16' },
@@ -49,12 +53,18 @@ export const dialog = defineSlotRecipe({
       _hover: { color: 'fg.default' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
+    headerAction: { display: 'flex', alignItems: 'center', flexShrink: '0', ms: 'auto' },
     footer: { display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '8' },
   },
   variants: {
     size: {
       md: { content: { w: 'shell.dialog', gap: '12' }, title: { textStyle: 'subtitle' } },
       lg: { content: { w: 'shell.dialogLg', gap: '16' }, title: { textStyle: 'title' } },
+      wide: {
+        content: { w: 'shell.dialogWide', gap: '4', pt: '20', px: '16', pb: '32' },
+        header: { alignItems: 'center', py: '10' },
+        title: { textStyle: 'subtitle' },
+      },
     },
   },
   defaultVariants: { size: 'md' },

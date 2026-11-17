@@ -141,6 +141,10 @@ export default definePreset({
               "value": "77px",
               "description": "Height of the tablet and phone tab bar, with the home-indicator area."
             },
+            "tabGroup": {
+              "value": "456px",
+              "description": "Width of the centred tab group of the tablet tab bar (TabBar size tablet): Toolkit T01 424:3864 to 424:3899 and Inbox T1 346:5575 to 346:5605, x 150 to 606 of the 756 px frame, shared equally by five or six tabs. Not for the phone tab bar, whose tabs share the whole width, or for a pane or a dialog."
+            },
             "widePane": {
               "value": "420px",
               "description": "Width of the Workbench subagents pane."

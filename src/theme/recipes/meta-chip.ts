@@ -7,6 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `surface.inset`, where the inventory merges the meta chips. The Inbox
 // chip's label is Geist Mono 11 (346:331), so `sm` sets it in `monoSm`;
 // `md` keeps `mono` (12).
+// `surface="raised"` fills the chip with the opaque #17213a of the Inbox
+// chips (346:327, the NCC chip 346:342): surface.raised (d-100). The default
+// `inset` keeps the merged surface.inset.
 export const metaChip = defineSlotRecipe({
   className: 'meta-chip',
   jsx: ['MetaChip'],
@@ -48,6 +51,10 @@ export const metaChip = defineSlotRecipe({
       muted: { root: { color: 'fg.muted' } },
       issue: { root: { color: 'accent.discuss' } },
     },
+    surface: {
+      inset: {},
+      raised: { root: { bg: 'surface.raised' } },
+    },
   },
-  defaultVariants: { size: 'md', tone: 'default' },
+  defaultVariants: { size: 'md', tone: 'default', surface: 'inset' },
 })

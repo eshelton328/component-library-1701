@@ -72,8 +72,9 @@ export type ProposalBlockProps = Scalar<ProposalBlockVariantProps> & {
  * denies it. `tone` is `update` (the default, violet), `create` (violet,
  * new tasks to make, often a `Checkbox` for each), `remove` (red; the
  * title is struck through) or `approval` (amber, a request to run a
- * command). Each button calls its own `onClick`; the block changes nothing
- * itself (d-068, d-069).
+ * command). Each button is a 28 px `sm` button with its label in `labelXs`
+ * (Medium 12/16). Each button calls its own `onClick`; the block changes
+ * nothing itself (d-068, d-069).
  */
 export function ProposalBlock({ tone, label, title, children, note, actions }: ProposalBlockProps) {
   const labelId = useId()
@@ -90,6 +91,7 @@ export function ProposalBlock({ tone, label, title, children, note, actions }: P
               // The labels of one block differ; the index keeps a repeated label unique.
               key={`${String(index)}:${action.label}`}
               size="sm"
+              textSize="xs"
               variant={action.variant ?? 'secondary'}
               disabled={action.disabled === true ? true : undefined}
               onClick={action.onClick}

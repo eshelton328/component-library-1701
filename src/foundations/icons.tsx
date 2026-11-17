@@ -656,6 +656,21 @@ export function SortIcon(props: IconProps) {
 }
 
 /**
+ * Sort descending: an arrow that points down beside three lines that get
+ * shorter, the Inbox Sort button (Figma node 346:175, drawn at 15 px with a
+ * 1.25 stroke and scaled to 24). Unlike `SortIcon` and `FilterIcon`, it
+ * shows the direction of the sort.
+ */
+export function SortDescIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M7 5V19M10 16L7 19L4 16" />
+      <path d="M13 7H20M13 12H18M13 17H16" />
+    </Svg>
+  )
+}
+
+/**
  * Filter: three centred lines that narrow like a funnel. Figma names the
  * layer Frame (402:15414, in the Artifacts Filter button), drawn at 15 px
  * and scaled to 24. It is close to Sort but narrower at each line.

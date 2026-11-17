@@ -1233,6 +1233,9 @@ export function SkillIcon(props: IconProps): JSX.Element;
 export function SnoozeIcon(props: IconProps): JSX.Element;
 
 // @public
+export function SortDescIcon(props: IconProps): JSX.Element;
+
+// @public
 export function SortIcon(props: IconProps): JSX.Element;
 
 // @public

@@ -132,6 +132,7 @@ export {
   SearchIcon,
   SkillIcon,
   SnoozeIcon,
+  SortDescIcon,
   SortIcon,
   SparkIcon,
   SparkleIcon,

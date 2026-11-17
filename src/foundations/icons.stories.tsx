@@ -59,6 +59,7 @@ import {
   SearchIcon,
   SkillIcon,
   SnoozeIcon,
+  SortDescIcon,
   SortIcon,
   SparkIcon,
   SparkleIcon,
@@ -181,6 +182,7 @@ const groups: { title: string; icons: Entry[] }[] = [
     title: 'Lists',
     icons: [
       { name: 'sort', Icon: SortIcon },
+      { name: 'sortDesc', Icon: SortDescIcon },
       { name: 'filter', Icon: FilterIcon },
       { name: 'refresh', Icon: RefreshIcon },
       { name: 'list', Icon: ListIcon },
@@ -311,6 +313,16 @@ const meta = {
         }
       }
     }
+    // Sort descending (346:175) is an upright arrow with its head at the bottom, beside the lines,
+    // so it does not read as Filter's funnel or Sort's three lines.
+    const sortDesc = svgIn(canvas.getByTestId('icon-sortDesc'))
+    await expect(sortDesc.innerHTML).not.toBe(svgIn(canvas.getByTestId('icon-filter')).innerHTML)
+    await expect(sortDesc.innerHTML).not.toBe(svgIn(canvas.getByTestId('icon-sort')).innerHTML)
+    const [arrow, lines] = Array.from(sortDesc.querySelectorAll('path')).map((p) => p.getBBox())
+    if (arrow === undefined || lines === undefined) throw new Error('sortDesc needs an arrow and lines')
+    await expect(arrow.height).toBe(14)
+    await expect(arrow.width).toBeLessThanOrEqual(6)
+    await expect(arrow.x + arrow.width).toBeLessThan(lines.x)
     // The size prop maps to the sizes.icon tokens.
     const sized = Array.from(canvas.getByTestId('sizes').querySelectorAll('svg'))
     await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 16, 20, 24])

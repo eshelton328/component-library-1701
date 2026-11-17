@@ -56,7 +56,8 @@ const meta = {
     }
     await expect(new Set(tones.map((t) => pillOf(t).color)).size).toBe(6)
     await expect(new Set(tones.map((t) => pillOf(t).backgroundColor)).size).toBe(6)
-    await expect(new Set(tones.map((t) => pillOf(t).borderTopColor)).size).toBe(6)
+    // Fill only, as Figma draws the pills (Inbox D2 346:731, D3 346:1280): the border keeps its 1 px but shows no colour.
+    for (const t of tones) await expect(pillOf(t).borderTopColor).toBe('rgba(0, 0, 0, 0)')
     const dot = canvas.getByText('Running').querySelector('[data-dot]')
     if (!(dot instanceof HTMLElement)) throw new Error('no dot')
     await expect(dot.getBoundingClientRect().width).toBe(6)

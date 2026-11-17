@@ -14,6 +14,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (346:1745, `small`) and the counts Geist Mono 11 (346:1747, `monoSm`). A
 // mono label stays `mono` at both sizes: the project rows are Geist Mono 12
 // (346:1787), as at the default size. The box stays 16 (346:1741).
+// `tone="discuss"` fills a checked box in violet, as the new tasks a
+// discussion proposes are (M21 402:7278, #9e8fff: accent.discuss); the
+// check stays fg.onAccent, which passes 4.5:1 on it in both modes.
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
@@ -57,11 +60,20 @@ export const checkbox = defineSlotRecipe({
       text: {},
       mono: { label: { textStyle: 'mono' } },
     },
+    tone: {
+      accent: {},
+      discuss: {
+        control: {
+          _checked: { bg: 'accent.discuss', borderColor: 'accent.discuss' },
+          _indeterminate: { bg: 'accent.discuss', borderColor: 'accent.discuss' },
+        },
+      },
+    },
     size: {
       md: {},
       sm: { label: { textStyle: 'small' }, trailing: { textStyle: 'monoSm' } },
     },
   },
   compoundVariants: [{ size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } }],
-  defaultVariants: { labelStyle: 'text', size: 'md' },
+  defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent' },
 })

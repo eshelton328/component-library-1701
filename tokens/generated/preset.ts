@@ -225,7 +225,7 @@ export default definePreset({
                 "base": "#5b4bd6",
                 "_dark": "#9e8fff"
               },
-              "description": "The Discuss action, update proposals and the composer caret."
+              "description": "The Discuss action, update proposals, the composer caret and the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes)."
             },
             "faint": {
               "value": {
@@ -720,7 +720,7 @@ export default definePreset({
                 "base": "#ffffff",
                 "_dark": "#17213a"
               },
-              "description": "Secondary buttons, inputs, message bubbles, the composer and step cards. Text on it uses fg.default or fg.muted, never fg.subtle."
+              "description": "Secondary buttons, inputs, message bubbles, the composer and step cards, and the opaque fill of a Popover or MetaChip with surface raised (the Inbox popovers and task chips). Text on it uses fg.default or fg.muted, never fg.subtle."
             },
             "selected": {
               "value": {

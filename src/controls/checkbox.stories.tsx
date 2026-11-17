@@ -383,3 +383,72 @@ const taskPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const TaskDark: StoryObj<typeof meta> = { render: () => <Tasks />, globals: { mode: 'dark' }, play: taskPlay }
 export const TaskLight: StoryObj<typeof meta> = { render: () => <Tasks />, globals: { mode: 'light' }, play: taskPlay }
+
+// `inline` and `labelTone="muted"`: "Also remove this task" under the new tasks of a discussion proposal (T20
+// 402:11886): a 16 px row, the label in Geist 12/16 #8a97b8 (`small` at `size="sm"`, fg.muted), 8 after the box.
+const proposal = css({ bg: 'surface.inset', p: '12', borderRadius: 'xl', w: 'shell.popoverLg', display: 'grid', gap: '12', justifyItems: 'start' })
+
+function InlineRows() {
+  return (
+    <main className={page}>
+      <div className={proposal}>
+        <Checkbox label="Write the tickets" size="compact" tone="discuss" defaultChecked />
+        <Checkbox label="Also remove this task" size="sm" tone="discuss" labelTone="muted" inline />
+      </div>
+      <Checkbox label="Only unread" size="sm" />
+      <div hidden>
+        <span data-swatch="muted" className={css({ color: 'fg.muted' })} />
+        <span data-swatch="default" className={css({ color: 'fg.default' })} />
+      </div>
+    </main>
+  )
+}
+
+/** An inline row is as high as its 12/16 label, 8 after the box, muted; its press area reaches 4 above and below. */
+const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const part = (name: string, slot: 'root' | 'label' | 'control') => {
+    const root = canvas.getByRole('checkbox', { name }).closest('label')
+    if (!(root instanceof HTMLElement)) throw new Error(`no row for ${name}`)
+    if (slot === 'root') return root
+    const el = root.querySelector(`.checkbox__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot} for ${name}`)
+    return el
+  }
+  const font = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  const row = part('Also remove this task', 'root')
+  const label = part('Also remove this task', 'label')
+  const control = part('Also remove this task', 'control')
+  await expect(row.getBoundingClientRect().height).toBe(16)
+  await expect(control.getBoundingClientRect().width).toBe(16)
+  await expect(font(label)).toEqual(['12px', 16, '400'])
+  await expect(getComputedStyle(label).fontFamily).not.toMatch(/Mono/)
+  await expect(getComputedStyle(label).color).toBe(swatch('muted'))
+  await expect(Math.round(label.getBoundingClientRect().left - control.getBoundingClientRect().right)).toBe(8)
+  // The press area: a point 3 px above and below the row is still the row, and a press there toggles the box.
+  const r = row.getBoundingClientRect()
+  const x = Math.round(r.left + r.width / 2)
+  await expect(document.elementFromPoint(x, r.top - 3)).toBe(row)
+  await expect(document.elementFromPoint(x, r.bottom + 3)).toBe(row)
+  const box = canvas.getByRole('checkbox', { name: 'Also remove this task' })
+  await userEvent.click(row)
+  await expect(box).toBeChecked()
+
+  // A row without them keeps the 32 px row, fg.default and the 10 px gap.
+  const plain = part('Only unread', 'root')
+  await expect(plain.getBoundingClientRect().height).toBe(32)
+  await expect(getComputedStyle(part('Only unread', 'label')).color).toBe(swatch('default'))
+  await expect(Math.round(part('Only unread', 'label').getBoundingClientRect().left - part('Only unread', 'control').getBoundingClientRect().right)).toBe(10)
+  await expect(getComputedStyle(part('Write the tickets', 'label')).color).toBe(swatch('default'))
+}
+
+export const InlineDark: StoryObj<typeof meta> = { render: () => <InlineRows />, globals: { mode: 'dark' }, play: inlinePlay }
+export const InlineLight: StoryObj<typeof meta> = { render: () => <InlineRows />, globals: { mode: 'light' }, play: inlinePlay }

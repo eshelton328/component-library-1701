@@ -44,12 +44,15 @@ export type CheckboxProps = {
   name?: string | undefined
   /** Shown at the end of the row, such as the number of items a filter matches. It is not part of the label. */
   trailing?: ReactNode
+  /** `text` (the default) draws the label in `body`; `mono` in `mono`, as the project and tag rows of the Inbox Filter menu are. */
+  labelStyle?: 'text' | 'mono' | undefined
 }
 
 /** A checkbox with a label, such as one filter in a filter popover, and an optional `trailing` count at the end. */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing }: CheckboxProps) {
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle }: CheckboxProps) {
   return (
     <Root
+      labelStyle={labelStyle}
       disabled={disabled}
       {...(checked === undefined ? {} : { checked })}
       {...(defaultChecked === undefined ? {} : { defaultChecked })}
@@ -81,6 +84,8 @@ export type CheckboxGroupItem = {
   disabled?: boolean | undefined
   /** Shown at the end of the row, such as a count. */
   trailing?: ReactNode
+  /** `mono` draws the label in `mono`, as a project or tag name is; `text` (the default) in `body`. */
+  labelStyle?: 'text' | 'mono' | undefined
 }
 
 export type CheckboxGroupProps = {
@@ -114,7 +119,7 @@ export function CheckboxGroup({ label, items, value, defaultValue, onValueChange
       <GroupLabel id={labelId}>{label}</GroupLabel>
       {items.map((item) => (
         // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} />
+        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} labelStyle={item.labelStyle} />
       ))}
     </Group>
   )

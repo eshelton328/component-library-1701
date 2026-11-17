@@ -162,3 +162,57 @@ export const Width: StoryObj<typeof meta> = {
     }
   },
 }
+
+// Two triggers at the foot of the viewport, where there is little room below. The Run in picker (Inbox D3
+// 346:1234) opens under its button, so it takes `flip={false}`; the other may flip above.
+const foot = css({ position: 'fixed', insetInlineStart: '24', insetInlineEnd: '24', bottom: '24' })
+const marked = css({ outlineStyle: 'dashed' })
+
+function Placements() {
+  return (
+    <main className={page}>
+      <div className={foot}>
+        <Inline justify="between">
+          <Popover trigger={<Button>Flips</Button>} label="Flips" placement="bottom-start" open>
+            <Checkbox label="A row" />
+          </Popover>
+          <Popover
+            trigger={<Button>Run in</Button>}
+            label="Run in"
+            placement="bottom-end"
+            flip={false}
+            width="picker"
+            className={marked}
+            data-fidelity="run in picker"
+            data-state="ignored"
+            open
+          >
+            <Checkbox label="Another row" />
+          </Popover>
+        </Inline>
+      </div>
+    </main>
+  )
+}
+
+/** `flip={false}` keeps the placement where there is no room; the box takes the caller's class and `data-*` attributes. */
+const placementPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const flips = await body.findByRole('dialog', { name: 'Flips' })
+  const kept = await body.findByRole('dialog', { name: 'Run in' })
+  const above = body.getByRole('button', { name: 'Flips' })
+  const below = body.getByRole('button', { name: 'Run in' })
+  // With no room below, the default flips above its trigger; flip={false} stays under its trigger.
+  await waitFor(() => expect(flips.getBoundingClientRect().bottom).toBeLessThanOrEqual(above.getBoundingClientRect().top))
+  await waitFor(() => expect(Math.round(kept.getBoundingClientRect().top - below.getBoundingClientRect().bottom)).toBe(6))
+  // The data attribute and the class land on the box, beside the recipe's class; Ark keeps its own data-state.
+  await expect(kept).toHaveAttribute('data-fidelity', 'run in picker')
+  await expect(kept).toHaveAttribute('data-state', 'open')
+  await expect(kept).toHaveClass(marked)
+  await expect(kept).toHaveClass('popover__content')
+  await expect(getComputedStyle(kept).outlineStyle).toBe('dashed')
+  await expect(flips).not.toHaveAttribute('data-fidelity')
+}
+
+export const PlacementDark: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'dark' }, play: placementPlay }
+export const PlacementLight: StoryObj<typeof meta> = { render: () => <Placements />, globals: { mode: 'light' }, play: placementPlay }

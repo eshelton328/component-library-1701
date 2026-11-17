@@ -35,18 +35,35 @@ export type PopoverProps = {
    * space beside the trigger.
    */
   width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined
-}
+  /**
+   * Whether the popover may move to the other side of the trigger when `placement` has too little room; `true` when
+   * not set. With `false` it keeps `placement`, and a long popover scrolls in the room it has.
+   */
+  flip?: boolean | undefined
+  /** A class added to the popover's box, after its own. */
+  className?: string | undefined
+} & PopoverDataAttributes
+
+/**
+ * `data-*` attributes set on the popover's box, such as a key an app's checks find it by. Ark's own `data-scope`,
+ * `data-part` and `data-state` are left as Ark sets them.
+ */
+export type PopoverDataAttributes = { [key: `data-${string}`]: string | number | boolean | undefined }
+
+const arkData = new Set(['data-scope', 'data-part', 'data-state'])
+const dataOf = (props: Record<string, unknown>) =>
+  Object.fromEntries(Object.entries(props).filter(([key, value]) => key.startsWith('data-') && !arkData.has(key) && value !== undefined))
 
 /**
  * A box of controls that a button opens, such as the filter popover. A
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, className, ...rest }: PopoverProps) {
   return (
     <Root
       width={width}
-      positioning={{ placement, gutter: 6 }}
+      positioning={{ placement, gutter: 6, flip }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {
         onOpenChange?.(details.open)
@@ -55,7 +72,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
       <ArkPopover.Trigger asChild>{trigger}</ArkPopover.Trigger>
       <Portal>
         <Positioner>
-          <Content aria-label={label}>
+          <Content {...dataOf(rest)} aria-label={label} {...(className === undefined ? {} : { className })}>
             {children}
             {note === undefined && actions === undefined ? null : (
               <Footer>

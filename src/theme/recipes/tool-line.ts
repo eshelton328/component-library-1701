@@ -4,8 +4,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // phone M3 105:2787: a row with gap 6, centred, no fill, border or padding;
 // a 6 px dot (105:872) and the call in Geist Mono 12 (`mono`) in #8a97b8
 // (fg.muted), name and target in one run (105:873). The dot is #6ee7a8
-// (status.done) on a finished call and #9b8cff (merged into
-// status.running) on the running call of M12 147:383. Figma draws no failed
+// (status.done) on a finished call. The running call is #5ee1ff in Inbox
+// D5 (346:2269), the colour of its task's Working pill, so it takes
+// status.working; phone M12 147:383 drew it #9b8cff, which no decision
+// kept, and the newer desktop frame wins. Figma draws no failed
 // call and no expanded output: a failed call takes status.danger, and the
 // output takes the transcript card of D3 105:1345 (rgba(7,11,20,0.6) =
 // surface.well, padding 10, radius 8, Mono 11 merged into `mono`, #e6ecff).
@@ -55,7 +57,7 @@ export const toolLine = defineSlotRecipe({
   },
   variants: {
     state: {
-      running: { dot: { bg: 'status.running.fg' } },
+      running: { dot: { bg: 'status.working.fg' } },
       done: { dot: { bg: 'status.done.fg' } },
       failed: { dot: { bg: 'status.danger.fg' } },
     },

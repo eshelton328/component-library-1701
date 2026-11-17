@@ -155,3 +155,50 @@ const countsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const TrailingDark: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'dark' }, play: countsPlay }
 export const TrailingLight: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'light' }, play: countsPlay }
+
+// The Inbox Filter menu sets project and tag names in mono (346:1787,
+// 346:1824: Geist Mono 12) and the kinds in sans.
+const projects = [
+  { value: 'ncc-1701', label: 'ncc-1701', trailing: 5, labelStyle: 'mono' },
+  { value: 'the-bridge', label: 'project/ncc-1701/the-bridge', trailing: 2, labelStyle: 'mono' },
+  { value: 'approval', label: 'Approval', trailing: 3 },
+] as const
+
+const monoSample = css({ textStyle: 'mono' })
+
+function MonoLabels() {
+  return (
+    <main className={page}>
+      <div className={filterMenu}>
+        <CheckboxGroup label="Project" items={projects} defaultValue={['ncc-1701']} />
+      </div>
+      <Checkbox label="global/decision" labelStyle="mono" />
+      <span data-testid="mono-sample" className={monoSample} hidden>
+        mono
+      </span>
+    </main>
+  )
+}
+
+/** `labelStyle="mono"` draws the label in the mono style; a row without it keeps the body style. */
+const monoPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const labelOf = (name: string) => {
+    const label = canvas.getByRole('checkbox', { name }).closest('label')?.querySelector('.checkbox__label')
+    if (!(label instanceof HTMLElement)) throw new Error(`no label for ${name}`)
+    return getComputedStyle(label)
+  }
+  const sample = canvas.getByTestId('mono-sample')
+  const mono = getComputedStyle(sample)
+  for (const name of ['ncc-1701', 'project/ncc-1701/the-bridge', 'global/decision']) {
+    await expect(labelOf(name).fontFamily).toBe(mono.fontFamily)
+    await expect(labelOf(name).fontSize).toBe(mono.fontSize)
+  }
+  await expect(labelOf('Approval').fontFamily).not.toBe(mono.fontFamily)
+  // The mono label is still the accessible name, and the row still toggles.
+  await userEvent.click(canvas.getByText('global/decision'))
+  await expect(canvas.getByRole('checkbox', { name: 'global/decision' })).toBeChecked()
+}
+
+export const MonoLabelDark: StoryObj<typeof meta> = { render: () => <MonoLabels />, globals: { mode: 'dark' }, play: monoPlay }
+export const MonoLabelLight: StoryObj<typeof meta> = { render: () => <MonoLabels />, globals: { mode: 'light' }, play: monoPlay }

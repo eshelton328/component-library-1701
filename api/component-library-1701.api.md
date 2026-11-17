@@ -224,6 +224,7 @@ export type CheckboxGroupItem = {
     label: string;
     disabled?: boolean | undefined;
     trailing?: ReactNode;
+    labelStyle?: 'text' | 'mono' | undefined;
 };
 
 // @public (undocumented)
@@ -247,6 +248,7 @@ export type CheckboxProps = {
     value?: string | undefined;
     name?: string | undefined;
     trailing?: ReactNode;
+    labelStyle?: 'text' | 'mono' | undefined;
 };
 
 // @public
@@ -990,6 +992,7 @@ export type OptionListProps = {
     name?: string | undefined;
     descriptionStyle?: 'text' | 'mono' | undefined;
     variant?: 'list' | 'card' | undefined;
+    selectedFill?: boolean | undefined;
 };
 
 // @public
@@ -1051,6 +1054,11 @@ export function PlusIcon(props: IconProps): JSX.Element;
 // @public
 export function Popover(input: PopoverProps): JSX.Element;
 
+// @public
+export type PopoverDataAttributes = {
+    [key: `data-${string}`]: string | number | boolean | undefined;
+};
+
 // @public (undocumented)
 export type PopoverProps = {
     trigger: ReactElement;
@@ -1062,7 +1070,9 @@ export type PopoverProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
-};
+    flip?: boolean | undefined;
+    className?: string | undefined;
+} & PopoverDataAttributes;
 
 // @public
 export function PopoverSection(input: PopoverSectionProps): JSX.Element;
@@ -1229,6 +1239,9 @@ export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public
 export function SnoozeIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SortDescIcon(props: IconProps): JSX.Element;
 
 // @public
 export function SortIcon(props: IconProps): JSX.Element;

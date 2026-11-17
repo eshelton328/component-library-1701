@@ -16,6 +16,7 @@ const selectedSwatch = css({ color: 'surface.selected' })
 const outlineSwatch = css({ color: 'border.selected' })
 const borderSwatch = css({ color: 'border.default' })
 const radioSwatch = css({ color: 'accent.default' })
+const onAccentSwatch = css({ color: 'fg.onAccent' })
 
 // The rows of the Artifacts M4 sort sheet (407:790, 407:797, 407:802, 407:807).
 const sorts: readonly OptionListItem[] = [
@@ -335,9 +336,10 @@ function Picker() {
   return (
     <main className={page}>
       <div className={picker}>
-        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" />
+        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" selectedFill />
       </div>
       <span hidden data-swatch="default" className={defaultSwatch} />
+      <span hidden data-swatch="selected" className={selectedSwatch} />
       <span hidden data-swatch="muted" className={mutedSwatch} />
       <span hidden data-swatch="accent" className={accentSwatch} />
     </main>
@@ -366,6 +368,9 @@ const pickerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const meta = getComputedStyle(within(claude).getByText('claude · ~/ncc-1701 · idle'))
   await expect([meta.fontSize, meta.color]).toEqual(['12px', swatch('muted')])
   await expect(meta.fontFamily).toMatch(/Mono/)
+  // `selectedFill` fills the chosen row with surface.selected (346:1243); the others have no fill.
+  await expect(getComputedStyle(claude).backgroundColor).toBe(swatch('selected'))
+  await expect(getComputedStyle(codex).backgroundColor).toBe('rgba(0, 0, 0, 0)')
   // The chosen row ends in its check; a row with a status pill ends in the pill and keeps no check space.
   await expect(getComputedStyle(part(claude, 'itemControl')).visibility).toBe('visible')
   const end = part(codex, 'itemTrailing')
@@ -400,6 +405,7 @@ function Cards() {
       <span hidden data-swatch="outline" className={outlineSwatch} />
       <span hidden data-swatch="border" className={borderSwatch} />
       <span hidden data-swatch="radio" className={radioSwatch} />
+      <span hidden data-swatch="onAccent" className={onAccentSwatch} />
     </main>
   )
 }
@@ -431,7 +437,11 @@ const cardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   if (body === null) throw new Error('no text column')
   await expect(body.getBoundingClientRect().left - radio.getBoundingClientRect().right).toBe(12)
   await expect(getComputedStyle(rpc.querySelector('.option-list__itemControl') ?? rpc).display).toBe('none')
-  await expect(getComputedStyle(radio).borderTopColor).toBe(swatch('radio'))
+  // The chosen radio is a cyan dot in a disc of fg.onAccent, with no cyan ring (346:790).
+  const chosen = getComputedStyle(radio)
+  await expect([chosen.backgroundColor, chosen.borderTopColor]).toEqual([swatch('onAccent'), swatch('onAccent')])
+  const dot = getComputedStyle(radio, '::after')
+  await expect([dot.width, dot.backgroundColor]).toEqual(['8px', swatch('radio')])
   await expect(getComputedStyle(radioOf(plain)).borderTopColor).not.toBe(swatch('radio'))
   // Picking another card moves the outline.
   await userEvent.click(within(plain).getByText('Plain fetch with zod schemas'))

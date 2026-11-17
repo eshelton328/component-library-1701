@@ -1043,6 +1043,7 @@ export type PopoverProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
 };
 
 // @public

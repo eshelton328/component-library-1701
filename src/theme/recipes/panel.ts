@@ -10,14 +10,20 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // Every variant is glass (d-044): `surface.pane` with the `glass` blur.
 // `tone="needsYou"` marks a panel that waits for the user, such as the
 // "waiting for this answer" box of Inbox D2 (346:772): Figma draws a 1 px
-// border in #ffb86b at 0.35 and a 0.08 tint. They take the status tokens
-// status.needsYou.border (0.5) and status.needsYou.bg (0.14), laid over the
-// pane fill; fg.default and fg.muted pass 4.5:1 on it in both modes.
+// border in #ffb86b at 0.35 and a 0.08 tint. The tint is
+// status.needsYou.faint (0.08, as Figma; d-100), laid over the pane fill;
+// fg.default and fg.muted pass 4.5:1 on it in both modes. The border stays
+// status.needsYou.border (0.5): at Figma's 0.35 it is 2.0:1 against the
+// tint, and 0.5 is the nearest value that keeps 3:1 in dark mode.
 // `tone="accent"` is the Inbox run card (D6 346:2688, also D9-D11): Figma
 // draws a 1 px border in #5ee1ff at 0.45 on #14263f, the look of a selected
 // or running row: border.selected (0.5) on surface.selected, where
-// fg.default, fg.muted and fg.accent pass 4.5:1 in both modes. D7's result
-// card (346:3067) has a green border instead; this tone does not draw it.
+// fg.default, fg.muted and fg.accent pass 4.5:1 in both modes.
+// `tone="done"` is D7's result card (346:3067), a pane with a green border:
+// status.done.border. `tone="danger"` is the card of a removed task (D21
+// 403:4261), a pane with a red border: status.danger.border. Figma's stroke
+// alphas are not recorded, so both take their status border token, and the
+// fill stays the pane.
 export const panel = defineSlotRecipe({
   className: 'panel',
   jsx: ['Panel'],
@@ -49,10 +55,12 @@ export const panel = defineSlotRecipe({
       needsYou: {
         root: {
           borderColor: 'status.needsYou.border',
-          backgroundImage: 'linear-gradient(token(colors.status.needsYou.bg), token(colors.status.needsYou.bg))',
+          backgroundImage: 'linear-gradient(token(colors.status.needsYou.faint), token(colors.status.needsYou.faint))',
         },
       },
       accent: { root: { bg: 'surface.selected', borderColor: 'border.selected' } },
+      done: { root: { borderColor: 'status.done.border' } },
+      danger: { root: { borderColor: 'status.danger.border' } },
     },
     variant: {
       list: {

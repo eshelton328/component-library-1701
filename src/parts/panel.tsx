@@ -37,7 +37,10 @@ export type PanelProps = Scalar<PanelVariantProps> & {
  * height of its parent and its body scrolls; a `section` panel is as tall
  * as its content. `tone="needsYou"` gives it the needs-you border and
  * tint, for a box that waits for the user; `tone="accent"` the cyan border
- * and selected fill of a running item, such as the Inbox run card.
+ * and selected fill of a running item, such as the Inbox run card;
+ * `tone="done"` a green border on the pane fill, such as the result card of
+ * a finished task; `tone="danger"` a red border on the pane fill, such as the
+ * card of a removed task. `default` draws the `border.default` border.
  */
 export function Panel({ title, meta, actions, children, variant, tone }: PanelProps) {
   const titleId = useId()

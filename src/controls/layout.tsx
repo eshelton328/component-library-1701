@@ -24,7 +24,7 @@ export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProp
 /** The props of a div, plus `gap` and `columns` (1 to 6). */
 export type GridProps = ComponentProps<'div'> & Scalar<LayoutGridVariantProps>
 
-/** The props of a div, plus `size` (desktop, tablet or phone) and `gap`. */
+/** The props of a div, plus `size` (desktop, tablet, phone or detail) and `gap`. */
 export type ContainerProps = ComponentProps<'div'> & Scalar<LayoutContainerVariantProps>
 
 /** Places its children one under the other, `gap` apart. */
@@ -46,6 +46,8 @@ export function Grid(props: GridProps) {
  * Pads a page's content for the frame size: `desktop` (the default),
  * `tablet` or `phone`. Its children stack, `gap` apart (0 by default).
  * The library has no breakpoint tokens, so the page picks `size`.
+ * `detail` pads as `desktop` does and keeps the content at most 748 px
+ * wide (`shell.detail`), at the start of its parent: the Inbox task column.
  */
 export function Container(props: ContainerProps) {
   return <StyledContainer {...props} />

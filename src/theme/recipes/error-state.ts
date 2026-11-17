@@ -69,7 +69,7 @@ export const errorState = defineSlotRecipe({
   variants: {
     size: {
       page: {
-        root: { flex: '1', w: '100%', minH: '100%', alignItems: 'center', justifyContent: 'center', gap: '16', p: '24' },
+        root: { flex: '1', w: '100%', minH: '100%', alignItems: 'center', justifyContent: 'safe center', gap: '16', p: '24' },
         content: { flexDirection: 'column', alignItems: 'center', gap: '16', w: '100%', maxW: 'shell.dialogLg', textAlign: 'center' },
         tile: { w: '40', h: '40', borderRadius: 'lg', '& svg': { w: 'icon.24!', h: 'icon.24!' } },
         text: { gap: '8', alignItems: 'center' },
@@ -80,7 +80,7 @@ export const errorState = defineSlotRecipe({
         stack: { alignSelf: 'stretch' },
       },
       pane: {
-        root: { flex: '1', w: '100%', minH: '100%', alignItems: 'center', justifyContent: 'center', gap: '12', p: '16' },
+        root: { flex: '1', w: '100%', minH: '100%', alignItems: 'center', justifyContent: 'safe center', gap: '12', p: '16' },
         content: { flexDirection: 'column', alignItems: 'center', gap: '12', w: '100%', maxW: 'shell.dialog', textAlign: 'center' },
         tile: { w: 'kindTile.lg', h: 'kindTile.lg', borderRadius: 'md', '& svg': { w: 'icon.20!', h: 'icon.20!' } },
         text: { gap: '4', alignItems: 'center' },

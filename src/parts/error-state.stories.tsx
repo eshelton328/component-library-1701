@@ -359,3 +359,28 @@ const detailsOpen: Story = {
 
 export const DetailsOpenDark: Story = { ...detailsOpen, globals: { mode: 'dark' } }
 export const DetailsOpenLight: Story = { ...detailsOpen, globals: { mode: 'light' } }
+
+// A pane that scrolls, too short for the open details.
+const scrollFrame = css({ display: 'flex', flexDirection: 'column', w: 'shell.sidebar', h: 'shell.popover', overflowY: 'auto', bg: 'surface.pane', borderWidth: 'default', borderStyle: 'solid', borderColor: 'border.default', borderRadius: 'xl' })
+const LONG_STACK = Array.from({ length: 20 }, (_, i) => `    at frame${String(i)} (src/pages/inbox/InboxScreen.tsx:${String(i + 10)}:5)`).join('\n')
+
+/** Content taller than its pane starts at the top ("safe" centring), so the heading and actions stay reachable by scrolling. */
+export const TallInScrollingPane: Story = {
+  render: () => (
+    <main className={page}>
+      <div className={scrollFrame} data-testid="frame">
+        <ErrorState size="pane" title="The terminal crashed" defaultDetailsOpen details={LONG_STACK} actions={<Button size="sm">Restart terminal</Button>} />
+      </div>
+    </main>
+  ),
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const frame = canvas.getByTestId('frame')
+    await expect(frame.scrollHeight).toBeGreaterThan(frame.clientHeight)
+    const heading = canvas.getByRole('heading', { name: 'The terminal crashed' })
+    await expect(box(heading).top).toBeGreaterThanOrEqual(box(frame).top)
+    const restart = canvas.getByRole('button', { name: 'Restart terminal' })
+    await expect(box(restart).top).toBeGreaterThanOrEqual(box(frame).top)
+  },
+}

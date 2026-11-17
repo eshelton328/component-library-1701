@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { ScrollFrame } from './scroll-frame'
+import { TextArea } from './text-field'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // A box with a bounded height, as the AppShell detail gives the frame.
@@ -69,4 +70,56 @@ const meta = {
 export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
+
+const draft = Array.from({ length: 30 }, (_, i) => `Draft line ${String(i + 1)}`).join('\n')
+
+function LongFooter() {
+  return (
+    <main className={page}>
+      <div className={box} data-testid="box">
+        <ScrollFrame
+          gap="12"
+          header={<Button size="sm">Back to the inbox</Button>}
+          footer={
+            <div data-testid="draft">
+              <TextArea label="Reply" labelHidden rows={30} defaultValue={draft} />
+            </div>
+          }
+        >
+          {lines.map((text) => (
+            <p key={text} className={line}>
+              {text}
+            </p>
+          ))}
+        </ScrollFrame>
+      </div>
+    </main>
+  )
+}
+
+/**
+ * A footer taller than the frame, such as a chat box with a long draft (a 30-line text area): it stops at 30% of the frame and scrolls
+ * inside, and the body between the bars keeps the rest, so the messages stay readable in a short window.
+ */
+export const LongFooterDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <LongFooter />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const draft = canvas.getByTestId('draft')
+    const footer = draft.parentElement
+    const body = canvas.getByText('Message 1').parentElement
+    const root = body?.parentElement
+    if (footer === null || body === null || root === null || root === undefined) throw new Error('no frame')
+    const frame = root.getBoundingClientRect().height
+    await expect(footer.getBoundingClientRect().height).toBeLessThanOrEqual(frame * 0.3 + 1)
+    await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
+    // The body keeps more room than the footer: the header, the two gaps and the capped footer leave it the rest.
+    await expect(body.getBoundingClientRect().height).toBeGreaterThan(footer.getBoundingClientRect().height)
+    // The end of the draft can be reached by scrolling the footer.
+    footer.scrollTop = footer.scrollHeight
+    await expect(draft.getBoundingClientRect().bottom).toBeLessThanOrEqual(footer.getBoundingClientRect().bottom + 1)
+  },
+}
+export const LongFooterLight: StoryObj<typeof meta> = { ...LongFooterDark, globals: { mode: 'light' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }

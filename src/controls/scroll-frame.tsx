@@ -12,7 +12,7 @@ const Footer = withContext('div', 'footer')
 export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
   /** Stays at the top while the body scrolls, such as a Back bar. */
   header?: ReactNode
-  /** Stays at the bottom while the body scrolls, such as a chat's `Composer`. */
+  /** Stays at the bottom while the body scrolls, such as a chat's `Composer`. It takes at most 30% of the frame's height and scrolls inside past that. */
   footer?: ReactNode
   /** The content between the bars; only it scrolls. */
   children?: ReactNode
@@ -28,6 +28,8 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * It fills the height of its parent, which must be a flex column with a
  * bounded height, such as the AppShell detail. The body takes the focus,
  * so the keyboard can scroll it. `gap` sets the space between the three.
+ * The footer takes at most 30% of the frame's height; a taller footer, such
+ * as a chat box with a long draft, scrolls inside, so the body keeps room.
  */
 export function ScrollFrame({ header, footer, children, className, bodyClassName, gap }: ScrollFrameProps) {
   return (

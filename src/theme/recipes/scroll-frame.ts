@@ -8,6 +8,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // the space between the header, the body and the footer (0 by default).
 // The body takes the focus, so the keyboard can scroll it, with the ring
 // inside, as the AppShell detail does.
+// The footer takes at most 30% of the frame's height and scrolls inside past
+// that, so a long draft in a chat box still leaves the body room to read
+// (d-107). In a 1232 x 400 window, a box capped at half the window left the
+// Inbox discussion's messages 18 px; at 30% they keep 108 (Artifacts 60).
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],
@@ -30,7 +34,7 @@ export const scrollFrame = defineSlotRecipe({
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
-    footer: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0' },
+    footer: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', maxH: '30%', overflowY: 'auto', overscrollBehavior: 'contain' },
   },
   variants: {
     gap: {

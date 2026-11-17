@@ -8,6 +8,10 @@ import { defineRecipe } from '@pandacss/dev'
 // 427:288, `body`, fg.muted); a path line in Mono 14/20 #8a97b8 (427:290,
 // `code`). Inline code, code blocks, links, quotes and tables are not
 // drawn; see each rule below.
+// `size="sm"` is the 13 px body text of the Inbox detail sections (D1
+// 346:354, Geist Regular 13/20 #8a97b8, `bodySm`), with `labelSm` for the
+// h2 to h6 subheadings. h1 and code keep their styles: no Figma frame draws
+// them at this size.
 export const markdownView = defineRecipe({
   className: 'markdown-view',
   jsx: ['MarkdownView'],
@@ -44,4 +48,11 @@ export const markdownView = defineRecipe({
     '& a': { color: 'fg.accent', textDecoration: 'underline' },
     '& a:focus-visible': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
   },
+  variants: {
+    size: {
+      md: {},
+      sm: { textStyle: 'bodySm', '& :where(h2, h3, h4, h5, h6)': { textStyle: 'labelSm' } },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

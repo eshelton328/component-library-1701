@@ -1578,6 +1578,17 @@
       },
       "$description": "Touch rows and back buttons on phone and tablet: drawer items, back row labels."
     },
+    "labelSm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 13, "unit": "px" },
+        "fontWeight": 500,
+        "lineHeight": 1.2308,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Compact row titles: a ListRow with density compact, as the Inbox list draws them at 13 px. Not for buttons, tabs or chips, which use label."
+    },
     "body": {
       "$type": "typography",
       "$value": {
@@ -1588,6 +1599,17 @@
         "letterSpacing": { "value": 0, "unit": "px" }
       },
       "$description": "Descriptions, messages and the prompt."
+    },
+    "bodySm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 13, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.5385,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Compact body text: the Inbox detail sections and their suggested prompt, and a MarkdownView with size sm, as Figma draws them at 13 px. Not for chat messages or the composer, which use body."
     },
     "small": {
       "$type": "typography",
@@ -1624,6 +1646,17 @@
       "$extensions": {
         "com.eshelton328.textTransform": "uppercase"
       }
+    },
+    "monoSm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.mono}",
+        "fontSize": { "value": 11, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.4546,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Compact meta lines: the meta line of a ListRow with density compact, as the Inbox list draws it at 11 px. Not for group headers (eyebrow) or other meta (mono)."
     },
     "code": {
       "$type": "typography",

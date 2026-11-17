@@ -472,3 +472,42 @@ export const Strong: StoryObj<typeof meta> = {
     await expect(getComputedStyle(strong).color).toBe(getComputedStyle(ref).color)
   },
 }
+
+/** The small size, as the Inbox detail sections draw their body text (D1 346:354): bodySm, with labelSm subheadings. */
+function Small() {
+  return (
+    <main className={page}>
+      <div className={panel} data-testid="sm">
+        <MarkdownView size="sm">
+          <h2>Why</h2>
+          <p>Tickets come before any code, and nothing blocks them.</p>
+          <ul>
+            <li>One ticket per screen</li>
+          </ul>
+        </MarkdownView>
+      </div>
+      <div className={panel} data-testid="md">
+        <MarkdownView>
+          <h2>Why</h2>
+          <p>The default size.</p>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+const smallPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const sm = pick(canvas.getByTestId('sm'), '.markdown-view')
+  const md = pick(canvas.getByTestId('md'), '.markdown-view')
+  // A one-line paragraph and item lay out at 20, a subheading at 16: whole pixels on the 4 px grid.
+  await expect([font(pick(sm, 'p')), box(pick(sm, 'p')).height]).toEqual([['13px', 20, '400'], 20])
+  await expect([font(pick(sm, 'li')), box(pick(sm, 'li')).height]).toEqual([['13px', 20, '400'], 20])
+  await expect([font(pick(sm, 'h2')), box(pick(sm, 'h2')).height]).toEqual([['13px', 16, '500'], 16])
+  // The default size keeps body and label.
+  await expect(font(pick(md, 'p'))).toEqual(['14px', 20, '400'])
+  await expect(font(pick(md, 'h2'))).toEqual(['14px', 20, '500'])
+}
+
+export const SmallDark: StoryObj<typeof meta> = { render: () => <Small />, play: smallPlay, globals: { mode: 'dark' } }
+export const SmallLight: StoryObj<typeof meta> = { render: () => <Small />, play: smallPlay, globals: { mode: 'light' } }

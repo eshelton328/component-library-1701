@@ -317,3 +317,55 @@ const nestedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const NestedDark: StoryObj<typeof meta> = { render: () => <Nested />, globals: { mode: 'dark' }, play: nestedPlay }
 export const NestedLight: StoryObj<typeof meta> = { render: () => <Nested />, globals: { mode: 'light' }, play: nestedPlay }
+
+const onCompact = fn<(id: string) => void>()
+
+/** Compact rows, as the Inbox list draws them (D1 346:237): a 13 px title and an 11 px mono meta line and age. */
+function Compact() {
+  return (
+    <main className={page}>
+      <div className={inboxList}>
+        <Stack gap="2">
+          <ListRow density="compact" title="Pick the header logo" meta="ncc-1701 · f-005 · NCC-36" leading={<span className={tile} />} trailing="1h" onSelect={() => { onCompact('logo') }} />
+          <ListRow density="compact" title="Write the tickets for increment one" meta="ncc-1701 · f-005 · NCC-28" leading={<span className={tile} />} trailing="2h" selected onSelect={() => { onCompact('tickets') }} />
+          <ListRow title="A default row" meta="ncc-1701 · f-005" leading={<span className={tile} />} trailing="3h" />
+        </Stack>
+      </div>
+    </main>
+  )
+}
+
+const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onCompact.mockClear()
+  const canvas = within(canvasElement)
+  const rowOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const text = (row: HTMLElement, slot: string) => {
+    const el = row.querySelector(`.list-row__${slot}`)
+    if (el === null) throw new Error(`no ${slot}`)
+    const style = getComputedStyle(el)
+    // The laid-out height of one line, a whole number of pixels.
+    return [style.fontSize, el.getBoundingClientRect().height, style.fontWeight]
+  }
+  const compact = rowOf('Pick the header logo')
+  // labelSm for the title, monoSm for the meta and the age.
+  await expect(text(compact, 'title')).toEqual(['13px', 16, '500'])
+  await expect(text(compact, 'meta')).toEqual(['11px', 16, '400'])
+  await expect(text(compact, 'trailing')).toEqual(['11px', 16, '400'])
+  // Title 16 + gap 4 + meta 16, padding 10 and a 1 px border on each side. Figma's row is 55 with no border.
+  await expect(compact.getBoundingClientRect().height).toBe(58)
+  // A default row keeps label and mono.
+  const plain = rowOf('A default row')
+  await expect(text(plain, 'title')).toEqual(['14px', 20, '500'])
+  await expect(text(plain, 'meta')).toEqual(['12px', 16, '400'])
+  // A compact row selects like any other.
+  await userEvent.click(canvas.getByText('Pick the header logo'))
+  await expect(onCompact).toHaveBeenLastCalledWith('logo')
+  await expect(canvas.getByRole('button', { name: 'Write the tickets for increment one' })).toHaveAttribute('aria-current', 'true')
+}
+
+export const CompactDark: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'dark' }, play: compactPlay }
+export const CompactLight: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'light' }, play: compactPlay }

@@ -1286,7 +1286,7 @@ export default definePreset({
           }
         },
         "labelSm": {
-          "description": "Compact titles at 13 px, as Inbox draws them: a ListRow with density compact, and the labels of an OptionList with size sm (the Run in picker and the question cards). Not for buttons, tabs or chips, which use label.",
+          "description": "Compact titles at 13 px, as Inbox draws them: a ListRow with density compact, and the labels of an OptionList with size sm (the Run in picker and the question cards), and the label of a Button with textSize sm (Newest, Filter and Keep it). Not for other buttons, tabs or chips, which use label.",
           "value": {
             "fontFamily": "text.labelSm",
             "fontSize": "text.labelSm",

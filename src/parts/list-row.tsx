@@ -38,7 +38,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
   running?: boolean | undefined
   /** A snoozed item. The row is dimmed. */
   snoozed?: boolean | undefined
-  /** A finished item, such as a done task. Unless the row is selected or running, its title is muted. */
+  /** A finished item, such as a done task. Unless the row is selected or running, its title is muted and its `leading` tile fades (`opacity.finished`). */
   finished?: boolean | undefined
   /**
    * How deep the row is nested: `1` for a subtask's or a fork's chat under

@@ -405,8 +405,18 @@ const finishedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
   const row = canvas.getByRole('button', { name: 'drift check wants to run git mv' }).closest('.list-row__root')
   if (!(row instanceof HTMLElement)) throw new Error('no row')
   await expect(getComputedStyle(row).opacity).toBe('1')
+  // The kind tile of a finished row that is not open fades to opacity.finished (0.75; Figma 0.6, 346:2940); an open
+  // finished row and an unfinished row keep it whole.
+  const leading = (name: string) => {
+    const el = canvas.getByRole('button', { name }).closest('.list-row__root')?.querySelector('.list-row__leading')
+    if (!(el instanceof HTMLElement)) throw new Error(`no leading in ${name}`)
+    return getComputedStyle(el).opacity
+  }
+  await expect(leading('drift check wants to run git mv')).toBe('0.75')
+  await expect(leading('Write the tickets for increment one')).toBe('1')
+  await expect(leading('Pick the header logo')).toBe('1')
 }
 
-/** `finished`: the done rows of Inbox D7, with a muted title unless the row is open. */
+/** `finished`: the done rows of Inbox D7, with a muted title and a faded kind tile unless the row is open. */
 export const FinishedDark: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'dark' }, play: finishedPlay }
 export const FinishedLight: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'light' }, play: finishedPlay }

@@ -256,6 +256,7 @@ export type CheckboxProps = {
     trailing?: ReactNode;
     labelStyle?: 'text' | 'mono' | undefined;
     size?: 'md' | 'sm' | undefined;
+    tone?: 'accent' | 'discuss' | undefined;
 };
 
 // @public

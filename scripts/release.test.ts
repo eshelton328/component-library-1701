@@ -34,7 +34,7 @@ void test('reads only declaration lines from a report', () => {
 
 void test('an added export is not breaking', () => {
   const d = diffApi(report('export const a: number;'), report('export const a: number;\nexport const b: string;'))
-  assert.deepEqual(d, { removed: [], added: ['export const b: string;'], addedRequired: [], breaking: false })
+  assert.deepEqual(d, { removed: [], added: ['export const b: string;'], addedRequired: [], narrowed: [], breaking: false })
 })
 
 void test('a removed export is breaking', () => {
@@ -206,7 +206,9 @@ void test('splits an object literal intersected with named types into members an
 })
 
 void test('a new optional member of an object and name intersection is not breaking', () => {
-  const d = diffApi(intersected(' & A;', 'label: string;'), intersected(' & A;', 'label: string;', 'size?: string;'))
+  const a = 'export interface A {\n    tone?: string;\n}\n'
+  const withA = (r: string) => r.replace('export type PopoverProps', `${a}export type PopoverProps`)
+  const d = diffApi(withA(intersected(' & A;', 'label: string;')), withA(intersected(' & A;', 'label: string;', 'size?: string;')))
   assert.equal(d.breaking, false)
   assert.deepEqual(d.removed, [])
   assert.deepEqual(d.added, ['size?: string;'])
@@ -244,8 +246,15 @@ void test('an intersection with a union, a second literal or a non-identifier ta
   assert.deepEqual(apiItems(report('export type P = {\n    [K in Keys]: string;\n} & A;')).map((i) => i.key), ['P'])
 })
 
+const popoverData = `// @public (undocumented)
+export type PopoverDataAttributes = {
+    [key: \`data-\${string}\`]: string | number | boolean | undefined;
+};
+
+`
+
 // PopoverProps as api/component-library-1701.api.md reports it on 2026-11-17.
-const popoverProps = report(`// @public (undocumented)
+const popoverPropsBody = `// @public (undocumented)
 export type PopoverProps = {
     trigger: ReactElement;
     label: string;
@@ -261,14 +270,56 @@ export type PopoverProps = {
 } & PopoverDataAttributes;
 
 // @public
-export function PopoverSection(input: PopoverSectionProps): JSX.Element;`)
+export function PopoverSection(input: PopoverSectionProps): JSX.Element;`
+const popoverProps = report(popoverPropsBody)
 
 void test('the reported PopoverProps splits into members, and a new optional member is not breaking', () => {
   const keys = apiItems(popoverProps).map((i) => i.key)
   assert.deepEqual(keys, ['PopoverProps', ...['trigger', 'label', 'children', 'note', 'actions', 'open', 'onOpenChange', 'placement', 'width', 'flip', 'className', '&'].map((k) => `PopoverProps.${k}`), 'PopoverSection'])
+  const withData = report(popoverData + popoverPropsBody)
+  const after = withData.replace('    className?: string | undefined;\n', '    className?: string | undefined;\n    opaque?: boolean | undefined;\n')
+  assert.equal(diffApi(withData, after).breaking, false)
+  assert.equal(diffApi(withData, withData.replace('& PopoverDataAttributes;', '& PopoverDataProps;')).breaking, true)
+})
+
+void test('a new optional member that an intersected index signature allows is breaking (Codex review of #110)', () => {
+  const before = report(popoverData + popoverPropsBody)
+  const add = (member: string) => before.replace('    className?: string | undefined;\n', `    className?: string | undefined;\n    ${member}\n`)
+  const testid = diffApi(before, add('"data-testid"?: string;'))
+  assert.equal(testid.breaking, true)
+  assert.deepEqual(testid.narrowed, ['PopoverProps.data-testid'])
+  const opaque = diffApi(before, add('opaque?: boolean | undefined;'))
+  assert.equal(opaque.breaking, false)
+  assert.deepEqual(opaque.narrowed, [])
+})
+
+void test('a new optional member is breaking when an intersected type is not in the report (Codex review of #110)', () => {
+  // The PopoverProps fixture has no PopoverDataAttributes declaration.
   const after = popoverProps.replace('    className?: string | undefined;\n', '    className?: string | undefined;\n    opaque?: boolean | undefined;\n')
-  assert.equal(diffApi(popoverProps, after).breaking, false)
-  assert.equal(diffApi(popoverProps, popoverProps.replace('& PopoverDataAttributes;', '& PopoverDataProps;')).breaking, true)
+  assert.deepEqual(diffApi(popoverProps, after).narrowed, ['PopoverProps.opaque'])
+})
+
+void test('a new optional member is breaking when an intersected type has it, or a key type allows it (Codex review of #110)', () => {
+  const props = (named: string, ...members: string[]) => report(`${named}\nexport type P = {\n${members.map((m) => `    ${m}\n`).join('')}} & A;`)
+  const cases: [named: string, member: string, breaking: boolean][] = [
+    ['export interface A {\n    size?: number;\n}', 'size?: string;', true],
+    ['export interface A {\n    size?: number;\n}', 'tone?: string;', false],
+    ['export type A = {\n    [key: string]: unknown;\n};', 'tone?: string;', true],
+    ['export type A = {\n    [key: number]: unknown;\n};', 'tone?: string;', false],
+    ['export type A = {\n    [key: number]: unknown;\n};', '"0"?: string;', true],
+    ['export type A = {\n    [key: `aria-${string}`]: string;\n};', 'tone?: string;', false],
+    ['export type A = {\n    [key: `aria-${string}`]: string;\n};', '"aria-label"?: string;', true],
+    ['export type A = {\n    [key: `x${boolean}`]: string;\n};', 'tone?: string;', true],
+    ['export type A = {\n    [key: Keys]: string;\n};', 'tone?: string;', true],
+    ['export interface A extends B {\n    size?: number;\n}', 'tone?: string;', true],
+    ['export interface A<T> {\n    size?: T;\n}', 'tone?: string;', true],
+    ['export type A = B | C;', 'tone?: string;', true],
+    ['export type A = {\n    size?: number;\n} & B;', 'tone?: string;', true],
+  ]
+  for (const [named, member, breaking] of cases) {
+    const d = diffApi(props(named, 'label: string;'), props(named, 'label: string;', member))
+    assert.equal(d.breaking, breaking, `${named} + ${member}`)
+  }
 })
 
 void test('a new call or computed signature counts as required (Codex review of #9)', () => {
@@ -281,7 +332,7 @@ void test('a new call or computed signature counts as required (Codex review of 
 
 void test('an empty baseline makes everything an addition', () => {
   const d = diffApi('', report('export const a: number;'))
-  assert.deepEqual(d, { removed: [], added: ['export const a: number;'], addedRequired: [], breaking: false })
+  assert.deepEqual(d, { removed: [], added: ['export const a: number;'], addedRequired: [], narrowed: [], breaking: false })
 })
 
 void test('reads a report with CRLF line ends', () => {

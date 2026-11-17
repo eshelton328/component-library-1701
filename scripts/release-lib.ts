@@ -164,7 +164,78 @@ export type ApiDiff = {
   added: string[]
   /** New members that a caller must give, by key. */
   addedRequired: string[]
+  /**
+   * New optional members of an object and name intersection that can
+   * narrow a property an intersected type already allows, by key (see
+   * `tailShadows`).
+   */
+  narrowed: string[]
   breaking: boolean
+}
+
+/** A key type of an index signature as a test on a member name. */
+type NameTest = (name: string) => boolean
+const numericName = /^(?:-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?|NaN|-?Infinity)$/i
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * The names an index signature key type allows, or `undefined` when the
+ * type is not one this parser knows: `string`, `number`, `symbol`, a
+ * template literal whose holes are `${string}` or `${number}`, or a
+ * union of these.
+ */
+function keyTypeTest(type: string): NameTest | undefined {
+  const tests: NameTest[] = []
+  for (const part of type.split('|').map((p) => p.trim())) {
+    if (part === 'string') tests.push(() => true)
+    else if (part === 'number') tests.push((n) => numericName.test(n))
+    else if (part === 'symbol') continue
+    else if (/^`[^`]*`$/.test(part)) {
+      const body = part.slice(1, -1)
+      const pieces = body.split(/(\$\{(?:string|number)\})/)
+      if (pieces.some((p, i) => i % 2 === 0 && p.includes('${'))) return undefined
+      const pattern = pieces.map((p) => (p === '${string}' ? '.*' : p === '${number}' ? '-?[\\d.eE+-]*\\d[\\d.eE+-]*|NaN|-?Infinity' : escapeRegExp(p)))
+      const re = new RegExp(`^${pattern.map((p, i) => (i % 2 === 1 ? `(?:${p})` : p)).join('')}$`, 's')
+      tests.push((n) => re.test(n))
+    } else return undefined
+  }
+  return (n) => tests.some((t) => t(n))
+}
+
+const indexSignature = /^(?:readonly\s+)?\[\s*[A-Za-z_$][\w$]*\s*:\s*(.+?)\s*\]\s*\??\s*:/
+/** A declaration line whose members `apiItems` lists in full: an interface with no type parameters and no `extends`, or a type alias that is one plain object literal. */
+const plainObjectDecl = /^(?:export\s+)?(?:declare\s+)?(?:interface\s+[A-Za-z_$][\w$]*\s*\{|type\s+[A-Za-z_$][\w$]*\s*=\s*\{)$/
+
+/**
+ * Whether a new optional member `name` of a declaration with an
+ * intersection tail (`Owner.&`) can narrow a property that a named type
+ * in the tail already allows: the named type has a member with that name,
+ * or an index signature whose key type allows it. When the parser cannot
+ * tell (a named type that is not in the report, that is not a plain
+ * object or interface, that has its own tail, or a key type or member it
+ * cannot read), every name counts.
+ */
+function tailShadows(items: ReadonlyMap<string, ApiItem>, owner: string, name: string): boolean {
+  const tail = items.get(`${owner}.&`)
+  if (!tail) return false
+  const names = tail.text.replace(/;$/, '').split('&').map((n) => n.trim()).filter((n) => n !== '')
+  for (const type of names) {
+    const decl = items.get(type)
+    if (!decl || !plainObjectDecl.test(decl.text) || items.has(`${type}.&`)) return true
+    for (const [key, member] of items) {
+      if (!key.startsWith(`${type}.`)) continue
+      const index = indexSignature.exec(member.text)
+      if (index) {
+        const test = keyTypeTest(index[1] ?? '')
+        if (!test || test(name)) return true
+        continue
+      }
+      const m = memberName.exec(member.text)
+      if (!m) return true
+      if ((m[1] ?? m[2]) === name) return true
+    }
+  }
+  return false
 }
 
 /**
@@ -172,8 +243,11 @@ export type ApiDiff = {
  * item is breaking: a removed export, or a prop that is removed, renamed,
  * retyped or moved to another declaration. A new member with no `?` is
  * breaking too, because the exported interfaces are props and a caller
- * that does not give it fails to compile. A new declaration or a new
- * optional member is not breaking.
+ * that does not give it fails to compile. So is a new optional member of
+ * an object and name intersection that a named type in its tail may
+ * already allow (see `tailShadows`): `"data-testid"?: string` narrows
+ * `[key: \`data-${string}\`]: string | number`. A new declaration or any
+ * other new optional member is not breaking.
  */
 export function diffApi(before: string, after: string): ApiDiff {
   const a = new Map(apiItems(before).map((i) => [i.key, i]))
@@ -181,6 +255,7 @@ export function diffApi(before: string, after: string): ApiDiff {
   const removed: string[] = []
   const added: string[] = []
   const addedRequired: string[] = []
+  const narrowed: string[] = []
   for (const [key, item] of a) {
     const now = b.get(key)
     if (!now || now.text !== item.text) removed.push(item.text)
@@ -192,9 +267,11 @@ export function diffApi(before: string, after: string): ApiDiff {
     // A new member of a declaration that existed before; a new declaration
     // breaks no caller, so its members do not count.
     const owner = key.includes('.') ? key.slice(0, key.indexOf('.')) : undefined
-    if (!old && owner && a.has(owner) && item.required) addedRequired.push(key)
+    if (old || !owner || !a.has(owner)) continue
+    if (item.required) addedRequired.push(key)
+    else if (tailShadows(b, owner, key.slice(owner.length + 1).replace(/#\d+$/, ''))) narrowed.push(key)
   }
-  return { removed, added, addedRequired, breaking: removed.length > 0 || addedRequired.length > 0 }
+  return { removed, added, addedRequired, narrowed, breaking: removed.length > 0 || addedRequired.length > 0 || narrowed.length > 0 }
 }
 
 export type RegistryState = { ok: boolean; problem?: string; warning?: string }

@@ -41,6 +41,7 @@ if (values.comment) {
   const parts: string[] = []
   if (diff.removed.length) parts.push(`These items of the public API were removed or changed:\n\n${list(diff.removed)}`)
   if (diff.addedRequired.length) parts.push(`These new members are required, so callers that do not give them fail to compile:\n\n${list(diff.addedRequired)}`)
+  if (diff.narrowed.length) parts.push(`These new optional members may narrow a property that an intersected type already allows, so callers that pass another type there can fail to compile:\n\n${list(diff.narrowed)}`)
   const body = diff.breaking
     ? `### ⚠️ Breaking API change\n\n${parts.join('\n\n')}\n\n${marked ? 'The title has `!`, so the release will be a major version.' : 'Add `!` to the PR title (for example `feat!: …`) and a `BREAKING CHANGE:` footer with the migration, or keep the old API and deprecate it first.'}`
     : diff.added.length
@@ -48,5 +49,5 @@ if (values.comment) {
       : ''
   writeFileSync(values.comment, body)
 }
-console.log(JSON.stringify({ ok, breaking: diff.breaking, marked, removed: diff.removed, added: diff.added, addedRequired: diff.addedRequired }))
+console.log(JSON.stringify({ ok, breaking: diff.breaking, marked, removed: diff.removed, added: diff.added, addedRequired: diff.addedRequired, narrowed: diff.narrowed }))
 process.exit(ok ? 0 : 1)

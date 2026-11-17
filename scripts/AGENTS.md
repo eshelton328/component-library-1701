@@ -36,7 +36,13 @@ Repository scripts that are not part of the package.
   are items. So are the members of a type alias that is one plain object
   literal intersected with named types (`{ ... } & A & B;`); its tail
   (`& A & B;`) is one more required item, `Name.&`, so any change to the
-  named types is breaking. Any other type alias (a union, a second object
+  named types is breaking. A new optional member of such an alias is
+  breaking when a named type in the tail has a member of that name or an
+  index signature whose key type allows it (`string`, `number` or a
+  template such as `data-${string}`), because it can narrow that
+  property. When a named type is not in the report, is not a plain
+  object or interface, or has a key type the parser cannot read, every
+  new member of the alias is breaking. Any other type alias (a union, a second object
   literal, a generic, a mapped type or a tail that is not plain names) is
   one item. The `api-report`
   workflow runs on `pull_request_target`, so GitHub runs the base

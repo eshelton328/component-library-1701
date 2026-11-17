@@ -49,6 +49,6 @@ const quiet = { log: () => undefined, error: () => undefined, warn: () => undefi
 const releaseType = await analyzeCommits(pluginConfig, { commits, logger: quiet, cwd: process.cwd(), options: {} })
 const marked = releaseType === 'major'
 const ok = !diff.breaking || marked
-console.log(JSON.stringify({ ok, tag: from, breaking: diff.breaking, releaseType, removed: diff.removed, addedRequired: diff.addedRequired }))
+console.log(JSON.stringify({ ok, tag: from, breaking: diff.breaking, releaseType, removed: diff.removed, addedRequired: diff.addedRequired, narrowed: diff.narrowed }))
 if (!ok) console.error(`The public API broke since ${from}, but semantic-release would make a ${String(releaseType)} release, not a major one. Push a commit with a BREAKING CHANGE footer that names the migration.`)
 process.exit(ok ? 0 : 1)

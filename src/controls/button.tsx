@@ -5,16 +5,16 @@ import type { Scalar } from './scalar'
 
 const StyledButton = styled('button', button)
 
-/** The props of a native button, plus the recipe's `variant`, `size`, `textSize` and `iconOnly`, `pressed` and `indicator`. */
+/**
+ * The props of a native button, plus the recipe's `variant`, `size`,
+ * `textSize` and `iconOnly`, `pressed` and `indicator`. `textSize` sets the
+ * label's text: `md` (the default) draws `label` (Medium 14/20), or `labelLg`
+ * on a `text` button; `sm` draws `labelSm` (Medium 13/16) on every variant,
+ * as the Inbox Newest, Filter and Keep it buttons do. It keeps the height and
+ * padding of `size`.
+ */
 export type ButtonProps = ComponentProps<'button'> &
   Scalar<ButtonVariantProps> & {
-    /**
-     * The label's text size. `md` (the default) draws `label` (Medium 14/20),
-     * or `labelLg` on a `text` button. `sm` draws `labelSm` (Medium 13/16) on
-     * every variant, as the Inbox Newest, Filter and Keep it buttons do. It
-     * keeps the height and padding of `size`.
-     */
-    textSize?: Scalar<ButtonVariantProps>['textSize']
     /**
      * Makes the button a toggle and says whether it is on. It sets
      * `aria-pressed` and, on a `secondary` button, the active colours: the

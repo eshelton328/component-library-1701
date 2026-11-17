@@ -15,7 +15,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `project` is the project heading inside an Inbox group when the list is
 // sorted by project (D11 346:4606): padding 8/0/2/10, gap 6, a 12 px folder
 // in the leading slot and the name as written in Geist Mono 11 #8a97b8
-// (`monoSm`, fg.muted). It is 26 tall; Figma's 14 px line makes it 24.
+// (`monoSm`, fg.muted). Figma's heading is 24 tall: 8 + a 14 px line + 2.
+// With the 16 px `monoSm` line it pads 6 above and 2 below, so it stays 24
+// on the 4 px grid (d-100 rule 3) and the name's centre sits 14 down, 1 above
+// Figma's 15 (D11 346:4606, M15).
 export const groupHeader = defineSlotRecipe({
   className: 'group-header',
   jsx: ['GroupHeader'],
@@ -74,7 +77,7 @@ export const groupHeader = defineSlotRecipe({
     variant: {
       list: { root: { pt: '12', pr: '4', pb: '8' } },
       sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' } },
-      project: { root: { pt: '8', pb: '2', pl: '10', textStyle: 'monoSm' }, label: { textTransform: 'none' } },
+      project: { root: { pt: '6', pb: '2', pl: '10', textStyle: 'monoSm' }, label: { textTransform: 'none' } },
     },
     // The dot takes a status colour: amber on Inbox "Needs you" (346:194) and
     // Workbench (105:635), cyan on Inbox "Next steps" (346:265).

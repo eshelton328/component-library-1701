@@ -17,11 +17,25 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `tone="discuss"` fills a checked box in violet, as the new tasks a
 // discussion proposes are (M21 402:7278, #9e8fff: accent.discuss); the
 // check stays fg.onAccent, which passes 4.5:1 on it in both modes.
+// `description` is a line under the label, aligned with it in the `text`
+// column, such as the meta line of a new task in a discussion proposal
+// (D17 403:2441, T20 402:11871: Geist Mono 11 on a 14 px line; `monoSm`,
+// fg.muted). It is `mono` at `size="md"`, as `trailing` is. The column is
+// centred on the box, as Figma centres the 16 px box on the two lines.
+// `size="compact"` is the type of that new task (D17 403:2440, T20
+// 402:11870, M21 402:7278): the title is Geist 13 on a 17 px line, which
+// takes `bodySm` (Regular 13/20, d-100 rule 4: the nearest token with
+// Figma's size and weight; `labelSm` is 13/16 but Medium), and the
+// description and count `monoSm`. With the 2 px gap the label and
+// description are 38 high (Figma's 17 + 3 + 14 = 34), so a box that pads
+// them 6 inside a 1 px border is Figma's 52 (403:2435). The row is then
+// taller than `control.md`, so the 32 px minimum touch height stays and
+// does not add height.
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
   staticCss: ['*'],
-  slots: [...checkboxAnatomy.keys(), 'groupLabel', 'trailing'],
+  slots: [...checkboxAnatomy.keys(), 'groupLabel', 'trailing', 'text', 'description'],
   base: {
     root: {
       display: 'flex',
@@ -50,7 +64,9 @@ export const checkbox = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     indicator: { display: 'inline-flex' },
+    text: { display: 'flex', flexDirection: 'column', gap: '2', minW: '0' },
     label: { textStyle: 'body', color: 'fg.default' },
+    description: { textStyle: 'mono', color: 'fg.muted' },
     trailing: { flexShrink: '0', ms: 'auto', textStyle: 'mono', color: 'fg.muted' },
     group: { display: 'flex', flexDirection: 'column', gap: '2' },
     groupLabel: { textStyle: 'small', color: 'fg.muted', pb: '4' },
@@ -71,9 +87,13 @@ export const checkbox = defineSlotRecipe({
     },
     size: {
       md: {},
-      sm: { label: { textStyle: 'small' }, trailing: { textStyle: 'monoSm' } },
+      compact: { label: { textStyle: 'bodySm' }, trailing: { textStyle: 'monoSm' }, description: { textStyle: 'monoSm' } },
+      sm: { label: { textStyle: 'small' }, trailing: { textStyle: 'monoSm' }, description: { textStyle: 'monoSm' } },
     },
   },
-  compoundVariants: [{ size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } }],
+  compoundVariants: [
+    { size: 'compact', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
+    { size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
+  ],
   defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent' },
 })

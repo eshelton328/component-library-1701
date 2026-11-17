@@ -390,3 +390,54 @@ export const LongText: StoryObj<typeof meta> = {
     }
   },
 }
+
+// The Inbox task chips on their opaque fill (346:327; the NCC chip 346:342, #17213a), beside a default chip.
+function RaisedChips() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <Inline gap="6">
+          <span data-testid="raised-muted">
+            <MetaChip size="sm" tone="muted" surface="raised" icon={<Glyph />} label="ncc-1701" />
+          </span>
+          <span data-testid="raised-issue">
+            <MetaChip size="sm" tone="issue" surface="raised" label="NCC-28" />
+          </span>
+          <span data-testid="plain">
+            <MetaChip size="sm" tone="issue" label="NCC-29" />
+          </span>
+        </Inline>
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// `surface="raised"` fills the chip with surface.raised and keeps its border, text colour and size; the default chip
+// stays on surface.inset. The axe test checks the text contrast on both fills.
+const raisedChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).backgroundColor
+  const chipOf = (id: string) => {
+    const el = canvasElement.querySelector(`[data-testid="${id}"] .meta-chip__root`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no chip ${id}`)
+    return el
+  }
+  const muted = getComputedStyle(chipOf('raised-muted'))
+  const issue = getComputedStyle(chipOf('raised-issue'))
+  const plain = getComputedStyle(chipOf('plain'))
+  await expect([muted.backgroundColor, muted.color]).toEqual([swatch('raised'), swatch('muted')])
+  await expect([issue.backgroundColor, issue.color]).toEqual([swatch('raised'), swatch('issue')])
+  await expect(plain.backgroundColor).toBe(swatch('inset'))
+  for (const key of ['borderTopColor', 'fontSize', 'paddingLeft', 'paddingTop'] as const) {
+    await expect(issue[key]).toBe(plain[key])
+  }
+  await expect(chipOf('raised-issue').getBoundingClientRect().height).toBe(chipOf('plain').getBoundingClientRect().height)
+}
+
+/** `surface="raised"`: the opaque Inbox task chips, such as the NCC issue chip. */
+export const RaisedChipDark: StoryObj<typeof meta> = { render: () => <RaisedChips />, globals: { mode: 'dark' }, play: raisedChipPlay }
+export const RaisedChipLight: StoryObj<typeof meta> = { render: () => <RaisedChips />, globals: { mode: 'light' }, play: raisedChipPlay }

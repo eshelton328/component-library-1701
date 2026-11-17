@@ -260,3 +260,44 @@ const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const SmallDark: StoryObj<typeof meta> = { render: () => <Small />, globals: { mode: 'dark' }, play: smallPlay }
 export const SmallLight: StoryObj<typeof meta> = { render: () => <Small />, globals: { mode: 'light' }, play: smallPlay }
+
+// `tone="discuss"`: the new tasks a discussion proposes (Inbox M21 402:7278) have violet checked boxes, #9e8fff
+// (accent.discuss); the default box stays cyan.
+function Discuss() {
+  return (
+    <main className={page}>
+      <div className={popover}>
+        <Checkbox label="Write the tickets" tone="discuss" defaultChecked />
+        <Checkbox label="Also remove this task" tone="discuss" />
+        <Checkbox label="Only unread" defaultChecked />
+      </div>
+      <div hidden>
+        <span data-swatch="discuss" className={css({ bg: 'accent.discuss' })} />
+        <span data-swatch="accent" className={css({ bg: 'accent.default' })} />
+        <span data-swatch="control" className={css({ bg: 'border.control' })} />
+        <span data-swatch="onAccent" className={css({ bg: 'fg.onAccent' })} />
+      </div>
+    </main>
+  )
+}
+
+const discussPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).backgroundColor
+  const box = (name: string) => {
+    const el = canvas.getByRole('checkbox', { name }).closest('label')?.querySelector('.checkbox__control')
+    if (!(el instanceof HTMLElement)) throw new Error(`no box for ${name}`)
+    return getComputedStyle(el)
+  }
+  // A checked discuss box is violet, fill and border, with the check in fg.onAccent.
+  const picked = box('Write the tickets')
+  await expect([picked.backgroundColor, picked.borderTopColor, picked.color]).toEqual([swatch('discuss'), swatch('discuss'), swatch('onAccent')])
+  // An unchecked one keeps the control border, and the default tone stays cyan.
+  await expect(box('Also remove this task').borderTopColor).toBe(swatch('control'))
+  await expect(box('Only unread').backgroundColor).toBe(swatch('accent'))
+  await userEvent.click(canvas.getByText('Also remove this task'))
+  await expect(box('Also remove this task').backgroundColor).toBe(swatch('discuss'))
+}
+
+export const DiscussDark: StoryObj<typeof meta> = { render: () => <Discuss />, globals: { mode: 'dark' }, play: discussPlay }
+export const DiscussLight: StoryObj<typeof meta> = { render: () => <Discuss />, globals: { mode: 'light' }, play: discussPlay }

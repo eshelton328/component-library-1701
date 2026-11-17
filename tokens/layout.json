@@ -63,6 +63,11 @@
   },
   "size": {
     "control": {
+      "xs": {
+        "$type": "dimension",
+        "$value": { "value": 24, "unit": "px" },
+        "$description": "The smallest buttons: a Button with size xs, such as Copy under a reply (Inbox T5 346:6404, 22 in Figma, on the 4 px grid). Not for inputs or touch targets on phone and tablet."
+      },
       "sm": {
         "$type": "dimension",
         "$value": { "value": 28, "unit": "px" },

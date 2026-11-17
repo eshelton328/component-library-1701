@@ -302,6 +302,9 @@ const snoozePlay: StoryObj<typeof meta>['play'] = async () => {
   // A row without a time keeps its height.
   await expect(within(menu).getByRole('menuitem', { name: 'Pick a date and time…' }).getBoundingClientRect().height).toBe(32)
   await expect(hour.getBoundingClientRect().height).toBe(32)
+  // The default size keeps its label in `label` (Medium 14/20).
+  const label = getComputedStyle(within(hour).getByText('In 1 hour'))
+  await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['14px', 20, '500'])
 }
 
 /** The snooze menu: a group heading and a time at the end of a row (Inbox D12, T13, M6). */
@@ -501,6 +504,11 @@ const largeSnoozePlay: StoryObj<typeof meta>['play'] = async () => {
   // The time stays at the end of the row.
   const hour = within(menu).getByRole('menuitem', { name: 'In 1 hour 11:40' })
   await expect(Math.round(hour.getBoundingClientRect().right - within(hour).getByText('11:40').getBoundingClientRect().right)).toBe(8)
+  // Labels are Regular 15/24 (bodyLg, 346:5303), in the sans family; the time stays mono 12.
+  const label = getComputedStyle(within(hour).getByText('In 1 hour'))
+  await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['15px', 24, '400'])
+  await expect(label.fontFamily).not.toMatch(/Mono/)
+  await expect(getComputedStyle(within(hour).getByText('11:40')).fontSize).toBe('12px')
 }
 
 /** The snooze menu at the Inbox D12 size: `width="md"` and `size="lg"`, with a calendar on "Pick a date and time…". */

@@ -220,6 +220,7 @@ export const LongTitle: StoryObj<typeof meta> = {
 
 const needsSwatches = {
   needsBorder: css({ color: 'status.needsYou.border' }),
+  needsTint: css({ color: 'status.needsYou.faint' }),
   plainBorder: css({ color: 'border.default' }),
   muted: css({ color: 'fg.muted' }),
 }
@@ -260,6 +261,8 @@ const needsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(waiting.backgroundColor).toBe(plain.backgroundColor)
   await expect(plain.borderTopColor).toBe(color('plainBorder'))
   await expect(plain.backgroundImage).toBe('none')
+  // The tint is status.needsYou.faint (Figma's 0.08, 346:772), not the pill tint status.needsYou.bg.
+  await expect(waiting.backgroundImage).toBe(`linear-gradient(${color('needsTint')}, ${color('needsTint')})`)
   // A needs-you list keeps its count readable on the tint: fg.muted, not the list's fg.subtle.
   const list = canvas.getByRole('region', { name: 'Needs you' })
   const count = within(list).getByText('2')
@@ -312,3 +315,58 @@ const accentPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `tone="accent"`: the Inbox run card (D6, D9–D11), as a section and as a list. */
 export const AccentDark: StoryObj<typeof meta> = { render: () => <RunCard />, globals: { mode: 'dark' }, play: accentPlay }
 export const AccentLight: StoryObj<typeof meta> = { render: () => <RunCard />, globals: { mode: 'light' }, play: accentPlay }
+
+const resultSwatches = {
+  doneBorder: css({ color: 'status.done.border' }),
+  dangerBorder: css({ color: 'status.danger.border' }),
+  plainBorder: css({ color: 'border.default' }),
+}
+
+// The result card of a finished task (Inbox D7 346:3067, a green border) and the card of a removed task (D21
+// 403:4261, a red border), beside a default panel.
+function Results() {
+  return (
+    <main className={page}>
+      <Grid columns="3" gap="24">
+        <Panel title="Result" meta="done" tone="done">
+          <p className={css({ textStyle: 'small', color: 'fg.muted' })}>Created 9 issues in NCC.</p>
+        </Panel>
+        <Panel title="Removed" meta="just now" tone="danger">
+          <p className={css({ textStyle: 'small', color: 'fg.muted' })}>The task and its chat are gone.</p>
+        </Panel>
+        <Panel title="Plain">
+          <div className={row}>web/src/api.ts</div>
+        </Panel>
+      </Grid>
+      <div hidden>
+        {Object.entries(resultSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// `done` and `danger` change only the border: status.done.border and status.danger.border, on the default pane fill
+// with no tint. The default panel keeps border.default. The axe test checks the text contrast.
+const resultPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const color = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  const done = getComputedStyle(canvas.getByRole('region', { name: 'Result' }))
+  const danger = getComputedStyle(canvas.getByRole('region', { name: 'Removed' }))
+  const plain = getComputedStyle(canvas.getByRole('region', { name: 'Plain' }))
+  await expect(done.borderTopColor).toBe(color('doneBorder'))
+  await expect(done.borderLeftColor).toBe(color('doneBorder'))
+  await expect(danger.borderTopColor).toBe(color('dangerBorder'))
+  await expect(danger.borderBottomColor).toBe(color('dangerBorder'))
+  await expect(plain.borderTopColor).toBe(color('plainBorder'))
+  for (const card of [done, danger]) {
+    await expect(card.backgroundColor).toBe(plain.backgroundColor)
+    await expect(card.backgroundImage).toBe('none')
+    await expect(card.borderTopWidth).toBe(plain.borderTopWidth)
+  }
+}
+
+/** `tone="done"` and `tone="danger"`: the Inbox result card (D7) and removed task card (D21). */
+export const ResultDark: StoryObj<typeof meta> = { render: () => <Results />, globals: { mode: 'dark' }, play: resultPlay }
+export const ResultLight: StoryObj<typeof meta> = { render: () => <Results />, globals: { mode: 'light' }, play: resultPlay }

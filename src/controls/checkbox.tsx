@@ -51,14 +51,20 @@ export type CheckboxProps = {
    * label in `small` and the count in `monoSm`, as the Inbox Filter menu does. A `mono` label stays `mono` at both sizes.
    */
   size?: 'md' | 'sm' | undefined
+  /**
+   * The fill of a checked box: `accent` (the default) is cyan (`accent.default`); `discuss` is violet
+   * (`accent.discuss`), as the new tasks a discussion proposes are. An unchecked box keeps `border.control`.
+   */
+  tone?: 'accent' | 'discuss' | undefined
 }
 
 /** A checkbox with a label, such as one filter in a filter popover, and an optional `trailing` count at the end. */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle, size }: CheckboxProps) {
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, labelStyle, size, tone }: CheckboxProps) {
   return (
     <Root
       labelStyle={labelStyle}
       size={size}
+      tone={tone}
       disabled={disabled}
       {...(checked === undefined ? {} : { checked })}
       {...(defaultChecked === undefined ? {} : { defaultChecked })}

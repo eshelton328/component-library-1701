@@ -73,10 +73,12 @@ export type MetaChipProps = Scalar<MetaChipVariantProps> & {
  * A read-only chip of meta, such as the project of a task. `size` is `sm`
  * (Inbox task, `monoSm`) or `md` (Artifacts item, `mono`, the default). `tone` sets the text:
  * `default`, `muted` (an age) or `issue` (an issue ID, such as NCC-28).
+ * `surface` sets the fill: `inset` (the default, `surface.inset`) or `raised`,
+ * the opaque `surface.raised` of the Inbox task chips, such as the NCC chip.
  */
-export function MetaChip({ label, icon, size, tone }: MetaChipProps) {
+export function MetaChip({ label, icon, size, tone, surface }: MetaChipProps) {
   return (
-    <ChipRoot size={size} tone={tone}>
+    <ChipRoot size={size} tone={tone} surface={surface}>
       {present(icon) ? <ChipIcon>{icon}</ChipIcon> : null}
       <ChipLabel>
         <TruncatedText>{label}</TruncatedText>

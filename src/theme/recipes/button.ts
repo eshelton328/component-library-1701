@@ -2,8 +2,8 @@ import { defineRecipe } from '@pandacss/dev'
 
 // The button of every page. The design inventory found 8 variants drawn
 // with 8 padding sets and three label sizes; this recipe merges them into
-// the `label` style (with `textSize` for the 13 px labels of Inbox), the four
-// control heights and the variants below. The
+// the `label` style (with `textSize` for the 12 and 13 px labels of Inbox), the
+// five control heights and the variants below. The
 // discuss toggle and the text link with a chevron come later.
 export const button = defineRecipe({
   className: 'button',
@@ -97,6 +97,9 @@ export const button = defineRecipe({
       },
     },
     size: {
+      // `xs` is the 24 px button of Inbox T5: Copy under a reply (346:6404) is
+      // 22 high in Figma, on the 4 px grid 24 (control.xs, d-100).
+      xs: { h: 'control.xs', px: '8', gap: '4' },
       sm: { h: 'control.sm', px: '8', gap: '4' },
       md: { h: 'control.md', px: '12' },
       lg: { h: 'control.lg', px: '16' },
@@ -105,10 +108,16 @@ export const button = defineRecipe({
     // The label's text style. `md` keeps `label` (Medium 14/20), or the
     // `labelLg` of the text variant. `sm` sets `labelSm` (Medium 13/16) on every
     // variant, as Inbox draws Newest and Filter (403:1663, 403:1671) and Keep it
-    // (403:1884). The size variant keeps the height and padding.
+    // (403:1884). `xs` sets `labelXs` (Medium 12/16), the label of the small
+    // Inbox buttons: Reset, Edit, Change, Snooze, Dismiss, Discuss, Allow once,
+    // Deny and Open chat (D16 403:1848, 403:1875). `smStrong` sets
+    // `labelSmStrong` (SemiBold 13/16), as Start and Remove task are (403:3928).
+    // The size variant keeps the height and padding.
     textSize: {
       md: {},
       sm: { textStyle: 'labelSm' },
+      smStrong: { textStyle: 'labelSmStrong' },
+      xs: { textStyle: 'labelXs' },
     },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
@@ -119,6 +128,7 @@ export const button = defineRecipe({
     },
   },
   compoundVariants: [
+    { iconOnly: true, size: 'xs', css: { w: 'control.xs' } },
     { iconOnly: true, size: 'sm', css: { w: 'control.sm' } },
     { iconOnly: true, size: 'md', css: { w: 'control.md' } },
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },

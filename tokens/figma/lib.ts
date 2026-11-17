@@ -117,7 +117,8 @@ export function colourScopes(path: readonly string[]): string[] {
   if (group === 'border') return plus(['STROKE_COLOR'])
   if (group === 'status' || group === 'diff') {
     if (last === 'fg') return plus(group === 'status' ? ['TEXT_FILL', 'SHAPE_FILL', 'STROKE_COLOR'] : ['TEXT_FILL', 'SHAPE_FILL'])
-    if (last === 'bg') return fill
+    // `faint` is the lighter tint over a whole box (Panel tone needsYou).
+    if (last === 'bg' || last === 'faint') return fill
     if (last === 'border') return ['STROKE_COLOR']
     return fail(`no scopes for color/${name}`)
   }

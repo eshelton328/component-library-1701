@@ -131,6 +131,10 @@ function CircleClear() {
       <div className={pane}>
         <SearchField label="Search the inbox" defaultValue="f-005" icon={<SearchIcon />} clearIcon={<CloseCircleIcon />} clearSize="16" />
       </div>
+      <div hidden>
+        <span data-swatch="subtle" className={css({ color: 'fg.subtle' })} />
+        <span data-swatch="muted" className={css({ color: 'fg.muted' })} />
+      </div>
     </main>
   )
 }
@@ -143,6 +147,12 @@ const circleClearPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
   // The button keeps its 20 px box.
   await expect([clear.getBoundingClientRect().width, clear.getBoundingClientRect().height]).toEqual([20, 20])
   await expect(icon.querySelectorAll('path')).toHaveLength(2)
+  // The clear icon is fg.subtle (d-099), dimmer than the magnifier, which stays fg.muted.
+  const colour = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  await expect(getComputedStyle(clear).color).toBe(colour('subtle'))
+  const magnifier = canvasElement.querySelector('.search-field__icon')
+  if (!(magnifier instanceof HTMLElement)) throw new Error('no magnifier')
+  await expect(getComputedStyle(magnifier).color).toBe(colour('muted'))
 }
 
 /** The clear button with `CloseCircleIcon` at `clearSize="16"` (Inbox D10). */

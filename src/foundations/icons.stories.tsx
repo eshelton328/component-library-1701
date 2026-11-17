@@ -13,6 +13,7 @@ import {
   BrainIcon,
   BranchIcon,
   BubbleIcon,
+  CalendarIcon,
   ChartIcon,
   ChatIcon,
   CheckIcon,
@@ -21,6 +22,7 @@ import {
   ChevronRightIcon,
   ClipIcon,
   ClockIcon,
+  CloseCircleIcon,
   CloseIcon,
   CodeIcon,
   CompassIcon,
@@ -127,6 +129,7 @@ const groups: { title: string; icons: Entry[] }[] = [
     icons: [
       { name: 'search', Icon: SearchIcon },
       { name: 'close', Icon: CloseIcon },
+      { name: 'closeCircle', Icon: CloseCircleIcon },
       { name: 'check', Icon: CheckIcon },
       { name: 'chevronDown', Icon: ChevronDownIcon },
       { name: 'chevronRight', Icon: ChevronRightIcon },
@@ -174,6 +177,7 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'feature', Icon: FeatureIcon },
       { name: 'chart', Icon: ChartIcon },
       { name: 'clock', Icon: ClockIcon },
+      { name: 'calendar', Icon: CalendarIcon },
       { name: 'cpu', Icon: CpuIcon },
       { name: 'book', Icon: BookIcon },
     ],
@@ -323,6 +327,17 @@ const meta = {
     await expect(arrow.height).toBe(14)
     await expect(arrow.width).toBeLessThanOrEqual(6)
     await expect(arrow.x + arrow.width).toBeLessThan(lines.x)
+    // Calendar (346:5328, the Snooze menu's "Pick a date and time…") is a 16 by 15 page with a line under its top
+    // and two rings above it.
+    const [sheet, rings] = Array.from(svgIn(canvas.getByTestId('icon-calendar')).querySelectorAll('path')).map((p) => p.getBBox())
+    if (sheet === undefined || rings === undefined) throw new Error('calendar needs a page and rings')
+    await expect([sheet.x, sheet.y, sheet.width, sheet.height]).toEqual([4, 5, 16, 15])
+    await expect([rings.y, rings.height]).toEqual([3, 7])
+    // Close circle (346:4201, the Inbox search clear button) is an x inside a circle of radius 9.
+    const [ring, cross] = Array.from(svgIn(canvas.getByTestId('icon-closeCircle')).querySelectorAll('path')).map((p) => p.getBBox())
+    if (ring === undefined || cross === undefined) throw new Error('closeCircle needs a circle and an x')
+    await expect([ring.x, ring.y, ring.width, ring.height]).toEqual([3, 3, 18, 18])
+    await expect([cross.x, cross.y, cross.width, cross.height]).toEqual([9, 9, 6, 6])
     // The size prop maps to the sizes.icon tokens.
     const sized = Array.from(canvas.getByTestId('sizes').querySelectorAll('svg'))
     await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 16, 20, 24])

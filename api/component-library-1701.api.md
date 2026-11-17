@@ -176,6 +176,9 @@ export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps> 
 };
 
 // @public
+export function CalendarIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Card(input: CardProps): JSX.Element;
 
 // @public (undocumented)
@@ -280,6 +283,9 @@ export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ClockIcon(props: IconProps): JSX.Element;
+
+// @public
+export function CloseCircleIcon(props: IconProps): JSX.Element;
 
 // @public
 export function CloseIcon(props: IconProps): JSX.Element;

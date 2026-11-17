@@ -202,3 +202,61 @@ const monoPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const MonoLabelDark: StoryObj<typeof meta> = { render: () => <MonoLabels />, globals: { mode: 'dark' }, play: monoPlay }
 export const MonoLabelLight: StoryObj<typeof meta> = { render: () => <MonoLabels />, globals: { mode: 'light' }, play: monoPlay }
+
+// `size="sm"`: the type of the Inbox Filter menu (D4 346:1737). The kind
+// labels are Geist Regular 12 (346:1745), the project labels Geist Mono 12
+// (346:1787) and the counts Geist Mono 11 (346:1747).
+const smallKinds = [
+  { value: 'approval', label: 'Approval', trailing: 1 },
+  { value: 'question', label: 'Question', trailing: 1 },
+  { value: 'ncc-1701', label: 'ncc-1701', trailing: 5, labelStyle: 'mono' },
+] as const
+
+function Small() {
+  return (
+    <main className={page}>
+      <div className={filterMenu}>
+        <CheckboxGroup label="Kind" items={smallKinds} defaultValue={['approval']} size="sm" />
+      </div>
+      <div className={filterMenu}>
+        <Checkbox label="Next step" trailing="3" size="sm" defaultChecked />
+        <Checkbox label="Only unread" trailing="7" />
+      </div>
+    </main>
+  )
+}
+
+/** `size="sm"` sets a text label in `small` (12/16) and the count in `monoSm` (11/16); a mono label and the box keep their size. */
+const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const part = (name: string, slot: 'label' | 'trailing' | 'control') => {
+    const el = canvas.getByRole('checkbox', { name }).closest('label')?.querySelector(`.checkbox__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot} for ${name}`)
+    return el
+  }
+  const font = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  const mono = /Mono/
+  for (const name of ['Approval', 'Question', 'Next step']) {
+    await expect(font(part(name, 'label'))).toEqual(['12px', 16, '400'])
+    await expect(getComputedStyle(part(name, 'label')).fontFamily).not.toMatch(mono)
+  }
+  for (const name of ['Approval', 'ncc-1701', 'Next step']) {
+    await expect(font(part(name, 'trailing'))).toEqual(['11px', 16, '400'])
+    await expect(getComputedStyle(part(name, 'trailing')).fontFamily).toMatch(mono)
+  }
+  // A mono label stays in mono (12/16).
+  await expect(font(part('ncc-1701', 'label'))).toEqual(['12px', 16, '400'])
+  await expect(getComputedStyle(part('ncc-1701', 'label')).fontFamily).toMatch(mono)
+  // The box stays 16; the default size keeps body (14/20) and mono (12) for the count.
+  await expect(part('Next step', 'control').getBoundingClientRect().width).toBe(16)
+  await expect(font(part('Only unread', 'label'))).toEqual(['14px', 20, '400'])
+  await expect(getComputedStyle(part('Only unread', 'trailing')).fontSize).toBe('12px')
+  await userEvent.click(canvas.getByText('Question'))
+  await expect(canvas.getByRole('checkbox', { name: 'Question' })).toBeChecked()
+}
+
+export const SmallDark: StoryObj<typeof meta> = { render: () => <Small />, globals: { mode: 'dark' }, play: smallPlay }
+export const SmallLight: StoryObj<typeof meta> = { render: () => <Small />, globals: { mode: 'light' }, play: smallPlay }

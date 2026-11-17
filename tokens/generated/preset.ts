@@ -1317,7 +1317,7 @@ export default definePreset({
           }
         },
         "monoSm": {
-          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, and the mono description of an OptionList with size sm. Not for group headers (eyebrow) or other meta (mono).",
+          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, the mono description of an OptionList with size sm, and the trailing count of a Checkbox with size sm. Not for group headers (eyebrow) or other meta (mono).",
           "value": {
             "fontFamily": "text.monoSm",
             "fontSize": "text.monoSm",
@@ -1367,7 +1367,7 @@ export default definePreset({
           }
         },
         "small": {
-          "description": "Captions, helper text and diff lines.",
+          "description": "Captions, helper text and diff lines, and the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px).",
           "value": {
             "fontFamily": "text.small",
             "fontSize": "text.small",

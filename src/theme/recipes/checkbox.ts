@@ -10,6 +10,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `labelStyle="mono"` sets the label in `mono`, as the project and tag rows
 // of that menu are (346:1787 and 346:1824: Geist Mono 12); the kind rows
 // keep `body`.
+// `size="sm"` is the type of that menu: the kind labels are Geist Regular 12
+// (346:1745, `small`) and the counts Geist Mono 11 (346:1747, `monoSm`). A
+// mono label stays `mono` at both sizes: the project rows are Geist Mono 12
+// (346:1787), as at the default size. The box stays 16 (346:1741).
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
@@ -53,6 +57,11 @@ export const checkbox = defineSlotRecipe({
       text: {},
       mono: { label: { textStyle: 'mono' } },
     },
+    size: {
+      md: {},
+      sm: { label: { textStyle: 'small' }, trailing: { textStyle: 'monoSm' } },
+    },
   },
-  defaultVariants: { labelStyle: 'text' },
+  compoundVariants: [{ size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } }],
+  defaultVariants: { labelStyle: 'text', size: 'md' },
 })

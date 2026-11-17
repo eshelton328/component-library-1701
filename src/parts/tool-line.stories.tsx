@@ -12,7 +12,8 @@ const swatches = {
   muted: css({ color: 'fg.muted' }),
   default: css({ color: 'fg.default' }),
   done: css({ color: 'status.done.fg' }),
-  running: css({ color: 'status.running.fg' }),
+  // The running call is cyan, as the Working pill of its task (Inbox D5 346:2269).
+  running: css({ color: 'status.working.fg' }),
   failed: css({ color: 'status.danger.fg' }),
   well: css({ color: 'surface.well' }),
   focus: css({ color: 'border.focus' }),

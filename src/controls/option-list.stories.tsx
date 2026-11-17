@@ -453,3 +453,42 @@ const cardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** Choice cards (Inbox D2 346:789): a bordered card per option with a leading radio; the chosen one is outlined. */
 export const CardDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Cards />, play: cardPlay }
 export const CardLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Cards />, play: cardPlay }
+
+// `size="sm"`: the 13 px titles and 11 px mono meta of the Run in picker (D3 346:1248, 346:1251) and the 13 px
+// titles of the question cards (D2 346:793), whose descriptions stay Regular 12 (346:796).
+function Small() {
+  return (
+    <main className={page}>
+      <div className={picker}>
+        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" selectedFill size="sm" />
+      </div>
+      <div className={column}>
+        <OptionList label="Choose one" items={choices} defaultValue="rpc" variant="card" size="sm" />
+      </div>
+    </main>
+  )
+}
+
+const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const font = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  const codex = rowOf(canvas.getByRole('radio', { name: 'component-library-1701' }))
+  // Picker rows: the title in labelSm (13/16), the mono meta line in monoSm (11/16).
+  await expect(font(within(codex).getByText('component-library-1701'))).toEqual(['13px', 16, '500'])
+  const meta = within(codex).getByText('codex · inbox-gaps · 2m ago')
+  await expect(font(meta)).toEqual(['11px', 16, '400'])
+  await expect(getComputedStyle(meta).fontFamily).toMatch(/Mono/)
+  // A row with a meta line is 8 + 16 + 2 + 16 + 8 = 50 (Figma 49; 54 at the default size); a title-only row is 32.
+  await expect(Math.round(codex.getBoundingClientRect().height)).toBe(50)
+  await expect(Math.round(rowOf(canvas.getByRole('radio', { name: 'New chat in another workspace…' })).getBoundingClientRect().height)).toBe(32)
+  // Cards: the title in labelSm; a text description stays small (12/16).
+  const card = rowOf(canvas.getByRole('radio', { name: 'Plain fetch with zod schemas' }))
+  await expect(font(within(card).getByText('Plain fetch with zod schemas'))).toEqual(['13px', 16, '500'])
+  await expect(font(within(card).getByText('Works with any server. The schemas are a second copy of the types.'))).toEqual(['12px', 16, '400'])
+}
+
+export const SmallDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Small />, play: smallPlay }
+export const SmallLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Small />, play: smallPlay }

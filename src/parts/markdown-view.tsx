@@ -35,6 +35,8 @@ export type MarkdownViewProps = {
   highlight?: MarkdownHighlight | undefined
   /** The text size: `md` (the default) for `body` and `label`, `sm` for `bodySm` and `labelSm`, as the Inbox detail draws them. */
   size?: Scalar<MarkdownViewVariantProps>['size']
+  /** `default` pads the text 20 by 24, as the Toolkit file preview does; `none` draws it flush, for a box that sets its own padding, such as an Inbox detail section. */
+  padding?: Scalar<MarkdownViewVariantProps>['padding']
 }
 
 /**
@@ -44,10 +46,11 @@ export type MarkdownViewProps = {
  * text column, and code in the `code` style. Pass `highlight` to colour
  * the code in fenced blocks. `size="sm"` draws the body text in `bodySm`
  * and the subheadings in `labelSm`, as the Inbox detail does; the default
- * (`md`) keeps `body` and `label`.
+ * (`md`) keeps `body` and `label`. `padding="none"` drops the view's own
+ * padding, so the text lines up with the box around it.
  */
-export function MarkdownView({ children, highlight, size }: MarkdownViewProps) {
-  return <Root size={size}>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
+export function MarkdownView({ children, highlight, size, padding }: MarkdownViewProps) {
+  return <Root size={size} padding={padding}>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
 }
 
 type WithChildren = { children?: ReactNode }

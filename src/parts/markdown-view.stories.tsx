@@ -511,3 +511,42 @@ const smallPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
 
 export const SmallDark: StoryObj<typeof meta> = { render: () => <Small />, play: smallPlay, globals: { mode: 'dark' } }
 export const SmallLight: StoryObj<typeof meta> = { render: () => <Small />, play: smallPlay, globals: { mode: 'light' } }
+
+// An Inbox detail section (D1 346:354) draws its own column; the text starts at its edge.
+const section = css({ w: 'shell.dialogLg', bg: 'surface.pane', p: '16' })
+
+/** `padding="none"`: the text sits flush in a box that sets its own padding, as an Inbox detail section does. */
+function Flush() {
+  return (
+    <main className={page}>
+      <div className={section} data-testid="flush">
+        <MarkdownView size="sm" padding="none">
+          <p>Tickets come before any code, and nothing blocks them.</p>
+        </MarkdownView>
+      </div>
+      <div className={section} data-testid="padded">
+        <MarkdownView size="sm">
+          <p>The default padding.</p>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+const flushPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const flush = canvas.getByTestId('flush')
+  const view = pick(flush, '.markdown-view')
+  const s = getComputedStyle(view)
+  await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['0px', '0px', '0px', '0px'])
+  // The paragraph starts at the section's content edge and the view is as tall as its one line.
+  await expect(box(pick(view, 'p')).left - box(flush).left).toBe(16)
+  await expect(box(view).height).toBe(20)
+  await expect(font(pick(view, 'p'))).toEqual(['13px', 20, '400'])
+  // The default keeps the 20 by 24 padding.
+  const padded = getComputedStyle(pick(canvas.getByTestId('padded'), '.markdown-view'))
+  await expect([padded.paddingTop, padded.paddingLeft]).toEqual(['20px', '24px'])
+}
+
+export const FlushDark: StoryObj<typeof meta> = { render: () => <Flush />, play: flushPlay, globals: { mode: 'dark' } }
+export const FlushLight: StoryObj<typeof meta> = { render: () => <Flush />, play: flushPlay, globals: { mode: 'light' } }

@@ -5,6 +5,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // field, the dialog inputs, and the prompt while it is edited. The fill is
 // surface.inset (the notes field, rgba(23,33,58,0.7)); the focused border is
 // border.focus, as the rename field draws it.
+// `textSize="sm"` sets the text in `bodySm`, as the Inbox D3 prompt editor
+// does (346:1189, Geist Regular 13/21; 20 on the 4 px grid). The box keeps
+// its padding and height.
 const box = {
   w: '100%',
   minW: '0',
@@ -73,6 +76,10 @@ export const textField = defineSlotRecipe({
       lg: { input: { h: 'control.lg' } },
       xl: { input: { h: 'control.xl' } },
     },
+    textSize: {
+      md: {},
+      sm: { input: { textStyle: 'bodySm' }, textarea: { textStyle: 'bodySm' } },
+    },
   },
-  defaultVariants: { size: 'md', variant: 'field', labelHidden: false },
+  defaultVariants: { size: 'md', variant: 'field', labelHidden: false, textSize: 'md' },
 })

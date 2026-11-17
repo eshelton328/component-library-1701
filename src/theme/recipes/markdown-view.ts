@@ -12,6 +12,9 @@ import { defineRecipe } from '@pandacss/dev'
 // 346:354, Geist Regular 13/20 #8a97b8, `bodySm`), with `labelSm` for the
 // h2 to h6 subheadings. h1 and code keep their styles: no Figma frame draws
 // them at this size.
+// `padding="none"` drops the 20 by 24 padding, so the text sits flush in a
+// box that sets its own, as an Inbox detail section does (D1 346:354: the
+// body text starts at the section's edge).
 export const markdownView = defineRecipe({
   className: 'markdown-view',
   jsx: ['MarkdownView'],
@@ -53,6 +56,10 @@ export const markdownView = defineRecipe({
       md: {},
       sm: { textStyle: 'bodySm', '& :where(h2, h3, h4, h5, h6)': { textStyle: 'labelSm' } },
     },
+    padding: {
+      default: {},
+      none: { py: '0', px: '0' },
+    },
   },
-  defaultVariants: { size: 'md' },
+  defaultVariants: { size: 'md', padding: 'default' },
 })

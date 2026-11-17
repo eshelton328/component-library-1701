@@ -8,6 +8,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The grip, chevrons and more icon take 12 px, on the 4 px icon scale.
 // The chevrons are drawn in #8a97b8 (fg.muted), the count in #4a5675 (fg.subtle).
 // The inventory merges every group header label into `eyebrow`.
+// Figma's Inbox header is 34 tall: 14 + a 14 px label line + 6. With the
+// 16 px `eyebrow` line it is 36 on the 4 px grid (d-100 rule 3): `list`
+// pads 12 above and 8 below, so the label's centre sits 20 down, 1 above
+// Figma's 21, and the rows start where a 36 px header ends.
 // `project` is the project heading inside an Inbox group when the list is
 // sorted by project (D11 346:4606): padding 8/0/2/10, gap 6, a 12 px folder
 // in the leading slot and the name as written in Geist Mono 11 #8a97b8
@@ -68,7 +72,7 @@ export const groupHeader = defineSlotRecipe({
   variants: {
     // `list` is the Inbox list header; `sidebar` the Workbench sidebar one; `project` a project heading in a group.
     variant: {
-      list: { root: { pt: '16', pr: '4' } },
+      list: { root: { pt: '12', pr: '4', pb: '8' } },
       sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' } },
       project: { root: { pt: '8', pb: '2', pl: '10', textStyle: 'monoSm' }, label: { textTransform: 'none' } },
     },

@@ -55,8 +55,9 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * A row in a list: an Inbox item (`inbox`, the default) or a chat in the
  * Workbench sidebar (`sidebar`). With `onSelect`, the title is a button and
  * a click anywhere on the row selects it. `density="compact"` draws the
- * title in `labelSm` and the meta and age in `monoSm`, as the Inbox list
- * does; the default keeps `label` and `mono`.
+ * title in `labelSm` and the meta and age in `monoSm`, with its lines 2
+ * apart, so a title and meta row is 56 tall, as the Inbox list draws it;
+ * the default keeps `label` and `mono`, 4 apart.
  */
 export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, variant, density }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.

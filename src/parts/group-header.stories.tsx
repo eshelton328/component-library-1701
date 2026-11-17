@@ -131,14 +131,18 @@ const meta = {
     }
     const width = (el: Element) => el.getBoundingClientRect().width
 
-    // Inbox list headers: padding 16/4/6/4, eyebrow text in fg.muted, in capitals.
+    // Inbox list headers: padding 12/4/8/4, eyebrow text in fg.muted, in capitals.
     const needs = canvas.getByRole('button', { name: /needs you/i })
     await expect(needs).toHaveAttribute('aria-expanded', 'true')
     await expect(needs).toHaveAttribute('aria-controls', 'rows-needs')
     await expect(canvas.getByRole('button', { name: /snoozed/i })).toHaveAttribute('aria-expanded', 'false')
     const listRoot = one(canvas.getByTestId('inbox'), '.group-header__root')
     const ls = getComputedStyle(listRoot)
-    await expect([ls.paddingTop, ls.paddingRight, ls.paddingBottom, ls.paddingLeft]).toEqual(['16px', '4px', '6px', '4px'])
+    await expect([ls.paddingTop, ls.paddingRight, ls.paddingBottom, ls.paddingLeft]).toEqual(['12px', '4px', '8px', '4px'])
+    // 36 tall: Figma's 34 (346:188) on the 4 px grid (d-100). The label's 16 px line is centred 20 down; Figma's at 21.
+    await expect(listRoot.getBoundingClientRect().height).toBe(36)
+    const labelBox = one(listRoot, '.group-header__label').getBoundingClientRect()
+    await expect(labelBox.top + labelBox.height / 2 - listRoot.getBoundingClientRect().top).toBe(20)
     const label = getComputedStyle(one(listRoot, '.group-header__label'))
     await expect([label.fontSize, label.letterSpacing, label.textTransform, label.color]).toEqual(['11px', '0.44px', 'uppercase', swatch('muted')])
     await expect(label.fontFamily).toContain('Geist Mono')
@@ -159,6 +163,8 @@ const meta = {
     const sideRoot = one(canvas.getByTestId('sidebar'), '.group-header__root')
     const ss = getComputedStyle(sideRoot)
     await expect([ss.paddingTop, ss.paddingRight, ss.paddingBottom, ss.paddingLeft, ss.borderTopLeftRadius]).toEqual(['8px', '6px', '6px', '4px', '8px'])
+    // The sidebar header keeps its height: 8 + 16 + 6.
+    await expect(sideRoot.getBoundingClientRect().height).toBe(30)
     await expect(width(one(sideRoot, '.group-header__chevron'))).toBe(12)
     await expect(width(one(sideRoot, '.group-header__leading svg'))).toBe(12)
     const actions = one(sideRoot, '.group-header__actions')

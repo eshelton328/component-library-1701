@@ -262,6 +262,17 @@ export function ChevronLeftIcon(props: IconProps): JSX.Element;
 export function ChevronRightIcon(props: IconProps): JSX.Element;
 
 // @public
+export function Clamp(input: ClampProps): JSX.Element;
+
+// @public (undocumented)
+export type ClampProps = {
+    children: ReactNode;
+    lines?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | undefined;
+    fade?: boolean | undefined;
+    onCutChange?: ((cut: boolean) => void) | undefined;
+};
+
+// @public
 export function ClipIcon(props: IconProps): JSX.Element;
 
 // @public

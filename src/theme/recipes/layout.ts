@@ -71,7 +71,12 @@ export const layoutGrid = defineRecipe({
  *   token (d-072), so 32 and 40.
  * - tablet: Inbox T1 content 346:5414: 12 top, 20 bottom, 22 sides (24, d-072).
  * - phone: Inbox M1 content 346:9007: 4 top, 12 bottom, 12 sides.
- * No max width: the drawn content widths (820, 748, 948) have no token.
+ * - detail: a detail column, such as the Inbox task (D1 346:306): the
+ *   desktop padding, and its content at most `shell.detail` (748) wide,
+ *   at the start of the pane. Figma draws 820 with 36 sides; 36 takes 40
+ *   (d-072), so the column is at most 828 wide. The box is content-box,
+ *   so the max width holds the content and the padding sits outside it.
+ * The other sizes have no max width.
  */
 export const layoutContainer = defineRecipe({
   className: 'container',
@@ -83,6 +88,7 @@ export const layoutContainer = defineRecipe({
       desktop: { pt: '24', pb: '32', px: '40' },
       tablet: { pt: '12', pb: '20', px: '24' },
       phone: { pt: '4', pb: '12', px: '12' },
+      detail: { pt: '24', pb: '32', px: '40', boxSizing: 'content-box', w: 'auto', maxW: 'shell.detail' },
     },
     gap,
   },

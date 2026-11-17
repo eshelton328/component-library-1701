@@ -29,6 +29,12 @@ export type PopoverProps = {
   onOpenChange?: ((open: boolean) => void) | undefined
   /** Where the popover opens next to the trigger; `bottom-end` when not set. */
   placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined
+  /**
+   * The box width: `sm` 240 (a small menu), `filter` 300 (the Inbox Filter menu), `md` 320 (a filter or snooze
+   * popover; the default), `lg` 360 (the skill picker) or `picker` 380 (the Run in picker). It never grows past the
+   * space beside the trigger.
+   */
+  width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined
 }
 
 /**
@@ -36,9 +42,10 @@ export type PopoverProps = {
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end' }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width }: PopoverProps) {
   return (
     <Root
+      width={width}
       positioning={{ placement, gutter: 6 }}
       {...(open === undefined ? {} : { open })}
       onOpenChange={(details) => {

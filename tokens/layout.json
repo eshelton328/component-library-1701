@@ -166,6 +166,11 @@
         "$value": { "value": 240, "unit": "px" },
         "$description": "Width of a small menu."
       },
+      "popoverFilter": {
+        "$type": "dimension",
+        "$value": { "value": 300, "unit": "px" },
+        "$description": "Width of the Inbox Filter menu (D4 346:1737). Other filter and snooze popovers take popover (320)."
+      },
       "popover": {
         "$type": "dimension",
         "$value": { "value": 320, "unit": "px" },
@@ -176,6 +181,11 @@
         "$value": { "value": 360, "unit": "px" },
         "$description": "Width of the skill picker."
       },
+      "popoverPicker": {
+        "$type": "dimension",
+        "$value": { "value": 380, "unit": "px" },
+        "$description": "Width of the Run in picker (Inbox D3 346:1234). Not for the Workbench side chat, which takes sidePane."
+      },
       "dialog": {
         "$type": "dimension",
         "$value": { "value": 440, "unit": "px" },
@@ -185,6 +195,11 @@
         "$type": "dimension",
         "$value": { "value": 540, "unit": "px" },
         "$description": "Width of the New chat dialog."
+      },
+      "detail": {
+        "$type": "dimension",
+        "$value": { "value": 748, "unit": "px" },
+        "$description": "Most content width of a detail column, such as the Inbox task (D1 346:306). Use it through Container size detail; not for a pane or a dialog."
       },
       "safeAreaBottom": {
         "$type": "dimension",

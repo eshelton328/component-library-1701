@@ -18,6 +18,14 @@ const fade =
 // mask, which uses only alpha, so it needs no colour token: #000 is opaque.
 // The component sets data-overflow-start and data-overflow-end from the
 // scroll position; a row that fits has neither and no mask.
+//
+// `compact` is the Inbox D1 chip row (346:151, chips 346:152 and 346:155):
+// 30 high, 8 sides, 5 between chips and between label and count, a Geist
+// Medium 12 label and a Mono 11 count. 5 takes 6 (d-072), which both gaps
+// already are. The height is the padding (6 top and bottom), the 16 px line
+// and the two 1 px borders, so no size token is needed. No text style is
+// Medium 12 (d-050): the label takes `small` (Regular 12, the same size and
+// line), and the count keeps `mono` (12).
 export const filterChips = defineSlotRecipe({
   className: 'filter-chips',
   jsx: ['FilterChips'],
@@ -73,4 +81,11 @@ export const filterChips = defineSlotRecipe({
     },
     count: { textStyle: 'mono', color: 'fg.muted' },
   },
+  variants: {
+    size: {
+      md: {},
+      compact: { item: { h: 'auto', py: '6', px: '8', textStyle: 'small' } },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

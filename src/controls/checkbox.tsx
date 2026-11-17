@@ -1,5 +1,5 @@
 import { Checkbox as ArkCheckbox } from '@ark-ui/react/checkbox'
-import { useId } from 'react'
+import { useId, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { checkbox } from '../../styled-system/recipes'
 
@@ -10,6 +10,10 @@ const Indicator = withContext(ArkCheckbox.Indicator, 'indicator')
 const Label = withContext(ArkCheckbox.Label, 'label')
 const Group = withProvider(ArkCheckbox.Group, 'group')
 const GroupLabel = withContext('span', 'groupLabel')
+const Trailing = withContext('span', 'trailing')
+
+// A slot given as `false`, `null` or an empty string is left out, as React leaves it out; `0` shows.
+const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
 // The check and the dash are part of the control, not icons a caller picks.
 function Check() {
@@ -38,10 +42,12 @@ export type CheckboxProps = {
   value?: string | undefined
   /** The form field name. */
   name?: string | undefined
+  /** Shown at the end of the row, such as the number of items a filter matches. It is not part of the label. */
+  trailing?: ReactNode
 }
 
-/** A checkbox with a label, such as one filter in a filter popover. */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name }: CheckboxProps) {
+/** A checkbox with a label, such as one filter in a filter popover, and an optional `trailing` count at the end. */
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing }: CheckboxProps) {
   return (
     <Root
       disabled={disabled}
@@ -62,13 +68,20 @@ export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disa
         </Indicator>
       </Control>
       <Label>{label}</Label>
+      {shown(trailing) ? <Trailing>{trailing}</Trailing> : null}
       <ArkCheckbox.HiddenInput />
     </Root>
   )
 }
 
 /** One choice in a `CheckboxGroup`. */
-export type CheckboxGroupItem = { value: string; label: string; disabled?: boolean | undefined }
+export type CheckboxGroupItem = {
+  value: string
+  label: string
+  disabled?: boolean | undefined
+  /** Shown at the end of the row, such as a count. */
+  trailing?: ReactNode
+}
 
 export type CheckboxGroupProps = {
   /** The group's name, such as "Kind". It labels the group. */
@@ -101,7 +114,7 @@ export function CheckboxGroup({ label, items, value, defaultValue, onValueChange
       <GroupLabel id={labelId}>{label}</GroupLabel>
       {items.map((item) => (
         // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} />
+        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} />
       ))}
     </Group>
   )

@@ -223,6 +223,7 @@ export type CheckboxGroupItem = {
     value: string;
     label: string;
     disabled?: boolean | undefined;
+    trailing?: ReactNode;
 };
 
 // @public (undocumented)
@@ -245,6 +246,7 @@ export type CheckboxProps = {
     disabled?: boolean | undefined;
     value?: string | undefined;
     name?: string | undefined;
+    trailing?: ReactNode;
 };
 
 // @public
@@ -258,6 +260,17 @@ export function ChevronLeftIcon(props: IconProps): JSX.Element;
 
 // @public
 export function ChevronRightIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Clamp(input: ClampProps): JSX.Element;
+
+// @public (undocumented)
+export type ClampProps = {
+    children: ReactNode;
+    lines?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | undefined;
+    fade?: boolean | undefined;
+    onCutChange?: ((cut: boolean) => void) | undefined;
+};
 
 // @public
 export function ClipIcon(props: IconProps): JSX.Element;
@@ -466,6 +479,7 @@ export type FilterChipsProps = {
     onValueChange?: ((value: string[]) => void) | undefined;
     multiple?: boolean | undefined;
     disabled?: boolean | undefined;
+    size?: 'md' | 'compact' | undefined;
 };
 
 // @public
@@ -959,6 +973,8 @@ export type OptionListItem = {
     label: string;
     description?: string | undefined;
     badge?: ReactNode;
+    leading?: ReactNode;
+    trailing?: ReactNode;
     disabled?: boolean | undefined;
 };
 
@@ -972,6 +988,8 @@ export type OptionListProps = {
     onItemSelect?: ((value: string) => void) | undefined;
     disabled?: boolean | undefined;
     name?: string | undefined;
+    descriptionStyle?: 'text' | 'mono' | undefined;
+    variant?: 'list' | 'card' | undefined;
 };
 
 // @public
@@ -1043,6 +1061,7 @@ export type PopoverProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
+    width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
 };
 
 // @public

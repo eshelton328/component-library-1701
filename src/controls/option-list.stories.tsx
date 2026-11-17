@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { BrainIcon, PlusIcon, TerminalIcon } from '../foundations/icons'
 import { OptionList, type OptionListItem } from './option-list'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
@@ -11,6 +12,10 @@ const sheet = css({ bg: 'surface.overlay', px: '12', py: '8', borderRadius: 'xl'
 const defaultSwatch = css({ color: 'fg.default' })
 const mutedSwatch = css({ color: 'fg.muted' })
 const accentSwatch = css({ color: 'fg.accent' })
+const selectedSwatch = css({ color: 'surface.selected' })
+const outlineSwatch = css({ color: 'border.selected' })
+const borderSwatch = css({ color: 'border.default' })
+const radioSwatch = css({ color: 'accent.default' })
 
 // The rows of the Artifacts M4 sort sheet (407:790, 407:797, 407:802, 407:807).
 const sorts: readonly OptionListItem[] = [
@@ -300,3 +305,141 @@ export const InForm: StoryObj<typeof meta> = {
     await expect(new FormData(form).get('sort')).toBeNull()
   },
 }
+
+// The Run in picker (Inbox D3 346:1234) at its width, 380 less its 8 px padding.
+const picker = css({ bg: 'surface.overlay', p: '8', borderRadius: 'xl', w: 'shell.popoverPicker' })
+// A stand-in for the caller's status pill (346:1280): a story in this tier cannot import StatusPill from parts.
+const status = css({ display: 'inline-flex', px: '8', py: '2', borderRadius: 'full', bg: 'status.needsYou.bg', color: 'status.needsYou.fg', textStyle: 'pill' })
+
+// Run in rows (346:1243, 346:1273, 346:1264): an agent mark, a title with a pill, a mono meta line, and at the end
+// a check on the chosen row or a status pill on a busy one. Stand-ins for KindMark: a story here cannot import parts.
+const workspaces: readonly OptionListItem[] = [
+  {
+    value: 'claude',
+    label: 'ncc-1701 · main',
+    description: 'claude · ~/ncc-1701 · idle',
+    badge: <span className={pill}>Recommended</span>,
+    leading: <BrainIcon size="16" />,
+  },
+  {
+    value: 'codex',
+    label: 'component-library-1701',
+    description: 'codex · inbox-gaps · 2m ago',
+    leading: <TerminalIcon size="16" />,
+    trailing: <span className={status}>Needs you</span>,
+  },
+  { value: 'new', label: 'New chat in another workspace…', leading: <PlusIcon size="16" /> },
+]
+
+function Picker() {
+  return (
+    <main className={page}>
+      <div className={picker}>
+        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" />
+      </div>
+      <span hidden data-swatch="default" className={defaultSwatch} />
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="accent" className={accentSwatch} />
+    </main>
+  )
+}
+
+const pickerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const claude = rowOf(canvas.getByRole('radio', { name: 'ncc-1701 · main' }))
+  const codexRadio = canvas.getByRole('radio', { name: 'component-library-1701' })
+  const codex = rowOf(codexRadio)
+  const part = (row: HTMLElement, slot: string) => {
+    const el = row.querySelector(`.option-list__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot}`)
+    return el
+  }
+  // The leading mark comes first, 16 px, 10 before the text, and is hidden from assistive technology.
+  const lead = part(claude, 'itemLeading')
+  await expect(claude.firstElementChild).toBe(lead)
+  await expect(lead).toHaveAttribute('aria-hidden', 'true')
+  await expect(lead.getBoundingClientRect().width).toBe(16)
+  await expect(part(claude, 'itemBody').getBoundingClientRect().left - lead.getBoundingClientRect().right).toBe(10)
+  // The pill stays beside the title.
+  await expect(part(claude, 'itemBadge').getBoundingClientRect().left - within(claude).getByText('ncc-1701 · main').getBoundingClientRect().right).toBe(8)
+  // The meta line is mono 12 in fg.muted.
+  const meta = getComputedStyle(within(claude).getByText('claude · ~/ncc-1701 · idle'))
+  await expect([meta.fontSize, meta.color]).toEqual(['12px', swatch('muted')])
+  await expect(meta.fontFamily).toMatch(/Mono/)
+  // The chosen row ends in its check; a row with a status pill ends in the pill and keeps no check space.
+  await expect(getComputedStyle(part(claude, 'itemControl')).visibility).toBe('visible')
+  const end = part(codex, 'itemTrailing')
+  await expect(getComputedStyle(part(codex, 'itemControl')).display).toBe('none')
+  const pad = parseFloat(getComputedStyle(codex).paddingRight)
+  await expect(Math.round(codex.getBoundingClientRect().right - pad)).toBe(Math.round(end.getBoundingClientRect().right))
+  // The pill describes the radio, after the description.
+  await expect(codexRadio).toHaveAccessibleDescription('codex · inbox-gaps · 2m ago Needs you')
+  // Choosing the busy row shows its check after the pill.
+  await userEvent.click(within(codex).getByText('component-library-1701'))
+  await expect(codexRadio).toBeChecked()
+  await waitFor(() => expect(getComputedStyle(part(codex, 'itemControl')).display).not.toBe('none'))
+  await expect(part(codex, 'itemControl').getBoundingClientRect().left).toBeGreaterThan(end.getBoundingClientRect().right)
+  // A row with a plus and a title only.
+  await expect(rowOf(canvas.getByRole('radio', { name: 'New chat in another workspace…' })).querySelector('.option-list__itemLeading svg')).not.toBeNull()
+}
+
+/** The Run in picker rows (Inbox D3): a leading mark, a mono meta line and a trailing status pill. */
+export const PickerDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Picker />, play: pickerPlay }
+export const PickerLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Picker />, play: pickerPlay }
+
+// The options of a question (Inbox D2 346:789), at the width of the question's column.
+const column = css({ bg: 'surface.pane', p: '16', w: 'shell.dialogLg' })
+
+function Cards() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <OptionList label="Choose one" items={choices} defaultValue="rpc" variant="card" />
+      </div>
+      <span hidden data-swatch="selected" className={selectedSwatch} />
+      <span hidden data-swatch="outline" className={outlineSwatch} />
+      <span hidden data-swatch="border" className={borderSwatch} />
+      <span hidden data-swatch="radio" className={radioSwatch} />
+    </main>
+  )
+}
+
+const cardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rpcRadio = canvas.getByRole('radio', { name: 'Hono RPC client' })
+  const fetchRadio = canvas.getByRole('radio', { name: 'Plain fetch with zod schemas' })
+  const [rpc, plain] = [rowOf(rpcRadio), rowOf(fetchRadio)]
+  const radioOf = (row: HTMLElement) => {
+    const el = row.querySelector('.option-list__itemRadio')
+    if (!(el instanceof HTMLElement)) throw new Error('no radio')
+    return el
+  }
+  // A bordered card: padding 12 by 16, radius 10, 1 px border, 8 between cards.
+  const s = getComputedStyle(plain)
+  await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['12px', '16px', '12px', '16px'])
+  await expect([s.borderTopLeftRadius, s.borderTopWidth, s.borderTopColor]).toEqual(['10px', '1px', swatch('border')])
+  await expect(plain.getBoundingClientRect().top - rpc.getBoundingClientRect().bottom).toBe(8)
+  // The chosen card is outlined in cyan on the selected fill.
+  const c = getComputedStyle(rpc)
+  await expect([c.backgroundColor, c.borderTopColor]).toEqual([swatch('selected'), swatch('outline')])
+  // A 16 px radio leads, at the top, 12 before the text; the trailing check is gone.
+  const radio = radioOf(rpc)
+  await expect(rpc.firstElementChild).toBe(radio)
+  await expect([radio.getBoundingClientRect().width, radio.getBoundingClientRect().height]).toEqual([16, 16])
+  await expect(radio.getBoundingClientRect().top - rpc.getBoundingClientRect().top).toBe(13)
+  const body = rpc.querySelector('.option-list__itemBody')
+  if (body === null) throw new Error('no text column')
+  await expect(body.getBoundingClientRect().left - radio.getBoundingClientRect().right).toBe(12)
+  await expect(getComputedStyle(rpc.querySelector('.option-list__itemControl') ?? rpc).display).toBe('none')
+  await expect(getComputedStyle(radio).borderTopColor).toBe(swatch('radio'))
+  await expect(getComputedStyle(radioOf(plain)).borderTopColor).not.toBe(swatch('radio'))
+  // Picking another card moves the outline.
+  await userEvent.click(within(plain).getByText('Plain fetch with zod schemas'))
+  await expect(fetchRadio).toBeChecked()
+  await waitFor(() => expect(getComputedStyle(plain).borderTopColor).toBe(swatch('outline')))
+  await expect(getComputedStyle(rpc).borderTopColor).toBe(swatch('border'))
+}
+
+/** Choice cards (Inbox D2 346:789): a bordered card per option with a leading radio; the chosen one is outlined. */
+export const CardDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Cards />, play: cardPlay }
+export const CardLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Cards />, play: cardPlay }

@@ -135,3 +135,44 @@ export const Behaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(last.getBoundingClientRect().right).toBeLessThanOrEqual(phone.getBoundingClientRect().right + 1))
   },
 }
+
+// The Inbox D1 chip row (346:151): five chips in a 395 px list pane.
+const inbox: readonly FilterChip[] = [
+  { value: 'all', label: 'All', count: 31 },
+  { value: 'needs', label: 'Needs you', count: 4 },
+  { value: 'working', label: 'Working', count: 6 },
+  { value: 'review', label: 'Review', count: 2 },
+  { value: 'done', label: 'Done' },
+]
+// The list pane's width less its 12 px sides is 396; the nearest width token under it is shell.popoverPicker (380).
+const pane = css({ w: 'shell.popoverPicker' })
+
+function Compact() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <FilterChips label="Inbox filter" items={inbox} defaultValue={['all']} multiple={false} size="compact" />
+      </div>
+      <FilterChips label="Default size" items={inbox} defaultValue={['all']} multiple={false} />
+    </main>
+  )
+}
+
+/** The compact size (Inbox D1 346:152): 30 high, 8 px sides, a 12 px label, 6 apart; the five Inbox chips fit the pane. */
+const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const row = canvas.getByLabelText('Inbox filter')
+  const all = within(row).getByRole('radio', { name: /^All/ })
+  const style = getComputedStyle(all)
+  await expect(all.getBoundingClientRect().height).toBe(30)
+  await expect([style.paddingLeft, style.paddingRight, style.fontSize]).toEqual(['8px', '8px', '12px'])
+  await expect(getComputedStyle(row).columnGap).toBe('6px')
+  await expect(row.scrollWidth).toBeLessThanOrEqual(row.clientWidth)
+  await expect(row).not.toHaveAttribute('data-overflow-end')
+  // The default size stays 32 high with the 14 px label.
+  const other = within(canvas.getByLabelText('Default size')).getByRole('radio', { name: /^All/ })
+  await expect([other.getBoundingClientRect().height, getComputedStyle(other).fontSize]).toEqual([32, '14px'])
+}
+
+export const CompactDark: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'dark' }, play: compactPlay }
+export const CompactLight: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'light' }, play: compactPlay }

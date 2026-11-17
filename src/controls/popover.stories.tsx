@@ -127,3 +127,38 @@ export const Behaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(body.queryByRole('dialog', { name: 'Filters' })).toBeNull())
   },
 }
+
+const widths = [
+  ['sm', 240],
+  ['filter', 300],
+  ['md', 320],
+  ['lg', 360],
+  ['picker', 380],
+] as const
+
+// One open popover per width, each under its own button.
+function Widths() {
+  return (
+    <main className={page}>
+      <Inline justify="end">
+        {widths.map(([w]) => (
+          <Popover key={w} trigger={<Button>{w}</Button>} label={`Width ${w}`} width={w} open>
+            <Checkbox label={`A ${w} row`} />
+          </Popover>
+        ))}
+      </Inline>
+    </main>
+  )
+}
+
+/** The widths (Inbox D4 346:1737 is 300, D3 346:1234 is 380): each box takes its width token. */
+export const Width: StoryObj<typeof meta> = {
+  render: () => <Widths />,
+  play: async () => {
+    const body = within(document.body)
+    for (const [w, px] of widths) {
+      const box = await body.findByRole('dialog', { name: `Width ${w}` })
+      await expect(box.getBoundingClientRect().width).toBe(px)
+    }
+  },
+}

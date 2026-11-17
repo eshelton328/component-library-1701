@@ -55,6 +55,15 @@ export const button = defineRecipe({
         _expanded: { borderColor: 'border.active' },
         _pressed: { bg: 'surface.selected', borderColor: 'border.active' },
       },
+      // Deny in an approval row (Inbox D1 346:213): the secondary box
+      // (#17213a surface.raised, 1 px #24314f border.default) with a #ff6b80
+      // label (status.danger.fg), which passes 4.5:1 on surface.raised.
+      secondaryDanger: {
+        bg: 'surface.raised',
+        color: 'status.danger.fg',
+        borderColor: 'border.default',
+        _expanded: { borderColor: 'border.active' },
+      },
       danger: { bg: 'status.danger.fg', color: 'fg.onAccent' },
       dangerSoft: { bg: 'status.danger.bg', color: 'status.danger.fg', borderColor: 'status.danger.border', _expanded: { borderColor: 'border.active' } },
       dangerText: { color: 'status.danger.fg' },

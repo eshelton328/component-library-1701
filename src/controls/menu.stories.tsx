@@ -374,9 +374,10 @@ const describedPlay: StoryObj<typeof meta>['play'] = async () => {
   const newest = within(group).getByRole('menuitemradio', { name: 'Newest first' })
   await expect(newest).toHaveAccessibleDescription('Most recent activity at the top')
   await expect(newest).toHaveAttribute('aria-checked', 'true')
-  // Row: padding 8/12, radius 8; label Medium 14 over a 12 px description in fg.muted, 2 apart (346:4003).
+  // Row: padding 6/12, radius 8; label Medium 14 over a 12 px description in fg.muted, 2 apart (346:4003). Figma pads
+  // 8 around 18 and 14 px lines; our lines are 20 and 16, so the row pads 6 and keeps Figma's 50.
   const row = getComputedStyle(newest)
-  await expect([row.paddingTop, row.paddingRight, row.paddingBottom, row.paddingLeft]).toEqual(['8px', '12px', '8px', '12px'])
+  await expect([row.paddingTop, row.paddingRight, row.paddingBottom, row.paddingLeft]).toEqual(['6px', '12px', '6px', '12px'])
   await expect(row.borderTopLeftRadius).toBe('8px')
   const label = within(newest).getByText('Newest first')
   const description = within(newest).getByText('Most recent activity at the top')
@@ -384,8 +385,15 @@ const describedPlay: StoryObj<typeof meta>['play'] = async () => {
   await expect([getComputedStyle(description).fontSize, getComputedStyle(description).fontWeight]).toEqual(['12px', '400'])
   await expect(getComputedStyle(description).color).toBe(swatch())
   await expect(Math.round(description.getBoundingClientRect().top - label.getBoundingClientRect().bottom)).toBe(2)
-  // 8 + 20 + 2 + 16 + 8 with the text style line heights.
-  await expect(Math.round(newest.getBoundingClientRect().height)).toBe(54)
+  // 6 + 20 + 2 + 16 + 6 with the text style line heights: Figma's 50 (D9 346:4003).
+  await expect(Math.round(newest.getBoundingClientRect().height)).toBe(50)
+  // The heading pads 2 above and 4 below its 16 px line, so the first choice starts 24 under the box's padding, as in
+  // Figma (D9 346:4001 to 346:4003).
+  await expect(Math.round(heading.getBoundingClientRect().height)).toBe(22)
+  const menuBox = newest.closest('[role="menu"]')
+  if (!(menuBox instanceof HTMLElement)) throw new Error('no menu box')
+  const contentTop = menuBox.getBoundingClientRect().top + Number.parseFloat(getComputedStyle(menuBox).borderTopWidth) + Number.parseFloat(getComputedStyle(menuBox).paddingTop)
+  await expect(Math.round(newest.getBoundingClientRect().top - contentTop)).toBe(24)
 }
 
 /** The sort menu with a heading and a description under each choice (Inbox D9, T9). */

@@ -41,7 +41,8 @@ export const popover = defineSlotRecipe({
     },
     section: { display: 'flex', flexDirection: 'column', gap: '2' },
     // The label of a group of rows, such as KIND. fg.subtle is only for bg.canvas, so the label is fg.muted.
-    sectionLabel: { px: '8', pt: '8', pb: '4', textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
+    // Figma's label row is 26 (D4 346:1738: 8 + a 14 px line + 4); the `eyebrow` line is 16, so the top pad is 6.
+    sectionLabel: { px: '8', pt: '6', pb: '4', textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
     footer: { display: 'flex', alignItems: 'center', gap: '8', px: '8', pt: '8', pb: '4' },
     note: { flex: '1', textStyle: 'small', color: 'fg.muted' },
   },

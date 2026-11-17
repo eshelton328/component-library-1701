@@ -22,7 +22,7 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
   placeholder?: string | undefined
   /** The icon before the text, such as a magnifying glass. */
   icon?: ReactNode
-  /** The icon of the clear button. Without it the button shows ×. */
+  /** The icon of the clear button, such as `CloseCircleIcon`. Without it the button shows ×. */
   clearIcon?: ReactNode
   /** The accessible name of the clear button. */
   clearLabel?: string | undefined
@@ -44,6 +44,7 @@ export function SearchField({
   clearLabel = 'Clear search',
   disabled,
   size,
+  clearSize,
 }: SearchFieldProps) {
   const [own, setOwn] = useState(defaultValue)
   const input = useRef<HTMLInputElement>(null)
@@ -60,7 +61,7 @@ export function SearchField({
     }
   }
   return (
-    <Root size={size} disabled={disabled}>
+    <Root size={size} clearSize={clearSize} disabled={disabled}>
       {icon === undefined ? null : <Icon aria-hidden="true">{icon}</Icon>}
       <Input
         ref={input}

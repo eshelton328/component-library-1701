@@ -11,6 +11,8 @@ export type HighlightProps = {
   query: string | readonly string[]
   /** Whether a match ignores case. Defaults to `true`. */
   ignoreCase?: boolean | undefined
+  /** `strong` (the default) marks a match in the accent colour, semibold and underlined; `colour` in the accent colour only. */
+  variant?: 'strong' | 'colour' | undefined
 }
 
 // A regular expression matches the query as plain text, so its special characters are escaped.
@@ -37,11 +39,11 @@ function highlightParts(text: string, query: string | readonly string[], ignoreC
 /**
  * A text with each match of a search query marked, as in search results.
  * The marks are `<mark>` elements in the accent colour, semibold and
- * underlined; the rest is plain text that takes its style from where it
+ * underlined, or in the accent colour only with `variant="colour"`; the rest is plain text that takes its style from where it
  * sits. The text reads the same with or without the marks.
  */
-export function Highlight({ text, query, ignoreCase = true }: HighlightProps): ReactNode {
+export function Highlight({ text, query, ignoreCase = true, variant }: HighlightProps): ReactNode {
   return highlightParts(text, query, ignoreCase).map((part, index) =>
-    part.match ? <Mark key={index}>{part.text}</Mark> : <Fragment key={index}>{part.text}</Fragment>,
+    part.match ? <Mark key={index} variant={variant}>{part.text}</Mark> : <Fragment key={index}>{part.text}</Fragment>,
   )
 }

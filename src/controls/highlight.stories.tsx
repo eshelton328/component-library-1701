@@ -73,3 +73,36 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+const metaLine = css({ textStyle: 'monoSm', color: 'fg.muted' })
+
+// The Inbox D10 search results (346:4236): the query in a meta line is #5ee1ff only, with the weight and line of the
+// text around it.
+function ColourResults() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={metaLine} data-testid="meta">
+          <Highlight text="ncc-1701 · f-005 · NCC-31" query="f-005" variant="colour" />
+        </span>
+      </div>
+      <span hidden data-swatch="accent" className={accent} />
+    </main>
+  )
+}
+
+const colourPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const line = within(canvasElement).getByTestId('meta')
+  await expect(line).toHaveTextContent('ncc-1701 · f-005 · NCC-31')
+  await expect(marks(line)).toEqual(['f-005'])
+  const mark = line.querySelector('mark')
+  if (mark === null) throw new Error('no mark')
+  const m = getComputedStyle(mark)
+  const around = getComputedStyle(line)
+  await expect(m.color).toBe(getComputedStyle(canvasElement.querySelector('[data-swatch="accent"]') ?? canvasElement).color)
+  await expect([m.fontWeight, m.textDecorationLine, m.backgroundColor]).toEqual([around.fontWeight, 'none', 'rgba(0, 0, 0, 0)'])
+}
+
+/** `variant="colour"`: the match in the accent colour only, as Inbox D10 marks the query in meta lines. */
+export const ColourDark: StoryObj<typeof meta> = { render: () => <ColourResults />, play: colourPlay, globals: { mode: 'dark' } }
+export const ColourLight: StoryObj<typeof meta> = { render: () => <ColourResults />, play: colourPlay, globals: { mode: 'light' } }

@@ -574,6 +574,7 @@ export type HighlightProps = {
     text: string;
     query: string | readonly string[];
     ignoreCase?: boolean | undefined;
+    variant?: 'strong' | 'colour' | undefined;
 };
 
 // @public

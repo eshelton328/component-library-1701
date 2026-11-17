@@ -10,11 +10,16 @@ export const highlight = defineRecipe({
   className: 'highlight',
   jsx: ['Highlight', 'TruncatedText', 'ListRow'],
   staticCss: ['*'],
-  base: {
-    bg: 'transparent',
-    color: 'fg.accent',
-    // The library has no weight token outside the text styles; SemiBold 600 is the weight of text.heading.
-    fontWeight: 'text.heading',
-    textDecoration: 'underline',
+  base: { bg: 'transparent', color: 'fg.accent' },
+  // `colour` marks the match in fg.accent only, with the weight of the text
+  // around it and no underline: Inbox D10 346:4236 marks "f-005" in a meta
+  // line in #5ee1ff only.
+  variants: {
+    variant: {
+      // The library has no weight token outside the text styles; SemiBold 600 is the weight of text.heading.
+      strong: { fontWeight: 'text.heading', textDecoration: 'underline' },
+      colour: {},
+    },
   },
+  defaultVariants: { variant: 'strong' },
 })

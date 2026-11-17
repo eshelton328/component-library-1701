@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { CloseCircleIcon, SearchIcon } from '../foundations/icons'
 import { SearchField } from './search-field'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -121,3 +122,29 @@ export const InDisabledFieldset: StoryObj<typeof meta> = {
     await expect(canvas.queryByRole('button', { name: 'Clear search' })).toBeNull()
   },
 }
+
+// The Inbox D10 search field (346:4193): a 15 px magnifier and a 15 px x in a circle to clear (346:4201), which take
+// 16 on the icon scale.
+function CircleClear() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <SearchField label="Search the inbox" defaultValue="f-005" icon={<SearchIcon />} clearIcon={<CloseCircleIcon />} clearSize="16" />
+      </div>
+    </main>
+  )
+}
+
+const circleClearPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const clear = within(canvasElement).getByRole('button', { name: 'Clear search' })
+  const icon = clear.querySelector('svg')
+  if (icon === null) throw new Error('no clear icon')
+  await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([16, 16])
+  // The button keeps its 20 px box.
+  await expect([clear.getBoundingClientRect().width, clear.getBoundingClientRect().height]).toEqual([20, 20])
+  await expect(icon.querySelectorAll('path')).toHaveLength(2)
+}
+
+/** The clear button with `CloseCircleIcon` at `clearSize="16"` (Inbox D10). */
+export const CircleClearDark: StoryObj<typeof meta> = { render: () => <CircleClear />, play: circleClearPlay, globals: { mode: 'dark' } }
+export const CircleClearLight: StoryObj<typeof meta> = { render: () => <CircleClear />, play: circleClearPlay, globals: { mode: 'light' } }

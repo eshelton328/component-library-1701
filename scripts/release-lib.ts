@@ -44,6 +44,7 @@ const declName = /^(?:export\s+)?(?:declare\s+)?(?:default\s+)?(?:abstract\s+)?(
 const memberName = /^(?:readonly\s+)?(?:static\s+)?(?:readonly\s+)?(?:["']([^"']+)["']|([A-Za-z_$][\w$]*))(\?)?\s*[:(<]/
 const isClosing = (t: string) => /^[}\])>;,\s]+$/.test(t)
 const braces = (t: string) => (t.match(/[{]/g)?.length ?? 0) - (t.match(/[}]/g)?.length ?? 0)
+const brackets = (t: string) => (t.match(/[[(]/g)?.length ?? 0) - (t.match(/[\])]/g)?.length ?? 0)
 /** Interfaces and classes are always split into members. */
 const splitKinds = new Set(['interface', 'class'])
 /** `type Name = {` with no type parameters. */
@@ -77,7 +78,10 @@ function isObjectAlias(lines: readonly string[], start: number): boolean {
  * that starts with `export` or `declare` opens a declaration. In an
  * interface, a class or a type alias that is one plain object literal
  * (see `isObjectAlias`), a line one brace level inside it is a member,
- * keyed by the declaration name. Every other line joins the item it
+ * keyed by the declaration name, unless a `[` or `(` that an earlier line
+ * of the declaration opened is still open: a line inside such a group,
+ * such as an element of a multi-line tuple, joins the member that opened
+ * the group, up to the line that closes it. Every other line joins the item it
  * belongs to, with nested closing braces kept, so a member moved between
  * nested objects changes the text. Any other type alias (a union, an
  * intersection, a generic or a mapped type) is one item, because its
@@ -95,6 +99,8 @@ export function apiItems(report: string): ApiItem[] {
     return n === 1 ? key : `${key}#${String(n)}`
   }
   let depth = 0
+  // The `[` and `(` groups left open by earlier lines of the declaration.
+  let groups = 0
   let decl: ApiItem | undefined
   let split = false
   let last: ApiItem | undefined
@@ -106,11 +112,12 @@ export function apiItems(report: string): ApiItem[] {
       const kind = m?.[1] ?? ''
       decl = { key: unique(m?.[2] ?? t), text: t, required: false }
       split = splitKinds.has(kind) || (kind === 'type' && isObjectAlias(lines, i))
+      groups = 0
       items.push(decl)
       last = decl
-    } else if (depth === 1 && split && decl && isClosing(t)) {
+    } else if (depth === 1 && groups === 0 && split && decl && isClosing(t)) {
       // The end of the body of a split declaration.
-    } else if (depth === 1 && split && decl) {
+    } else if (depth === 1 && groups === 0 && split && decl) {
       const m = memberName.exec(t)
       const name = m ? (m[1] ?? m[2] ?? t) : t
       last = { key: unique(`${decl.key}.${name}`), text: t, required: !m || !m[3] }
@@ -119,6 +126,7 @@ export function apiItems(report: string): ApiItem[] {
       last.text += ` ${t}`
     }
     depth = Math.max(0, depth + braces(t))
+    groups = Math.max(0, groups + brackets(t))
   }
   return items
 }

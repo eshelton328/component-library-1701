@@ -41,10 +41,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `check={false}` hides the check and its space on every row.
 // `density="compact"` is the picker's row (105:412, 105:415, 105:418):
 // 146 wide and 44 tall, padded 6 by 8, the name (16) over the description
-// (Regular 11, 14 tall). On the 4 px grid the description is `smallSm`
-// (11/16) right under the name: 6 + 16 + 16 + 6 = 44, Figma's height, and
-// in a compact Popover (padding 6) the text column is Figma's 130, so the
-// descriptions stay on one line. A mono description is `monoSm`.
+// (Regular 11, 14 tall). It shares RadioMenu's compact values (#121, the
+// Artifacts Sort menu 403:8881) where Figma allows: the label straight over
+// the description, which is `smallXs` (Regular 11/16; a mono one `monoSm`),
+// in a box padded 6. Figma's skill rows differ from the Sort menu's: they
+// pad 6 by 8 (105:412; the Sort menu 6 by 12), are 2 apart (105:412 to
+// 105:415; the Sort menu 4) and 44 tall with a 16 px mono name (the Sort
+// menu 48 with a 20 px label). In a compact Popover (padding 6) the text
+// column is Figma's 130, and "Write or check a README" (105:417) is 130
+// wide in Figma, so the description stays on one line: a font that draws
+// it wider cuts it with an ellipsis (`TruncatedText`) instead of wrapping.
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -138,7 +144,7 @@ export const optionList = defineSlotRecipe({
     },
     density: {
       default: {},
-      compact: { item: { px: '8', py: '6' }, itemBody: { gap: '0' }, itemDescription: { textStyle: 'smallSm' } },
+      compact: { item: { px: '8', py: '6' }, itemBody: { gap: '0' }, itemDescription: { textStyle: 'smallXs' } },
     },
     check: {
       true: {},

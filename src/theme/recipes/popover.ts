@@ -16,6 +16,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // surface.raised allows.
 // `density="compact"` is the Workbench skill picker (D1 105:406): its rows
 // start 7 inside the box edge, so the box pads 6 inside its 1 px border,
+// as a Menu or RadioMenu box does (compact Sort menu 403:8881 included),
 // and the SKILLS label row (105:407) is 21 tall, 20 here on the 4 px grid
 // (2 + a 16 px eyebrow line + 2), with the label 8 in, as at the default.
 // A section with `rule` draws the 1 px line after its label (105:409): 6

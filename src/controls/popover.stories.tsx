@@ -333,6 +333,8 @@ export const SkillsLight: StoryObj<typeof meta> = { render: () => <Skills />, gl
 // The Workbench skill picker as Figma draws it (D1 105:406): a compact 160 px box, the SKILLS label with a rule,
 // and compact rows of a mono /name over a one-line description. "/" in the message box opens it, so the focus stays
 // in the trigger. A default popover beside it takes the focus and keeps its spacing.
+const narrow = css({ w: 'shell.popoverXs' })
+
 function CompactSkills() {
   return (
     <main className={page}>
@@ -342,6 +344,9 @@ function CompactSkills() {
             <OptionList label="Skills" items={skills} value="writer" labelStyle="mono" check={false} selectedFill density="compact" />
           </PopoverSection>
         </Popover>
+        <div className={narrow}>
+          <OptionList label="Long skill" items={[{ value: 'long', label: '/long', description: 'A description much longer than its one line' }]} labelStyle="mono" check={false} density="compact" />
+        </div>
         <Popover trigger={<Button>Sort</Button>} label="Default skills" placement="bottom-start" width="xs">
           <PopoverSection label="Skills">
             <OptionList label="Default list" items={skills} value="writer" labelStyle="mono" check={false} selectedFill />
@@ -355,6 +360,13 @@ function CompactSkills() {
 const compactSkillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
   const body = within(document.body)
+  // Measure in Geist, not in a fallback font.
+  await document.fonts.ready
+  // A compact description too long for its line stays on one 16 px line and ends with an ellipsis.
+  const long = canvas.getByText('A description much longer than its one line')
+  await expect(long).toHaveClass('truncated-text')
+  await expect(long.scrollWidth).toBeGreaterThan(long.clientWidth)
+  await expect(long.getBoundingClientRect().height).toBe(16)
   // A default popover moves the focus into its box, pads 8 and keeps its rows' spacing and `small` descriptions.
   await userEvent.click(canvas.getByRole('button', { name: 'Sort' }))
   const plain = await body.findByRole('dialog', { name: 'Default skills' })
@@ -395,7 +407,7 @@ const compactSkillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
     const text = row.querySelector('.option-list__itemBody')
     if (!(text instanceof HTMLElement)) throw new Error('no text')
     await expect(text.getBoundingClientRect().width).toBe(130)
-    // The description is smallSm, Regular 11/16, on one line.
+    // The description is smallXs, Regular 11/16, on one line.
     const description = row.querySelector('.option-list__itemDescription')
     if (!(description instanceof HTMLElement)) throw new Error('no description')
     const style = getComputedStyle(description)

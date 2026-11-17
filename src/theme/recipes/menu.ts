@@ -46,6 +46,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (105:459) in the icon colour; its list (105:473) is 200 wide:
 // `width="submenu"` with shell.submenu, set by the component. The row
 // stays filled while its list is open.
+//
+// A RadioMenu with `density="compact"` is the Artifacts Sort menu (D6
+// 403:8881, 280 x 283): its choices (403:8884 to 403:8901) are 50 high in
+// Figma, 48 here on the 4 px grid (d-100): padding 6/12 and the label
+// (`label`, 20) straight over the description (`smallXs`, Regular 11/16;
+// Figma's 11 on 14 px lines). The note (403:8907) is `smallXs` on one 16 px
+// line, 2 under the last choice as at the default density (the compact box
+// has gap 0), so the menu is Figma's 283 high. The component
+// opens it 8 under its trigger (Figma y 150 under the Sort button).
 export const menu = defineSlotRecipe({
   className: 'menu',
   jsx: ['Menu'],
@@ -160,7 +169,12 @@ export const menu = defineSlotRecipe({
           '&[data-highlighted] [data-part=item-icon] svg, &[data-part=trigger-item][data-state=open] [data-part=item-icon] svg': { color: 'fg.accent' },
           // A danger row keeps its colour.
           '&[data-tone=danger] [data-part=item-icon] svg': { color: 'status.danger.fg' },
+          // A RadioMenu choice with a description (Artifacts D6 403:8884).
+          '&[data-has-description]': { py: '6', px: '12' },
         },
+        itemBody: { gap: '0' },
+        itemDescription: { textStyle: 'smallXs' },
+        footer: { mt: '2', textStyle: 'smallXs' },
       },
     },
   ],

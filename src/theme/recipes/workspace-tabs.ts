@@ -18,11 +18,21 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   #4a5675 (fg.subtle; fg.muted on the selected tab, as the count) before the
 //   label, and a 6 px #ffb86b dot (status.needsYou.fg) after the count; all
 //   6 apart (the tab gap).
+// - Leading, Workbench D1 105:105: the 30 px sidebar toggle (158:2, icon/panel
+//   16) sits at the start of the bar, 16 in, and the tab group (105:108)
+//   starts 8 after it (the bar gap). The caller passes the button; the
+//   slot only places it.
+// - `size="compact"`, Workbench D1 105:105 and the panes 105:174: the bar is
+//   52 high with the tabs at y 12 and the panes start at y 52 with no top
+//   padding (10 at the sides and bottom, 105:177). The tabs stay 32 high
+//   (control.md, Figma 30, on the 4 px grid), so the bar pads 10 above and 6
+//   below; with the list's 2 px focus padding the tabs sit 12 down and
+//   the bar is 10 + 2 + 32 + 2 + 6 = 52.
 export const workspaceTabs = defineSlotRecipe({
   className: 'workspace-tabs',
   jsx: ['WorkspaceTabs'],
   staticCss: ['*'],
-  slots: [...tabsAnatomy.keys(), 'bar', 'grip', 'count', 'dot', 'hint', 'actions'],
+  slots: [...tabsAnatomy.keys(), 'bar', 'grip', 'count', 'dot', 'hint', 'leading', 'actions'],
   base: {
     root: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0', minH: '0' },
     bar: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', minW: '0', pt: '12', pb: '10', px: '16' },
@@ -65,6 +75,7 @@ export const workspaceTabs = defineSlotRecipe({
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full', bg: 'status.needsYou.fg' },
     // The needs-you dot's words for screen readers.
     hint: { srOnly: true },
+    leading: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0' },
     actions: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0' },
     content: {
       display: 'flex',
@@ -78,4 +89,11 @@ export const workspaceTabs = defineSlotRecipe({
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
   },
+  variants: {
+    size: {
+      md: {},
+      compact: { bar: { pt: '10', pb: '6' }, content: { pt: '0' } },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

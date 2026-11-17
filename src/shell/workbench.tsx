@@ -22,8 +22,17 @@ export type WorkbenchProps = {
   defaultValue?: string | undefined
   /** Called with the value of the workspace the user picks. */
   onValueChange?: ((value: string) => void) | undefined
+  /** Before the tabs, at the start of the bar, such as the button that opens the workspace sidebar (Workbench D1 158:2). */
+  leading?: ReactNode
   /** After the tabs, such as the button that starts a chat in the workspace. */
   actions?: ReactNode
+  /**
+   * The tab bar's size. `md` (the default) pads the bar 12 above and 10
+   * below the tabs and the panes 10 on every side. `compact` is the 52 px
+   * bar of the desktop Workbench (D1 105:105): the panes start right under
+   * it, with 10 at the sides and bottom.
+   */
+  size?: 'md' | 'compact' | undefined
   /** The start of the status bar, in cyan, such as "omni-brain · 2 panes". */
   summary?: string | undefined
   /** Keyboard hints after the summary, such as "Cmd+D split". */
@@ -38,12 +47,12 @@ export type WorkbenchProps = {
  * (Workbench D9). It fills its parent, usually the detail pane of the
  * `AppShell`. The status bar is left out when it has nothing to show.
  */
-export function Workbench({ label = 'Workspaces', workspaces, value, defaultValue, onValueChange, actions, summary, hints = [], alert }: WorkbenchProps) {
+export function Workbench({ label = 'Workspaces', workspaces, value, defaultValue, onValueChange, leading, actions, size, summary, hints = [], alert }: WorkbenchProps) {
   const hasSummary = summary !== undefined && summary !== ''
   const hasAlert = alert !== undefined && alert !== ''
   return (
     <Root>
-      <WorkspaceTabs label={label} items={workspaces} value={value} defaultValue={defaultValue} onValueChange={onValueChange} actions={actions} />
+      <WorkspaceTabs label={label} items={workspaces} value={value} defaultValue={defaultValue} onValueChange={onValueChange} leading={leading} actions={actions} size={size} />
       {hasSummary || hints.length > 0 || hasAlert ? (
         <Status>
           {hasSummary ? <Summary>{summary}</Summary> : null}

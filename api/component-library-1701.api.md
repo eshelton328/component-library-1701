@@ -1588,7 +1588,9 @@ export type WorkbenchProps = {
     value?: string | undefined;
     defaultValue?: string | undefined;
     onValueChange?: ((value: string) => void) | undefined;
+    leading?: ReactNode;
     actions?: ReactNode;
+    size?: 'md' | 'compact' | undefined;
     summary?: string | undefined;
     hints?: readonly string[] | undefined;
     alert?: string | undefined;
@@ -1620,7 +1622,9 @@ export type WorkspaceTabsProps = {
     value?: string | undefined;
     defaultValue?: string | undefined;
     onValueChange?: ((value: string) => void) | undefined;
+    leading?: ReactNode;
     actions?: ReactNode;
+    size?: 'md' | 'compact' | undefined;
 };
 
 // (No @packageDocumentation comment for this package)

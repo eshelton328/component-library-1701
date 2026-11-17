@@ -7,7 +7,7 @@ const StyledButton = styled('button', button)
 
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
- * `textSize` and `iconOnly`, `pressed` and `indicator`. `size` sets the
+ * `textSize`, `pressedTone` and `iconOnly`, `pressed` and `indicator`. `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
  * default) draws `label` (Medium 14/20), or `labelLg` on a `text` button;
@@ -24,6 +24,9 @@ export type ButtonProps = ComponentProps<'button'> &
      * `aria-pressed` and, on a `secondary` button, the active colours: the
      * selected fill and the cyan border. Use it for Sort or Filter while a
      * sort or filter applies. Leave it unset for a button that is not a toggle.
+     * `pressedTone` sets the label and icon of a pressed button: `default`
+     * keeps `fg.default`; `accent` draws them in `fg.accent` (cyan), as the
+     * Toolkit phone's view buttons do.
      */
     pressed?: boolean | undefined
     /**

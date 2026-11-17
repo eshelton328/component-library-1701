@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { CopyIcon, GridIcon, MoveIcon } from '../foundations/icons'
+import { ChartIcon, CopyIcon, GridIcon, ListIcon, MapIcon, MoveIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -453,3 +453,81 @@ const extraSmallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 
 export const ExtraSmallDark: StoryObj<typeof meta> = { render: () => <ExtraSmall />, globals: { mode: 'dark' }, play: extraSmallPlay }
 export const ExtraSmallLight: StoryObj<typeof meta> = { render: () => <ExtraSmall />, globals: { mode: 'light' }, play: extraSmallPlay }
+
+// The Toolkit phone's view buttons (M1 466:54, 466:57, 466:63): 36 px icon-only secondary buttons, 8 apart in the
+// page header. The current view (List) is pressed with `pressedTone="accent"`: the selected fill, the cyan
+// border and a cyan icon (466:55). The others stay fg.default, and a pressed default-tone button keeps fg.default.
+const toneSwatches = {
+  selected: css({ color: 'surface.selected' }),
+  active: css({ color: 'border.active' }),
+  default: css({ color: 'fg.default' }),
+  fgAccent: css({ color: 'fg.accent' }),
+}
+
+function ViewButtons() {
+  const [view, setView] = useState('list')
+  const views = [
+    { value: 'list', label: 'List', icon: <ListIcon /> },
+    { value: 'map', label: 'Map', icon: <MapIcon /> },
+    { value: 'activity', label: 'Activity', icon: <ChartIcon /> },
+  ]
+  return (
+    <main className={page}>
+      <div className={row}>
+        {views.map((item) => (
+          <Button
+            key={item.value}
+            size="lg"
+            iconOnly
+            pressedTone="accent"
+            aria-label={item.label}
+            pressed={view === item.value}
+            onClick={() => {
+              setView(item.value)
+            }}
+          >
+            {item.icon}
+          </Button>
+        ))}
+        <Button size="lg" iconOnly pressed aria-label="Pressed, default tone">
+          <ListIcon />
+        </Button>
+      </div>
+      <div hidden>
+        {Object.entries(toneSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const pressedTonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const list = canvas.getByRole('button', { name: 'List' })
+  const map = canvas.getByRole('button', { name: 'Map' })
+  await expect(list).toHaveAttribute('aria-pressed', 'true')
+  const l = getComputedStyle(list)
+  await expect([l.backgroundColor, l.borderTopColor, l.color]).toEqual([swatch('selected'), swatch('active'), swatch('fgAccent')])
+  const icon = list.querySelector('svg')
+  if (icon === null) throw new Error('no icon')
+  await expect(getComputedStyle(icon).stroke).toBe(swatch('fgAccent'))
+  await expect([list.getBoundingClientRect().width, list.getBoundingClientRect().height]).toEqual([36, 36])
+  await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([16, 16])
+  // An idle button of the accent tone keeps fg.default, and so does a pressed button of the default tone.
+  await expect(getComputedStyle(map).color).toBe(swatch('default'))
+  await expect(getComputedStyle(canvas.getByRole('button', { name: 'Pressed, default tone' })).color).toBe(swatch('default'))
+  // Picking Map moves the cyan to it.
+  await userEvent.click(map)
+  await expect(getComputedStyle(map).color).toBe(swatch('fgAccent'))
+  await expect(getComputedStyle(list).color).toBe(swatch('default'))
+}
+
+/** `pressedTone="accent"`: the pressed view button draws its icon in fg.accent, as the Toolkit phone header does. */
+export const PressedAccentDark: StoryObj<typeof meta> = { render: () => <ViewButtons />, globals: { mode: 'dark' }, play: pressedTonePlay }
+export const PressedAccentLight: StoryObj<typeof meta> = { render: () => <ViewButtons />, globals: { mode: 'light' }, play: pressedTonePlay }

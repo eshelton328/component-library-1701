@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { BrainIcon, PlusIcon, TerminalIcon } from '../foundations/icons'
 import { OptionList, type OptionListItem } from './option-list'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
@@ -300,3 +301,84 @@ export const InForm: StoryObj<typeof meta> = {
     await expect(new FormData(form).get('sort')).toBeNull()
   },
 }
+
+// The Run in picker (Inbox D3 346:1234) at its width, 380 less its 8 px padding.
+const picker = css({ bg: 'surface.overlay', p: '8', borderRadius: 'xl', w: 'shell.popoverPicker' })
+// A stand-in for the caller's status pill (346:1280): a story in this tier cannot import StatusPill from parts.
+const status = css({ display: 'inline-flex', px: '8', py: '2', borderRadius: 'full', bg: 'status.needsYou.bg', color: 'status.needsYou.fg', textStyle: 'pill' })
+
+// Run in rows (346:1243, 346:1273, 346:1264): an agent mark, a title with a pill, a mono meta line, and at the end
+// a check on the chosen row or a status pill on a busy one. Stand-ins for KindMark: a story here cannot import parts.
+const workspaces: readonly OptionListItem[] = [
+  {
+    value: 'claude',
+    label: 'ncc-1701 · main',
+    description: 'claude · ~/ncc-1701 · idle',
+    badge: <span className={pill}>Recommended</span>,
+    leading: <BrainIcon size="16" />,
+  },
+  {
+    value: 'codex',
+    label: 'component-library-1701',
+    description: 'codex · inbox-gaps · 2m ago',
+    leading: <TerminalIcon size="16" />,
+    trailing: <span className={status}>Needs you</span>,
+  },
+  { value: 'new', label: 'New chat in another workspace…', leading: <PlusIcon size="16" /> },
+]
+
+function Picker() {
+  return (
+    <main className={page}>
+      <div className={picker}>
+        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" />
+      </div>
+      <span hidden data-swatch="default" className={defaultSwatch} />
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="accent" className={accentSwatch} />
+    </main>
+  )
+}
+
+const pickerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const claude = rowOf(canvas.getByRole('radio', { name: 'ncc-1701 · main' }))
+  const codexRadio = canvas.getByRole('radio', { name: 'component-library-1701' })
+  const codex = rowOf(codexRadio)
+  const part = (row: HTMLElement, slot: string) => {
+    const el = row.querySelector(`.option-list__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot}`)
+    return el
+  }
+  // The leading mark comes first, 16 px, 10 before the text, and is hidden from assistive technology.
+  const lead = part(claude, 'itemLeading')
+  await expect(claude.firstElementChild).toBe(lead)
+  await expect(lead).toHaveAttribute('aria-hidden', 'true')
+  await expect(lead.getBoundingClientRect().width).toBe(16)
+  await expect(part(claude, 'itemBody').getBoundingClientRect().left - lead.getBoundingClientRect().right).toBe(10)
+  // The pill stays beside the title.
+  await expect(part(claude, 'itemBadge').getBoundingClientRect().left - within(claude).getByText('ncc-1701 · main').getBoundingClientRect().right).toBe(8)
+  // The meta line is mono 12 in fg.muted.
+  const meta = getComputedStyle(within(claude).getByText('claude · ~/ncc-1701 · idle'))
+  await expect([meta.fontSize, meta.color]).toEqual(['12px', swatch('muted')])
+  await expect(meta.fontFamily).toMatch(/Mono/)
+  // The chosen row ends in its check; a row with a status pill ends in the pill and keeps no check space.
+  await expect(getComputedStyle(part(claude, 'itemControl')).visibility).toBe('visible')
+  const end = part(codex, 'itemTrailing')
+  await expect(getComputedStyle(part(codex, 'itemControl')).display).toBe('none')
+  const pad = parseFloat(getComputedStyle(codex).paddingRight)
+  await expect(Math.round(codex.getBoundingClientRect().right - pad)).toBe(Math.round(end.getBoundingClientRect().right))
+  // The pill describes the radio, after the description.
+  await expect(codexRadio).toHaveAccessibleDescription('codex · inbox-gaps · 2m ago Needs you')
+  // Choosing the busy row shows its check after the pill.
+  await userEvent.click(within(codex).getByText('component-library-1701'))
+  await expect(codexRadio).toBeChecked()
+  await waitFor(() => expect(getComputedStyle(part(codex, 'itemControl')).display).not.toBe('none'))
+  await expect(part(codex, 'itemControl').getBoundingClientRect().left).toBeGreaterThan(end.getBoundingClientRect().right)
+  // A row with a plus and a title only.
+  await expect(rowOf(canvas.getByRole('radio', { name: 'New chat in another workspace…' })).querySelector('.option-list__itemLeading svg')).not.toBeNull()
+}
+
+/** The Run in picker rows (Inbox D3): a leading mark, a mono meta line and a trailing status pill. */
+export const PickerDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Picker />, play: pickerPlay }
+export const PickerLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Picker />, play: pickerPlay }

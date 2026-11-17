@@ -962,6 +962,8 @@ export type OptionListItem = {
     label: string;
     description?: string | undefined;
     badge?: ReactNode;
+    leading?: ReactNode;
+    trailing?: ReactNode;
     disabled?: boolean | undefined;
 };
 
@@ -975,6 +977,7 @@ export type OptionListProps = {
     onItemSelect?: ((value: string) => void) | undefined;
     disabled?: boolean | undefined;
     name?: string | undefined;
+    descriptionStyle?: 'text' | 'mono' | undefined;
 };
 
 // @public

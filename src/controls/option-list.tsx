@@ -7,12 +7,17 @@ import { optionList } from '../../styled-system/recipes'
 const { withProvider, withContext } = createSlotRecipeContext(optionList)
 const Root = withProvider(ArkRadioGroup.Root, 'root')
 const Item = withContext(ArkRadioGroup.Item, 'item')
+const ItemLeading = withContext('span', 'itemLeading')
 const ItemBody = withContext('span', 'itemBody')
 const ItemHeading = withContext('span', 'itemHeading')
 const ItemText = withContext(ArkRadioGroup.ItemText, 'itemText')
 const ItemBadge = withContext('span', 'itemBadge')
 const ItemDescription = withContext('span', 'itemDescription')
 const ItemControl = withContext(ArkRadioGroup.ItemControl, 'itemControl')
+const ItemTrailing = withContext('span', 'itemTrailing')
+
+// A slot given as `false`, `null` or an empty string is left out, as React leaves it out.
+const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
 
 /** One choice in an `OptionList`. */
@@ -27,6 +32,13 @@ export type OptionListItem = {
    * recommends. It describes the radio for assistive technology, before the description.
    */
   badge?: ReactNode
+  /** A mark before the text, such as a 16 px agent mark or a plus. It is decoration; the label names the row. */
+  leading?: ReactNode
+  /**
+   * An element at the end of the row, such as a status pill. The chosen row still shows its check after it; a row
+   * that is not chosen gives the check's space to it. It describes the radio, after the description.
+   */
+  trailing?: ReactNode
   disabled?: boolean | undefined
 }
 
@@ -47,6 +59,8 @@ export type OptionListProps = {
   disabled?: boolean | undefined
   /** The form field name. */
   name?: string | undefined
+  /** `text` (the default) draws the description in `small`; `mono` in `mono`, as the Run in picker's meta lines are. */
+  descriptionStyle?: 'text' | 'mono' | undefined
 }
 
 /**
@@ -55,7 +69,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -94,6 +108,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
     <Root
       aria-label={label}
       aria-labelledby={undefined}
+      descriptionStyle={descriptionStyle}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}
@@ -111,11 +126,16 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       {items.map((item, index) => {
         const descriptionId = `${baseId}-${String(index)}-description`
         const badgeId = `${baseId}-${String(index)}-badge`
-        const hasBadge = item.badge !== undefined && item.badge !== null && item.badge !== false
-        const describedBy = [hasBadge ? badgeId : null, item.description === undefined ? null : descriptionId].filter((id) => id !== null).join(' ')
+        const trailingId = `${baseId}-${String(index)}-trailing`
+        const hasBadge = shown(item.badge)
+        const hasTrailing = shown(item.trailing)
+        const describedBy = [hasBadge ? badgeId : null, item.description === undefined ? null : descriptionId, hasTrailing ? trailingId : null]
+          .filter((id) => id !== null)
+          .join(' ')
         return (
           // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
           <Item key={item.value} value={item.value} disabled={item.disabled === true ? true : undefined}>
+            {shown(item.leading) ? <ItemLeading aria-hidden="true">{item.leading}</ItemLeading> : null}
             <ItemBody>
               {hasBadge ? (
                 <ItemHeading>
@@ -127,6 +147,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
               )}
               {item.description === undefined ? null : <ItemDescription id={descriptionId}>{item.description}</ItemDescription>}
             </ItemBody>
+            {hasTrailing ? <ItemTrailing id={trailingId}>{item.trailing}</ItemTrailing> : null}
             <ItemControl>
               <CheckIcon size="16" />
             </ItemControl>

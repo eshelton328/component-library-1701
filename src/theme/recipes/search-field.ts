@@ -7,6 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `textSize="sm"` sets the text and placeholder in `bodySm` (13/20), as the
 // Inbox search fields draw their placeholder at 13 px (T7 346:6800, 101 x 17;
 // the T12 Run in picker's field too). The height stays the `size` token's.
+// The clear icon is fg.subtle, dimmer than the magnifier's fg.muted, as
+// Figma's dim clear icon (T10) and d-099: Figma's #4a5675 fails AA, and
+// fg.subtle is the nearest approved dim colour, allowed on surface.inset.
 export const searchField = defineSlotRecipe({
   className: 'search-field',
   jsx: ['SearchField'],
@@ -54,7 +57,7 @@ export const searchField = defineSlotRecipe({
       width: 'icon.20',
       height: 'icon.20',
       borderRadius: 'full',
-      color: 'fg.muted',
+      color: 'fg.subtle',
       cursor: 'pointer',
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },

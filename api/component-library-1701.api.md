@@ -706,6 +706,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     selected?: boolean | undefined;
     running?: boolean | undefined;
     snoozed?: boolean | undefined;
+    finished?: boolean | undefined;
     level?: 0 | 1 | 2 | undefined;
     onSelect?: (() => void) | undefined;
 };

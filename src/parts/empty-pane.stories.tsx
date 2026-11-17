@@ -83,6 +83,14 @@ const meta = {
     const row = list.children[1]
     if (!(row instanceof HTMLElement)) throw new Error('no row')
     await expect(Math.round(row.getBoundingClientRect().top - label.getBoundingClientRect().bottom)).toBe(2)
+    // The rows are 2 apart with no border, as Figma draws them (105:370, 50 tall), so no two outlined boxes touch.
+    const next = list.children[2]
+    if (!(next instanceof HTMLElement)) throw new Error('no second row')
+    await expect(Math.round(next.getBoundingClientRect().top - row.getBoundingClientRect().bottom)).toBe(2)
+    for (const el of [row, next]) {
+      const edge = getComputedStyle(el)
+      await expect([edge.borderTopWidth, edge.borderBottomWidth, el.getBoundingClientRect().height]).toEqual(['0px', '0px', 50])
+    }
   },
 } satisfies Meta<typeof Empty>
 export default meta

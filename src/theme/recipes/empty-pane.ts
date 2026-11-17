@@ -10,6 +10,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // row; it takes radius.xl, as the Workbench panes do. The content is
 // centred by auto margins, so in a pane too short for it, it starts at
 // the top and the pane scrolls, and the title stays in reach.
+// The list's rows (105:370, 50 tall: 8 + 34 + 8) draw no border and no
+// fill, only 2 apart, so a row here drops `ListRow`'s 1 px transparent
+// border: two bordered boxes 2 apart read as touching, and the compact
+// sidebar row is then Figma's 50 (52 with the border).
 export const emptyPane = defineSlotRecipe({
   className: 'empty-pane',
   jsx: ['EmptyPane'],
@@ -32,7 +36,15 @@ export const emptyPane = defineSlotRecipe({
     title: { m: '0', textStyle: 'paneTitle', color: 'fg.default' },
     description: { m: '0', textStyle: 'bodySm', color: 'fg.muted' },
     actions: { display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8' },
-    list: { display: 'flex', flexDirection: 'column', gap: '2', w: 'shell.popoverPicker', maxW: '100%', textAlign: 'start' },
+    list: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2',
+      w: 'shell.popoverPicker',
+      maxW: '100%',
+      textAlign: 'start',
+      '& > .list-row__root': { borderStyle: 'none' },
+    },
     listLabel: { textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
   },
 })

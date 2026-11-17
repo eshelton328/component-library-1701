@@ -10,7 +10,7 @@ const row = css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 
 const label = css({ textStyle: 'eyebrow', color: 'fg.muted' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', display: 'grid', gap: '12' })
 
-const variants = ['primary', 'secondary', 'danger', 'dangerSoft', 'dangerText', 'text'] as const
+const variants = ['primary', 'secondary', 'secondaryDanger', 'danger', 'dangerSoft', 'dangerText', 'text'] as const
 const sizes = ['sm', 'md', 'lg', 'xl'] as const
 
 function Plus() {
@@ -247,3 +247,34 @@ const textPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const TextDark: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'dark' }, play: textPlay }
 export const TextLight: StoryObj<typeof meta> = { render: () => <SheetHeader />, globals: { mode: 'light' }, play: textPlay }
+
+// Approve and Deny in an approval row (Inbox D1 346:213): Deny is the secondary box with a danger label.
+function Approval() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <div className={row}>
+          <Button variant="primary" size="sm">Approve</Button>
+          <Button variant="secondaryDanger" size="sm">Deny</Button>
+          <Button size="sm">Later</Button>
+        </div>
+      </div>
+      <span hidden data-swatch="danger" className={css({ color: 'status.danger.fg' })} />
+    </main>
+  )
+}
+
+const secondaryDangerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const danger = getComputedStyle(canvasElement.querySelector('[data-swatch="danger"]') ?? canvasElement).color
+  const deny = getComputedStyle(canvas.getByRole('button', { name: 'Deny' }))
+  const later = getComputedStyle(canvas.getByRole('button', { name: 'Later' }))
+  // The secondary box: the same fill and border as secondary.
+  await expect([deny.backgroundColor, deny.borderTopColor, deny.borderTopWidth]).toEqual([later.backgroundColor, later.borderTopColor, '1px'])
+  // The danger label.
+  await expect(deny.color).toBe(danger)
+  await expect(deny.color).not.toBe(later.color)
+}
+
+export const SecondaryDangerDark: StoryObj<typeof meta> = { render: () => <Approval />, globals: { mode: 'dark' }, play: secondaryDangerPlay }
+export const SecondaryDangerLight: StoryObj<typeof meta> = { render: () => <Approval />, globals: { mode: 'light' }, play: secondaryDangerPlay }

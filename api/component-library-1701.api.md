@@ -852,6 +852,7 @@ export type MenuAction = {
     tone?: 'danger' | undefined;
     disabled?: boolean | undefined;
     trailing?: ReactNode;
+    submenu?: MenuSubmenu | undefined;
 };
 
 // @public (undocumented)
@@ -868,12 +869,24 @@ export type MenuProps = {
     heading?: string | undefined;
     width?: 'sm' | 'sort' | 'md' | undefined;
     size?: 'md' | 'lg' | undefined;
+    density?: 'default' | 'compact' | undefined;
+    highlightedValue?: string | null | undefined;
+    onHighlightChange?: ((value: string | null) => void) | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;
 
 // @public
 export type MenuSeparator = {
     type: 'separator';
+};
+
+// @public
+export type MenuSubmenu = {
+    items: readonly MenuEntry[];
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    highlightedValue?: string | null | undefined;
+    onHighlightChange?: ((value: string | null) => void) | undefined;
 };
 
 // @public

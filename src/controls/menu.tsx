@@ -3,6 +3,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { useId, useState, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { menu } from '../../styled-system/recipes'
+import { ChevronRightIcon } from '../foundations/icons'
 import { dataAttributesOf } from './data-attributes'
 import type { PopoverDataAttributes } from './popover'
 
@@ -11,6 +12,10 @@ const Root = withRootProvider(ArkMenu.Root)
 const Positioner = withContext(ArkMenu.Positioner, 'positioner')
 const Content = withContext(ArkMenu.Content, 'content')
 const Item = withContext(ArkMenu.Item, 'item')
+// A row that opens a submenu takes the row's look.
+const TriggerItem = withContext(ArkMenu.TriggerItem, 'item')
+const ItemIcon = withContext('span', 'itemIcon')
+const ItemChevron = withContext('span', 'itemChevron')
 const ItemText = withContext(ArkMenu.ItemText, 'itemText')
 const Separator = withContext(ArkMenu.Separator, 'separator')
 const ItemGroup = withContext(ArkMenu.ItemGroup, 'itemGroup')
@@ -35,6 +40,28 @@ export type MenuAction = {
   disabled?: boolean | undefined
   /** Text at the end of the row, such as the time a snooze choice wakes the task ("11:40"). It is part of the action's name. */
   trailing?: ReactNode
+  /**
+   * A list that opens to the right of the row, such as Move to workspace's list of workspaces. The row then opens the
+   * list instead of being picked: it draws a chevron at its end in place of `trailing`, and its `tone` is not drawn.
+   * A `disabled` row shows the chevron and opens nothing.
+   */
+  submenu?: MenuSubmenu | undefined
+}
+/**
+ * The list a row of a `Menu` opens to its right, 200 wide (`shell.submenu`), with the menu's `size` and `density`. Its
+ * box starts at the row's top and 4 px past the menu's box (Workbench D1 105:473). Right Arrow or Enter on the row
+ * opens it and moves the focus to its first action, Left Arrow or Escape closes it and returns the focus to the row,
+ * and the pointer opens it on hover, as Ark UI's nested menu does.
+ */
+export type MenuSubmenu = {
+  /** The list's actions. A pick calls the menu's `onSelect` with the action's value, so values must differ from the menu's own. */
+  items: readonly MenuEntry[]
+  /** Whether the list is open. Set it with `onOpenChange` to control it. */
+  open?: boolean | undefined
+  onOpenChange?: ((open: boolean) => void) | undefined
+  /** The value of the list's highlighted action, as `Menu`'s `highlightedValue`. */
+  highlightedValue?: string | null | undefined
+  onHighlightChange?: ((value: string | null) => void) | undefined
 }
 /** A line between two groups of actions. */
 export type MenuSeparator = { type: 'separator' }
@@ -63,6 +90,20 @@ export type MenuProps = {
   width?: 'sm' | 'sort' | 'md' | undefined
   /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
+  /**
+   * The row pitch at `size="md"`. `default` puts the 32 px rows 2 apart with 10 px padding and gap. `compact` puts them
+   * edge to edge with 8 px padding and gap, and draws the highlighted row's icon in `fg.accent`, as the Workbench pane
+   * and chat actions menus (D1 105:421, D2b 402:5486). `size="lg"` keeps its own pitch.
+   */
+  density?: 'default' | 'compact' | undefined
+  /**
+   * The value of the highlighted action, the row filled as the pointer or the arrow keys leave it, such as a design
+   * state that shows the row whose submenu is open. `null` highlights none. Set it with `onHighlightChange` to control
+   * it; when not set, the menu keeps its own.
+   */
+  highlightedValue?: string | null | undefined
+  /** Called with the value of the action the pointer or the arrow keys highlight, or `null` when none is. */
+  onHighlightChange?: ((value: string | null) => void) | undefined
   /** A class added to the menu's box, after its own. */
   className?: string | undefined
 } & PopoverDataAttributes
@@ -77,51 +118,144 @@ const fromArk = (v: string) => (v.startsWith('menu:') ? v.slice(5) : undefined)
 /**
  * A menu of actions that a button opens, such as the chat actions or a row
  * menu. The arrow keys move between actions, Enter picks one, and Escape
- * closes the menu and returns the focus to the trigger.
+ * closes the menu and returns the focus to the trigger. A row with a
+ * `submenu` opens a list of more actions to its right.
  */
-export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, className, ...rest }: MenuProps) {
-  const renderEntry = (entry: MenuEntry, i: number) =>
-    entry.type === 'separator' ? (
-      <Separator key={`separator-${String(i)}`} />
-    ) : (
-      <Item key={entry.value} value={toArk(entry.value)} valueText={entry.label} disabled={entry.disabled} data-tone={entry.tone}>
-        {entry.icon === undefined ? null : <span aria-hidden="true">{entry.icon}</span>}
-        <ItemText>{entry.label}</ItemText>
-        {entry.trailing === undefined || entry.trailing === null || entry.trailing === false ? null : <ItemTrailing>{entry.trailing}</ItemTrailing>}
-      </Item>
-    )
-  // With a heading, the actions before the first separator form a group that the heading names.
-  const firstSeparator = items.findIndex((entry) => entry.type === 'separator')
-  const groupEnd = heading === undefined ? 0 : firstSeparator === -1 ? items.length : firstSeparator
+export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
+  const baseId = useId()
+  const select = (details: { value: string }) => {
+    const value = fromArk(details.value)
+    if (value !== undefined) onSelect?.(value)
+  }
   return (
     <Root
       width={width}
       size={size}
+      density={density}
       positioning={{ placement, gutter: 4 }}
       {...(open === undefined ? {} : { open })}
+      {...highlightOf(baseId, items, highlightedValue, onHighlightChange)}
       onOpenChange={(details) => {
         onOpenChange?.(details.open)
       }}
-      onSelect={(details) => {
-        const value = fromArk(details.value)
-        if (value !== undefined) onSelect?.(value)
-      }}
+      onSelect={select}
     >
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
       <Portal>
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
-            {heading === undefined ? null : (
-              <ItemGroup>
-                <ItemGroupLabel>{heading}</ItemGroupLabel>
-                {items.slice(0, groupEnd).map(renderEntry)}
-              </ItemGroup>
-            )}
-            {items.slice(groupEnd).map((entry, i) => renderEntry(entry, i + groupEnd))}
+            <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} onSelect={select} />
           </Content>
         </Positioner>
       </Portal>
     </Root>
+  )
+}
+
+// Ark names a submenu's row by its trigger id, not by a value, so each row gets an id made from the menu's id and its
+// value, and the highlighted value is mapped to and from it.
+const submenuTriggerId = (baseId: string, value: string) => `${baseId}-submenu-${value}`
+
+function highlightOf(baseId: string, items: readonly MenuEntry[], value: string | null | undefined, onChange: ((value: string | null) => void) | undefined) {
+  const submenus = new Map<string, string>()
+  for (const entry of items) {
+    if (entry.type !== 'separator' && entry.submenu !== undefined) submenus.set(submenuTriggerId(baseId, entry.value), entry.value)
+  }
+  const toItem = (v: string) => (submenus.has(submenuTriggerId(baseId, v)) ? submenuTriggerId(baseId, v) : toArk(v))
+  return {
+    ...(value === undefined ? {} : { highlightedValue: value === null ? null : toItem(value) }),
+    onHighlightChange: (details: { highlightedValue: string | null }) => {
+      const next = details.highlightedValue
+      onChange?.(next === null ? null : (submenus.get(next) ?? fromArk(next) ?? null))
+    },
+  }
+}
+
+type EntriesProps = {
+  baseId: string
+  items: readonly MenuEntry[]
+  heading?: string | undefined
+  size: MenuProps['size']
+  density: MenuProps['density']
+  onSelect: (details: { value: string }) => void
+}
+
+function Entries({ baseId, items, heading, size, density, onSelect }: EntriesProps) {
+  const renderEntry = (entry: MenuEntry, i: number) => {
+    if (entry.type === 'separator') return <Separator key={`separator-${String(i)}`} />
+    const icon = entry.icon === undefined ? null : <ItemIcon aria-hidden="true" data-part="item-icon">{entry.icon}</ItemIcon>
+    const sub = entry.submenu
+    const chevron = (
+      <ItemChevron aria-hidden="true" data-part="item-chevron">
+        <ChevronRightIcon size="12" />
+      </ItemChevron>
+    )
+    if (sub === undefined) {
+      return (
+        <Item key={entry.value} value={toArk(entry.value)} valueText={entry.label} disabled={entry.disabled} data-tone={entry.tone}>
+          {icon}
+          <ItemText>{entry.label}</ItemText>
+          {entry.trailing === undefined || entry.trailing === null || entry.trailing === false ? null : <ItemTrailing>{entry.trailing}</ItemTrailing>}
+        </Item>
+      )
+    }
+    // Ark's submenu row cannot be disabled, so a disabled one is a disabled action with the chevron, which opens nothing.
+    if (entry.disabled === true) {
+      return (
+        <Item key={entry.value} value={toArk(entry.value)} valueText={entry.label} disabled aria-haspopup="menu">
+          {icon}
+          <ItemText>{entry.label}</ItemText>
+          {chevron}
+        </Item>
+      )
+    }
+    const subId = `${baseId}-${entry.value}`
+    return (
+      <Root
+        key={entry.value}
+        id={subId}
+        ids={{ trigger: submenuTriggerId(baseId, entry.value) }}
+        width="submenu"
+        size={size}
+        density={density}
+        // Ark puts a submenu right of its row with no gap; the offset sets Figma's place (D1 105:473): 11 past the row's
+        // end (the menu's padding 6 and border 1, then 4) and 7 below its top.
+        positioning={{ placement: 'right-start', offset: { mainAxis: 11, crossAxis: 7 } }}
+        {...(sub.open === undefined ? {} : { open: sub.open })}
+        {...highlightOf(subId, sub.items, sub.highlightedValue, sub.onHighlightChange)}
+        onOpenChange={(details) => {
+          sub.onOpenChange?.(details.open)
+        }}
+        onSelect={onSelect}
+      >
+        <TriggerItem>
+          {icon}
+          <ItemText>{entry.label}</ItemText>
+          {chevron}
+        </TriggerItem>
+        <Portal>
+          <Positioner>
+            <Content>
+              <Entries baseId={subId} items={sub.items} size={size} density={density} onSelect={onSelect} />
+            </Content>
+          </Positioner>
+        </Portal>
+      </Root>
+    )
+  }
+  // With a heading, the actions before the first separator form a group that the heading names.
+  const firstSeparator = items.findIndex((entry) => entry.type === 'separator')
+  const groupEnd = heading === undefined ? 0 : firstSeparator === -1 ? items.length : firstSeparator
+  return (
+    <>
+      {heading === undefined ? null : (
+        <ItemGroup>
+          <ItemGroupLabel>{heading}</ItemGroupLabel>
+          {items.slice(0, groupEnd).map(renderEntry)}
+        </ItemGroup>
+      )}
+      {items.slice(groupEnd).map((entry, i) => renderEntry(entry, i + groupEnd))}
+    </>
   )
 }
 

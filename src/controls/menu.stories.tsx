@@ -3,8 +3,9 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { useState } from 'react'
-import { CalendarIcon, CheckIcon, CloseIcon, SnoozeIcon } from '../foundations/icons'
-import { Menu, RadioMenu, type MenuEntry, type RadioMenuOption } from './menu'
+import { BranchIcon, BubbleIcon, CalendarIcon, CheckIcon, CloseIcon, EditIcon, GridIcon, MoveIcon, PlusIcon, ProjectsIcon, SnoozeIcon, SparkleIcon, WorkspacesIcon } from '../foundations/icons'
+import { Inline } from './layout'
+import { Menu, RadioMenu, type MenuEntry, type MenuSubmenu, type RadioMenuOption } from './menu'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 
@@ -514,3 +515,275 @@ const largeSnoozePlay: StoryObj<typeof meta>['play'] = async () => {
 /** The snooze menu at the Inbox D12 size: `width="md"` and `size="lg"`, with a calendar on "Pick a date and time…". */
 export const LargeSnoozeDark: StoryObj<typeof meta> = { render: () => <LargeSnooze />, play: largeSnoozePlay, globals: { mode: 'dark' } }
 export const LargeSnoozeLight: StoryObj<typeof meta> = { render: () => <LargeSnooze />, play: largeSnoozePlay, globals: { mode: 'light' } }
+
+// The Workbench menus (D1 105:421 with its Move to workspace list 105:473, D2b 402:5486): compact rows, a submenu and
+// highlighted rows.
+const swatchColour = (name: string, property: 'color' | 'backgroundColor') => {
+  const el = document.querySelector(`[data-swatch="${name}"]`)
+  if (el === null) throw new Error(`no ${name} swatch`)
+  return getComputedStyle(el)[property]
+}
+const accentSwatch = css({ color: 'fg.accent' })
+const selectedSwatch = css({ bg: 'surface.selected' })
+
+const iconOf = (row: HTMLElement) => {
+  const icon = row.querySelector('[data-part="item-icon"] svg')
+  if (!(icon instanceof SVGElement)) throw new Error('no icon')
+  return icon
+}
+
+// D2b's chat actions: eight rows and a separator, the pointer on Move to workspace.
+const workbenchActions: readonly MenuEntry[] = [
+  { value: 'newChat', label: 'New chat', icon: <PlusIcon /> },
+  { value: 'fork', label: 'Fork', icon: <BranchIcon /> },
+  { value: 'sideChat', label: 'Side chat (/btw)', icon: <BubbleIcon /> },
+  { value: 'subtask', label: 'Subtask', icon: <SparkleIcon /> },
+  { type: 'separator' },
+  { value: 'subagents', label: 'Subagents · 2', icon: <WorkspacesIcon /> },
+  { value: 'folders', label: 'Folders…', icon: <ProjectsIcon /> },
+  { value: 'move', label: 'Move to workspace', icon: <MoveIcon /> },
+  { value: 'rename', label: 'Rename chat', icon: <EditIcon /> },
+]
+
+function CompactMenus() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Menu open trigger={<Button>Chat actions</Button>} items={workbenchActions} width="sm" density="compact" highlightedValue="move" data-figma="compact" />
+        <Menu open trigger={<Button>Default actions</Button>} items={workbenchActions} width="sm" data-figma="default" />
+      </Inline>
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="accent" className={accentSwatch} />
+      <span hidden data-swatch="selected" className={selectedSwatch} />
+    </main>
+  )
+}
+
+const menuByKey = async (key: string) => {
+  const found = await waitFor(() => {
+    const el = document.querySelector(`[role="menu"][data-figma="${key}"]`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${key} menu`)
+    return el
+  })
+  return found
+}
+
+const compactPlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await menuByKey('compact')
+  const rows = within(menu).getAllByRole('menuitem')
+  await expect(rows).toHaveLength(8)
+  // 32 px rows (Figma 31, d-100), edge to edge: one 32 px pitch as Figma's 31 + 1 (402:5530 to 402:5518).
+  for (const row of rows) await expect(row.getBoundingClientRect().height).toBe(32)
+  const [first, second] = rows
+  if (first === undefined || second === undefined) throw new Error('no rows')
+  await expect(second.getBoundingClientRect().top - first.getBoundingClientRect().bottom).toBe(0)
+  // Eight rows and a separator in a box padded 6: Figma's 279 (402:5486).
+  await expect(menu.getBoundingClientRect().height).toBe(279)
+  // Padding 8 and an 8 px gap between the 16 px icon and the label (105:423, 105:429).
+  const fork = within(menu).getByRole('menuitem', { name: 'Fork' })
+  const f = getComputedStyle(fork)
+  await expect([f.paddingLeft, f.paddingRight, f.columnGap]).toEqual(['8px', '8px', '8px'])
+  const forkIcon = iconOf(fork)
+  await expect([forkIcon.getBoundingClientRect().width, forkIcon.getBoundingClientRect().height]).toEqual([16, 16])
+  // The label stays `label` (Medium 14/20, sans).
+  const label = getComputedStyle(within(fork).getByText('Fork'))
+  await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['14px', 20, '500'])
+  await expect(label.fontFamily).not.toMatch(/Mono/)
+  // The highlighted row is filled and its icon is fg.accent; the others keep fg.muted icons and no fill.
+  const move = within(menu).getByRole('menuitem', { name: 'Move to workspace' })
+  await expect(move).toHaveAttribute('data-highlighted')
+  await expect(getComputedStyle(move).backgroundColor).toBe(swatchColour('selected', 'backgroundColor'))
+  await expect(getComputedStyle(iconOf(move)).color).toBe(swatchColour('accent', 'color'))
+  await expect(fork).not.toHaveAttribute('data-highlighted')
+  await expect(getComputedStyle(iconOf(fork)).color).toBe(swatchColour('muted', 'color'))
+  await expect(getComputedStyle(fork).backgroundColor).not.toBe(swatchColour('selected', 'backgroundColor'))
+  // The default menu keeps its look: 32 px rows 2 apart, padding and gap 10, 295 high, no accent icon.
+  const plain = await menuByKey('default')
+  const plainRows = within(plain).getAllByRole('menuitem')
+  const [p1, p2] = plainRows
+  if (p1 === undefined || p2 === undefined) throw new Error('no default rows')
+  await expect(p1.getBoundingClientRect().height).toBe(32)
+  await expect(p2.getBoundingClientRect().top - p1.getBoundingClientRect().bottom).toBe(2)
+  await expect(plain.getBoundingClientRect().height).toBe(295)
+  const p = getComputedStyle(p1)
+  await expect([p.paddingLeft, p.columnGap]).toEqual(['10px', '10px'])
+  await expect(getComputedStyle(iconOf(p1)).color).toBe(swatchColour('muted', 'color'))
+}
+
+/** The Workbench chat actions menu (D2b): `density="compact"` and `highlightedValue="move"`, beside a default menu. */
+export const CompactDark: StoryObj<typeof meta> = { render: () => <CompactMenus />, play: compactPlay, globals: { mode: 'dark' } }
+export const CompactLight: StoryObj<typeof meta> = { render: () => <CompactMenus />, play: compactPlay, globals: { mode: 'light' } }
+
+const workspaces: readonly MenuEntry[] = [
+  { value: 'the-bridge', label: 'the-bridge', icon: <GridIcon /> },
+  { value: 'omni', label: 'omni', icon: <GridIcon /> },
+  { value: 'skill-evals', label: 'skill-evals', icon: <GridIcon /> },
+  { type: 'separator' },
+  { value: 'new', label: 'New workspace…', icon: <PlusIcon /> },
+]
+
+// D1's pane menu, with Move to workspace's list beside it.
+const paneActions = (submenu: MenuSubmenu): readonly MenuEntry[] => [
+  { value: 'fork', label: 'Fork', icon: <BranchIcon /> },
+  { value: 'sideChat', label: 'Side chat (/btw)', icon: <BubbleIcon /> },
+  { value: 'subtask', label: 'Subtask', icon: <SparkleIcon /> },
+  { type: 'separator' },
+  { value: 'move', label: 'Move to workspace', icon: <MoveIcon />, submenu },
+  { value: 'rename', label: 'Rename chat', icon: <EditIcon /> },
+  { value: 'close', label: 'Close pane', icon: <CloseIcon /> },
+]
+
+function OpenSubmenu() {
+  return (
+    <main className={page}>
+      <Menu
+        open
+        trigger={<Button>Pane actions</Button>}
+        items={paneActions({ items: workspaces, open: true, highlightedValue: 'the-bridge' })}
+        width="sm"
+        density="compact"
+        highlightedValue="move"
+        data-figma="pane"
+      />
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="accent" className={accentSwatch} />
+      <span hidden data-swatch="selected" className={selectedSwatch} />
+    </main>
+  )
+}
+
+const submenuPlay: StoryObj<typeof meta>['play'] = async () => {
+  const pane = await menuByKey('pane')
+  const move = within(pane).getByRole('menuitem', { name: 'Move to workspace' })
+  // The row opens a menu, and its list is open.
+  await expect(move).toHaveAttribute('aria-haspopup', 'menu')
+  await expect(move).toHaveAttribute('aria-expanded', 'true')
+  const listId = move.getAttribute('aria-controls')
+  if (listId === null) throw new Error('the row controls no list')
+  const list = document.getElementById(listId)
+  if (list === null) throw new Error('no list')
+  await expect(list).toHaveAttribute('role', 'menu')
+  await expect(within(list).getAllByRole('menuitem')).toHaveLength(4)
+  // Figma's boxes (105:421, 105:473): the pane menu 240 × 215 and the list 200 × 151, 4 past the menu and 7 below
+  // the row's top.
+  await waitFor(() => expect(list.getBoundingClientRect().left - pane.getBoundingClientRect().right).toBe(4))
+  await expect(list.getBoundingClientRect().top - move.getBoundingClientRect().top).toBe(7)
+  await expect([pane.getBoundingClientRect().width, pane.getBoundingClientRect().height]).toEqual([240, 215])
+  await expect([list.getBoundingClientRect().width, list.getBoundingClientRect().height]).toEqual([200, 151])
+  // The list takes the compact rows.
+  const bridge = within(list).getByRole('menuitem', { name: 'the-bridge' })
+  await expect(bridge.getBoundingClientRect().height).toBe(32)
+  await expect(getComputedStyle(bridge).paddingLeft).toBe('8px')
+  // The chevron is 12 px at the row's end, 8 from its edge, in the icon colour (105:459).
+  const chevron = move.querySelector('[data-part="item-chevron"] svg')
+  if (!(chevron instanceof SVGElement)) throw new Error('no chevron')
+  await expect([chevron.getBoundingClientRect().width, chevron.getBoundingClientRect().height]).toEqual([12, 12])
+  await expect(move.getBoundingClientRect().right - chevron.getBoundingClientRect().right).toBe(8)
+  await expect(getComputedStyle(chevron).color).toBe(swatchColour('muted', 'color'))
+  // Move to workspace and the-bridge are filled, with fg.accent icons (105:449, 105:474); omni is not.
+  for (const row of [move, bridge]) {
+    await expect(getComputedStyle(row).backgroundColor).toBe(swatchColour('selected', 'backgroundColor'))
+    await expect(getComputedStyle(iconOf(row)).color).toBe(swatchColour('accent', 'color'))
+  }
+  const omni = within(list).getByRole('menuitem', { name: 'omni' })
+  await expect(getComputedStyle(iconOf(omni)).color).toBe(swatchColour('muted', 'color'))
+  await expect(getComputedStyle(omni).backgroundColor).not.toBe(swatchColour('selected', 'backgroundColor'))
+}
+
+/** D1's pane menu with Move to workspace's list open beside it, both with a highlighted row. */
+export const SubmenuDark: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: submenuPlay, globals: { mode: 'dark' } }
+export const SubmenuLight: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: submenuPlay, globals: { mode: 'light' } }
+
+const onPaneSelect = fn<(value: string) => void>()
+const onPaneHighlight = fn<(value: string | null) => void>()
+const onMoveOpen = fn<(open: boolean) => void>()
+
+/** The keyboard follows Ark UI's nested menu: Right Arrow opens the list, Left Arrow closes it, Enter picks. */
+export const SubmenuBehaviour: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu
+        trigger={<Button>Pane actions</Button>}
+        items={paneActions({ items: workspaces, onOpenChange: onMoveOpen })}
+        width="sm"
+        density="compact"
+        onSelect={onPaneSelect}
+        onHighlightChange={onPaneHighlight}
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onPaneSelect.mockClear()
+    onPaneHighlight.mockClear()
+    onMoveOpen.mockClear()
+    const body = within(document.body)
+    const trigger = within(canvasElement).getByRole('button', { name: 'Pane actions' })
+    await userEvent.click(trigger)
+    const menu = await body.findByRole('menu')
+    await waitFor(() => expect(menu).toHaveFocus())
+    // Fork, Side chat, Subtask, then Move to workspace past the separator; the callback gets the row's value.
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}')
+    const move = within(menu).getByRole('menuitem', { name: 'Move to workspace' })
+    await waitFor(() => expect(move).toHaveAttribute('data-highlighted'))
+    await expect(onPaneHighlight).toHaveBeenLastCalledWith('move')
+    // Right Arrow opens the list and highlights its first workspace.
+    await userEvent.keyboard('{ArrowRight}')
+    await expect(onMoveOpen).toHaveBeenLastCalledWith(true)
+    await waitFor(() => expect(move).toHaveAttribute('aria-expanded', 'true'))
+    const listId = move.getAttribute('aria-controls')
+    if (listId === null) throw new Error('the row controls no list')
+    const list = await waitFor(() => {
+      const el = document.getElementById(listId)
+      if (el === null) throw new Error('no list')
+      return el
+    })
+    await waitFor(() => expect(list).toHaveFocus())
+    await waitFor(() => expect(within(list).getByRole('menuitem', { name: 'the-bridge' })).toHaveAttribute('data-highlighted'))
+    // Left Arrow closes the list and returns to the row.
+    await userEvent.keyboard('{ArrowLeft}')
+    await waitFor(() => expect(move).toHaveAttribute('aria-expanded', 'false'))
+    await expect(onMoveOpen).toHaveBeenLastCalledWith(false)
+    await waitFor(() => expect(menu).toHaveFocus())
+    await expect(move).toHaveAttribute('data-highlighted')
+    // Enter opens it too; a pick in the list reports the workspace and closes both menus.
+    await userEvent.keyboard('{Enter}')
+    await waitFor(() => expect(list).toHaveFocus())
+    await userEvent.keyboard('{ArrowDown}')
+    await waitFor(() => expect(within(list).getByRole('menuitem', { name: 'omni' })).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{Enter}')
+    await expect(onPaneSelect).toHaveBeenLastCalledWith('omni')
+    await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+    await waitFor(() => expect(trigger).toHaveFocus())
+    await expect(onPaneSelect).toHaveBeenCalledTimes(1)
+  },
+}
+
+/** A disabled submenu row shows its chevron, is skipped by the arrow keys and opens nothing. */
+export const DisabledSubmenu: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu
+        trigger={<Button>Pane actions</Button>}
+        items={[
+          { value: 'fork', label: 'Fork', icon: <BranchIcon /> },
+          { value: 'move', label: 'Move to workspace', icon: <MoveIcon />, disabled: true, submenu: { items: workspaces } },
+          { value: 'rename', label: 'Rename chat', icon: <EditIcon /> },
+        ]}
+        density="compact"
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const body = within(document.body)
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Pane actions' }))
+    const menu = await body.findByRole('menu')
+    await waitFor(() => expect(menu).toHaveFocus())
+    const move = within(menu).getByRole('menuitem', { name: 'Move to workspace' })
+    await expect(move).toHaveAttribute('aria-disabled', 'true')
+    await expect(move.querySelector('[data-part="item-chevron"] svg')).not.toBeNull()
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}')
+    await waitFor(() => expect(within(menu).getByRole('menuitem', { name: 'Rename chat' })).toHaveAttribute('data-highlighted'))
+    await userEvent.click(move)
+    await expect(body.getAllByRole('menu')).toHaveLength(1)
+  },
+}

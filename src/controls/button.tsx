@@ -5,9 +5,16 @@ import type { Scalar } from './scalar'
 
 const StyledButton = styled('button', button)
 
-/** The props of a native button, plus the recipe's `variant`, `size` and `iconOnly`, `pressed` and `indicator`. */
+/** The props of a native button, plus the recipe's `variant`, `size`, `textSize` and `iconOnly`, `pressed` and `indicator`. */
 export type ButtonProps = ComponentProps<'button'> &
   Scalar<ButtonVariantProps> & {
+    /**
+     * The label's text size. `md` (the default) draws `label` (Medium 14/20),
+     * or `labelLg` on a `text` button. `sm` draws `labelSm` (Medium 13/16) on
+     * every variant, as the Inbox Newest, Filter and Keep it buttons do. It
+     * keeps the height and padding of `size`.
+     */
+    textSize?: Scalar<ButtonVariantProps>['textSize']
     /**
      * Makes the button a toggle and says whether it is on. It sets
      * `aria-pressed` and, on a `secondary` button, the active colours: the
@@ -25,7 +32,9 @@ export type ButtonProps = ComponentProps<'button'> &
 /**
  * A button for an action on the page. It is `type="button"` unless you set
  * `type`, so it does not submit a form by accident. An icon-only button
- * needs an `aria-label`.
+ * needs an `aria-label`. A disabled `secondary` button keeps its fill and
+ * border and mutes its label and icon to `fg.muted`; the other variants fade
+ * the whole button (`opacity.disabled`).
  */
 export function Button({ type = 'button', pressed, indicator = false, children, ...props }: ButtonProps) {
   return (

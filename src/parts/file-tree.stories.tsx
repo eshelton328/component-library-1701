@@ -76,7 +76,7 @@ function Tree() {
       </div>
       <Swatches />
       <span hidden data-ref="code">
-        <CodeIcon size="14" />
+        <CodeIcon size="12" />
       </span>
     </main>
   )
@@ -114,18 +114,18 @@ const meta = {
     await expect([rootStyle.paddingTop, rootStyle.paddingRight, rootStyle.paddingBottom, rootStyle.paddingLeft]).toEqual(['12px', '10px', '12px', '10px'])
     await expect(rootStyle.backgroundColor).toBe(swatch(canvasElement, 'well'))
 
-    // File row: 27 high with the border, padding 8 at the start, radius 6, mono 12/17 (432:2161).
+    // File row: 26 high with the border, padding 8 at the start, radius 6, mono 12/16 (432:2161 draws 27 and 12/17).
     const file = row(canvasElement, 'tokens.md')
     const fileStyle = getComputedStyle(file)
-    await expect(file.getBoundingClientRect().height).toBe(27)
+    await expect(file.getBoundingClientRect().height).toBe(26)
     await expect(fileStyle.borderTopLeftRadius).toBe('6px')
     await expect(fileStyle.borderTopColor).toBe('rgba(0, 0, 0, 0)')
     const text = getComputedStyle(textOf(file))
-    await expect([text.fontSize, Math.round(Number.parseFloat(text.lineHeight)), text.fontWeight]).toEqual(['12px', 17, '400'])
+    await expect([text.fontSize, Math.round(Number.parseFloat(text.lineHeight)), text.fontWeight]).toEqual(['12px', 16, '400'])
     await expect(text.fontFamily).toContain('Geist Mono')
     await expect(fileStyle.color).toBe(swatch(canvasElement, 'default'))
     const icon = iconOf(file)
-    await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([14, 14])
+    await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([12, 12])
     await expect(getComputedStyle(icon).stroke).toBe(swatch(canvasElement, 'muted'))
     await expect(textOf(file).getBoundingClientRect().left - icon.getBoundingClientRect().right).toBe(8)
 
@@ -140,7 +140,7 @@ const meta = {
     await expect(file.getBoundingClientRect().top - folder.getBoundingClientRect().bottom).toBe(2)
 
     // A folder row has a chevron, the folder icon and a muted count.
-    await expect(folder.getBoundingClientRect().height).toBe(27)
+    await expect(folder.getBoundingClientRect().height).toBe(26)
     const count = folder.querySelector('.tree-view__trailing')
     if (!(count instanceof HTMLElement)) throw new Error('no count')
     await expect(count.textContent).toBe('2')
@@ -151,7 +151,7 @@ const meta = {
     const caption = top.querySelector('.tree-view__caption')
     if (!(caption instanceof HTMLElement)) throw new Error('no caption')
     const captionStyle = getComputedStyle(caption)
-    await expect([captionStyle.fontSize, Math.round(Number.parseFloat(captionStyle.lineHeight))]).toEqual(['12px', 17])
+    await expect([captionStyle.fontSize, Math.round(Number.parseFloat(captionStyle.lineHeight))]).toEqual(['12px', 16])
     await expect(captionStyle.color).toBe(swatch(canvasElement, 'muted'))
     await expect(caption.getBoundingClientRect().left).toBe(textOf(top).getBoundingClientRect().left)
 
@@ -159,7 +159,7 @@ const meta = {
     const selected = row(canvasElement, 'check-values.sh')
     const selectedStyle = getComputedStyle(selected)
     await expect(selected.getAttribute('aria-selected')).toBe('true')
-    await expect(selected.getBoundingClientRect().height).toBe(27)
+    await expect(selected.getBoundingClientRect().height).toBe(26)
     await expect(selectedStyle.backgroundColor).toBe(swatch(canvasElement, 'selected'))
     await expect(selectedStyle.borderTopColor).toBe(swatch(canvasElement, 'selectedBorder'))
     await expect(selectedStyle.color).toBe(swatch(canvasElement, 'accent'))
@@ -172,7 +172,7 @@ const meta = {
     const script = iconOf(row(canvasElement, 'outline.py'))
     await expect(script.innerHTML).toBe(codeRef.innerHTML)
     await expect(iconOf(selected).innerHTML).toBe(codeRef.innerHTML)
-    await expect([script.getBoundingClientRect().width, script.getBoundingClientRect().height]).toEqual([14, 14])
+    await expect([script.getBoundingClientRect().width, script.getBoundingClientRect().height]).toEqual([12, 12])
     await expect(getComputedStyle(script).stroke).toBe(swatch(canvasElement, 'muted'))
     await expect(getComputedStyle(script).strokeWidth).toBe('2px')
   },

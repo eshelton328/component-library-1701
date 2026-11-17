@@ -47,7 +47,7 @@ export const bottomSheet = defineSlotRecipe({
     title: { flex: '1', color: 'fg.default', '[data-leading] > &': { textAlign: 'center' } },
     headerLeading: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },
     headerActions: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },
-    // The close button of the tablet side chat (105:1925): an 18 px icon with no box.
+    // The close button of the tablet side chat (105:1925): a 16 px icon with no box (Figma draws 18).
     closeTrigger: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -60,7 +60,7 @@ export const bottomSheet = defineSlotRecipe({
       borderRadius: 'md',
       cursor: 'pointer',
       outline: 'none',
-      '& svg': { w: 'icon.18', h: 'icon.18' },
+      '& svg': { w: 'icon.16', h: 'icon.16' },
       _hover: { color: 'fg.default' },
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },

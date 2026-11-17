@@ -83,8 +83,8 @@ const meta = {
       if (!(el instanceof HTMLElement)) throw new Error(`no ${slot} in ${id}`)
       return el
     }
-    // The title styles: pane 15/20, page 20/29, phone 28/41, all SemiBold in fg.default.
-    for (const [id, size, line] of [['pane', 15, 20], ['artifacts', 20, 29], ['phone', 28, 41]] as const) {
+    // The title styles: pane 15/20, page 20/28, phone 28/40, all SemiBold in fg.default.
+    for (const [id, size, line] of [['pane', 15, 20], ['artifacts', 20, 28], ['phone', 28, 40]] as const) {
       const t = getComputedStyle(part(id, 'title'))
       await expect([t.fontSize, t.fontWeight]).toEqual([`${String(size)}px`, '600'])
       await expect(parseFloat(t.lineHeight)).toBeCloseTo(line, 0)

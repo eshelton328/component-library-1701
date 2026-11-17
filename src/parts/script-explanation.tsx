@@ -78,7 +78,7 @@ export function ScriptExplanation({ summary, facts, steps, note, summaryLabel = 
       </Steps>
       {note === undefined ? null : (
         <Note>
-          <SparkIcon size="14" />
+          <SparkIcon size="12" />
           {note}
         </Note>
       )}

@@ -6,7 +6,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   no border; text Geist Regular 13/19 #e6ecff, merged into `body`.
 // - The assistant's message (105:874, 105:2790): no fill; author row, body
 //   and actions in a column with gap 6. The author row (105:875) has gap 6:
-//   a 13 px kind mark (KindMark size 14) and the name in Geist SemiBold 12
+//   a 13 px kind mark (KindMark size 12) and the name in Geist SemiBold 12
 //   #e6ecff, which no text style has; it uses `label`. The body (105:879)
 //   is Geist Regular 13/19 #e6ecff (`body`).
 // Figma draws no time on a message; the time here is `mono` in fg.subtle on

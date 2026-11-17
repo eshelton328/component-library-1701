@@ -122,7 +122,7 @@ const meta = {
     const number = within(card).getByText('1')
     const n = style(number)
     await expect([n.backgroundColor, n.borderTopColor, n.borderTopLeftRadius, n.color, n.fontSize, n.paddingLeft]).toEqual([swatch('overlay'), swatch('border'), '8px', swatch('text'), '12px', '8px'])
-    await expect(Math.round(box(number).height)).toBe(19)
+    await expect(Math.round(box(number).height)).toBe(18)
     await expect(box(number).right).toBeLessThan(box(within(card).getByRole('heading')).left)
     const title = style(within(card).getByRole('heading'))
     await expect([title.fontSize, title.fontWeight, title.color]).toEqual(['14px', '500', swatch('text')])
@@ -132,7 +132,7 @@ const meta = {
     const connector = card.nextElementSibling
     if (connector === null) throw new Error('no connector')
     await expect(connector).toHaveAttribute('aria-hidden', 'true')
-    await expect(Math.round(box(connector).height)).toBe(14)
+    await expect(Math.round(box(connector).height)).toBe(12)
     await expect(style(connector).color).toBe(swatch('muted'))
     await expect(box(second).top).toBe(box(connector).bottom)
     await expect(items[3]?.children).toHaveLength(1)

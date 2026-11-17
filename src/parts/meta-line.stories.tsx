@@ -152,11 +152,11 @@ const meta = {
     await expect(inboxStyle.fontFamily).toContain('Geist Mono')
     await expect(inbox.textContent).toBe('omni-brain·drift check')
     await expect(inbox.querySelectorAll('.meta-line__separator')).toHaveLength(1)
-    // The card line: a 14 px mark, and the age at the right edge.
+    // The card line: a 12 px mark, and the age at the right edge.
     const card = first('line-card')
     const mark = card.querySelector('.meta-line__leading svg')
     if (mark === null) throw new Error('no mark')
-    await expect(box(mark).width).toBe(14)
+    await expect(box(mark).width).toBe(12)
     const age = card.querySelector('.meta-line__trailing')
     if (age === null) throw new Error('no age')
     await expect(box(age).right).toBe(box(card).right)
@@ -202,7 +202,7 @@ const meta = {
     await expect(first('kind-skill')).toHaveTextContent('Skill')
     const kindIcon = first('kind-hook').querySelector('svg')
     if (kindIcon === null) throw new Error('no kind icon')
-    await expect(box(kindIcon).width).toBe(14)
+    await expect(box(kindIcon).width).toBe(12)
 
     // Tags line: a named list, separators hidden from screen readers.
     const list = canvas.getByRole('list', { name: 'Tags' })
@@ -328,9 +328,9 @@ export const Sizing: StoryObj<typeof meta> = {
       return [r.width, r.height]
     }
     await expect(size('icon-line-row')).toEqual([12, 12])
-    await expect(size('icon-line-card')).toEqual([14, 14])
+    await expect(size('icon-line-card')).toEqual([12, 12])
     await expect(size('icon-chip')).toEqual([12, 12])
-    await expect(size('icon-kind')).toEqual([14, 14])
+    await expect(size('icon-kind')).toEqual([12, 12])
     await expect(size('icon-tags')).toEqual([12, 12])
     const path = canvas.getByTestId('icon-path').querySelectorAll('svg')
     await expect(Array.from(path, (svg) => [svg.getBoundingClientRect().width, svg.getBoundingClientRect().height])).toEqual([

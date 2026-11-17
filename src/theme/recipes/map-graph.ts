@@ -83,7 +83,7 @@ export const mapGraph = defineSlotRecipe({
     },
     scroller: { overflow: 'auto', maxW: '100%' },
     svg: { display: 'block', overflow: 'visible' },
-    columnLabel: { textStyle: 'mono', fill: 'fg.muted', textTransform: 'uppercase' },
+    columnLabel: { textStyle: 'monoCaps', fill: 'fg.muted' },
     edge: {
       fill: 'none',
       stroke: 'fg.muted',

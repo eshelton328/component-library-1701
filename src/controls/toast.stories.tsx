@@ -37,7 +37,7 @@ function StaticToasts() {
     <main className={page}>
       <div className={list}>
         <Stack gap="12">
-          <Toast tone="discuss" icon={<CheckIcon size="14" />} action={{ label: 'Undo', onClick: onUndo }}>
+          <Toast tone="discuss" icon={<CheckIcon size="12" />} action={{ label: 'Undo', onClick: onUndo }}>
             Created 3 tasks from a discussion
           </Toast>
           <Toast action={{ label: 'Undo', onClick: onUndo }} onClose={onClose}>
@@ -75,7 +75,7 @@ const meta = {
     await expect(s.boxShadow).not.toBe('none')
     // D20 417:2135: the accent tone has the cyan border.
     await expect(getComputedStyle(moved).borderTopColor).toBe(swatch('accentBorder'))
-    // The text is small fg.default; Undo is fg.accent at the end; the icon is status.done.fg at 14px.
+    // The text is small fg.default; Undo is fg.accent at the end; the icon is status.done.fg at 12px.
     const text = within(created).getByText('Created 3 tasks from a discussion')
     await expect([getComputedStyle(text).color, getComputedStyle(text).fontSize]).toEqual([swatch('text'), '12px'])
     const undo = within(created).getByRole('button', { name: 'Undo' })
@@ -84,9 +84,9 @@ const meta = {
     const icon = created.querySelector('.toast__icon')
     if (icon === null) throw new Error('no icon')
     await expect(getComputedStyle(icon).color).toBe(swatch('done'))
-    await expect(icon.querySelector('svg')?.getBoundingClientRect().width).toBe(14)
-    // Figma draws it 38px high with 16px text lines; the small text style's line is 17px, so it is 39px.
-    await expect(Math.round(created.getBoundingClientRect().height)).toBe(39)
+    await expect(icon.querySelector('svg')?.getBoundingClientRect().width).toBe(12)
+    // Figma draws it 38px high with 16px text lines, and the small text style's line is 16px.
+    await expect(Math.round(created.getBoundingClientRect().height)).toBe(38)
     // A toast with no action and no onClose has no buttons.
     await expect(within(plain).queryAllByRole('button')).toHaveLength(0)
     // The buttons run their callbacks, and take the keyboard focus.

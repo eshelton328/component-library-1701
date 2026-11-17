@@ -88,7 +88,7 @@ const meta = {
     await expect(style.borderTopWidth).toBe('0px')
     // 2 between rows.
     await expect(second.getBoundingClientRect().top - first.getBoundingClientRect().bottom).toBe(2)
-    // Title: label, Medium 14/20 in fg.default. Description: small, Regular 12/17 in fg.muted
+    // Title: label, Medium 14/20 in fg.default. Description: small, Regular 12/16 in fg.muted
     // (Figma draws Regular 11, which the inventory merges into small).
     const title = getComputedStyle(within(first).getByText('Newest first'))
     await expect([title.fontSize, title.fontWeight]).toEqual(['14px', '500'])
@@ -96,10 +96,10 @@ const meta = {
     await expect(title.color).toBe(swatch('default'))
     const description = getComputedStyle(within(first).getByText('Most recently found at the top'))
     await expect([description.fontSize, description.fontWeight]).toEqual(['12px', '400'])
-    await expect(parseFloat(description.lineHeight)).toBeCloseTo(17, 0)
+    await expect(parseFloat(description.lineHeight)).toBeCloseTo(16, 0)
     await expect(description.color).toBe(swatch('muted'))
-    // Row height: 8 + 20 + 2 + 17 + 8 with the text style line heights.
-    await expect(Math.round(first.getBoundingClientRect().height)).toBe(55)
+    // Row height: 8 + 20 + 2 + 16 + 8 with the text style line heights.
+    await expect(Math.round(first.getBoundingClientRect().height)).toBe(54)
     // The text column and the check are 10 apart; the check is 16 px in fg.accent.
     const check = checkOf(first)
     const body = first.querySelector('.option-list__itemBody')

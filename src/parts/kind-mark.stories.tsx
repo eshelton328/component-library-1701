@@ -10,7 +10,7 @@ const table = css({ display: 'grid', gridTemplateColumns: 'repeat(4, auto)', ali
 const label = css({ textStyle: 'mono', color: 'fg.muted' })
 
 const kinds = ['claude', 'codex', 'shell'] as const satisfies readonly KindMarkKind[]
-const sizes = ['14', '16', '20'] as const satisfies readonly KindMarkSize[]
+const sizes = ['12', '16', '20'] as const satisfies readonly KindMarkSize[]
 const swatches: Record<KindMarkKind, string> = {
   claude: css({ color: 'agent.claude' }),
   codex: css({ color: 'agent.codex' }),

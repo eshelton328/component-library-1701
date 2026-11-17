@@ -5,7 +5,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // get_design_context:
 // - Inbox D18 `toast · created` 403:2943 (also T21 402:12214, M22 402:7589):
 //   fill #17213a (surface.raised), a 1px border rgba(158,143,255,0.5)
-//   (border.discuss), radius 10 (lg), padding 10 × 12, gap 8; a 14px check
+//   (border.discuss), radius 10 (lg), padding 10 × 12, gap 8; a 12px check
 //   403:2944 in #6ee7a8 (status.done.fg); the text 403:2946 in Geist Regular
 //   12 #e6ecff (small, fg.default); Undo 403:2948 in Geist Medium 12 #5ee1ff
 //   (fg.accent), pushed to the end by a spacer.

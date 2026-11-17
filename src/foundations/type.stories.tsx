@@ -16,6 +16,7 @@ const styles = [
   { name: 'body', className: css({ textStyle: 'body', color: 'fg.default' }) },
   { name: 'small', className: css({ textStyle: 'small', color: 'fg.muted' }) },
   { name: 'mono', className: css({ textStyle: 'mono', color: 'fg.muted' }) },
+  { name: 'monoCaps', className: css({ textStyle: 'monoCaps', color: 'fg.muted' }) },
   { name: 'code', className: css({ textStyle: 'code', color: 'fg.default' }) },
   { name: 'eyebrow', className: css({ textStyle: 'eyebrow', color: 'fg.muted' }) },
   { name: 'navLabel', className: css({ textStyle: 'navLabel', color: 'fg.muted' }) },

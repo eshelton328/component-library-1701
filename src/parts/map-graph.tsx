@@ -88,7 +88,7 @@ export function MapLegend({ kinds = ['rule', 'hook', 'skill', 'agent', 'workflow
           return (
             <LegendItem key={kind}>
               <LegendIcon data-kind={kind}>
-                <Icon size="14" />
+                <Icon size="12" />
               </LegendIcon>
               {kindNames[kind]}
             </LegendItem>
@@ -147,7 +147,7 @@ export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom,
         {onClose === undefined ? null : (
           <CardClose>
             <Button variant="secondary" size="sm" iconOnly aria-label={`Close ${name}`} onClick={onClose}>
-              <CloseIcon size="14" />
+              <CloseIcon size="12" />
             </Button>
           </CardClose>
         )}
@@ -158,7 +158,7 @@ export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom,
         <CardAction>
           <Button variant="primary" onClick={onAction}>
             {actionLabel}
-            <ChevronRightIcon size="14" />
+            <ChevronRightIcon size="12" />
           </Button>
         </CardAction>
       ) : null}

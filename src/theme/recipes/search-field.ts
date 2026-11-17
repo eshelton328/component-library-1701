@@ -55,7 +55,7 @@ export const searchField = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
-      '& svg': { width: 'icon.14!', height: 'icon.14!' },
+      '& svg': { width: 'icon.12!', height: 'icon.12!' },
     },
   },
   variants: {

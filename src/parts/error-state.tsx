@@ -114,7 +114,7 @@ export function ErrorState({
       {hasDetails ? (
         <Details>
           <Toggle type="button" aria-expanded={open} aria-controls={stackId} onClick={toggle}>
-            {open ? <ChevronDownIcon size="14" /> : <ChevronRightIcon size="14" />}
+            {open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}
             {detailsLabel}
           </Toggle>
           <Trace id={stackId} hidden={!open}>

@@ -74,7 +74,7 @@ export function Message({ from = 'assistant', name, kind = 'claude', time, dateT
   return (
     <Root from="assistant" aria-labelledby={nameId}>
       <Author>
-        <KindMark kind={kind} size="14" />
+        <KindMark kind={kind} size="12" />
         <Name id={nameId}>
           <TruncatedText>{shown}</TruncatedText>
         </Name>

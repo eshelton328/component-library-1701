@@ -57,8 +57,8 @@ const meta = {
     }
     const chip = canvas.getByRole('button', { name: 'Model: Opus 5.5' })
     const style = getComputedStyle(chip)
-    // 24 px tall: 4 × 8 padding, a 1 px border, Medium 11 text on a 14 px line (13.98 from the 1.2727 line height).
-    await expect(chip.getBoundingClientRect().height).toBeCloseTo(24, 0)
+    // 26 px tall: 4 × 8 padding, a 1 px border, Medium 11 text on a 16 px line (the pill style on the 4 px grid).
+    await expect(chip.getBoundingClientRect().height).toBeCloseTo(26, 0)
     await expect([style.paddingTop, style.paddingBottom, style.paddingLeft, style.paddingRight]).toEqual(['4px', '4px', '8px', '8px'])
     await expect(style.borderRadius).toBe('8px')
     await expect(style.borderTopWidth).toBe('1px')
@@ -85,7 +85,7 @@ const meta = {
     if (!(staticChip instanceof HTMLElement)) throw new Error('no static chip')
     await expect(staticChip.tagName).toBe('SPAN')
     await expect(staticChip.querySelector('svg')).toBeNull()
-    await expect(staticChip.getBoundingClientRect().height).toBeCloseTo(24, 0)
+    await expect(staticChip.getBoundingClientRect().height).toBeCloseTo(26, 0)
   },
 } satisfies Meta<typeof Chips>
 export default meta

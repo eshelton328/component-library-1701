@@ -59,26 +59,26 @@ const meta = {
     const s = getComputedStyle(tile)
     await expect([s.backgroundColor, s.borderTopColor, s.borderTopWidth, s.borderTopLeftRadius]).toEqual([swatch('pane'), swatch('border'), '1px', '12px'])
     await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft, s.rowGap]).toEqual(['10px', '12px', '10px', '12px', '2px'])
-    // The value is on top in the title style, then the label, then the muted caption: 89 px in all, as in Figma.
+    // The value is on top in the title style, then the label, then the muted caption: 86 px in all on the 4 px line grid (Figma draws 89).
     const value = within(tile).getByText('330')
     const caption = within(tile).getByText('since Oct 31')
     const v = getComputedStyle(value)
-    await expect([v.fontSize, Math.round(Number.parseFloat(v.lineHeight)), v.fontWeight, v.color]).toEqual(['20px', 29, '600', swatch('text')])
+    await expect([v.fontSize, Math.round(Number.parseFloat(v.lineHeight)), v.fontWeight, v.color]).toEqual(['20px', 28, '600', swatch('text')])
     const l = getComputedStyle(term)
     await expect([l.fontSize, l.fontWeight, l.color, l.marginLeft]).toEqual(['12px', '400', swatch('text'), '0px'])
     await expect(getComputedStyle(caption).color).toBe(swatch('muted'))
     await expect(value.getBoundingClientRect().bottom).toBeLessThanOrEqual(term.getBoundingClientRect().top)
     await expect(term.getBoundingClientRect().bottom).toBeLessThanOrEqual(caption.getBoundingClientRect().top)
-    await expect(Math.round(tile.getBoundingClientRect().height)).toBe(89)
+    await expect(Math.round(tile.getBoundingClientRect().height)).toBe(86)
     // A tile with an empty caption has one definition.
     const last = canvas.getByText('last used').closest('dl')
     if (!(last instanceof HTMLElement)) throw new Error('no last tile')
     await expect(last.querySelectorAll('dd')).toHaveLength(1)
     // A long value, label and caption each stay on one line, clipped inside the tile with an ellipsis.
     const lines = [
-      [canvas.getByText('1,234,567,890,123,456,789'), 29],
-      [canvas.getByText('tokens read by every agent in the last thirty days'), 17],
-      [canvas.getByText('counted from the transcripts of every chat and headless run'), 17],
+      [canvas.getByText('1,234,567,890,123,456,789'), 28],
+      [canvas.getByText('tokens read by every agent in the last thirty days'), 16],
+      [canvas.getByText('counted from the transcripts of every chat and headless run'), 16],
     ] as const
     for (const [line, height] of lines) {
       const ls = getComputedStyle(line)

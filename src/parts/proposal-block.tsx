@@ -48,7 +48,7 @@ export type ProposalAction = {
    * Defaults to `secondary`. `dangerSoft` is a tint on a tint here, and its label falls under 4.5:1 in light mode.
    */
   variant?: ButtonProps['variant']
-  /** An icon from the icon set before the label, such as `<CheckIcon size="14" />`. */
+  /** An icon from the icon set before the label, such as `<CheckIcon size="12" />`. */
   icon?: ReactNode
   /** Turns the button off, for example while the change is applied. */
   disabled?: boolean | undefined

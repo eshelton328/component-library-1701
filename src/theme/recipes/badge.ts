@@ -31,7 +31,7 @@ export const badge = defineSlotRecipe({
       borderColor: 'transparent',
     },
     // The icon recipe's size variant wins over a slot rule, so the caller
-    // sizes the icon: 12 (Figma 9-11), or 14 in `quiet` (Figma 13).
+    // sizes the icon: 12 (Figma 9-11, and 13 in `quiet`).
     icon: { display: 'inline-flex', flexShrink: '0' },
   },
   variants: {

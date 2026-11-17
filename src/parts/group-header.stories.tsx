@@ -93,7 +93,7 @@ function Headers({ onOpenChange = () => undefined, onMenu = () => undefined }: {
             leading={<Grip />}
             actions={
               <button type="button" className={more} aria-label="Workspace actions" onClick={onMenu}>
-                <MoreIcon size="14" />
+                <MoreIcon size="12" />
               </button>
             }
           />
@@ -155,12 +155,12 @@ const meta = {
     // The items are 6 apart.
     await expect(getComputedStyle(needs).columnGap).toBe('6px')
 
-    // Workbench sidebar header: padding 8/6/6/4, radius 8, a 14 px chevron, the actions at the end.
+    // Workbench sidebar header: padding 8/6/6/4, radius 8, a 12 px chevron, the actions at the end.
     const sideRoot = one(canvas.getByTestId('sidebar'), '.group-header__root')
     const ss = getComputedStyle(sideRoot)
     await expect([ss.paddingTop, ss.paddingRight, ss.paddingBottom, ss.paddingLeft, ss.borderTopLeftRadius]).toEqual(['8px', '6px', '6px', '4px', '8px'])
-    await expect(width(one(sideRoot, '.group-header__chevron'))).toBe(14)
-    await expect(width(one(sideRoot, '.group-header__leading svg'))).toBe(14)
+    await expect(width(one(sideRoot, '.group-header__chevron'))).toBe(12)
+    await expect(width(one(sideRoot, '.group-header__leading svg'))).toBe(12)
     const actions = one(sideRoot, '.group-header__actions')
     await expect(actions.getBoundingClientRect().right).toBe(sideRoot.getBoundingClientRect().right - 6)
 

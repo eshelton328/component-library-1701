@@ -336,9 +336,10 @@ function Picker() {
   return (
     <main className={page}>
       <div className={picker}>
-        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" />
+        <OptionList label="Run in" items={workspaces} defaultValue="claude" descriptionStyle="mono" selectedFill />
       </div>
       <span hidden data-swatch="default" className={defaultSwatch} />
+      <span hidden data-swatch="selected" className={selectedSwatch} />
       <span hidden data-swatch="muted" className={mutedSwatch} />
       <span hidden data-swatch="accent" className={accentSwatch} />
     </main>
@@ -367,6 +368,9 @@ const pickerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const meta = getComputedStyle(within(claude).getByText('claude · ~/ncc-1701 · idle'))
   await expect([meta.fontSize, meta.color]).toEqual(['12px', swatch('muted')])
   await expect(meta.fontFamily).toMatch(/Mono/)
+  // `selectedFill` fills the chosen row with surface.selected (346:1243); the others have no fill.
+  await expect(getComputedStyle(claude).backgroundColor).toBe(swatch('selected'))
+  await expect(getComputedStyle(codex).backgroundColor).toBe('rgba(0, 0, 0, 0)')
   // The chosen row ends in its check; a row with a status pill ends in the pill and keeps no check space.
   await expect(getComputedStyle(part(claude, 'itemControl')).visibility).toBe('visible')
   const end = part(codex, 'itemTrailing')

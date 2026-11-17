@@ -67,6 +67,8 @@ export type OptionListProps = {
    * with a radio at the start, the chosen card outlined in cyan, as the options of a question are.
    */
   variant?: 'list' | 'card' | undefined
+  /** Fill the chosen row with the selected surface, as the Run in picker does. The card variant always fills it. */
+  selectedFill?: boolean | undefined
 }
 
 /**
@@ -75,7 +77,7 @@ export type OptionListProps = {
  * sheet of Artifacts M4 and the Choose one list of Inbox D2, T3 and M5.
  * It is a radio group: Tab enters it, arrow keys move the choice.
  */
-export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant }: OptionListProps) {
+export function OptionList({ label, items, value, defaultValue, onValueChange, onItemSelect, disabled, name, descriptionStyle, variant, selectedFill }: OptionListProps) {
   const baseId = useId()
   // Ark builds element ids from the item value, so a value with a space would break `aria-labelledby`.
   // These ids use the item's position instead.
@@ -116,6 +118,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
       aria-labelledby={undefined}
       descriptionStyle={descriptionStyle}
       variant={variant}
+      selectedFill={selectedFill}
       disabled={disabled === true ? true : undefined}
       ids={ids}
       {...(value === undefined ? {} : { value })}

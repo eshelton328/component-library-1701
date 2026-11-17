@@ -16,7 +16,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 12), and at the end a check on the chosen row or a status pill on another
 // (`trailing`). A row with a trailing element and no check gives the
 // check's space to it, so the pill ends the row. The title is Medium 13 in
-// Figma; it keeps `label` (14), the larger on a tie (d-072).
+// Figma; it keeps `label` (14), the larger on a tie (d-072). The chosen
+// row is filled #14263f (346:1243, `surface.selected`), where the M4 sort
+// sheet's chosen row has no fill, so the fill is `selectedFill`.
 //
 // `variant="card"` is the options of a question (Inbox D2 346:789): a
 // bordered card per option with a leading 16 px radio, the chosen card
@@ -105,6 +107,10 @@ export const optionList = defineSlotRecipe({
       text: {},
       mono: { itemDescription: { textStyle: 'mono' } },
     },
+    selectedFill: {
+      false: {},
+      true: { item: { '&[data-state=checked]': { bg: 'surface.selected' } } },
+    },
   },
-  defaultVariants: { variant: 'list', descriptionStyle: 'text' },
+  defaultVariants: { variant: 'list', descriptionStyle: 'text', selectedFill: false },
 })

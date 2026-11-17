@@ -16,6 +16,8 @@ export type { FilterChip, FilterChipKind, FilterChipsProps } from './controls/fi
 export { Container, Grid, Inline, Stack } from './controls/layout'
 export type { ContainerProps, GridProps, InlineProps, StackProps } from './controls/layout'
 export type { Scalar } from './controls/scalar'
+export { ScrollFrame } from './controls/scroll-frame'
+export type { ScrollFrameProps } from './controls/scroll-frame'
 export { SearchField } from './controls/search-field'
 export type { SearchFieldProps } from './controls/search-field'
 export { ViewSwitch } from './controls/view-switch'

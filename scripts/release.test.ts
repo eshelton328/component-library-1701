@@ -148,6 +148,36 @@ void test('a member moved between union branches is breaking (Codex review of #9
   assert.equal(diffApi(before, after).breaking, true)
 })
 
+const alias = (...members: string[]) => report(`export type CheckboxGroupItem = {\n${members.map((m) => `    ${m}\n`).join('')}};`)
+
+void test('a new optional member of an object type alias is not breaking', () => {
+  const d = diffApi(alias('value: string;'), alias('value: string;', 'disabled?: boolean;'))
+  assert.equal(d.breaking, false)
+  assert.deepEqual(d.removed, [])
+  assert.deepEqual(d.added, ['disabled?: boolean;'])
+})
+
+void test('a removed member of an object type alias is breaking', () => {
+  const d = diffApi(alias('value: string;', 'disabled?: boolean;'), alias('value: string;'))
+  assert.equal(d.breaking, true)
+  assert.deepEqual(d.removed, ['disabled?: boolean;'])
+})
+
+void test('a new required member of an object type alias is breaking', () => {
+  const d = diffApi(alias('value: string;'), alias('value: string;', 'label: string;'))
+  assert.equal(d.breaking, true)
+  assert.deepEqual(d.removed, [])
+  assert.deepEqual(d.addedRequired, ['CheckboxGroupItem.label'])
+})
+
+void test('a union type alias counts any change as breaking', () => {
+  const before = report('export type Props = {\n    kind: "a";\n} | {\n    kind: "b";\n};')
+  const after = report('export type Props = {\n    kind: "a";\n    value?: string;\n} | {\n    kind: "b";\n};')
+  const d = diffApi(before, after)
+  assert.equal(d.breaking, true)
+  assert.deepEqual(apiItems(after).map((i) => i.key), ['Props'])
+})
+
 void test('a new call or computed signature counts as required (Codex review of #9)', () => {
   const before = report('export interface P {\n    label?: string;\n}')
   for (const member of ['(value: string): string;', '[Symbol.iterator](): Iterator<string>;']) {

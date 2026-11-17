@@ -57,7 +57,10 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * a click anywhere on the row selects it. `density="compact"` draws the
  * title in `labelSm` and the meta and age in `monoSm`, with its lines 2
  * apart, so a title and meta row is 56 tall, as the Inbox list draws it;
- * the default keeps `label` and `mono`, 4 apart.
+ * the default keeps `label` and `mono`, 4 apart. A compact `sidebar` row
+ * at level 0 pads 20 at the start, where Figma draws the Workbench sidebar
+ * chat's kind mark (D2 105:705), so a model and a context meter fit beside
+ * a status pill; a nested row keeps 24.
  */
 export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, variant, density }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.

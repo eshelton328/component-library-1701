@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
-import { Stack } from '../controls/layout'
+import { Inline, Stack } from '../controls/layout'
+import { ContextMeter } from './context-meter'
+import { KindMark } from './kind-mark'
 import { ListRow } from './list-row'
 import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
@@ -424,3 +426,60 @@ const finishedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** `finished`: the done rows of Inbox D7, with a muted title and a faded kind tile unless the row is open. */
 export const FinishedDark: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'dark' }, play: finishedPlay }
 export const FinishedLight: StoryObj<typeof meta> = { render: () => <Finished />, globals: { mode: 'light' }, play: finishedPlay }
+
+/**
+ * A Workbench sidebar chat (D2 105:705, 105:643): a compact sidebar row with the model and a context meter in its
+ * meta and a Needs you pill at the end, in the 308 px row of a 328 px sidebar.
+ */
+function SidebarMeta() {
+  const chatMeta = (model: string, value: number) => (
+    <Inline gap="4" align="center">
+      <span>{model}</span>
+      <ContextMeter value={value} high={value >= 75} />
+    </Inline>
+  )
+  return (
+    <main className={page}>
+      <div className={sidebar}>
+        <Stack gap="4">
+          <ListRow variant="sidebar" density="compact" title="hono server" meta={chatMeta('Sonnet 5.5', 78)} leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill tone="needsYou" label="Needs you" dot />} onSelect={() => undefined} />
+          <ListRow variant="sidebar" density="compact" level={1} title="theme tokens" meta={chatMeta('Opus 5.5', 26)} leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill tone="running" label="Running" dot />} onSelect={() => undefined} />
+          <ListRow variant="sidebar" title="A default sidebar row" meta="Opus 5.5" leading={<KindMark kind="claude" size="16" />} onSelect={() => undefined} />
+        </Stack>
+      </div>
+    </main>
+  )
+}
+
+const sidebarMetaPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rowOf = (name: string) => {
+    const row = canvas.getByRole('button', { name }).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const part = (row: HTMLElement, selector: string) => {
+    const el = row.querySelector(selector)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${selector}`)
+    return el
+  }
+  const chat = rowOf('hono server')
+  await expect(chat.getBoundingClientRect().width).toBe(308)
+  // Figma draws the kind mark 22 in (105:706); a compact sidebar row pads 20 inside its 1 px border, so 21.
+  await expect(part(chat, '.list-row__leading').getBoundingClientRect().left - chat.getBoundingClientRect().left).toBe(21)
+  // The model and the whole meter, "78%" included, fit beside the Needs you pill: nothing in the meta is cut.
+  const metaLine = part(chat, '.list-row__meta')
+  await expect(metaLine.scrollWidth).toBeLessThanOrEqual(metaLine.clientWidth)
+  await expect(part(chat, '.context-meter__value').getBoundingClientRect().right).toBeLessThanOrEqual(metaLine.getBoundingClientRect().right)
+  await expect(getComputedStyle(metaLine).fontSize).toBe('11px')
+  // A nested compact row keeps 24 at the start, so its ↳ sits 25 in, as before (Figma 27, 199:68).
+  const nested = rowOf('theme tokens')
+  await expect(getComputedStyle(nested).paddingLeft).toBe('24px')
+  await expect(part(nested, '.list-row__nest').getBoundingClientRect().left - nested.getBoundingClientRect().left).toBe(25)
+  // A sidebar row at the default density keeps 24 at the start.
+  await expect(getComputedStyle(rowOf('A default sidebar row')).paddingLeft).toBe('24px')
+}
+
+/** `variant="sidebar" density="compact"`: the Workbench sidebar chat, whose model and context meter fit beside its pill. */
+export const SidebarMetaDark: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'dark' }, play: sidebarMetaPlay }
+export const SidebarMetaLight: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'light' }, play: sidebarMetaPlay }

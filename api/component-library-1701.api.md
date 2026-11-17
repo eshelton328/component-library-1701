@@ -258,6 +258,8 @@ export type CheckboxProps = {
     labelStyle?: 'text' | 'mono' | undefined;
     size?: 'md' | 'compact' | 'sm' | undefined;
     tone?: 'accent' | 'discuss' | undefined;
+    labelTone?: 'default' | 'muted' | undefined;
+    inline?: boolean | undefined;
 };
 
 // @public
@@ -1093,6 +1095,7 @@ export type PopoverProps = {
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     width?: 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
     flip?: boolean | undefined;
+    surface?: 'overlay' | 'raised' | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;
 

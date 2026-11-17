@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
+import { PanelIcon } from '../foundations/icons'
 import { Workbench } from './workbench'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -202,5 +203,100 @@ export const LongHint: StoryObj<typeof meta> = {
   ),
   play: async ({ canvasElement }) => {
     await expectCutText(find(canvasElement, '.workbench__hint'), longHint)
+  },
+}
+
+const twoFrames = css({ display: 'flex', flexDirection: 'column', gap: '16', bg: 'bg.canvas' })
+
+/** The desktop Workbench bar (D1 105:105) beside the default one, each with the sidebar toggle before the tabs. */
+function Desktop() {
+  return (
+    <div className={twoFrames}>
+      {(['compact', 'md'] as const).map((size) => (
+        <div key={size} className={frame} data-size={size}>
+          <Workbench
+            label={`Workspaces ${size}`}
+            size={size}
+            workspaces={workspaces}
+            leading={
+              <Button size="sm" iconOnly aria-label={`Show the sidebar ${size}`}>
+                <PanelIcon size="16" />
+              </Button>
+            }
+            actions={<Button size="sm">New chat</Button>}
+            summary="omni-brain · 2 panes"
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const sized = (root: HTMLElement, size: string) => find(root, `[data-size="${size}"]`)
+
+/**
+ * `size="compact"` (Workbench D1 105:105): a 52 px bar with the 32 px tabs 12
+ * down, and the panes right under it with no top padding, 10 at the sides
+ * and bottom (105:177). The default `md` bar keeps its 58 px and 10 px panes.
+ */
+const compactPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const compact = sized(canvasElement, 'compact')
+  const bar = find(compact, '.workspace-tabs__bar')
+  await expect(rect(bar).height).toBe(52)
+  await expect(pad(getComputedStyle(bar))).toEqual(['10px', '16px', '6px', '16px'])
+  const tab = within(compact).getByRole('tab', { name: /omni-brain/ })
+  await expect(rect(tab).height).toBe(32)
+  await expect(Math.round(rect(tab).top - rect(bar).top)).toBe(12)
+  const panel = within(compact).getByRole('tabpanel')
+  await expect(pad(getComputedStyle(panel))).toEqual(['0px', '10px', '10px', '10px'])
+  await expect(Math.round(rect(panel).top - rect(find(compact, '.workbench__root')).top)).toBe(52)
+  // The default bar is unchanged: 12 + 2 + 32 + 2 + 10 = 58, and the panes padded 10 on every side.
+  const md = sized(canvasElement, 'md')
+  const mdBar = find(md, '.workspace-tabs__bar')
+  await expect(rect(mdBar).height).toBe(58)
+  await expect(pad(getComputedStyle(mdBar))).toEqual(['12px', '16px', '10px', '16px'])
+  await expect(pad(getComputedStyle(within(md).getByRole('tabpanel')))).toEqual(['10px', '10px', '10px', '10px'])
+}
+
+export const CompactDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Desktop />, play: compactPlay }
+export const CompactLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Desktop />, play: compactPlay }
+
+/**
+ * `leading` (Workbench D1 158:2): the sidebar toggle at the start of the bar,
+ * 16 in, before the tabs; the tab group starts 8 after it, and New chat
+ * stays after the tabs. With no `leading`, the bar has no leading slot.
+ */
+const leadingPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  for (const size of ['compact', 'md']) {
+    const root = sized(canvasElement, size)
+    const toggle = within(root).getByRole('button', { name: `Show the sidebar ${size}` })
+    const list = within(root).getByRole('tablist', { name: `Workspaces ${size}` })
+    const bar = find(root, '.workspace-tabs__bar')
+    await expect(Math.round(rect(toggle).left - rect(bar).left)).toBe(16)
+    await expect(Math.round(rect(list).left - rect(toggle).right)).toBe(8)
+    await expect(rect(toggle).height).toBe(28)
+    await expect(Math.round(rect(toggle).top + rect(toggle).height / 2)).toBe(Math.round(rect(list).top + rect(list).height / 2))
+    await expect(rect(toggle.querySelector('svg') ?? toggle).width).toBe(16)
+    await expect(rect(within(root).getByRole('button', { name: 'New chat' })).left).toBeGreaterThan(rect(list).right - 1)
+    // The toggle is before the tabs in the tab order.
+    await expect(toggle.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  }
+}
+
+export const LeadingDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Desktop />, play: leadingPlay }
+export const LeadingLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Desktop />, play: leadingPlay }
+
+/** With no `leading`, the bar draws no leading slot and the tabs start 16 in. */
+export const NoLeading: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={frame}>
+      <Workbench workspaces={workspaces} size="compact" />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('.workspace-tabs__leading')).toBeNull()
+    const bar = find(canvasElement, '.workspace-tabs__bar')
+    await expect(Math.round(rect(within(canvasElement).getByRole('tablist')).left - rect(bar).left)).toBe(16)
   },
 }

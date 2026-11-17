@@ -13,6 +13,7 @@ const Grip = withContext('span', 'grip')
 const Count = withContext('span', 'count')
 const Dot = withContext('span', 'dot')
 const Hint = withContext('span', 'hint')
+const Leading = withContext('div', 'leading')
 const Actions = withContext('div', 'actions')
 const Content = withContext(Tabs.Content, 'content')
 
@@ -44,8 +45,18 @@ export type WorkspaceTabsProps = {
   defaultValue?: string | undefined
   /** Called with the value of the workspace the user picks. */
   onValueChange?: ((value: string) => void) | undefined
+  /** Before the tabs, at the start of the bar, such as the button that opens the workspace sidebar. */
+  leading?: ReactNode
   /** After the tabs, such as the button that starts a chat in the workspace. */
   actions?: ReactNode
+  /**
+   * The height of the bar and the padding above the panes. `md` (the
+   * default) pads the bar 12 above and 10 below the tabs and the panes 10 on
+   * every side. `compact` is the 52 px bar of the desktop Workbench
+   * (Workbench D1): the tabs 12 down, and the panes right under the bar
+   * with no top padding, 10 at the sides and bottom.
+   */
+  size?: 'md' | 'compact' | undefined
 }
 
 /**
@@ -54,7 +65,7 @@ export type WorkspaceTabsProps = {
  * The arrow keys move between tabs and select them. Uncontrolled tabs keep
  * the selected workspace while others are added, moved or removed.
  */
-export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange, actions }: WorkspaceTabsProps) {
+export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange, leading, actions, size }: WorkspaceTabsProps) {
   // Uncontrolled tabs store the workspace they show, so adding, moving or
   // restoring other workspaces never changes it. When it goes away, the
   // first workspace is selected and stored.
@@ -67,6 +78,7 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
   }
   return (
     <Root
+      size={size}
       // Ark treats an empty string as no value, so each value gets a prefix.
       value={selected === undefined ? null : toArk(selected)}
       onValueChange={(details) => {
@@ -77,6 +89,7 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
       }}
     >
       <Bar>
+        {isEmpty(leading) ? null : <Leading>{leading}</Leading>}
         <List aria-label={label}>
           {items.map((item) => (
             <Trigger key={item.value} value={toArk(item.value)}>
@@ -96,7 +109,7 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
             </Trigger>
           ))}
         </List>
-        {actions === undefined || actions === null || actions === false ? null : <Actions>{actions}</Actions>}
+        {isEmpty(actions) ? null : <Actions>{actions}</Actions>}
       </Bar>
       {items.map((item) => (
         <Content key={item.value} value={toArk(item.value)}>
@@ -107,5 +120,6 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
   )
 }
 
+const isEmpty = (node: ReactNode) => node === undefined || node === null || node === false
 const toArk = (v: string) => `workspace:${v}`
 const fromArk = (v: string | null) => (v?.startsWith('workspace:') === true ? v.slice(10) : undefined)

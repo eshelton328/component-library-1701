@@ -787,3 +787,59 @@ export const DisabledSubmenu: StoryObj<typeof meta> = {
     await expect(body.getAllByRole('menu')).toHaveLength(1)
   },
 }
+
+const onNestedSelect = fn<(value: string) => void>()
+
+/**
+ * Two submenus whose values join to the same text (a row `a-b`, and `b` inside `a`) get their own ids, and the
+ * keyboard reaches an action two levels deep.
+ */
+export const NestedSubmenuIds: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Menu
+        trigger={<Button>Nested actions</Button>}
+        onSelect={onNestedSelect}
+        items={[
+          { value: 'a-b', label: 'Row a-b', submenu: { items: [{ value: 'x', label: 'Action x' }] } },
+          { value: 'a', label: 'Row a', submenu: { items: [{ value: 'b', label: 'Row b', submenu: { items: [{ value: 'deep', label: 'Action deep' }] } }] } },
+        ]}
+      />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    onNestedSelect.mockClear()
+    const body = within(document.body)
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Nested actions' }))
+    const menu = await body.findByRole('menu')
+    await waitFor(() => expect(menu).toHaveFocus())
+    // Every menu box and row in the tree has an id no other element has.
+    const ids = [...document.querySelectorAll('[data-scope="menu"][id]')].map((el) => el.id)
+    await expect(new Set(ids).size).toBe(ids.length)
+    // Row a, then its list; Row b, then its list; Enter picks the action two levels deep.
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}')
+    const rowA = within(menu).getByRole('menuitem', { name: 'Row a' })
+    await waitFor(() => expect(rowA).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{ArrowRight}')
+    const listA = await waitFor(() => {
+      const el = document.getElementById(rowA.getAttribute('aria-controls') ?? '')
+      if (el === null) throw new Error('no list of Row a')
+      return el
+    })
+    await waitFor(() => expect(listA).toHaveFocus())
+    const rowB = within(listA).getByRole('menuitem', { name: 'Row b' })
+    await waitFor(() => expect(rowB).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{ArrowRight}')
+    const listB = await waitFor(() => {
+      const el = document.getElementById(rowB.getAttribute('aria-controls') ?? '')
+      if (el === null) throw new Error('no list of Row b')
+      return el
+    })
+    await waitFor(() => expect(listB).toHaveFocus())
+    await expect(within(listB).getByRole('menuitem', { name: 'Action deep' })).toBeInTheDocument()
+    await waitFor(() => expect(within(listB).getByRole('menuitem', { name: 'Action deep' })).toHaveAttribute('data-highlighted'))
+    await userEvent.keyboard('{Enter}')
+    await expect(onNestedSelect).toHaveBeenLastCalledWith('deep')
+    await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+  },
+}

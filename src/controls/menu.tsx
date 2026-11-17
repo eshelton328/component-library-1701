@@ -138,6 +138,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       onOpenChange={(details) => {
         onOpenChange?.(details.open)
       }}
+      id={baseId}
       onSelect={select}
     >
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
@@ -152,16 +153,20 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
   )
 }
 
-// Ark names a submenu's row by its trigger id, not by a value, so each row gets an id made from the menu's id and its
-// value, and the highlighted value is mapped to and from it.
-const submenuTriggerId = (baseId: string, value: string) => `${baseId}-submenu-${value}`
+// Ark names a submenu's row by its trigger id, not by a value, so each row gets an id made from its menu's own React
+// id and the row's index, never from values (values joined with "-" can repeat across levels), and the highlighted
+// value is mapped to and from it.
+const submenuTriggerId = (baseId: string, index: number) => `${baseId}-submenu-${String(index)}`
 
 function highlightOf(baseId: string, items: readonly MenuEntry[], value: string | null | undefined, onChange: ((value: string | null) => void) | undefined) {
   const submenus = new Map<string, string>()
-  for (const entry of items) {
-    if (entry.type !== 'separator' && entry.submenu !== undefined) submenus.set(submenuTriggerId(baseId, entry.value), entry.value)
-  }
-  const toItem = (v: string) => (submenus.has(submenuTriggerId(baseId, v)) ? submenuTriggerId(baseId, v) : toArk(v))
+  const triggers = new Map<string, string>()
+  items.forEach((entry, index) => {
+    if (entry.type === 'separator' || entry.submenu === undefined) return
+    submenus.set(submenuTriggerId(baseId, index), entry.value)
+    triggers.set(entry.value, submenuTriggerId(baseId, index))
+  })
+  const toItem = (v: string) => triggers.get(v) ?? toArk(v)
   return {
     ...(value === undefined ? {} : { highlightedValue: value === null ? null : toItem(value) }),
     onHighlightChange: (details: { highlightedValue: string | null }) => {
@@ -169,6 +174,47 @@ function highlightOf(baseId: string, items: readonly MenuEntry[], value: string 
       onChange?.(next === null ? null : (submenus.get(next) ?? fromArk(next) ?? null))
     },
   }
+}
+
+type SubmenuProps = {
+  triggerId: string
+  submenu: MenuSubmenu
+  row: ReactNode
+  size: MenuProps['size']
+  density: MenuProps['density']
+  onSelect: (details: { value: string }) => void
+}
+
+// A submenu level: its own React id names its Ark menu, so its list and items have ids no other level can repeat.
+function Submenu({ triggerId, submenu, row, size, density, onSelect }: SubmenuProps) {
+  const id = useId()
+  return (
+    <Root
+      id={id}
+      ids={{ trigger: triggerId }}
+      width="submenu"
+      size={size}
+      density={density}
+      // Ark puts a submenu right of its row with no gap; the offset sets Figma's place (D1 105:473): 11 past the row's
+      // end (the menu's padding 6 and border 1, then 4) and 7 below its top.
+      positioning={{ placement: 'right-start', offset: { mainAxis: 11, crossAxis: 7 } }}
+      {...(submenu.open === undefined ? {} : { open: submenu.open })}
+      {...highlightOf(id, submenu.items, submenu.highlightedValue, submenu.onHighlightChange)}
+      onOpenChange={(details) => {
+        submenu.onOpenChange?.(details.open)
+      }}
+      onSelect={onSelect}
+    >
+      <TriggerItem>{row}</TriggerItem>
+      <Portal>
+        <Positioner>
+          <Content>
+            <Entries baseId={id} items={submenu.items} size={size} density={density} onSelect={onSelect} />
+          </Content>
+        </Positioner>
+      </Portal>
+    </Root>
+  )
 }
 
 type EntriesProps = {
@@ -209,38 +255,22 @@ function Entries({ baseId, items, heading, size, density, onSelect }: EntriesPro
         </Item>
       )
     }
-    const subId = `${baseId}-${entry.value}`
     return (
-      <Root
+      <Submenu
         key={entry.value}
-        id={subId}
-        ids={{ trigger: submenuTriggerId(baseId, entry.value) }}
-        width="submenu"
+        triggerId={submenuTriggerId(baseId, i)}
+        submenu={sub}
         size={size}
         density={density}
-        // Ark puts a submenu right of its row with no gap; the offset sets Figma's place (D1 105:473): 11 past the row's
-        // end (the menu's padding 6 and border 1, then 4) and 7 below its top.
-        positioning={{ placement: 'right-start', offset: { mainAxis: 11, crossAxis: 7 } }}
-        {...(sub.open === undefined ? {} : { open: sub.open })}
-        {...highlightOf(subId, sub.items, sub.highlightedValue, sub.onHighlightChange)}
-        onOpenChange={(details) => {
-          sub.onOpenChange?.(details.open)
-        }}
         onSelect={onSelect}
-      >
-        <TriggerItem>
-          {icon}
-          <ItemText>{entry.label}</ItemText>
-          {chevron}
-        </TriggerItem>
-        <Portal>
-          <Positioner>
-            <Content>
-              <Entries baseId={subId} items={sub.items} size={size} density={density} onSelect={onSelect} />
-            </Content>
-          </Positioner>
-        </Portal>
-      </Root>
+        row={
+          <>
+            {icon}
+            <ItemText>{entry.label}</ItemText>
+            {chevron}
+          </>
+        }
+      />
     )
   }
   // With a heading, the actions before the first separator form a group that the heading names.

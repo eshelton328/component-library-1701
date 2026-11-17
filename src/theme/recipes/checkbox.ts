@@ -4,11 +4,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The filter checks of Inbox (D4, T14) and Artifacts (D3): a checkbox with
 // a label, checked or not, in groups. The box border is `border.control`, the
 // checked box `accent.default` (inventory: `#8a97b8` at 0.7 and `#5ee1ff`).
+// `trailing` sits at the end of the row, such as the count of each row in the
+// Inbox Filter menu (D4 346:1747: Geist Mono 11 pushed to the end; `mono`,
+// fg.muted, as the popover's labels on surface.overlay are).
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
   staticCss: ['*'],
-  slots: [...checkboxAnatomy.keys(), 'groupLabel'],
+  slots: [...checkboxAnatomy.keys(), 'groupLabel', 'trailing'],
   base: {
     root: {
       display: 'flex',
@@ -38,6 +41,7 @@ export const checkbox = defineSlotRecipe({
     },
     indicator: { display: 'inline-flex' },
     label: { textStyle: 'body', color: 'fg.default' },
+    trailing: { flexShrink: '0', ms: 'auto', textStyle: 'mono', color: 'fg.muted' },
     group: { display: 'flex', flexDirection: 'column', gap: '2' },
     groupLabel: { textStyle: 'small', color: 'fg.muted', pb: '4' },
   },

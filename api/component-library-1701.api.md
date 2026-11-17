@@ -223,6 +223,7 @@ export type CheckboxGroupItem = {
     value: string;
     label: string;
     disabled?: boolean | undefined;
+    trailing?: ReactNode;
 };
 
 // @public (undocumented)
@@ -245,6 +246,7 @@ export type CheckboxProps = {
     disabled?: boolean | undefined;
     value?: string | undefined;
     name?: string | undefined;
+    trailing?: ReactNode;
 };
 
 // @public

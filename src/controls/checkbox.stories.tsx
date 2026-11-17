@@ -109,3 +109,49 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(canvas.getByRole('checkbox', { name: 'Agents' })).not.toBeChecked()
   },
 }
+
+// The Inbox Filter menu (D4 346:1737): each row ends in its count (346:1747).
+const filterMenu = css({ bg: 'surface.overlay', p: '8', borderRadius: 'xl', w: 'shell.popoverFilter' })
+const counted = [
+  { value: 'approval', label: 'Approval', trailing: 3 },
+  { value: 'question', label: 'Question', trailing: 0 },
+  { value: 'review', label: 'Review', trailing: 12 },
+] as const
+
+function Counts() {
+  return (
+    <main className={page}>
+      <div className={filterMenu}>
+        <CheckboxGroup label="Kind" items={counted} defaultValue={['approval']} />
+      </div>
+      <div className={filterMenu}>
+        <Checkbox label="Only unread" trailing="7" defaultChecked />
+        <Checkbox label="No count" trailing={false} />
+      </div>
+    </main>
+  )
+}
+
+/** A trailing count sits at the end of the row, in mono, outside the box's accessible name; `0` shows, `false` does not. */
+const countsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const row = (name: string) => {
+    const root = canvas.getByRole('checkbox', { name }).closest('label')
+    if (!(root instanceof HTMLElement)) throw new Error(`no row for ${name}`)
+    return root
+  }
+  for (const [name, count] of [['Approval', '3'], ['Question', '0'], ['Review', '12'], ['Only unread', '7']] as const) {
+    const end = row(name).querySelector('.checkbox__trailing')
+    if (!(end instanceof HTMLElement)) throw new Error(`no count for ${name}`)
+    await expect(end).toHaveTextContent(count)
+    // Pushed to the end of the row.
+    await expect(Math.round(end.getBoundingClientRect().right)).toBe(Math.round(row(name).getBoundingClientRect().right))
+    await expect(getComputedStyle(end).fontFamily).toMatch(/Mono/)
+  }
+  await expect(row('No count').querySelector('.checkbox__trailing')).toBeNull()
+  await userEvent.click(canvas.getByText('Question'))
+  await expect(canvas.getByRole('checkbox', { name: 'Question' })).toBeChecked()
+}
+
+export const TrailingDark: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'dark' }, play: countsPlay }
+export const TrailingLight: StoryObj<typeof meta> = { render: () => <Counts />, globals: { mode: 'light' }, play: countsPlay }

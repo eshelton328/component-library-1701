@@ -35,6 +35,23 @@ pnpm verify
 `pnpm storybook` starts Storybook at <http://localhost:6006>.
 `pnpm verify` runs every check that CI runs, and prints the first failure.
 
+## Focus rings on page blocks
+
+A page writes the focus ring of its own block under the exported
+`focusRing` condition and sets `outline: 'none'` on the same element, never
+`_focusVisible`. The ring then shows after the keyboard and hides after a
+mouse, pen or touch press, as on the library's controls:
+
+```tsx
+import { focusRing } from '@eshelton328/component-library-1701'
+import { css } from '../styled-system/css'
+
+const block = css({
+  outline: 'none',
+  [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+})
+```
+
 ## Help
 
 Open an issue in this repository. Agents read [AGENTS.md](AGENTS.md).

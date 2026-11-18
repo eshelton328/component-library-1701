@@ -25,6 +25,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   the detail's child reads them to reach under the bar and lift its
 //   footer and the end of its body above it (the scroll-frame recipe); a
 //   ScrollFrame deeper in the page, or outside AppShell, keeps 0.
+//   The tab bar slot is filled with bg.canvas under the overlay, so the
+//   bar's translucent surface.chrome (0.96) lies over the canvas and not
+//   over the page: the page does not show through behind the icons and
+//   labels. Figma's bars (Artifacts M1 406:28, Workspaces M1 252:2, Toolkit
+//   T1 424:3863, Inbox T1 346:5574: #0F1626 at 0.96, no effects) have only
+//   the dark backdrop behind them, so this is the colour Figma shows, from
+//   the two tokens and no new value. A bar below the page (no overlay)
+//   keeps its fill over the backdrop, as before.
 export const appShell = defineSlotRecipe({
   className: 'app-shell',
   jsx: ['AppShell'],
@@ -76,7 +84,7 @@ export const appShell = defineSlotRecipe({
           scrollPaddingBottom: 'var(--app-shell-tab-bar-inset)',
           '& > * *': { '--app-shell-tab-bar-inset': '0px', '--app-shell-tab-bar-spacer': 'none' },
         },
-        tabBar: { position: 'absolute', insetInline: '0', bottom: '0' },
+        tabBar: { position: 'absolute', insetInline: '0', bottom: '0', bg: 'bg.canvas' },
       },
     },
   },

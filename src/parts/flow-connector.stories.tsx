@@ -467,8 +467,8 @@ const phone = { m09: { name: 'Phone (M09)', styles: { width: '390px', height: '8
 
 /** D13's flow: stages joined by lines, a fork and a join around steps 4 and 5, the gate's way out with "no", and the dashed loop back to the stop. */
 export const HorizontalDark: Story = { render: () => <Desktop />, parameters: { viewport: { options: desktop } }, globals: { mode: 'dark', viewport: { value: 'd13' } }, play: horizontal }
-export const HorizontalLight: Story = { ...HorizontalDark, globals: { mode: 'light', viewport: { value: 'd13' } } }
+export const HorizontalLight: Story = { ...HorizontalDark, globals: { mode: 'light', viewport: { value: 'd13' } }, play: horizontal }
 
 /** T08 and M09's column on a 390 px phone: down lines between steps, and the fork and join around steps 4 and 5 side by side. */
 export const ColumnDark: Story = { render: () => <Column />, parameters: { viewport: { options: phone } }, globals: { mode: 'dark', viewport: { value: 'm09' } }, play: column }
-export const ColumnLight: Story = { ...ColumnDark, globals: { mode: 'light', viewport: { value: 'm09' } } }
+export const ColumnLight: Story = { ...ColumnDark, globals: { mode: 'light', viewport: { value: 'm09' } }, play: column }

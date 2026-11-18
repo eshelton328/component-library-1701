@@ -30,7 +30,7 @@ const LineTrailing = line.withContext('span', 'trailing')
 export type MetaLineProps = Scalar<MetaLineVariantProps> & {
   /** The items, in order, such as the project and the source. A "·" goes between them; empty items (null, false, '') are left out. */
   items: readonly ReactNode[]
-  /** A mark before the items, such as a kind mark. `icon="md"` is the card's mark, which Figma draws at 14 px; both sizes now draw 12 px. */
+  /** A mark before the items, such as a kind mark. `icon` sizes it: `sm` (the default) draws 12 px, as in a row; `md` draws 16 px, the card's mark (Figma 14). Pass a `KindMark size="16"` to `md`, so its stroke stays 2 px. */
   leading?: ReactNode
   /** An item pushed to the end of the line, such as the age. */
   trailing?: ReactNode

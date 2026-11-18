@@ -29,13 +29,16 @@ export const metaLine = defineSlotRecipe({
     trailing: { flexShrink: '0', ms: 'auto', whiteSpace: 'nowrap' },
   },
   variants: {
-    // Figma draws a 14 px kind mark on the card and a 12 px one in rows;
-    // both take 12, on the 4 px icon scale. Each variant sets the size, not
-    // base: `!` wins over the icon's own size, and an important base style
-    // would also win over the variant.
+    // Figma draws a 12 px kind mark in rows (`sm`) and a 14 px one on the
+    // Artifacts card (`md`, `kind · claude` 402:15461; T1 405:193 and
+    // 405:222). 14 is a tie between 12 and 16 on the 4 px icon scale, so
+    // `md` takes the larger, 16 (d-072, d-100); it fits the 16 px mono
+    // line. Each variant sets the size, not base: `!` wins over the icon's
+    // own size, and an important base style would also win over the
+    // variant.
     icon: {
       sm: { leading: { '& svg': { w: 'icon.12!', h: 'icon.12!' } } },
-      md: { leading: { '& svg': { w: 'icon.12!', h: 'icon.12!' } } },
+      md: { leading: { '& svg': { w: 'icon.16!', h: 'icon.16!' } } },
     },
   },
   defaultVariants: { icon: 'sm' },

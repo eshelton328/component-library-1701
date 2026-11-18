@@ -391,16 +391,22 @@ function tailShadows(types: ReadonlyMap<string, ApiItem>, owner: string, name: s
  * an object and name intersection that a named type in its tail may
  * already allow (see `tailShadows`): `"data-testid"?: string` narrows
  * `[key: \`data-${string}\`]: string | number`. A new declaration or any
- * other new optional member is not breaking. `types` is a report of more
- * declarations, such as the recipe variant types that the API report
- * imports; `tailShadows` reads them to find the names an intersected type
- * allows, and the diff does not compare them. A declaration in `after`
- * wins over one of the same name in `types`.
+ * other new optional member is not breaking. `types.before` and
+ * `types.after` are reports of more declarations on each side, such as
+ * the recipe variant types that the API report imports. `tailShadows`
+ * reads them to find the names an intersected type allows, and the diff
+ * does not compare them. A new member is narrowed when the types of either
+ * side allow its name, because a type can lose a key in the same change
+ * that adds the member; a side whose types the parser cannot read counts
+ * as allowing every name. A declaration in a report wins over one of the
+ * same name in its types.
  */
-export function diffApi(before: string, after: string, types = ''): ApiDiff {
+export function diffApi(before: string, after: string, types: { before?: string | undefined; after?: string | undefined } = {}): ApiDiff {
   const a = new Map(apiItems(before).map((i) => [i.key, i]))
   const b = new Map(apiItems(after).map((i) => [i.key, i]))
-  const known = new Map([...apiItems(types).map((i): [string, ApiItem] => [i.key, i]), ...b])
+  const withTypes = (report: ReadonlyMap<string, ApiItem>, more: string | undefined) => new Map([...apiItems(more ?? '').map((i): [string, ApiItem] => [i.key, i]), ...report])
+  const knownBefore = withTypes(a, types.before)
+  const knownAfter = withTypes(b, types.after)
   const removed: string[] = []
   const added: string[] = []
   const addedRequired: string[] = []
@@ -418,7 +424,14 @@ export function diffApi(before: string, after: string, types = ''): ApiDiff {
     const owner = key.includes('.') ? key.slice(0, key.indexOf('.')) : undefined
     if (old || !owner || !a.has(owner)) continue
     if (item.required) addedRequired.push(key)
-    else if (tailShadows(known, owner, key.slice(owner.length + 1).replace(/#\d+$/, ''))) narrowed.push(key)
+    else {
+      const name = key.slice(owner.length + 1).replace(/#\d+$/, '')
+      // The tail text comes from the after side; the before side reads the
+      // same types, so a key the release had counts too.
+      const tail = b.get(`${owner}.&`)
+      const beforeTypes = tail ? new Map([...knownBefore, [`${owner}.&`, tail]]) : knownBefore
+      if (tailShadows(knownAfter, owner, name) || (tail !== undefined && tailShadows(beforeTypes, owner, name))) narrowed.push(key)
+    }
   }
   return { removed, added, addedRequired, narrowed, breaking: removed.length > 0 || addedRequired.length > 0 || narrowed.length > 0 }
 }

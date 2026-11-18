@@ -60,7 +60,11 @@ Repository scripts that are not part of the package.
   the last release tag. It also reads the recipe types that Panda
   codegen writes to `styled-system/recipes/`, because the report imports
   the variant props (such as `DialogVariantProps`) and does not declare
-  them. `check-api-diff.ts` reads only the two reports, so the
+  them. When a new member may narrow such a type, it also adds a
+  temporary worktree of the tag, runs `pnpm install` there (which runs
+  codegen) and reads the tag's recipe types, so a variant that the change
+  removes still counts. When either side has no recipe types, every new
+  member of such an alias is breaking. `check-api-diff.ts` reads only the two reports, so the
   `api-report` workflow counts a new member of such an alias as breaking. When it broke, `@semantic-release/commit-analyzer`
   with `release.config.js` must return `major` for the commits in the
   range, so a reverted breaking commit does not count. The release job

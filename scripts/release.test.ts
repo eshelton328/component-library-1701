@@ -325,6 +325,7 @@ export type DialogProps = Scalar<DialogVariantProps> & {
     className?: string | undefined;
 } & PopoverDataAttributes;`
 const dialogProps = report(popoverData + scalarDecl + dialogPropsBody)
+const bothTypes = { before: dialogVariantTypes, after: dialogVariantTypes }
 const addDialogMember = (r: string, member: string) => r.replace('    title: string;\n', `    title: string;\n    ${member}\n`)
 
 void test('an alias with a generic reference before its object splits into members (#158)', () => {
@@ -341,31 +342,31 @@ void test('an alias with a generic reference before its object splits into membe
 })
 
 void test('a new optional member of an alias with a generic reference is not breaking when the reference has no such key (#158)', () => {
-  const d = diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), dialogVariantTypes)
+  const d = diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), bothTypes)
   assert.deepEqual(d, { removed: [], added: ['meta?: ReactNode;'], addedRequired: [], narrowed: [], breaking: false })
 })
 
 void test('a removed or narrowed member of an alias with a generic reference is breaking', () => {
-  const removed = diffApi(dialogProps, dialogProps.replace('    description?: ReactNode;\n', ''), dialogVariantTypes)
+  const removed = diffApi(dialogProps, dialogProps.replace('    description?: ReactNode;\n', ''), bothTypes)
   assert.equal(removed.breaking, true)
   assert.ok(removed.removed.some((t) => t.includes('description?: ReactNode;')))
-  const retyped = diffApi(dialogProps, dialogProps.replace('description?: ReactNode;', 'description?: string;'), dialogVariantTypes)
+  const retyped = diffApi(dialogProps, dialogProps.replace('description?: ReactNode;', 'description?: string;'), bothTypes)
   assert.equal(retyped.breaking, true)
   assert.ok(retyped.removed.some((t) => t.includes('description?: ReactNode;')))
   // `size` is a key of the variant props, so a new `size` narrows it.
-  const shadow = diffApi(dialogProps, addDialogMember(dialogProps, 'size?: "md";'), dialogVariantTypes)
+  const shadow = diffApi(dialogProps, addDialogMember(dialogProps, 'size?: "md";'), bothTypes)
   assert.equal(shadow.breaking, true)
-  const required = diffApi(dialogProps, addDialogMember(dialogProps, 'meta: ReactNode;'), dialogVariantTypes)
+  const required = diffApi(dialogProps, addDialogMember(dialogProps, 'meta: ReactNode;'), bothTypes)
   assert.equal(required.breaking, true)
 })
 
 void test('a new optional member is breaking when the keys of a generic reference are not known', () => {
-  const meta = (before: string, types?: string) => diffApi(before, addDialogMember(before, 'meta?: ReactNode;'), types)
+  const meta = (before: string, types?: { before?: string | undefined; after?: string | undefined }) => diffApi(before, addDialogMember(before, 'meta?: ReactNode;'), types)
   // No declaration of DialogVariantProps.
   assert.deepEqual(meta(dialogProps).narrowed, ['DialogProps.meta'])
   // No declaration of Scalar.
   const noScalar = report(popoverData + dialogPropsBody)
-  assert.deepEqual(meta(noScalar, dialogVariantTypes).narrowed, ['DialogProps.meta'])
+  assert.deepEqual(meta(noScalar, bothTypes).narrowed, ['DialogProps.meta'])
   // A Scalar that is not a mapped type over the keys of its parameter.
   for (const scalar of [
     'export type Scalar<T> = {\n    [K in keyof T as `x${string}`]?: T[K];\n};\n\n',
@@ -374,14 +375,27 @@ void test('a new optional member is breaking when the keys of a generic referenc
     'export type Scalar<T> = Partial<T>;\n\n',
   ]) {
     const r = report(popoverData + scalar + dialogPropsBody)
-    assert.deepEqual(meta(r, dialogVariantTypes).narrowed, ['DialogProps.meta'], scalar)
+    assert.deepEqual(meta(r, bothTypes).narrowed, ['DialogProps.meta'], scalar)
   }
+})
+
+void test('a new optional member is breaking when the recipe types of the release had that key (Codex review of #160)', () => {
+  // The release had a `size` variant; this change removes it and adds a
+  // `size` prop, so a caller that passes size="lg" fails to compile.
+  const withoutSize = dialogVariantTypes.replace('  size?: "md" | "lg" | "wide"\n', '')
+  const after = addDialogMember(dialogProps, 'size?: "md";')
+  const d = diffApi(dialogProps, after, { before: dialogVariantTypes, after: withoutSize })
+  assert.deepEqual(d.narrowed, ['DialogProps.size'])
+  // With no recipe types for the release, every new member counts.
+  assert.deepEqual(diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), { after: dialogVariantTypes }).narrowed, ['DialogProps.meta'])
+  // With both, a name that neither allows passes.
+  assert.deepEqual(diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), { before: dialogVariantTypes, after: withoutSize }).narrowed, [])
 })
 
 void test('any change to the generic references before the object is breaking', () => {
   for (const head of ['Scalar<OtherVariantProps> & ', 'ComponentProps<"div"> & Scalar<DialogVariantProps> & ', '']) {
     const after = dialogProps.replace('Scalar<DialogVariantProps> & {', `${head}{`)
-    assert.equal(diffApi(dialogProps, after, dialogVariantTypes).breaking, true, head)
+    assert.equal(diffApi(dialogProps, after, bothTypes).breaking, true, head)
   }
 })
 

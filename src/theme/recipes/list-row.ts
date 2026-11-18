@@ -49,7 +49,8 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - `leadingGap="16"` puts the body 16 after the leading, as D4's title
 //   (403:8232 at x 253) after its 128 px preview (403:8217, x 109 to 237):
 //   the 10 px row gap and 6 more after the leading. Without it the gap
-//   stays 10.
+//   stays 10. `leadingGap="12"` puts the body 12 after the leading, as the
+//   Toolkit phone row's name (M1 429:96) after its 36 px kind tile.
 // - `bodyAlign="center"` centres the body down the row, as D4's 62 px text
 //   frame (403:8230 at y 218) in the 98 px row (403:8216 at y 200): 18 below
 //   the row's top, not the 13 of the border and `lg`'s 12. `start`, the
@@ -177,6 +178,7 @@ export const listRow = defineSlotRecipe({
       danger: { dot: { bg: 'status.danger.fg' } },
     },
     leadingGap: {
+      '12': { leading: { me: '2' } },
       '16': { leading: { me: '6' } },
     },
     bodyAlign: {

@@ -8,6 +8,7 @@ import { SparkFilledIcon } from '../foundations/icons'
 import { Badge } from './badge'
 import { ContextMeter } from './context-meter'
 import { KindMark } from './kind-mark'
+import { KindTile } from './kind-tile'
 import { ListRow } from './list-row'
 import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
@@ -859,3 +860,37 @@ export const DotChangeKeepsFocus: StoryObj<typeof meta> = {
     await expect(title.isConnected).toBe(true)
   },
 }
+
+/**
+ * The Toolkit phone row (M1 429:96): the name starts 12 after the 36 px
+ * kind tile with `leadingGap="12"`; a row without it keeps the 10 px gap.
+ */
+function ToolkitPhoneRows() {
+  return (
+    <main className={page}>
+      <div className={phoneList}>
+        <ListRow padding="phone" leadingGap="12" trailingAlign="center" title="agents-md" meta="toolkit/skills/agents-md" leading={<KindTile kind="skill" size="lg" />} trailing="→0 ←1" onSelect={() => undefined} />
+        <ListRow padding="phone" trailingAlign="center" title="writer" meta="toolkit/agents/writer" leading={<KindTile kind="agent" size="lg" />} trailing="→2 ←0" onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const toolkitPhonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const gapOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    const leading = row?.querySelector('.list-row__leading')
+    const body = row?.querySelector('.list-row__body')
+    if (!(row instanceof HTMLElement) || !(leading instanceof HTMLElement) || !(body instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return { gap: body.getBoundingClientRect().left - leading.getBoundingClientRect().right, tile: leading.getBoundingClientRect().width }
+  }
+  // 12 after the 36 px tile, as Figma's name (M1 429:96).
+  await expect(gapOf('agents-md')).toEqual({ gap: 12, tile: 36 })
+  // The default keeps the 10 px row gap.
+  await expect(gapOf('writer')).toEqual({ gap: 10, tile: 36 })
+}
+
+/** `leadingGap="12"`: the Toolkit phone row (M1 429:96). */
+export const LeadingGap12Dark: StoryObj<typeof meta> = { render: () => <ToolkitPhoneRows />, globals: { mode: 'dark' }, play: toolkitPhonePlay }
+export const LeadingGap12Light: StoryObj<typeof meta> = { render: () => <ToolkitPhoneRows />, globals: { mode: 'light' }, play: toolkitPhonePlay }

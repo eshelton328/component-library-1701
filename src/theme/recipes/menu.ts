@@ -67,6 +67,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // px line, 2 under the last choice as at the default density (the compact box
 // has gap 0), so the menu is Figma's 283 high. The component opens it 8 under
 // its trigger (Figma y 150 under the Sort button).
+//
+// The box is glass, as Dialog and BottomSheet: Figma's menu (Workbench T12
+// 420:1266, T2b 402:5721, D19 417:1740) fills #0f1626 at 0.95 over a 12 px
+// background blur, so the text under an open menu does not show through.
+// The fill stays `surface.overlay` and the blur is `blurs.glass` (d-044),
+// on every box the recipe draws: the menu, a submenu's list and RadioMenu.
 export const menu = defineSlotRecipe({
   className: 'menu',
   jsx: ['Menu'],
@@ -89,6 +95,7 @@ export const menu = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
       boxShadow: 'overlay',
+      backdropFilter: 'blur(token(blurs.glass))',
       outline: 'none',
       _closed: { display: 'none' },
     },

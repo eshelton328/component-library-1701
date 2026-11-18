@@ -802,6 +802,25 @@ const submenuPlay: StoryObj<typeof meta>['play'] = async () => {
 export const SubmenuDark: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: submenuPlay, globals: { mode: 'dark' } }
 export const SubmenuLight: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: submenuPlay, globals: { mode: 'light' } }
 
+// Figma's menu is glass (T12 420:1266, T2b 402:5721, D19 417:1740): the menu and a submenu's list blur what is under
+// them by blurs.glass (12 px), as Dialog and BottomSheet, over their surface.overlay fill.
+const glassPlay: StoryObj<typeof meta>['play'] = async () => {
+  const pane = await menuByKey('pane')
+  const move = within(pane).getByRole('menuitem', { name: 'Move to workspace' })
+  const listId = move.getAttribute('aria-controls')
+  if (listId === null) throw new Error('the row controls no list')
+  const list = document.getElementById(listId)
+  if (list === null) throw new Error('no list')
+  for (const box of [pane, list]) {
+    await expect(getComputedStyle(box).backdropFilter).toBe('blur(12px)')
+    await expect(getComputedStyle(box).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  }
+}
+
+/** The menu and its open submenu list, both glass: a 12 px backdrop blur under the overlay fill. */
+export const GlassDark: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: glassPlay, globals: { mode: 'dark' } }
+export const GlassLight: StoryObj<typeof meta> = { render: () => <OpenSubmenu />, play: glassPlay, globals: { mode: 'light' } }
+
 const onPaneSelect = fn<(value: string) => void>()
 const onPaneHighlight = fn<(value: string | null) => void>()
 const onMoveOpen = fn<(open: boolean) => void>()

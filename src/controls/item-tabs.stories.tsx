@@ -182,3 +182,61 @@ const compact: StoryObj<typeof meta> = {
 /** `density="compact"`: the Toolkit item's tabs on a phone and a tablet, flush with the list and 10 px at the sides. */
 export const CompactDark: StoryObj<typeof meta> = { ...compact, globals: { mode: 'dark' } }
 export const CompactLight: StoryObj<typeof meta> = { ...compact, globals: { mode: 'light' } }
+
+// Each swatch has the computed colour of one token, so the play test compares the tabs with the tokens.
+const swatches = {
+  accent: css({ color: 'fg.accent' }),
+  default: css({ color: 'fg.default' }),
+  muted: css({ color: 'fg.muted' }),
+  selected: css({ color: 'surface.selected' }),
+  border: css({ color: 'border.selected' }),
+}
+
+function swatch(name: keyof typeof swatches) {
+  const el = document.querySelector(`[data-swatch="${name}"]`)
+  if (el === null) throw new Error(`no ${name} swatch`)
+  return getComputedStyle(el).color
+}
+
+function Tones() {
+  return (
+    <main className={page}>
+      <ItemTabs tone="accent" label="Accent sections" items={toolkit} />
+      <ItemTabs tone="accent" density="compact" label="Accent compact sections" items={toolkit} />
+      <ItemTabs label="Default tone sections" items={toolkit} />
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const accent: StoryObj<typeof meta> = {
+  render: () => <Tones />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const tab = (list: string, name: string) => getComputedStyle(within(canvas.getByRole('tablist', { name: list })).getByRole('tab', { name }))
+    // The selected accent tab (D3 480:6, T17 487:366): the selected fill, a 1 px border.selected border and the label in fg.accent.
+    for (const list of ['Accent sections', 'Accent compact sections']) {
+      const selected = tab(list, 'Overview')
+      await expect(selected.backgroundColor).toBe(swatch('selected'))
+      await expect([selected.borderTopWidth, selected.borderTopStyle]).toEqual(['1px', 'solid'])
+      await expect(selected.borderTopColor).toBe(swatch('border'))
+      await expect(selected.color).toBe(swatch('accent'))
+      // An idle tab has no visible border and stays fg.muted (480:8).
+      const idle = tab(list, 'Files')
+      await expect(idle.color).toBe(swatch('muted'))
+      await expect(idle.borderTopColor).toBe('rgba(0, 0, 0, 0)')
+    }
+    // The default tone keeps the fg.default label on the same border.
+    const plain = tab('Default tone sections', 'Overview')
+    await expect(plain.color).toBe(swatch('default'))
+    await expect(plain.borderTopColor).toBe(swatch('border'))
+  },
+}
+
+/** `tone="accent"`: the Toolkit item's selected tab, its label cyan on the selected fill and border. */
+export const AccentDark: StoryObj<typeof meta> = { ...accent, globals: { mode: 'dark' } }
+export const AccentLight: StoryObj<typeof meta> = { ...accent, globals: { mode: 'light' } }

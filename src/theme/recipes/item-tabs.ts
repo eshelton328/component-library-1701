@@ -13,6 +13,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // list's scroll clip would cut a ring outside the tab; the focus ring moves
 // inside it, as FilterChips `padding="none"` draws it. `default` keeps the
 // 2 px list inset and 12 px sides.
+//
+// `tone="accent"` is the Toolkit item's selected tab (D3 `tab · Overview`
+// 480:6, T17 487:366): the selected fill, a 1 px cyan border and the label
+// in cyan (480:7). The label takes fg.accent, as ViewSwitch `tone="accent"`
+// does, but the tab keeps its border, which ViewSwitch's accent tone drops.
+// The border stays border.selected: it is the cyan (#5ee1ff) border token
+// for a selected item, and border.accent (the same cyan) is for toasts
+// only. An idle tab stays fg.muted. `default` keeps the fg.default label.
 export const itemTabs = defineSlotRecipe({
   className: 'item-tabs',
   jsx: ['ItemTabs'],
@@ -68,6 +76,10 @@ export const itemTabs = defineSlotRecipe({
       default: {},
       compact: { list: { p: '0' }, trigger: { px: '10', _focusVisible: { outlineOffset: '-2' } } },
     },
+    tone: {
+      default: {},
+      accent: { trigger: { _selected: { color: 'fg.accent' } } },
+    },
   },
-  defaultVariants: { size: 'md', density: 'default' },
+  defaultVariants: { size: 'md', density: 'default', tone: 'default' },
 })

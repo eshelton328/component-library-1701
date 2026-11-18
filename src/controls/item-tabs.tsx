@@ -44,8 +44,12 @@ export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
  * `compact` starts the tabs at the list's edge with 10 px sides, as the
  * Toolkit item draws them on a phone and a tablet, and draws the focus ring
  * inside the tab.
+ * `tone` sets the selected tab's look: `default` draws the selected fill
+ * with a `border.selected` border and the label in `fg.default`; `accent`
+ * keeps the fill and the border and draws the label and icon in `fg.accent`
+ * (cyan), as the Toolkit item's tabs do.
  */
-export function ItemTabs({ label, items, value, defaultValue, onValueChange, size, density }: ItemTabsProps) {
+export function ItemTabs({ label, items, value, defaultValue, onValueChange, size, density, tone }: ItemTabsProps) {
   // Uncontrolled tabs keep their own selection here, not in Ark, so that it
   // follows the items: when the selected tab goes away or is disabled, the
   // first enabled tab is selected and stays in the tab order.
@@ -56,6 +60,7 @@ export function ItemTabs({ label, items, value, defaultValue, onValueChange, siz
     <Root
       size={size}
       density={density}
+      tone={tone}
       // Ark treats an empty string as no value, so each value gets a prefix.
       value={selected === undefined ? null : toArk(selected)}
       onValueChange={(details) => {

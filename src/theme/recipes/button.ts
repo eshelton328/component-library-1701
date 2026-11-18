@@ -27,8 +27,9 @@ export const button = defineRecipe({
     borderColor: 'transparent',
     outline: 'none',
     _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
-    // The button of an open menu (aria-expanded). A variant with its own
-    // border sets this again, because the variant's border wins over base.
+    // The button of an open menu, popover or sheet (aria-expanded). A variant
+    // with its own border sets this again, because the variant's border wins
+    // over base. `expandedBorder: 'default'` keeps the variant's own border.
     _expanded: { borderColor: 'border.active' },
     // Each variant draws its own disabled look: most fade the whole button
     // (opacity.disabled), and secondary mutes only its label.
@@ -131,6 +132,18 @@ export const button = defineRecipe({
       default: {},
       accent: {},
     },
+    // The border of an expanded button (aria-expanded). `active` draws
+    // border.active, as the trigger of an open menu, popover or sheet does in
+    // 14 Figma frames. `default` keeps the variant's own border, for a
+    // disclosure toggle that shows or hides a section in place: Hide
+    // transcript on a subagent card keeps #24314f (border.default) while open
+    // (Workbench D3 105:1350, T3 105:2059, M6 105:3215). The compound
+    // variants below set it per variant, because each variant's own
+    // `_expanded` wins over a variant here. `_pressed` is not changed.
+    expandedBorder: {
+      active: {},
+      default: {},
+    },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
     // y 2 in a 35 wide button, so 4 from the end and 2 from the top.
@@ -146,6 +159,17 @@ export const button = defineRecipe({
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
     { variant: 'secondary', pressedTone: 'accent', css: { _pressed: { color: 'fg.accent' } } },
+    {
+      variant: ['secondary', 'secondaryDanger'],
+      expandedBorder: 'default',
+      css: { _expanded: { borderColor: 'border.default' } },
+    },
+    { variant: 'dangerSoft', expandedBorder: 'default', css: { _expanded: { borderColor: 'status.danger.border' } } },
+    {
+      variant: ['primary', 'danger', 'dangerText', 'text'],
+      expandedBorder: 'default',
+      css: { _expanded: { borderColor: 'transparent' } },
+    },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', iconOnly: false },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', iconOnly: false },
 })

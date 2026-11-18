@@ -38,6 +38,11 @@ under their purpose group, never under "Controls" (d-065).
   sticky element inside its body (a Start button at its foot) sticks at
   `bottom: 'var(--scroll-frame-inset, 0px)'`, the frame's public bottom
   offset, so it stays above the bar.
+- `Button` draws `border.active` while `aria-expanded` is true. Keep that
+  default on the trigger of a menu, popover or sheet. A disclosure toggle,
+  a button that shows or hides a section in place (Hide transcript on a
+  subagent card), sets `expandedBorder="default"` and keeps its variant's
+  border; a page never overrides `_expanded` itself.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

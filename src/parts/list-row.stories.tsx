@@ -705,6 +705,7 @@ function MetaTrailingRows() {
     <main className={page}>
       <div className={phoneList}>
         <ListRow padding="phone" title="Logo options" meta="ncc-1701" metaTrailing={<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" />} leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
+        <ListRow padding="phone" title="Long meta" meta="averyverylongprojectnamewithnospacesandnohyphens" metaTrailing={<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" />} leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
         <ListRow padding="phone" title="Without a meta part" meta="ncc-1701" leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
       </div>
     </main>
@@ -724,7 +725,7 @@ const metaTrailingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
     return el.getBoundingClientRect()
   }
   const match = rowOf('Logo options')
-  const badge = canvas.getByText('New').closest('.badge__root')
+  const badge = within(match).getByText('New').closest('.badge__root')
   if (!(badge instanceof HTMLElement)) throw new Error('no badge')
   await expect(match.querySelector('.list-row__metaTrailing')?.contains(badge)).toBe(true)
   const end = badge.getBoundingClientRect()
@@ -737,6 +738,21 @@ const metaTrailingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
   await expect(end.top + end.height / 2).toBe(metaText.top + metaText.height / 2)
   // The part does not grow the row: it is still the 66 px phone row (M1).
   await expect(match.getBoundingClientRect().height).toBe(66)
+  // A long word in the meta wraps inside its width, so the meta text never runs under the badge.
+  const long = rowOf('Long meta')
+  const longMeta = long.querySelector('.list-row__meta')
+  const longBadge = long.querySelector('.list-row__metaTrailing')
+  if (!(longMeta instanceof HTMLElement) || !(longBadge instanceof HTMLElement)) throw new Error('no long meta row parts')
+  const range = document.createRange()
+  range.selectNodeContents(longMeta)
+  await expect(range.getBoundingClientRect().right).toBeLessThanOrEqual(longBadge.getBoundingClientRect().left)
+  await expect(longMeta.scrollWidth).toBeLessThanOrEqual(longMeta.clientWidth)
+  // The long word does not widen the rows past the list, and the badge stays inside the body.
+  const list = long.parentElement
+  if (!(list instanceof HTMLElement)) throw new Error('no list')
+  await expect(long.getBoundingClientRect().right).toBeLessThanOrEqual(list.getBoundingClientRect().right)
+  await expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth)
+  await expect(longBadge.getBoundingClientRect().right).toBeLessThanOrEqual(part(long, 'body').right)
   // Without `metaTrailing` the meta is the body's own child, with no meta row, in the same 66 px row.
   const plain = rowOf('Without a meta part')
   await expect(plain.querySelector('.list-row__metaRow')).toBeNull()

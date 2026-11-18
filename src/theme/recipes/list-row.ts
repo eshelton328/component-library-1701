@@ -115,7 +115,8 @@ export const listRow = defineSlotRecipe({
     },
     meta: { textStyle: 'mono', color: 'fg.muted' },
     // The meta line with a `metaTrailing` part: the meta text takes the free width, so the part ends the line.
-    metaRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0', '& > .list-row__meta': { flex: '1', minW: '0' } },
+    // A long word in the meta wraps inside that width, so it never runs under the part.
+    metaRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0', '& > .list-row__meta': { flex: '1', minW: '0', overflowWrap: 'anywhere' } },
     metaTrailing: { display: 'inline-flex', flexShrink: '0', ms: 'auto' },
     lines: { display: 'flex', flexDirection: 'column', gap: '4', textStyle: 'small', color: 'fg.muted' },
     // Buttons in the row, such as Approve. They sit above the title's ::after, so a click reaches them.

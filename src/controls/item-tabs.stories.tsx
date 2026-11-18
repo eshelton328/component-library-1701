@@ -248,8 +248,8 @@ export const AccentLight: StoryObj<typeof meta> = { ...accent, globals: { mode: 
 // at 378, the list's edge.
 const m27 = { m27: { name: 'Phone (M27)', styles: { width: '390px', height: '844px' } } }
 const phoneItem = css({ bg: 'bg.canvas', color: 'fg.default', px: '12', py: '12' })
-// Each idle tab's Figma width and its label's (492:3976 to 492:3986).
-const m27Widths: Record<string, readonly [number, number]> = { Overview: [82, 62], 'How it works': [105, 85], Files: [51, 31], Links: [55, 35], Activity: [71, 51] }
+// Figma's label widths up to the selected tab (492:3976, 492:3978, 492:3980, 492:3982, 492:3984).
+const m27Labels = { Overview: 62, 'How it works': 85, Files: 31, Links: 35, Evals: 35 }
 // The width of a tab's label text, from the page.
 const labelWidth = (tab: HTMLElement) => {
   const range = document.createRange()
@@ -273,8 +273,9 @@ const phonePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
   await expect([box.left, box.right]).toEqual([12, 378])
   const tab = (name: string) => within(list).getByRole('tab', { name })
   const evals = tab('Evals')
-  // Measure in Geist, not in a fallback font: the play test can start before the label font has loaded, and
-  // a fallback (DejaVu Sans on Linux) draws each label about 2 px wider. Load the tabs' own font, then check it.
+  // Measure in Geist: load the tabs' own face first. The label widths still differ between machines (CI's Linux
+  // Chromium draws each label about 2 px wider than macOS), so every check below is stated from the rendered
+  // label widths, not from Figma's absolute widths.
   const font = getComputedStyle(evals)
   const face = `${font.fontWeight} ${font.fontSize} "Geist Variable"`
   const loaded = await document.fonts.load(face, 'Overview How it works Files Links Evals Activity')
@@ -282,33 +283,52 @@ const phonePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
   await expect(loaded.length).toBeGreaterThan(0)
   await expect(document.fonts.check(face)).toBe(true)
   await expect(evals).toHaveAttribute('aria-selected', 'true')
-  // The selected tab's outline ends inside the list, so its scroll clip cuts none of it.
+  const tabs = within(list).getAllByRole('tab')
+  await expect(tabs.map((t) => t.textContent)).toEqual(['Overview', 'How it works', 'Files', 'Links', 'Evals', 'Activity'])
+  // The selected tab is its label and 10 at each side inside a 1 px border (Figma 492:3983: 22 around the label).
   const r = evals.getBoundingClientRect()
-  await expect(r.right).toBeLessThanOrEqual(box.right)
-  await expect(Math.abs(r.width - 57)).toBeLessThanOrEqual(1)
   await expect(r.height).toBe(32)
   const s = getComputedStyle(evals)
   await expect([s.borderLeftWidth, s.paddingLeft]).toEqual(['1px', '10px'])
   await expect(Math.abs(r.width - labelWidth(evals) - 22)).toBeLessThan(0.5)
-  // Each unselected tab has no border: it is its label and 10 at each side, as Figma's 20 around the label, and
-  // its width matches Figma's within 1 px. Activity's label renders 1.06 px narrower than Figma's 51 (the font,
-  // not the tab), so its tab is held to Figma's 20 px around the label and to 1.5 px of Figma's width.
-  for (const [name, [width, label]] of Object.entries(m27Widths)) {
-    const t = tab(name)
+  // Each unselected tab has no border and is its label and 10 at each side (Figma 492:3975 and its siblings: 20
+  // around the label).
+  for (const t of tabs.filter((x) => x !== evals)) {
     const w = t.getBoundingClientRect().width
+    const name = t.textContent
     await expect(getComputedStyle(t).borderLeftWidth).toBe('0px')
-    await expect({ name, chrome: Math.abs(w - labelWidth(t) - (width - label)) < 0.5 }).toEqual({ name, chrome: true })
-    await expect({ name, width: Math.abs(w - width) <= (name === 'Activity' ? 1.5 : 1) }).toEqual({ name, width: true })
+    await expect({ name, chrome: Math.abs(w - labelWidth(t) - 20) < 0.5 }).toEqual({ name, chrome: true })
     await expect(t.getBoundingClientRect().height).toBe(32)
   }
-  // A newly selected tab takes the same border and size; the one it leaves drops its border.
-  await userEvent.click(tab('Overview'))
-  await expect(tab('Overview')).toHaveAttribute('aria-selected', 'true')
-  await expect(Math.abs(tab('Overview').getBoundingClientRect().width - 84)).toBeLessThanOrEqual(1)
-  await expect(getComputedStyle(tab('Overview')).borderLeftWidth).toBe('1px')
-  await expect(Math.abs(evals.getBoundingClientRect().width - 55)).toBeLessThanOrEqual(1)
+  // The tabs are 4 apart and the first starts at the list's edge (492:3974).
+  await expect(tabs[0]?.getBoundingClientRect().left).toBe(box.left)
+  for (let i = 1; i < tabs.length; i += 1) {
+    const gap = (tabs[i]?.getBoundingClientRect().left ?? 0) - (tabs[i - 1]?.getBoundingClientRect().right ?? 0)
+    await expect({ i, gap: Math.abs(gap - 4) < 0.5 }).toEqual({ i, gap: true })
+  }
+  // Evals's right edge is the list's left plus each tab's label and padding, the selected border and the gaps.
+  // With a border on every tab (main's recipe) it would be 2 px further right for each idle tab before it.
+  const upToEvals = tabs.slice(0, tabs.indexOf(evals) + 1)
+  const labels = upToEvals.reduce((sum, t) => sum + labelWidth(t), 0)
+  const gaps = 4 * (upToEvals.length - 1)
+  const model = box.left + labels + 20 * upToEvals.length + 2 + gaps
+  const everyBorder = box.left + labels + 22 * upToEvals.length + gaps
+  await expect(Math.abs(r.right - model)).toBeLessThan(0.5)
+  await expect(everyBorder - model).toBe(2 * (upToEvals.length - 1))
+  // The list's edge is checked only when the labels are no wider than Figma's (248 in all), as they draw on
+  // macOS; then Evals ends inside the list's 378, as in M27. Wider labels (CI's Linux Chromium) move every tab
+  // right whatever the border, so the edge proves nothing there.
+  const figmaLabels = Object.values(m27Labels).reduce((sum, w) => sum + w, 0)
+  if (labels <= figmaLabels) await expect(r.right).toBeLessThanOrEqual(box.right)
+  // A newly selected tab takes the same border and padding; the one it leaves drops its border.
+  const overview = tab('Overview')
+  await userEvent.click(overview)
+  await expect(overview).toHaveAttribute('aria-selected', 'true')
+  await expect(getComputedStyle(overview).borderLeftWidth).toBe('1px')
+  await expect(Math.abs(overview.getBoundingClientRect().width - labelWidth(overview) - 22)).toBeLessThan(0.5)
   await expect(getComputedStyle(evals).borderLeftWidth).toBe('0px')
-  await expect([tab('Overview').getBoundingClientRect().height, evals.getBoundingClientRect().height]).toEqual([32, 32])
+  await expect(Math.abs(evals.getBoundingClientRect().width - labelWidth(evals) - 20)).toBeLessThan(0.5)
+  await expect([overview.getBoundingClientRect().height, evals.getBoundingClientRect().height]).toEqual([32, 32])
 }
 
 /** The phone's item tabs (Toolkit M27) on a 390 px screen: a border only on the selected tab, so Evals ends inside the list. */

@@ -38,6 +38,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // filled (`selectedFill`) and no check. The row note says the name is 13;
 // the layer widths (7.2 px a character, "/pr-description" 108 wide, 16
 // tall) are Geist Mono 12, so `labelStyle="mono"` takes `mono` (12/16).
+// A mono label is a name with no spaces to wrap at (a skill's /name), so
+// `labelStyle="mono"` keeps the label and the description on one line each,
+// cut with `TruncatedText`, as a long skill name is in the 240 px skill list
+// after "/" (Popover width composer, screen review R8). A tooltip needs a
+// pointer to rest on the text, so on a touch screen (`pointer: coarse`) a
+// tap would pick the skill without showing its whole name: there the label
+// and the description wrap instead (anywhere, as a name has no spaces), so
+// two names with the same start can be told apart (PR #171 review).
 // `check={false}` hides the check and its space on every row.
 // `density="compact"` is the picker's row (105:412, 105:415, 105:418):
 // 146 wide and 44 tall, padded 6 by 8, the name (16) over the description
@@ -51,6 +59,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // column is Figma's 130, and "Write or check a README" (105:417) is 130
 // wide in Figma, so the description stays on one line: a font that draws
 // it wider cuts it with an ellipsis (`TruncatedText`) instead of wrapping.
+// On a touch screen a mono label and its description show whole: they wrap
+// where they must, as no tooltip opens under a finger.
+const wholeText = { whiteSpace: 'normal', overflowWrap: 'anywhere' } as const
+
 export const optionList = defineSlotRecipe({
   className: 'option-list',
   jsx: ['OptionList'],
@@ -140,7 +152,11 @@ export const optionList = defineSlotRecipe({
     },
     labelStyle: {
       text: {},
-      mono: { itemText: { textStyle: 'mono' } },
+      // minW 0 lets the cut name shrink beside a badge.
+      mono: {
+        itemText: { textStyle: 'mono', minW: '0', '@media (pointer: coarse)': { '& .truncated-text': wholeText } },
+        itemDescription: { '@media (pointer: coarse)': { '& .truncated-text': wholeText } },
+      },
     },
     density: {
       default: {},

@@ -105,6 +105,14 @@ export default definePreset({
               "value": "420px",
               "description": "Width of a list pane: Inbox, Artifacts and Toolkit."
             },
+            "pickerMax": {
+              "value": "400px",
+              "description": "Most width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least pickerMin and at most this, so it stays a list and not a pane on a wide screen (screen review R8). Not for a popover of a fixed width, such as the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."
+            },
+            "pickerMin": {
+              "value": "240px",
+              "description": "Least width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least this and at most pickerMax (screen review R8). Not for a popover of a fixed width, such as a menu (popoverSm) or the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."
+            },
             "popover": {
               "value": "320px",
               "description": "Width of a filter or snooze popover."

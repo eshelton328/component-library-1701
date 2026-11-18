@@ -1241,7 +1241,7 @@ export type PopoverProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
-    width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined;
+    width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | 'composer' | 'trigger' | undefined;
     flip?: boolean | undefined;
     surface?: 'overlay' | 'raised' | undefined;
     density?: 'default' | 'compact' | undefined;

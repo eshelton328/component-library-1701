@@ -4,6 +4,8 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Inline, Stack } from '../controls/layout'
+import { OptionList } from '../controls/option-list'
+import { Popover, PopoverSection } from '../controls/popover'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { Composer, type ComposerAttachment } from './composer'
 import { ModelChip } from './model-chip'
@@ -525,3 +527,215 @@ export const InFramePhoneDark: StoryObj<typeof meta> = {
   },
 }
 export const InFramePhoneLight: StoryObj<typeof meta> = { ...InFramePhoneDark, globals: { mode: 'light' } }
+
+// The skill list after "/" over a composer, which is the popover's trigger (screen review R8). Each screen is a
+// viewport, as the-bridge draws it: a chat whose composer fills its column, padded 16 on the phone and 24 elsewhere,
+// and on the 1512 screen a side chat (shell.sidePane, 380) beside it, whose composer is narrow.
+const skillScreens = {
+  phone: { name: 'Phone (390)', styles: { width: '390px', height: '844px' } },
+  tablet: { name: 'Tablet (756)', styles: { width: '756px', height: '1024px' } },
+  laptop: { name: 'Laptop (1512)', styles: { width: '1512px', height: '982px' } },
+  wide: { name: 'Wide screen (3540)', styles: { width: '3540px', height: '1440px' } },
+}
+type SkillScreen = keyof typeof skillScreens
+const skillScreen = css({ display: 'flex', h: 'dvh', bg: 'bg.canvas', color: 'fg.default' })
+const skillChat = css({ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: '1', p: '24' })
+const skillChatPhone = css({ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flex: '1', p: '16' })
+const skillSide = css({
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-end',
+  flexShrink: '0',
+  w: 'shell.sidePane',
+  p: '24',
+  borderLeftWidth: 'default',
+  borderLeftStyle: 'solid',
+  borderColor: 'border.default',
+})
+const longSkill = '/summarise-the-review-comments-for-the-release-notes'
+const longHint = 'Gather every review comment on the open pull requests and write them up as release notes'
+const pickerSkills = [
+  { value: 'writer', label: '/writer', description: 'Draft a doc from sources' },
+  { value: 'readme', label: '/readme', description: 'Write or check a README' },
+  { value: 'long', label: longSkill, description: longHint },
+]
+
+// One composer with its open skill list. `trigger` is the phone's width; `composer` the others'.
+function SkillComposer({ name, width }: { name: string; width: 'composer' | 'trigger' }) {
+  return (
+    <Popover
+      label={`${name} skills`}
+      open
+      placement="top-start"
+      width={width}
+      density={width === 'trigger' ? 'compact' : 'default'}
+      autoFocus={false}
+      flip={false}
+      trigger={
+        <div role="combobox" aria-label={`${name} skills`}>
+          <Composer label={name} model={<ModelChip model="Opus 5.5" options={[]} />} />
+        </div>
+      }
+    >
+      <PopoverSection label="Skills">
+        <OptionList
+          label={`${name} skill list`}
+          items={pickerSkills}
+          value="writer"
+          size="sm"
+          labelStyle="mono"
+          check={false}
+          selectedFill
+          density={width === 'trigger' ? 'compact' : 'default'}
+        />
+      </PopoverSection>
+    </Popover>
+  )
+}
+
+function SkillPickerScreen({ screen }: { screen: SkillScreen }) {
+  return (
+    <div className={skillScreen}>
+      <main className={screen === 'phone' ? skillChatPhone : skillChat}>
+        <SkillComposer name="Chat" width={screen === 'phone' ? 'trigger' : 'composer'} />
+      </main>
+      {screen === 'laptop' ? (
+        <aside className={skillSide} aria-label="Side chat">
+          <SkillComposer name="Side chat" width="composer" />
+        </aside>
+      ) : null}
+    </div>
+  )
+}
+
+/** The popover named `name` and the composer box that opens it. */
+const pickerParts = async (canvasElement: HTMLElement, name: string) => {
+  const box = await within(document.body).findByRole('dialog', { name: `${name} skills` })
+  const composerBox = within(canvasElement).getByRole('textbox', { name }).closest('.composer__root')
+  if (!(composerBox instanceof HTMLElement)) throw new Error(`no composer ${name}`)
+  return { box, composer: composerBox.getBoundingClientRect().width }
+}
+
+// The rule of `width="composer"`: 40% of the composer, at least 240 and at most 400.
+const clampedWidth = (composer: number) => Math.min(400, Math.max(240, composer * 0.4))
+
+/**
+ * The list's width on each screen: on the phone the composer's whole width (`width="trigger"`); elsewhere 40% of
+ * the composer, clamped to 240 (`shell.pickerMin`) and 400 (`shell.pickerMax`). A long skill name and its hint stay on
+ * one line each and are cut with a tooltip.
+ */
+const skillPickerPlay =
+  (screen: SkillScreen): NonNullable<StoryObj<typeof meta>['play']> =>
+  async ({ canvasElement }) => {
+    const size = skillScreens[screen].styles
+    await expect([`${String(window.innerWidth)}px`, `${String(window.innerHeight)}px`]).toEqual([size.width, size.height])
+    await document.fonts.ready
+    const chat = await pickerParts(canvasElement, 'Chat')
+    await waitFor(() => expect(chat.box.getBoundingClientRect().width).toBeGreaterThan(0))
+    const width = () => chat.box.getBoundingClientRect().width
+    if (screen === 'phone') {
+      // The phone's composer is 358 (390 less 16 each side, M3 105:2805), and the list is as wide as it.
+      await expect(chat.composer).toBe(358)
+      await waitFor(() => expect(width()).toBe(chat.composer))
+    } else {
+      await waitFor(() => expect(width()).toBeCloseTo(clampedWidth(chat.composer), 1))
+      // The tablet's composer (708) gives 40% (283.2); the laptop's (1084) and the wide screen's (3492) hit 400.
+      if (screen === 'tablet') await expect(width()).toBeCloseTo(283.2, 1)
+      else await expect(width()).toBe(400)
+    }
+    if (screen !== 'laptop') return
+    // The side chat's composer is 331 (380 less its 1 px border and 24 each side), whose 40% is under the floor:
+    // the list is 240.
+    const side = await pickerParts(canvasElement, 'Side chat')
+    await expect(side.composer).toBe(331)
+    await waitFor(() => expect(side.box.getBoundingClientRect().width).toBe(240))
+    // At 240 the long mono name and its hint each keep one line, cut with an ellipsis and shown whole in a tooltip.
+    const row = within(side.box).getByRole('radio', { name: longSkill }).closest('label')
+    if (!(row instanceof HTMLElement)) throw new Error('no long row')
+    const nameText = row.querySelector('.option-list__itemText')
+    const hint = row.querySelector('.option-list__itemDescription')
+    if (!(nameText instanceof HTMLElement) || !(hint instanceof HTMLElement)) throw new Error('no long row text')
+    await expect(nameText.getBoundingClientRect().height).toBe(16)
+    await expect(Math.round(hint.getBoundingClientRect().height)).toBe(Math.round(parseFloat(getComputedStyle(hint).lineHeight)))
+    await expectCutText(nameText, longSkill)
+    await expectCutText(hint, longHint)
+    // A short name fits and is not cut.
+    const short = within(side.box).getByRole('radio', { name: '/writer' }).closest('label')?.querySelector('.truncated-text')
+    if (!(short instanceof HTMLElement)) throw new Error('no short name')
+    await expect(short.scrollWidth).toBeLessThanOrEqual(short.clientWidth)
+  }
+
+const skillPickerStory = (screen: SkillScreen, mode: 'dark' | 'light'): StoryObj<typeof meta> => ({
+  render: () => <SkillPickerScreen screen={screen} />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode, viewport: { value: screen } },
+  play: skillPickerPlay(screen),
+})
+
+/** The phone (390): the skill list is as wide as the composer (`width="trigger"`). */
+export const SkillPickerPhoneDark = skillPickerStory('phone', 'dark')
+export const SkillPickerPhoneLight = skillPickerStory('phone', 'light')
+/** The tablet (756): 40% of the 708 px composer. */
+export const SkillPickerTabletDark = skillPickerStory('tablet', 'dark')
+export const SkillPickerTabletLight = skillPickerStory('tablet', 'light')
+/** The 1512 laptop: 400 over the chat's composer, 240 over the side chat's, where a long skill name is cut. */
+export const SkillPickerLaptopDark = skillPickerStory('laptop', 'dark')
+export const SkillPickerLaptopLight = skillPickerStory('laptop', 'light')
+/** The 3540 screen of screen review R8: the list stops at 400. */
+export const SkillPickerWideDark = skillPickerStory('wide', 'dark')
+export const SkillPickerWideLight = skillPickerStory('wide', 'light')
+
+// A touch screen for the story test: Chromium's touch emulation, through the test runner's DevTools session, makes
+// the CSS `(pointer: coarse)` true, as a phone's is. A mocked `matchMedia` would not change the CSS.
+const emulateTouch = async (enabled: boolean) => {
+  const { cdp } = await import('vitest/browser')
+  await cdp().send('Emulation.setTouchEmulationEnabled', { enabled, maxTouchPoints: 1 })
+}
+
+/** The long skill name in the phone's list: its TruncatedText and its rows' line height. */
+const phoneLongName = async (canvasElement: HTMLElement) => {
+  const { box } = await pickerParts(canvasElement, 'Chat')
+  const row = within(box).getByRole('radio', { name: longSkill }).closest('label')
+  const text = row?.querySelector('.option-list__itemText .truncated-text')
+  const hint = row?.querySelector('.option-list__itemDescription .truncated-text')
+  if (!(text instanceof HTMLElement) || !(hint instanceof HTMLElement)) throw new Error('no long name')
+  return { text, hint, line: parseFloat(getComputedStyle(text).lineHeight) }
+}
+
+/**
+ * A tooltip needs a pointer to rest on the text, so on a touch screen the long skill name and its hint wrap and show
+ * whole (PR #171 review); with a fine pointer they are cut again, with the tooltip.
+ */
+export const SkillPickerTouchDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the DevTools session that emulates touch, so the Storybook UI leaves this story
+  // out; the test runner still runs it.
+  tags: ['!dev'],
+  render: () => <SkillPickerScreen screen="phone" />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' } },
+  beforeEach: async () => {
+    await emulateTouch(true)
+    return async () => {
+      await emulateTouch(false)
+    }
+  },
+  play: async ({ canvasElement }) => {
+    await expect(window.matchMedia('(pointer: coarse)').matches).toBe(true)
+    await document.fonts.ready
+    // Wait for Ark to place the box at the composer's width.
+    const chat = await pickerParts(canvasElement, 'Chat')
+    await waitFor(() => expect(chat.box.getBoundingClientRect().width).toBe(chat.composer))
+    const touch = await phoneLongName(canvasElement)
+    await waitFor(() => expect(touch.text.scrollWidth).toBeLessThanOrEqual(touch.text.clientWidth))
+    await expect(touch.text.getBoundingClientRect().height).toBeGreaterThan(touch.line)
+    await expect(touch.hint.scrollWidth).toBeLessThanOrEqual(touch.hint.clientWidth)
+    await expect(touch.hint.getBoundingClientRect().height).toBeGreaterThan(parseFloat(getComputedStyle(touch.hint).lineHeight))
+    // A fine pointer: the name is on one line again and cut.
+    await emulateTouch(false)
+    await expect(window.matchMedia('(pointer: coarse)').matches).toBe(false)
+    const fine = await phoneLongName(canvasElement)
+    await waitFor(() => expect(fine.text.scrollWidth).toBeGreaterThan(fine.text.clientWidth))
+    await expect(Math.round(fine.text.getBoundingClientRect().height)).toBe(Math.round(fine.line))
+  },
+}
+export const SkillPickerTouchLight: StoryObj<typeof meta> = { ...SkillPickerTouchDark, globals: { mode: 'light', viewport: { value: 'phone' } } }

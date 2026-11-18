@@ -68,6 +68,17 @@ under their purpose group, never under "Controls" (d-065).
   typed, such as the "/wri" of a skill list's "SKILLS MATCHING /wri",
   goes in its `query` prop, which keeps its case in `monoSm`; never put
   typed text in `label`.
+- A list a composer opens, such as the skill list after "/", is a
+  `Popover` whose trigger is the composer, at `width="composer"`: 40% of
+  the trigger's width (Ark's `--reference-width`), clamped to
+  `shell.pickerMin` (240) and `shell.pickerMax` (400), so it grows with
+  the screen and stops before it becomes a pane (screen review R8). The
+  library has no breakpoint tokens, so the page picks the phone's width:
+  `width="trigger"`, the composer's whole width. Every other popover
+  keeps a fixed width token. A mono `OptionList` label (a skill's /name)
+  and its description stay on one line each, cut with `TruncatedText`;
+  on a touch screen (`pointer: coarse`) they wrap and show whole, as no
+  tooltip opens under a finger.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

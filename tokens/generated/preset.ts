@@ -372,10 +372,10 @@ export default definePreset({
             },
             "selected": {
               "value": {
-                "base": "rgba(14, 116, 144, 0.5)",
+                "base": "rgba(14, 116, 144, 0.75)",
                 "_dark": "rgba(94, 225, 255, 0.5)"
               },
-              "description": "The border of a selected or running item."
+              "description": "The border of a selected or running item, and of a pressed Button with pressedBorder=\"selected\" (a selected toggle chip). Not for an open menu trigger or a pressed Sort or Filter, which use border.active. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha (Figma's 0.5 gives 2.13 on light bg.canvas); dark keeps Figma's 0.5."
             }
           },
           "code": {

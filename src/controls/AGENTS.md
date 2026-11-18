@@ -48,7 +48,9 @@ under their purpose group, never under "Controls" (d-065).
   border; a page never overrides `_expanded` itself.
 - A pressed `Button` draws `border.active`. The Discuss toggle sets
   `pressedBorder="discuss"` and draws `accent.discuss` while its
-  discussion is open; a page never overrides `_pressed` itself.
+  discussion is open; a selected toggle chip (a chosen folder) sets
+  `pressedBorder="selected"` and draws `border.selected`. A page never
+  overrides `_pressed` itself.
 - A `PopoverSection` label is in capitals (`eyebrow`). Text the user
   typed, such as the "/wri" of a skill list's "SKILLS MATCHING /wri",
   goes in its `query` prop, which keeps its case in `monoSm`; never put

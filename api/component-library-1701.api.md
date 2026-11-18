@@ -796,6 +796,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     finished?: boolean | undefined;
     level?: 0 | 1 | 2 | undefined;
     onSelect?: (() => void) | undefined;
+    dotLabel?: string | undefined;
 };
 
 // @public

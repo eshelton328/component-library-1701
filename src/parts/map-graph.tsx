@@ -224,6 +224,16 @@ export type MapGraphProps = {
   columns?: readonly MapGraphColumn[] | undefined
   /** The width and height of every node, in px. Defaults to 220 × 34, as in Figma (426:464). */
   nodeSize?: { width: number; height: number } | undefined
+  /**
+   * How the lines run. `horizontal` (the default) joins each pair of nodes
+   * side to side, for columns of nodes. `vertical` is for nodes in rows over
+   * and under each other, as on the phone's Links graph (Toolkit M17,
+   * 493:152): each line runs down a lane at the centre of one of its two
+   * nodes that passes no other node, meets that node at its top or foot,
+   * and meets the other node at the side that faces the lane. Two nodes in
+   * one row still join side to side.
+   */
+  orientation?: 'horizontal' | 'vertical' | undefined
   /** The selected node's id. Its links light up and the nodes it does not touch go dim. */
   selectedId?: string | null | undefined
   /** Called with a node's id when it is selected, and with `null` when Escape clears the selection. */
@@ -261,14 +271,62 @@ function linkPath(a: Box, b: Box): { d: string; end: { x: number; y: number } } 
   return { d: `M ${String(sx)} ${String(ay)} C ${String(mx)} ${String(ay)} ${String(mx)} ${String(by)} ${String(ex)} ${String(by)}`, end: { x: ex, y: by } }
 }
 
+// A line between nodes in rows (`orientation="vertical"`, M17 493:152).
+// It runs down a lane: the centre x of one of the two nodes, from the foot
+// of the upper node to the top of the lower one. Candidate lanes go in order
+// of how many lines their node has, so lines share the lane of a hub such as
+// the open item; the first lane that passes no other node wins. The line
+// meets the lane's node head-on and turns into the side of the other node
+// that faces the lane, or meets it head-on too when the lane runs through it.
+// Two nodes that share rows in y join side to side, as in `linkPath`.
+function uprightPath(a: Box, b: Box, others: readonly Box[], degree: (box: Box) => number): { d: string; end: { x: number; y: number } } {
+  const aOver = a.y + a.height <= b.y
+  const bOver = b.y + b.height <= a.y
+  if (!aOver && !bOver) return linkPath(a, b)
+  const upper = aOver ? a : b
+  const lower = aOver ? b : a
+  const top = upper.y + upper.height
+  const foot = lower.y
+  const inside = (box: Box, x: number) => x > box.x && x < box.x + box.width
+  const free = (x: number) => others.every((o) => !inside(o, x) || o.y >= foot || o.y + o.height <= top)
+  const lanes = [upper, lower].sort((p, q) => degree(q) - degree(p))
+  const owner = lanes.find((box) => free(box.x + box.width / 2)) ?? lower
+  const lx = owner.x + owner.width / 2
+  const n = (v: number) => String(v)
+  let d: string
+  let ends: { upper: { x: number; y: number }; lower: { x: number; y: number } }
+  if (owner === lower && !inside(upper, lx)) {
+    // Out of the upper node's side, round into the lane, down into the lower node's top.
+    const sx = lx > upper.x + upper.width / 2 ? upper.x + upper.width : upper.x
+    const sy = upper.y + upper.height / 2
+    const k = Math.min(Math.abs(lx - sx), foot - sy)
+    d = `M ${n(sx)} ${n(sy)} Q ${n(lx)} ${n(sy)} ${n(lx)} ${n(sy + k)} L ${n(lx)} ${n(foot)}`
+    ends = { upper: { x: sx, y: sy }, lower: { x: lx, y: foot } }
+  } else if (owner === upper && !inside(lower, lx)) {
+    // Out of the upper node's foot, down the lane, round into the lower node's side.
+    const ex = lx > lower.x + lower.width / 2 ? lower.x + lower.width : lower.x
+    const ey = lower.y + lower.height / 2
+    const k = Math.min(Math.abs(lx - ex), ey - top)
+    d = `M ${n(lx)} ${n(top)} L ${n(lx)} ${n(ey - k)} Q ${n(lx)} ${n(ey)} ${n(ex)} ${n(ey)}`
+    ends = { upper: { x: lx, y: top }, lower: { x: ex, y: ey } }
+  } else {
+    // The lane runs through both nodes: straight from one to the other.
+    d = `M ${n(lx)} ${n(top)} L ${n(lx)} ${n(foot)}`
+    ends = { upper: { x: lx, y: top }, lower: { x: lx, y: foot } }
+  }
+  return { d, end: b === lower ? ends.lower : ends.upper }
+}
+
 /**
  * The toolkit map: nodes placed at the x and y they are given, lines for
  * the links between them, and column headings. When a node is selected,
  * its links light up and the nodes it does not link to go dim. Each node
  * is a button in the tab order; Enter or Space selects it, and Escape
  * clears the selection. The map does no layout: the caller places nodes.
+ * With `orientation="vertical"` the lines run between nodes in rows over
+ * and under each other, for the phone.
  */
-export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, selectedId = null, onSelect, legend, card }: MapGraphProps) {
+export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, orientation = 'horizontal', selectedId = null, onSelect, legend, card }: MapGraphProps) {
   const idBase = useId()
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
@@ -288,12 +346,31 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
     }
   }
   const stateOf = (id: string): MapNodeState => (selected === null ? 'lit' : id === selected ? 'selected' : linked.has(id) ? 'lit' : 'dim')
+  // How many drawn lines each node has, so upright lines share a hub's lane.
+  const degrees = new Map<Box, number>()
+  for (const e of edges) {
+    const a = boxes.get(e.from)
+    const b = boxes.get(e.to)
+    if (a === undefined || b === undefined || e.from === e.to) continue
+    degrees.set(a, (degrees.get(a) ?? 0) + 1)
+    degrees.set(b, (degrees.get(b) ?? 0) + 1)
+  }
+  const degree = (box: Box) => degrees.get(box) ?? 0
   const drawn = edges.flatMap((e, i) => {
     const a = boxes.get(e.from)
     const b = boxes.get(e.to)
     if (a === undefined || b === undefined || e.from === e.to) return []
     const lit = selected !== null && (e.from === selected || e.to === selected)
-    return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...linkPath(a, b) }]
+    const path =
+      orientation === 'vertical'
+        ? uprightPath(
+            a,
+            b,
+            [...boxes.values()].filter((o) => o !== a && o !== b),
+            degree,
+          )
+        : linkPath(a, b)
+    return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...path }]
   })
   // Lit links go last, so they draw over the dim ones.
   const ordered = [...drawn.filter((e) => !e.lit), ...drawn.filter((e) => e.lit)]

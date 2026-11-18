@@ -273,3 +273,165 @@ export const LongLabel: StoryObj<typeof meta> = {
     await userEvent.unhover(name)
   },
 }
+
+// The phone's Links graph, Toolkit M17 `links graph` 493:152 (366 × 390, 364 × 388 inside its border), placed as
+// the-bridge places it: 162 × 32 nodes two to a row, 15 in from each edge and 38 apart; the items that link to the
+// open item (`LINKED FROM 4` 493:228, 493:229 to 493:247) over it, the open item (493:224) in the middle, and the
+// items it links to (`LINKS TO 7` 493:253, 493:254 to 493:288) under it.
+const phone = { m17: { name: 'Phone (M17)', styles: { width: '390px', height: '844px' } } }
+const phoneItem = css({ bg: 'bg.canvas', p: '12', display: 'flex', flexDirection: 'column', gap: '24' })
+const upright = { width: 364, height: 388, node: { width: 162, height: 32 } }
+const sideNodes = (side: 'from' | 'to', top: number, items: readonly (readonly [string, MapGraphNode['kind']])[]): MapGraphNode[] =>
+  items.map(([label, kind], i) => ({ id: `${side}:${label}`, label, kind, x: i % 2 === 0 ? 15 : 187, y: top + Math.floor(i / 2) * 38 }))
+const uprightFrom = sideNodes('from', 41, [
+  ['writer', 'agent'],
+  ['writing-reviewer', 'agent'],
+  ['ste100', 'rule'],
+  ['writing', 'rule'],
+])
+const uprightTo = sideNodes('to', 225, [
+  ['pr-description', 'skill'],
+  ['audit-slop', 'skill'],
+  ['writing-reviewer', 'agent'],
+  ['readmes', 'rule'],
+  ['writing', 'rule'],
+  ['ste100', 'rule'],
+  ['commits-and-prs', 'rule'],
+])
+const uprightNodes: MapGraphNode[] = [...uprightFrom, { id: 'item', label: 'writer', kind: 'skill', x: 101, y: 155 }, ...uprightTo]
+const uprightEdges: MapGraphEdge[] = [...uprightFrom.map((n) => ({ from: n.id, to: 'item' })), ...uprightTo.map((n) => ({ from: 'item', to: n.id }))]
+
+/** `orientation="vertical"`: the phone's Links graph (M17) on a 390 px screen, with the open item selected. */
+function Upright() {
+  const [selected, setSelected] = useState<string | null>('item')
+  return (
+    <main className={phoneItem}>
+      <MapGraph
+        label="Links of writer"
+        orientation="vertical"
+        width={upright.width}
+        height={upright.height}
+        nodeSize={upright.node}
+        nodes={uprightNodes}
+        edges={uprightEdges}
+        columns={[
+          { label: 'Linked from 4', x: 15, y: 13 },
+          { label: 'Links to 7', x: 15, y: 199 },
+        ]}
+        selectedId={selected}
+        onSelect={setSelected}
+      />
+      {/* The default orientation keeps its side-to-side line. */}
+      <MapGraph
+        label="Default map"
+        width={upright.width}
+        height={120}
+        nodeSize={{ width: 100, height: 32 }}
+        nodes={[
+          { id: 'a', label: 'a', kind: 'rule', x: 10, y: 10 },
+          { id: 'b', label: 'b', kind: 'skill', x: 250, y: 70 },
+        ]}
+        edges={[{ from: 'a', to: 'b' }]}
+      />
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const uprightPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).backgroundColor
+  }
+  await expect(window.innerWidth).toBe(390)
+  const map = within(canvasElement).getByRole('group', { name: 'Links of writer' })
+  await expect(map.getBoundingClientRect().width).toBe(366)
+  const svg = map.querySelector('svg')
+  if (svg === null) throw new Error('no svg')
+  const origin = svg.getBoundingClientRect()
+  await expect([origin.width, origin.height]).toEqual([upright.width, upright.height])
+  // Each node's box on the canvas, from the page.
+  const buttons = within(map).getAllByRole('button')
+  await expect(buttons).toHaveLength(uprightNodes.length)
+  const boxes = buttons.map((b) => {
+    const r = b.getBoundingClientRect()
+    return { name: b.textContent, x: r.left - origin.left, y: r.top - origin.top, w: r.width, h: r.height }
+  })
+  const focus = boxes.find((b, i) => b.name === 'writer' && buttons[i]?.getAttribute('aria-pressed') === 'true')
+  if (focus === undefined) throw new Error('no open item')
+  const on = (p: { x: number; y: number }, b: (typeof boxes)[number]) =>
+    p.x >= b.x - 0.5 && p.x <= b.x + b.w + 0.5 && p.y >= b.y - 0.5 && p.y <= b.y + b.h + 0.5 && (Math.abs(p.x - b.x) < 0.5 || Math.abs(p.x - b.x - b.w) < 0.5 || Math.abs(p.y - b.y) < 0.5 || Math.abs(p.y - b.y - b.h) < 0.5)
+  const paths = Array.from(map.querySelectorAll<SVGPathElement>('path.map-graph__edge'))
+  await expect(paths).toHaveLength(uprightEdges.length)
+  const joined = new Set<(typeof boxes)[number]>()
+  for (const path of paths) {
+    const length = path.getTotalLength()
+    const points = Array.from({ length: 101 }, (_, i) => path.getPointAtLength((length * i) / 100))
+    const first = points[0]
+    const last = points[100]
+    if (first === undefined || last === undefined) throw new Error('no points')
+    // One end on the open item's edge, the other on the edge of a linked node.
+    const ends = [first, last].map((p) => boxes.filter((b) => on(p, b)))
+    const other = ends.flat().find((b) => b !== focus)
+    await expect(ends.some((e) => e.includes(focus)), 'a line ends on the open item').toBe(true)
+    if (other === undefined) throw new Error(`line ${path.getAttribute('d') ?? ''} joins no linked node`)
+    joined.add(other)
+    for (const p of points) {
+      // Inside the graph's box.
+      await expect(p.x >= 0 && p.x <= upright.width && p.y >= 0 && p.y <= upright.height, 'a line stays inside the graph').toBe(true)
+      // Through no node: no point lies more than half a pixel inside any node box.
+      const crossed = boxes.find((b) => p.x > b.x + 0.5 && p.x < b.x + b.w - 0.5 && p.y > b.y + 0.5 && p.y < b.y + b.h - 0.5)
+      await expect(crossed?.name, 'a line crosses no node').toBeUndefined()
+    }
+  }
+  // Every linked node has its line.
+  await expect(joined.size).toBe(uprightNodes.length - 1)
+
+  // The selected open item keeps its look: surface.selected, a 2 px accent border and an accent name.
+  const item = buttons.find((b) => b.getAttribute('aria-pressed') === 'true')
+  if (item === undefined) throw new Error('no selected node')
+  const s = getComputedStyle(item)
+  await expect([s.backgroundColor, s.borderTopColor, s.borderTopWidth]).toEqual([swatch('selected'), swatch('accent'), '2px'])
+  await expect(getComputedStyle(within(item).getByText('writer')).color).toBe(swatch('fgAccent'))
+  // Each node links to it, so none goes dim, and every line is lit and shows: the point halfway along it hits a line, not a node.
+  await expect(buttons.filter((b) => b.getAttribute('data-state') === 'dim')).toHaveLength(0)
+  for (const path of paths) {
+    await expect(path).toHaveAttribute('data-lit')
+    const line = getComputedStyle(path)
+    await expect([line.stroke, line.strokeWidth, line.visibility, line.opacity]).toEqual([swatch('accent'), '2px', 'visible', '1'])
+    const mid = path.getPointAtLength(path.getTotalLength() / 2)
+    const hit = document.elementFromPoint(origin.left + mid.x, origin.top + mid.y)
+    await expect(hit?.classList.contains('map-graph__edge'), 'a lit line shows over the nodes').toBe(true)
+  }
+  // Selection works as on the desktop: a side node lights its one line and dims the nodes it does not link.
+  const pr = within(map).getByRole('button', { name: 'pr-description' })
+  await userEvent.click(pr)
+  await waitFor(() => expect(pr).toHaveAttribute('aria-pressed', 'true'))
+  await waitFor(() => expect(map.querySelectorAll('path.map-graph__edge[data-lit]')).toHaveLength(1))
+  await expect(within(map).getAllByRole('button', { name: 'writer' }).map((b) => b.getAttribute('data-state'))).toEqual(['dim', 'lit'])
+  await expect(within(map).getByRole('button', { name: 'readmes' })).toHaveAttribute('data-state', 'dim')
+  await userEvent.click(within(map).getAllByRole('button', { name: 'writer' })[1] ?? map)
+  await waitFor(() => expect(map.querySelectorAll('path.map-graph__edge[data-lit]')).toHaveLength(uprightEdges.length))
+
+  // The default orientation is unchanged: a's right side to b's left side, curved with level ends.
+  const plain = within(canvasElement).getByRole('group', { name: 'Default map' })
+  await expect(plain.querySelector('path.map-graph__edge')?.getAttribute('d')).toBe('M 110 26 C 180 26 180 86 250 86')
+}
+
+export const UprightDark: StoryObj<typeof meta> = {
+  render: () => <Upright />,
+  play: uprightPlay,
+  parameters: { viewport: { options: phone } },
+  globals: { mode: 'dark', viewport: { value: 'm17' } },
+}
+export const UprightLight: StoryObj<typeof meta> = {
+  render: () => <Upright />,
+  play: uprightPlay,
+  parameters: { viewport: { options: phone } },
+  globals: { mode: 'light', viewport: { value: 'm17' } },
+}

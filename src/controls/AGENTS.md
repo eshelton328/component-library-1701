@@ -18,10 +18,15 @@ under their purpose group, never under "Controls" (d-065).
   still lets this tier import the layout patterns in `../structure.ts`;
   do not use them. No file uses `Box`, `Spacer` or the other free-form
   patterns. The library has no breakpoint tokens, so Container takes a
-  `size` prop (desktop, tablet, phone). Only `size="detail"` has a max
-  width: 748 (`shell.detail`) at the start, or 1024
-  (`shell.detailWide`) in the middle when its query container (the
-  `AppShell` detail) is at least 1600 wide (`shell.detailWideFrom`).
+  `size` prop (desktop, tablet, phone, detail, item, page). desktop,
+  tablet and phone have no max width. `size="detail"` is at most 748
+  (`shell.detail`) at the start, or 1024 (`shell.detailWide`) in the
+  middle when its query container (the `AppShell` detail) is at least
+  1600 wide (`shell.detailWideFrom`). `size="item"` (an open Toolkit
+  item, desktop padding) and `size="page"` (a Toolkit full page, 32
+  sides) fill their parent below 1600; from it they are at most 1028
+  (`shell.itemWide`) and 1448 (`shell.pageWide`), padding included, in
+  the middle.
 - `ChatColumn` (`layout.tsx`) is a chat's column: messages, empty state
   or reply box. It fills its parent up to 768 (`shell.thread`) and sits
   in the middle of a wider one. Put the entries and the reply box each in

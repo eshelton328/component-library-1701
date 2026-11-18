@@ -83,7 +83,7 @@ export default definePreset({
             },
             "detailWideFrom": {
               "value": "1600px",
-              "description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
+              "description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself, and a Toolkit item or full page (Container size item or page) stops at shell.itemWide or shell.pageWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
             },
             "dialog": {
               "value": "440px",
@@ -101,9 +101,17 @@ export default definePreset({
               "value": "800px",
               "description": "Largest width of the side pane beside an open item (DetailSplit side), such as the Inbox and Artifacts discussion: shell.thread (768) plus the panel's 12 start and 20 end padding (Inbox D14 403:947), so its chat column fills it. A literal value, not derived from shell.thread: change both together. Below it the pane takes what the item leaves, 628 in the 1512 px frames. Not for the AppShell side slot, which takes sidePane or widePane."
             },
+            "itemWide": {
+              "value": "1028px",
+              "description": "Largest width of an open Toolkit item (Container size item), padding included: 948 of content and the desktop's 40 sides, as the 1512 px Figma frames draw it (D03 427:250, D17 474:393, D19 482:349). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the item then sits in the middle. Below that the item fills its space. Not for the Inbox task column, which takes detail and detailWide, or for a pane or a dialog."
+            },
             "listPane": {
               "value": "420px",
               "description": "Width of a list pane: Inbox, Artifacts and Toolkit."
+            },
+            "pageWide": {
+              "value": "1448px",
+              "description": "Largest width of a Toolkit full page (Container size page), padding included: 1384 of content and 32 sides, the whole detail of the 1512 px Figma frames (map D02 426:53, Activity D11 444:153, workflow D13 446:153). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the page then sits in the middle. Below that the page fills its space. Not for an open item, which takes itemWide, or for a pane or a dialog."
             },
             "pickerMax": {
               "value": "400px",

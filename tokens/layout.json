@@ -211,7 +211,17 @@
       "detailWideFrom": {
         "$type": "dimension",
         "$value": { "value": 1600, "unit": "px" },
-        "$description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
+        "$description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself, and a Toolkit item or full page (Container size item or page) stops at shell.itemWide or shell.pageWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
+      },
+      "itemWide": {
+        "$type": "dimension",
+        "$value": { "value": 1028, "unit": "px" },
+        "$description": "Largest width of an open Toolkit item (Container size item), padding included: 948 of content and the desktop's 40 sides, as the 1512 px Figma frames draw it (D03 427:250, D17 474:393, D19 482:349). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the item then sits in the middle. Below that the item fills its space. Not for the Inbox task column, which takes detail and detailWide, or for a pane or a dialog."
+      },
+      "pageWide": {
+        "$type": "dimension",
+        "$value": { "value": 1448, "unit": "px" },
+        "$description": "Largest width of a Toolkit full page (Container size page), padding included: 1384 of content and 32 sides, the whole detail of the 1512 px Figma frames (map D02 426:53, Activity D11 444:153, workflow D13 446:153). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the page then sits in the middle. Below that the page fills its space. Not for an open item, which takes itemWide, or for a pane or a dialog."
       },
       "popoverXs": {
         "$type": "dimension",

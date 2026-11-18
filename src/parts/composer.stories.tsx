@@ -684,3 +684,58 @@ export const SkillPickerLaptopLight = skillPickerStory('laptop', 'light')
 /** The 3540 screen of screen review R8: the list stops at 400. */
 export const SkillPickerWideDark = skillPickerStory('wide', 'dark')
 export const SkillPickerWideLight = skillPickerStory('wide', 'light')
+
+// A touch screen for the story test: Chromium's touch emulation, through the test runner's DevTools session, makes
+// the CSS `(pointer: coarse)` true, as a phone's is. A mocked `matchMedia` would not change the CSS.
+const emulateTouch = async (enabled: boolean) => {
+  const { cdp } = await import('vitest/browser')
+  await cdp().send('Emulation.setTouchEmulationEnabled', { enabled, maxTouchPoints: 1 })
+}
+
+/** The long skill name in the phone's list: its TruncatedText and its rows' line height. */
+const phoneLongName = async (canvasElement: HTMLElement) => {
+  const { box } = await pickerParts(canvasElement, 'Chat')
+  const row = within(box).getByRole('radio', { name: longSkill }).closest('label')
+  const text = row?.querySelector('.option-list__itemText .truncated-text')
+  const hint = row?.querySelector('.option-list__itemDescription .truncated-text')
+  if (!(text instanceof HTMLElement) || !(hint instanceof HTMLElement)) throw new Error('no long name')
+  return { text, hint, line: parseFloat(getComputedStyle(text).lineHeight) }
+}
+
+/**
+ * A tooltip needs a pointer to rest on the text, so on a touch screen the long skill name and its hint wrap and show
+ * whole (PR #171 review); with a fine pointer they are cut again, with the tooltip.
+ */
+export const SkillPickerTouchDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the DevTools session that emulates touch, so the Storybook UI leaves this story
+  // out; the test runner still runs it.
+  tags: ['!dev'],
+  render: () => <SkillPickerScreen screen="phone" />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' } },
+  beforeEach: async () => {
+    await emulateTouch(true)
+    return async () => {
+      await emulateTouch(false)
+    }
+  },
+  play: async ({ canvasElement }) => {
+    await expect(window.matchMedia('(pointer: coarse)').matches).toBe(true)
+    await document.fonts.ready
+    // Wait for Ark to place the box at the composer's width.
+    const chat = await pickerParts(canvasElement, 'Chat')
+    await waitFor(() => expect(chat.box.getBoundingClientRect().width).toBe(chat.composer))
+    const touch = await phoneLongName(canvasElement)
+    await waitFor(() => expect(touch.text.scrollWidth).toBeLessThanOrEqual(touch.text.clientWidth))
+    await expect(touch.text.getBoundingClientRect().height).toBeGreaterThan(touch.line)
+    await expect(touch.hint.scrollWidth).toBeLessThanOrEqual(touch.hint.clientWidth)
+    await expect(touch.hint.getBoundingClientRect().height).toBeGreaterThan(parseFloat(getComputedStyle(touch.hint).lineHeight))
+    // A fine pointer: the name is on one line again and cut.
+    await emulateTouch(false)
+    await expect(window.matchMedia('(pointer: coarse)').matches).toBe(false)
+    const fine = await phoneLongName(canvasElement)
+    await waitFor(() => expect(fine.text.scrollWidth).toBeGreaterThan(fine.text.clientWidth))
+    await expect(Math.round(fine.text.getBoundingClientRect().height)).toBe(Math.round(fine.line))
+  },
+}
+export const SkillPickerTouchLight: StoryObj<typeof meta> = { ...SkillPickerTouchDark, globals: { mode: 'light', viewport: { value: 'phone' } } }

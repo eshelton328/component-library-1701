@@ -69,7 +69,9 @@ under their purpose group, never under "Controls" (d-065).
   library has no breakpoint tokens, so the page picks the phone's width:
   `width="trigger"`, the composer's whole width. Every other popover
   keeps a fixed width token. A mono `OptionList` label (a skill's /name)
-  and its description stay on one line each, cut with `TruncatedText`.
+  and its description stay on one line each, cut with `TruncatedText`;
+  on a touch screen (`pointer: coarse`) they wrap and show whole, as no
+  tooltip opens under a finger.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

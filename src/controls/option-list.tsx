@@ -79,7 +79,8 @@ export type OptionListProps = {
    * `text` (the default) draws the label in the sans style of `size`; `mono` draws it in `mono` (12/16), as the
    * Workbench skill picker draws each skill's /name (D1 105:413). A mono label is a name with no spaces to wrap
    * at, so its row keeps the label and the description on one line each: a long one ends with an ellipsis and shows
-   * whole in a tooltip (`TruncatedText`), as a long skill name does in the skill list after "/".
+   * whole in a tooltip (`TruncatedText`), as a long skill name does in the skill list after "/". On a touch screen
+   * (`pointer: coarse`), where no tooltip opens under a finger, both wrap and show whole instead.
    */
   labelStyle?: 'text' | 'mono' | undefined
   /**

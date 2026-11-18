@@ -223,8 +223,9 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * `tabBarOverlay` (a tablet or phone with a tab bar; `false` by default)
  * lays the tab bar over the bottom of the pane, which then runs to the
  * bottom of the shell, as Figma draws the phone pages (Toolkit M02, M20,
- * M22). The pane's scroll ends with the bar's height (`shell.tabBar`) of
- * space, so its last item scrolls clear of the bar, and a `ScrollFrame`
+ * M22). The pane's scroll ends with the bar's height (`shell.tabBar`, or
+ * more where the device's home-indicator inset is more than
+ * `shell.safeAreaBottom`) of space, so its last item scrolls clear of the bar, and a `ScrollFrame`
  * that is the pane's own child lifts its footer and the end of its body
  * above the bar. Under the overlay the tab bar slot is filled with
  * `bg.canvas`, so a translucent bar (`surface.chrome`) is opaque over the

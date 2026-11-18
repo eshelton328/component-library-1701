@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { tabBarHeight } from './tab-bar-height'
 
 // The tablet and phone tab bar: tablet Inbox 346:5574 and phone Workbench
 // 252:2. Idle tab 346:5575 (label 346:5580), selected tab 346:5581 (label
@@ -20,7 +21,15 @@ export const tabBar = defineSlotRecipe({
       w: '100%',
       // 77 high with the home-indicator area: Figma 7 + a 42 tab + 28 left
       // empty. Here the 1 px top border and the 8 px top leave 26 empty.
-      h: 'shell.tabBar',
+      // The bar grows only where the device's home-indicator inset
+      // (env(safe-area-inset-bottom)) is taller than the token for it,
+      // sizes.shell.safeAreaBottom (34): by the difference, so the tabs
+      // stay clear of it (tabBarHeight, shared with the app-shell overlay
+      // inset). Every iPhone and iPad inset is 34 or less, and env() is 0
+      // in Chromium and with no viewport-fit=cover, so the bar stays 77
+      // there. Padding the bar with max(34, env()) instead would make it
+      // 85 (1 + 8 + 42 + 34), taller than every Figma frame.
+      h: tabBarHeight,
       // Keep the height beside a scrolling page in a flex column.
       flexShrink: '0',
       // Figma top 7 takes `8`, the larger of 6 and 8 (d-072); phone sides 8.

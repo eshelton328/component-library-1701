@@ -12,9 +12,16 @@
  * is not set, so keyboard users always see the ring (WCAG 2.4.7).
  *
  * The package exports this constant, so a page's own block draws the same
- * ring: `css({ outline: 'none', [focusRing]: { outlineWidth: 'strong',
- * outlineStyle: 'solid', outlineColor: 'border.focus' } })`. Panda's
- * `_focusVisible` does not read `data-focus-quiet`, so a page never uses it.
+ * ring. Panda's `_focusVisible` does not read `data-focus-quiet`, so a page
+ * never uses it:
+ *
+ * ```ts
+ * css({
+ *   outline: 'none',
+ *   [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+ * })
+ * ```
+ *
  * The mark is set once a library control that installs the tracker (Button,
  * BottomSheet, Dialog, Menu or Popover) is on the page.
  */

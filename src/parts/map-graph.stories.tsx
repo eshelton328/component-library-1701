@@ -435,3 +435,67 @@ export const UprightLight: StoryObj<typeof meta> = {
   parameters: { viewport: { options: phone } },
   globals: { mode: 'light', viewport: { value: 'm17' } },
 }
+
+// Checks each line of an upright map from the page: it starts and ends on the edges of two different nodes, stays
+// inside the graph's box and passes behind no node (no point lies more than half a pixel inside a node box).
+const expectClearLines = async (map: HTMLElement, count: number) => {
+  const svg = map.querySelector('svg')
+  if (svg === null) throw new Error('no svg')
+  const origin = svg.getBoundingClientRect()
+  const boxes = within(map)
+    .getAllByRole('button')
+    .map((b) => {
+      const r = b.getBoundingClientRect()
+      return { name: b.textContent, x: r.left - origin.left, y: r.top - origin.top, w: r.width, h: r.height }
+    })
+  const on = (p: { x: number; y: number }, b: (typeof boxes)[number]) =>
+    p.x >= b.x - 0.5 && p.x <= b.x + b.w + 0.5 && p.y >= b.y - 0.5 && p.y <= b.y + b.h + 0.5 && (Math.abs(p.x - b.x) < 0.5 || Math.abs(p.x - b.x - b.w) < 0.5 || Math.abs(p.y - b.y) < 0.5 || Math.abs(p.y - b.y - b.h) < 0.5)
+  const paths = Array.from(map.querySelectorAll<SVGPathElement>('path.map-graph__edge'))
+  await expect(paths).toHaveLength(count)
+  for (const path of paths) {
+    const d = path.getAttribute('d') ?? ''
+    const length = path.getTotalLength()
+    const points = Array.from({ length: 201 }, (_, i) => path.getPointAtLength((length * i) / 200))
+    const first = points[0]
+    const last = points[200]
+    if (first === undefined || last === undefined) throw new Error('no points')
+    const start = boxes.find((b) => on(first, b))
+    const end = boxes.find((b) => on(last, b) && b !== start)
+    await expect(start !== undefined && end !== undefined, `line ${d} joins two nodes`).toBe(true)
+    for (const p of points) {
+      await expect(p.x >= 0 && p.x <= origin.width && p.y >= 0 && p.y <= origin.height, `line ${d} stays inside the graph`).toBe(true)
+      const crossed = boxes.find((b) => p.x > b.x + 0.5 && p.x < b.x + b.w - 0.5 && p.y > b.y + 0.5 && p.y < b.y + b.h - 0.5)
+      await expect(crossed?.name, `line ${d} passes behind no node`).toBeUndefined()
+    }
+  }
+}
+
+/**
+ * `orientation="vertical"`: the lane at the upper node's centre is clear, but
+ * its turn into the lower node would cross `c`, which sits in the lower
+ * node's row. The line takes the lower node's lane, whose turn is clear.
+ */
+function UprightTurn() {
+  return (
+    <main className={page}>
+      <MapGraph
+        label="Turn map"
+        orientation="vertical"
+        width={340}
+        height={140}
+        nodeSize={{ width: 100, height: 32 }}
+        nodes={[
+          { id: 'a', label: 'a', kind: 'rule', x: 0, y: 0 },
+          { id: 'c', label: 'c', kind: 'hook', x: 110, y: 100 },
+          { id: 'b', label: 'b', kind: 'skill', x: 220, y: 100 },
+        ]}
+        edges={[{ from: 'a', to: 'b' }]}
+      />
+    </main>
+  )
+}
+const uprightTurnPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Turn map' }), 1)
+}
+export const UprightTurnDark: StoryObj<typeof meta> = { render: () => <UprightTurn />, play: uprightTurnPlay, globals: { mode: 'dark' } }
+export const UprightTurnLight: StoryObj<typeof meta> = { render: () => <UprightTurn />, play: uprightTurnPlay, globals: { mode: 'light' } }

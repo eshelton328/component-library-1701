@@ -4,6 +4,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
 import { Button } from '../controls/button'
 import { TruncatedText } from '../controls/tooltip'
+import { type Box, linkRoute, uprightRoute } from './map-graph-route'
 import type { ToolkitKind } from './meta-line'
 
 const kindIcons: Record<ToolkitKind, (props: IconProps) => React.JSX.Element> = {
@@ -245,77 +246,8 @@ export type MapGraphProps = {
 }
 
 const NODE_SIZE = { width: 220, height: 34 }
-// How far a link between two nodes in one column bows out to the right.
-const BOW = 40
 // The radius of the dot at the end of a link (426:369 is 6 × 6).
 const DOT = 3
-
-type Box = { x: number; y: number; width: number; height: number }
-
-// A line from the side of `a` that faces `b` to the side of `b` that faces
-// `a`, curved with level ends. Two nodes in one column join on the right.
-function linkPath(a: Box, b: Box): { d: string; end: { x: number; y: number } } {
-  const ay = a.y + a.height / 2
-  const by = b.y + b.height / 2
-  const apart = Math.abs(a.x - b.x) >= Math.min(a.width, b.width)
-  if (!apart) {
-    const sx = a.x + a.width
-    const ex = b.x + b.width
-    const cx = Math.max(sx, ex) + BOW
-    return { d: `M ${String(sx)} ${String(ay)} C ${String(cx)} ${String(ay)} ${String(cx)} ${String(by)} ${String(ex)} ${String(by)}`, end: { x: ex, y: by } }
-  }
-  const forward = b.x > a.x
-  const sx = forward ? a.x + a.width : a.x
-  const ex = forward ? b.x : b.x + b.width
-  const mx = (sx + ex) / 2
-  return { d: `M ${String(sx)} ${String(ay)} C ${String(mx)} ${String(ay)} ${String(mx)} ${String(by)} ${String(ex)} ${String(by)}`, end: { x: ex, y: by } }
-}
-
-// A line between nodes in rows (`orientation="vertical"`, M17 493:152).
-// It runs down a lane: the centre x of one of the two nodes, from the foot
-// of the upper node to the top of the lower one. Candidate lanes go in order
-// of how many lines their node has, so lines share the lane of a hub such as
-// the open item; the first lane that passes no other node wins. The line
-// meets the lane's node head-on and turns into the side of the other node
-// that faces the lane, or meets it head-on too when the lane runs through it.
-// Two nodes that share rows in y join side to side, as in `linkPath`.
-function uprightPath(a: Box, b: Box, others: readonly Box[], degree: (box: Box) => number): { d: string; end: { x: number; y: number } } {
-  const aOver = a.y + a.height <= b.y
-  const bOver = b.y + b.height <= a.y
-  if (!aOver && !bOver) return linkPath(a, b)
-  const upper = aOver ? a : b
-  const lower = aOver ? b : a
-  const top = upper.y + upper.height
-  const foot = lower.y
-  const inside = (box: Box, x: number) => x > box.x && x < box.x + box.width
-  const free = (x: number) => others.every((o) => !inside(o, x) || o.y >= foot || o.y + o.height <= top)
-  const lanes = [upper, lower].sort((p, q) => degree(q) - degree(p))
-  const owner = lanes.find((box) => free(box.x + box.width / 2)) ?? lower
-  const lx = owner.x + owner.width / 2
-  const n = (v: number) => String(v)
-  let d: string
-  let ends: { upper: { x: number; y: number }; lower: { x: number; y: number } }
-  if (owner === lower && !inside(upper, lx)) {
-    // Out of the upper node's side, round into the lane, down into the lower node's top.
-    const sx = lx > upper.x + upper.width / 2 ? upper.x + upper.width : upper.x
-    const sy = upper.y + upper.height / 2
-    const k = Math.min(Math.abs(lx - sx), foot - sy)
-    d = `M ${n(sx)} ${n(sy)} Q ${n(lx)} ${n(sy)} ${n(lx)} ${n(sy + k)} L ${n(lx)} ${n(foot)}`
-    ends = { upper: { x: sx, y: sy }, lower: { x: lx, y: foot } }
-  } else if (owner === upper && !inside(lower, lx)) {
-    // Out of the upper node's foot, down the lane, round into the lower node's side.
-    const ex = lx > lower.x + lower.width / 2 ? lower.x + lower.width : lower.x
-    const ey = lower.y + lower.height / 2
-    const k = Math.min(Math.abs(lx - ex), ey - top)
-    d = `M ${n(lx)} ${n(top)} L ${n(lx)} ${n(ey - k)} Q ${n(lx)} ${n(ey)} ${n(ex)} ${n(ey)}`
-    ends = { upper: { x: lx, y: top }, lower: { x: ex, y: ey } }
-  } else {
-    // The lane runs through both nodes: straight from one to the other.
-    d = `M ${n(lx)} ${n(top)} L ${n(lx)} ${n(foot)}`
-    ends = { upper: { x: lx, y: top }, lower: { x: lx, y: foot } }
-  }
-  return { d, end: b === lower ? ends.lower : ends.upper }
-}
 
 /**
  * The toolkit map: nodes placed at the x and y they are given, lines for
@@ -363,13 +295,13 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
     const lit = selected !== null && (e.from === selected || e.to === selected)
     const path =
       orientation === 'vertical'
-        ? uprightPath(
+        ? uprightRoute(
             a,
             b,
             [...boxes.values()].filter((o) => o !== a && o !== b),
             degree,
           )
-        : linkPath(a, b)
+        : linkRoute(a, b)
     return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...path }]
   })
   // Lit links go last, so they draw over the dim ones.

@@ -11,3 +11,7 @@ purpose group, never under "Parts" (d-065).
   never with Panda patterns.
 - A part shows the data it gets as props and reports through callbacks.
   The composer calls `onSubmit`; it does not send a message (d-068, d-069).
+- A part may keep pure geometry in its own `.ts` file beside it, such as
+  `map-graph-route.ts`, the routes of the `MapGraph` lines. The part
+  imports it, `index.ts` does not export it, and the part's stories test
+  what it draws.

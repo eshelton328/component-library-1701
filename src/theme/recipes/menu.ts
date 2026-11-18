@@ -25,6 +25,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // style) in `fg.muted`.
 // `width` sets the box width: sm 240, sort 280 (D9 346:4000) or md 320 (D12
 // 346:5300); without it the box takes its content's width, at least 240.
+// `iconTone` sets the colour of a row's leading icon: `muted` (fg.muted, the
+// default) or `default`, the label's colour. The phone's New menu (Workspaces
+// M15 208:515) strokes its plus and grid icons (208:521, 208:529) in #e6ecff,
+// the colour of their labels (208:519, 208:527): fg.default. The icon inherits
+// the row's colour, so a danger row keeps its colour and the compact menu's
+// highlighted row keeps fg.accent. A submenu chevron stays fg.muted.
 // `width="phone"` is the phone's New menu (Workspaces M15 208:515): 220 wide
 // (shell.popoverPhone), so it ends under + and leaves the end of the row title
 // under it clear. Its 42 px rows with 18 px icons (208:516, 208:521, 208:529)
@@ -162,6 +168,11 @@ export const menu = defineSlotRecipe({
         },
       },
     },
+    // The leading icon's colour; `default` takes the row's (label's) colour (M15 208:521, 208:529).
+    iconTone: {
+      muted: {},
+      default: { item: { '& [data-part=item-icon] svg': { color: 'inherit' } } },
+    },
     // Only `size="md"` has a compact pitch; see the compound variant.
     density: { default: {}, compact: {} },
   },
@@ -186,5 +197,5 @@ export const menu = defineSlotRecipe({
       },
     },
   ],
-  defaultVariants: { size: 'md', density: 'default' },
+  defaultVariants: { size: 'md', density: 'default', iconTone: 'muted' },
 })

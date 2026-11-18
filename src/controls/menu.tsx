@@ -99,6 +99,13 @@ export type MenuProps = {
    */
   density?: 'default' | 'compact' | undefined
   /**
+   * The colour of each action's icon. `muted` (the default) draws it in `fg.muted`, a shade under its label. `default`
+   * draws it in its label's colour (`fg.default`, or `status.danger.fg` on a `danger` row), as the New menu that +
+   * opens on the phone's Workspaces list (M15 208:521, 208:529). A submenu row's chevron stays `fg.muted`, and the
+   * compact menu's highlighted row still draws its icon in `fg.accent`. A submenu takes the menu's tone.
+   */
+  iconTone?: 'muted' | 'default' | undefined
+  /**
    * The value of the highlighted action, the row filled as the pointer or the arrow keys leave it, such as a design
    * state that shows the row whose submenu is open. `null` highlights none. Set it with `onHighlightChange` to control
    * it; when not set, the menu keeps its own.
@@ -123,7 +130,7 @@ const fromArk = (v: string) => (v.startsWith('menu:') ? v.slice(5) : undefined)
  * closes the menu and returns the focus to the trigger. A row with a
  * `submenu` opens a list of more actions to its right.
  */
-export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
+export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, iconTone, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
   const baseId = useId()
   const select = (details: { value: string }) => {
     const value = fromArk(details.value)
@@ -134,6 +141,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       width={width}
       size={size}
       density={density}
+      iconTone={iconTone}
       positioning={{ placement, gutter: 4 }}
       {...(open === undefined ? {} : { open })}
       {...highlightOf(baseId, items, highlightedValue, onHighlightChange)}
@@ -147,7 +155,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       <Portal>
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
-            <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} onSelect={select} />
+            <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} iconTone={iconTone} onSelect={select} />
           </Content>
         </Positioner>
       </Portal>
@@ -184,11 +192,12 @@ type SubmenuProps = {
   row: ReactNode
   size: MenuProps['size']
   density: MenuProps['density']
+  iconTone: MenuProps['iconTone']
   onSelect: (details: { value: string }) => void
 }
 
 // A submenu level: its own React id names its Ark menu, so its list and items have ids no other level can repeat.
-function Submenu({ triggerId, submenu, row, size, density, onSelect }: SubmenuProps) {
+function Submenu({ triggerId, submenu, row, size, density, iconTone, onSelect }: SubmenuProps) {
   const id = useId()
   const { api, service } = useMenu({
     id,
@@ -224,12 +233,12 @@ function Submenu({ triggerId, submenu, row, size, density, onSelect }: SubmenuPr
     }
   }, [open, contentId, service])
   return (
-    <RootProvider value={{ api, service }} width="submenu" size={size} density={density}>
+    <RootProvider value={{ api, service }} width="submenu" size={size} density={density} iconTone={iconTone}>
       <TriggerItem>{row}</TriggerItem>
       <Portal>
         <Positioner>
           <Content>
-            <Entries baseId={id} items={submenu.items} size={size} density={density} onSelect={onSelect} />
+            <Entries baseId={id} items={submenu.items} size={size} density={density} iconTone={iconTone} onSelect={onSelect} />
           </Content>
         </Positioner>
       </Portal>
@@ -243,10 +252,11 @@ type EntriesProps = {
   heading?: string | undefined
   size: MenuProps['size']
   density: MenuProps['density']
+  iconTone: MenuProps['iconTone']
   onSelect: (details: { value: string }) => void
 }
 
-function Entries({ baseId, items, heading, size, density, onSelect }: EntriesProps) {
+function Entries({ baseId, items, heading, size, density, iconTone, onSelect }: EntriesProps) {
   const renderEntry = (entry: MenuEntry, i: number) => {
     if (entry.type === 'separator') return <Separator key={`separator-${String(i)}`} />
     const icon = entry.icon === undefined ? null : <ItemIcon aria-hidden="true" data-part="item-icon">{entry.icon}</ItemIcon>
@@ -282,6 +292,7 @@ function Entries({ baseId, items, heading, size, density, onSelect }: EntriesPro
         submenu={sub}
         size={size}
         density={density}
+        iconTone={iconTone}
         onSelect={onSelect}
         row={
           <>

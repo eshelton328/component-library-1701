@@ -39,8 +39,16 @@ Layout, Navigation or Overlays (d-065, d-066).
   fit at once; a `focusout` whose `relatedTarget` is another field keeps
   it. When the focus leaves the fields (to Send, or a blur), the fit stays
   until the next viewport `resize` or `scroll`, the keyboard closing, so
-  the tap that took the focus lands on the button it pressed. Pages set
-  nothing for the keyboard;
+  the tap that took the focus lands on the button it pressed. The
+  window's `resize`, `orientationchange` and `pageshow` and the
+  document's `visibilitychange` count as such an event: they read the
+  focus again and drop a fit that no focused field needs. Each fit also
+  checks `editable(document.activeElement)`, not only the flag the focus
+  events keep, because WebKit fires no `focusout` when the focused field
+  is removed (a route change or a closed dialog, which the library does
+  not see); the removed field then counts as not focused, and the shell
+  never follows a later viewport shrink for it. Pages set nothing for the
+  keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
 - The `AppShell` detail is an inline-size query container. A detail

@@ -37,9 +37,17 @@ const visibleTop = '--app-shell-visible-top'
  * nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the keyboard closing: a
  * tap on the composer's Send takes the focus on its press, and if the shell grew then, the button would move
  * from under the finger before the click and the tap would miss it. A `focusout` whose `relatedTarget` is
- * another field keeps the fit too, so moving from one field to another never drops it. Without `visualViewport` (an
- * old browser, or no window when rendered on the server) nothing changes: the hook reads the window only in its
- * effect.
+ * another field keeps the fit too, so moving from one field to another never drops it. The window's `resize`,
+ * `orientationchange` and `pageshow` (a page back from the back-forward cache) and the document's
+ * `visibilitychange` (an installed app back on screen) count as such an event: they read the focus again and fit,
+ * so a fit that no focused field needs is dropped there too, and a stale small visual viewport with no field
+ * focused gives the full height. Every fit also checks that a field still has the focus (`document.activeElement`),
+ * not only the flag the focus events keep: WebKit fires no `focusout` when the focused field is removed from the
+ * page (a route change, or a closed dialog), so the flag alone would keep the shell following the visual viewport,
+ * and a later shrink with no field focused would leave the shell short of the screen. A route change is not
+ * visible to the library; the removed field counts as not focused at the next event, which drops the fit and
+ * gives the parent's height. Without `visualViewport` (an old browser, or no window when rendered on the server)
+ * nothing changes: the hook reads the window only in its effect.
  */
 function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null)
@@ -56,6 +64,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
     let typing = editable(document.activeElement)
     const fit = () => {
+      // A field removed while it had the focus fires no focusout in WebKit: the focus is then on the body, and the
+      // fit must not stay on for it.
+      if (!editable(document.activeElement)) typing = false
       const layout = document.documentElement.clientHeight
       const visible = viewport.height * viewport.scale
       if (viewport.scale === 1) top = viewport.offsetTop
@@ -77,21 +88,38 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
     // Only `typing` changes, and nothing is fitted: the fit stays as it is, the leaving state, until the next
-    // viewport event (the keyboard closing) fits with `typing` false and removes it. So a press that takes the
-    // focus from the field (Send) lands where it started, and a move to another field never drops the fit.
+    // viewport event (the keyboard closing, or a `refit` event) fits with `typing` false and removes it. So a press
+    // that takes the focus from the field (Send) lands where it started, and a move to another field never drops
+    // the fit.
     const focusOut = (event: FocusEvent) => {
       typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
+    }
+    // The window resizes or turns, the page comes back from the back-forward cache, or the installed app comes
+    // back on screen: these may change the viewport with no visualViewport event, and they end a tap, so they
+    // read the focus again and fit. A fit that no focused field needs is dropped, and one a field needs is measured
+    // again.
+    const refit = () => {
+      typing = editable(document.activeElement)
+      fit()
     }
     fit()
     viewport.addEventListener('resize', fit)
     viewport.addEventListener('scroll', fit)
     document.addEventListener('focusin', focusIn)
     document.addEventListener('focusout', focusOut)
+    document.addEventListener('visibilitychange', refit)
+    window.addEventListener('resize', refit)
+    window.addEventListener('orientationchange', refit)
+    window.addEventListener('pageshow', refit)
     return () => {
       viewport.removeEventListener('resize', fit)
       viewport.removeEventListener('scroll', fit)
       document.removeEventListener('focusin', focusIn)
       document.removeEventListener('focusout', focusOut)
+      document.removeEventListener('visibilitychange', refit)
+      window.removeEventListener('resize', refit)
+      window.removeEventListener('orientationchange', refit)
+      window.removeEventListener('pageshow', refit)
       root.style.removeProperty(visibleHeight)
       root.style.removeProperty(visibleTop)
     }

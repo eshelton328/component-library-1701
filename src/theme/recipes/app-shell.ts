@@ -42,7 +42,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   root then is at most that tall and starts at that top, so the slots at
 //   its foot (a composer, the tab bar, the safe area) end at the keyboard's
 //   top. AppShell sets them only while a field that opens the keyboard has
-//   the focus, and after it leaves until the keyboard closes; the browser's
+//   the focus (checked at each fit, so a field removed with no focusout
+//   counts as gone), and after it leaves until the next viewport event: the
+//   keyboard closing, or a window resize, orientationchange, pageshow or
+//   visibilitychange, which drop a fit no focused field needs; the browser's
 //   bars that show and hide on a scroll shrink the visual viewport too, and
 //   the shell does not follow them. Unset, as with
 //   no focused field, no keyboard or where the browser resizes the layout,

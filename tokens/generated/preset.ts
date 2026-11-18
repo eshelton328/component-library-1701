@@ -319,10 +319,10 @@ export default definePreset({
             },
             "active": {
               "value": {
-                "base": "rgba(14, 116, 144, 0.7)",
+                "base": "rgba(14, 116, 144, 0.75)",
                 "_dark": "rgba(94, 225, 255, 0.7)"
               },
-              "description": "The border of an open menu trigger, a drop target or a lifted row."
+              "description": "The border of an open menu trigger, a pressed Button, a drop target or a lifted row. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha."
             },
             "control": {
               "value": {

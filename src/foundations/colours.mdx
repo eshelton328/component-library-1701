@@ -43,7 +43,7 @@ these names, for example `css({ color: 'fg.muted' })`.
 
 <ColorPalette>
   <ColorItem title={"border.accent"} subtitle={"The border of a toast that confirms an action, such as a move with Undo (Workbench D20 417:2135). Not for selected items, which use border.selected."} colors={{"dark":"rgba(94, 225, 255, 0.5)","light":"rgba(14, 116, 144, 0.5)"}} />
-  <ColorItem title={"border.active"} subtitle={"The border of an open menu trigger, a drop target or a lifted row."} colors={{"dark":"rgba(94, 225, 255, 0.7)","light":"rgba(14, 116, 144, 0.7)"}} />
+  <ColorItem title={"border.active"} subtitle={"The border of an open menu trigger, a pressed Button, a drop target or a lifted row. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha."} colors={{"dark":"rgba(94, 225, 255, 0.7)","light":"rgba(14, 116, 144, 0.75)"}} />
   <ColorItem title={"border.control"} subtitle={"The border of an unchecked checkbox or other small control. Not for pane or card borders, which use border.default."} colors={{"dark":"rgba(138, 151, 184, 0.7)","light":"rgba(74, 86, 117, 0.7)"}} />
   <ColorItem title={"border.default"} subtitle={"Every 1px border and divider, and empty meter segments."} colors={{"dark":"#24314f","light":"#d3d9e6"}} />
   <ColorItem title={"border.discuss"} subtitle={"The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943). Not for text, and not for the border of a pressed Discuss button, which needs 3:1 and uses accent.discuss."} colors={{"dark":"rgba(158, 143, 255, 0.5)","light":"rgba(91, 75, 214, 0.5)"}} />

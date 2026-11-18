@@ -628,7 +628,8 @@ const replaceVisualViewport = (value: FakeViewport | undefined) => {
   }
 }
 
-function PhoneChat() {
+// `titled` adds a second field, a Title above the message, to move the focus between two fields.
+function PhoneChat({ titled = false }: { titled?: boolean }) {
   return (
     <div className={screenFrame} data-testid="phone">
       <AppShell
@@ -640,6 +641,7 @@ function PhoneChat() {
               Chat
             </section>
             <div role="group" aria-label="Composer" className={composerBox}>
+              {titled ? <textarea aria-label="Title" rows={1} className={messageField} /> : null}
               <textarea aria-label="Message" rows={1} className={messageField} />
             </div>
           </>
@@ -671,6 +673,11 @@ const keyboard: StoryObj<typeof meta> = {
     await expect(Math.round(rect(root).height)).toBe(844)
     await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    // The keyboard opens for a field: the shell follows the visual viewport only while one has the focus.
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    await userEvent.click(field)
+    await expect(field).toHaveFocus()
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
     // The keyboard opens and covers 300 px; the layout keeps its 844, as on iOS Safari. The shell shrinks to the
     // visible 544, so the composer ends 34 (the safe area) over the keyboard's top, not under it.
     fakeViewport.move({ height: 544 })
@@ -748,6 +755,109 @@ const focusZoom: StoryObj<typeof meta> = {
 export const FocusZoomDark: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FocusZoomLight: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+const withFakeViewport = {
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+}
+
+const noFieldFocused: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <PhoneChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const root = shellRoot(canvasElement)
+    const composer = () => rect(within(canvasElement).getByRole('group', { name: 'Composer' }))
+    await expect(document.activeElement?.tagName).not.toBe('TEXTAREA')
+    // With no field focused, the browser's bottom bar shows on a scroll and shrinks the visual viewport by 80 px:
+    // the shell keeps its parent's 844 and sets nothing, so the page does not move under the finger.
+    fakeViewport.move({ height: 764 })
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+    // The top bar hides and the visual viewport pans down (a scroll event): the shell stays at the top.
+    fakeViewport.move({ height: 700, offsetTop: 60 }, 'scroll')
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+  },
+}
+
+/** Phone chat with no field focused: the browser's bars that show and hide on a scroll shrink the visual viewport, and the shell keeps its height. */
+export const NoFieldFocusedDark: StoryObj<typeof meta> = { ...noFieldFocused, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const NoFieldFocusedLight: StoryObj<typeof meta> = { ...noFieldFocused, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const fieldBlurred: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <PhoneChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    // The field takes the focus and the keyboard opens: the shell fits the visible 544.
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await expect(Math.round(rect(root).height)).toBe(544)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    // The focus leaves the field while the visual viewport is still short (the keyboard closing, or the bars):
+    // both properties go and the shell is its parent's 844 again.
+    field.blur()
+    await expect(field).not.toHaveFocus()
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+    await expect(Math.round(rect(root).height)).toBe(844)
+    // The focus comes back to the field: the fit starts at once, with no viewport event.
+    await userEvent.click(field)
+    await expect(Math.round(rect(root).height)).toBe(544)
+    // The focus moves to a control that opens no keyboard (the detail pane): the fit ends.
+    await userEvent.click(canvas.getByRole('main'))
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(Math.round(rect(root).height)).toBe(844)
+  },
+}
+
+/** Phone chat: when the focus leaves the message field, the shell stops following the visual viewport and returns to its parent's height. */
+export const FieldBlurredDark: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FieldBlurredLight: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const fieldToField: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <PhoneChat titled />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const title = canvas.getByRole('textbox', { name: 'Title' })
+    const message = canvas.getByRole('textbox', { name: 'Message' })
+    await userEvent.click(title)
+    fakeViewport.move({ height: 544 })
+    await expect(Math.round(rect(root).height)).toBe(544)
+    // The focus moves from the title to the message while the keyboard stays open: the fit is never removed in
+    // between, so the page does not jump down and up.
+    const remove = spyOn(root.style, 'removeProperty')
+    await userEvent.click(message)
+    await expect(message).toHaveFocus()
+    await expect(remove).not.toHaveBeenCalled()
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    await expect(Math.round(rect(root).height)).toBe(544)
+    // And back with Shift+Tab, the keyboard's own way between fields.
+    await userEvent.tab({ shift: true })
+    await expect(title).toHaveFocus()
+    await expect(remove).not.toHaveBeenCalled()
+    await expect(Math.round(rect(root).height)).toBe(544)
+    remove.mockRestore()
+  },
+}
+
+/** Phone chat with two fields: moving the focus from one to the other while the keyboard is open keeps the fit. */
+export const FieldToFieldDark: StoryObj<typeof meta> = { ...fieldToField, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FieldToFieldLight: StoryObj<typeof meta> = { ...fieldToField, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const noVisualViewport: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,
   parameters: { viewport: { options: phoneScreen } },
@@ -802,10 +912,14 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
     const canvas = within(canvasElement)
     await expect([...fakeViewport.listening].sort()).toEqual(['resize', 'scroll'])
     const remove = spyOn(fakeViewport, 'removeEventListener')
+    const removeFromDocument = spyOn(document, 'removeEventListener')
     await userEvent.click(canvas.getByRole('button', { name: 'Close the chat' }))
     await expect(canvas.getByText('Closed')).toBeVisible()
     await expect(remove).toHaveBeenCalledWith('resize', expect.any(Function))
     await expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function))
+    await expect(removeFromDocument).toHaveBeenCalledWith('focusin', expect.any(Function))
+    await expect(removeFromDocument).toHaveBeenCalledWith('focusout', expect.any(Function))
+    removeFromDocument.mockRestore()
     await expect(fakeViewport.listening.size).toBe(0)
     // A keyboard after the unmount reaches nothing and throws nothing.
     fakeViewport.move({ height: 544 })

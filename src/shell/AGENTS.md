@@ -29,7 +29,14 @@ Layout, Navigation or Overlays (d-065, d-066).
   zoom the top stays at the last scale-1 `offsetTop`, moved only as far as
   the shell must to cover the visible area. Where the browser resizes the
   layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
-  nothing is set. Pages set nothing for the keyboard;
+  nothing is set. The fit applies only while a field that opens the
+  keyboard has the focus (`editable` in `../controls/editable.ts`, shared
+  with `ScrollFrame`): with none, the browser's bars that show and hide on
+  a scroll also shrink the visual viewport, and the shell removes both
+  properties and keeps its parent's height, so the page stays still. It
+  listens to `focusin` and `focusout` on the document as well as the
+  viewport's `resize` and `scroll`; a `focusout` whose `relatedTarget` is
+  another field keeps the fit. Pages set nothing for the keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
 - The `AppShell` detail is an inline-size query container. A detail

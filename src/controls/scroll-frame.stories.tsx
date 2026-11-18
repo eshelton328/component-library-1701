@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { ScrollFrame } from './scroll-frame'
@@ -238,3 +238,202 @@ export const FooterKeptDark: StoryObj<typeof meta> = {
 }
 export const FooterKeptLight: StoryObj<typeof meta> = { ...FooterKeptDark, globals: { mode: 'light' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// A phone chat: the transcript scrolls in the body, the reply box sits in the footer. A play test stands in for the
+// touch screen: it answers `(pointer: coarse)` as `pointer` says, and sends touch events as a finger would.
+let pointer: 'coarse' | 'fine' = 'coarse'
+const onCopy = fn()
+
+const touchScreen = () => {
+  pointer = 'coarse'
+  onCopy.mockClear()
+  const own = Object.getOwnPropertyDescriptor(window, 'matchMedia')
+  const real = window.matchMedia.bind(window)
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    writable: true,
+    value: (query: string) => (query === '(pointer: coarse)' ? { matches: pointer === 'coarse', media: query } : real(query)),
+  })
+  return () => {
+    if (own) Object.defineProperty(window, 'matchMedia', own)
+    else Reflect.deleteProperty(window, 'matchMedia')
+  }
+}
+
+function Chat() {
+  return (
+    <main className={page}>
+      <div className={box}>
+        <ScrollFrame gap="12" footer={<TextArea label="Reply" labelHidden rows={2} />}>
+          {lines.map((text) => (
+            <p key={text} className={line}>
+              {text}
+            </p>
+          ))}
+          <Button size="sm" onClick={onCopy}>
+            Copy the message
+          </Button>
+        </ScrollFrame>
+      </div>
+    </main>
+  )
+}
+
+const finger = (target: Element) => {
+  const r = target.getBoundingClientRect()
+  const x = r.left + r.width / 2
+  const y = r.top + r.height / 2
+  const send = (type: 'touchstart' | 'touchmove' | 'touchend', dy: number) => {
+    const touch = new Touch({ identifier: 1, target, clientX: x, clientY: y - dy })
+    const touches = type === 'touchend' ? [] : [touch]
+    target.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches, targetTouches: touches, changedTouches: [touch] }))
+  }
+  return {
+    down: () => {
+      send('touchstart', 0)
+    },
+    move: (dy: number) => {
+      send('touchmove', dy)
+    },
+    up: (dy = 0) => {
+      send('touchend', dy)
+    },
+  }
+}
+
+const chatParts = async (root: HTMLElement, draft = 'Half a reply') => {
+  const canvas = within(root)
+  const reply = canvas.getByRole('textbox', { name: 'Reply' })
+  await userEvent.click(reply)
+  await userEvent.keyboard(draft)
+  await expect(reply).toHaveFocus()
+  return { canvas, reply, message: canvas.getByText('Message 5') }
+}
+
+const touchChat: StoryObj<typeof meta> = { render: () => <Chat />, beforeEach: touchScreen }
+
+const dragCloses: StoryObj<typeof meta> = {
+  ...touchChat,
+  play: async ({ canvasElement }) => {
+    const { reply, message } = await chatParts(canvasElement)
+    // The user drags the transcript 11 px: the reply box loses the focus, so the keyboard closes.
+    const press = finger(message)
+    press.down()
+    press.move(11)
+    await expect(reply).not.toHaveFocus()
+    press.up(11)
+    // The draft stays, and a tap on the reply box opens the keyboard again with it.
+    await expect(reply).toHaveValue('Half a reply')
+    await userEvent.click(reply)
+    await expect(reply).toHaveFocus()
+    await expect(reply).toHaveValue('Half a reply')
+  },
+}
+
+/** On a touch screen a drag of the transcript closes the keyboard of the reply box; the draft stays. */
+export const DragClosesKeyboardDark: StoryObj<typeof meta> = { ...dragCloses, globals: { mode: 'dark' } }
+export const DragClosesKeyboardLight: StoryObj<typeof meta> = { ...dragCloses, globals: { mode: 'light' } }
+
+/** A press that has moved 10 px or less is not a drag: the keyboard stays open while the finger is down. */
+export const ShortDragKeepsKeyboard: StoryObj<typeof meta> = {
+  ...touchChat,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const { reply, message } = await chatParts(canvasElement)
+    const press = finger(message)
+    press.down()
+    press.move(5)
+    press.move(10)
+    await expect(reply).toHaveFocus()
+    // One more pixel makes it a drag.
+    press.move(11)
+    await expect(reply).not.toHaveFocus()
+    press.up(11)
+  },
+}
+
+/** A scroll from code, such as an auto-scroll to a new message, never closes the keyboard. */
+export const CodeScrollKeepsKeyboard: StoryObj<typeof meta> = {
+  ...touchChat,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const { reply, message } = await chatParts(canvasElement)
+    const body = message.parentElement
+    if (body === null) throw new Error('no body')
+    body.scrollTop = 200
+    body.dispatchEvent(new Event('scroll'))
+    body.scrollTo({ top: body.scrollHeight })
+    body.dispatchEvent(new Event('scroll'))
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    await expect(body.scrollTop).toBeGreaterThan(200)
+    await expect(reply).toHaveFocus()
+    // The same frame still closes it for the user's own drag.
+    const press = finger(message)
+    press.down()
+    press.move(40)
+    await expect(reply).not.toHaveFocus()
+    press.up(40)
+  },
+}
+
+/** With a mouse (a fine pointer) nothing changes: a drag or a tap on the transcript leaves the reply box focused. */
+export const FinePointerKeepsKeyboard: StoryObj<typeof meta> = {
+  ...touchChat,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const { reply, message } = await chatParts(canvasElement)
+    pointer = 'fine'
+    const drag = finger(message)
+    drag.down()
+    drag.move(40)
+    drag.up(40)
+    const tap = finger(message)
+    tap.down()
+    tap.up()
+    await expect(reply).toHaveFocus()
+    // The same drag on a touch screen closes it.
+    pointer = 'coarse'
+    drag.down()
+    drag.move(40)
+    await expect(reply).not.toHaveFocus()
+    drag.up(40)
+  },
+}
+
+/** A tap on a blank part of the transcript (a press and release within 10 px) closes the keyboard; the draft stays. */
+export const TapClosesKeyboard: StoryObj<typeof meta> = {
+  ...touchChat,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const { reply, message } = await chatParts(canvasElement)
+    const tap = finger(message)
+    tap.down()
+    tap.move(4)
+    await expect(reply).toHaveFocus()
+    tap.up(4)
+    await expect(reply).not.toHaveFocus()
+    await expect(reply).toHaveValue('Half a reply')
+  },
+}
+
+/** A tap on a button in a message does the button's action only and leaves the keyboard open. */
+export const TapOnButtonKeepsKeyboard: StoryObj<typeof meta> = {
+  ...touchChat,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const { canvas, reply, message } = await chatParts(canvasElement)
+    const copy = canvas.getByRole('button', { name: 'Copy the message' })
+    const tap = finger(copy)
+    tap.down()
+    tap.up()
+    // The click that follows a tap; a button's click() does not move the focus.
+    copy.click()
+    await expect(onCopy).toHaveBeenCalledTimes(1)
+    await expect(reply).toHaveFocus()
+    // A tap beside the button, on the transcript, still closes it.
+    const blank = finger(message)
+    blank.down()
+    blank.up()
+    await expect(reply).not.toHaveFocus()
+  },
+}

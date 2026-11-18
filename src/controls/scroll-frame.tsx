@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode, type TouchEvent } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { scrollFrame, type ScrollFrameVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
@@ -8,6 +8,61 @@ const Root = withProvider('div', 'root')
 const Header = withContext('div', 'header')
 const Body = withContext('div', 'body')
 const Footer = withContext('div', 'footer')
+
+// How far a press may move, in px, and still be a tap; a press that moves further is a drag of the body.
+const dragSlop = 10
+// A press on one of these does its own action and leaves the keyboard alone.
+const control = 'a, button, input, textarea, select, [role=button], [contenteditable]'
+// The input types that open an on-screen keyboard.
+const typed = new Set(['text', 'search', 'email', 'url', 'tel', 'password', 'number'])
+
+const editable = (el: Element | null): el is HTMLElement =>
+  el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && typed.has(el.type)) || (el instanceof HTMLElement && el.isContentEditable)
+
+// Blurs the focused element only when it is a text field, so the on-screen keyboard closes; its text stays.
+const closeKeyboard = () => {
+  const focused = document.activeElement
+  if (editable(focused)) focused.blur()
+}
+
+type Press = { x: number; y: number; dragged: boolean; onControl: boolean }
+
+/**
+ * On a touch screen (`pointer: coarse`), a user's drag of the body by more than `dragSlop` px, or a tap on it
+ * that is not on a control, closes the keyboard of a focused text field, as a native chat does, so the user can
+ * scroll up and read. It reads touch events, never the scroll event, so a scroll from code (an auto-scroll to a
+ * new message) never closes it. With a mouse nothing changes.
+ */
+function useKeyboardClose() {
+  const press = useRef<Press | null>(null)
+  return {
+    onTouchStart: (event: TouchEvent<HTMLDivElement>) => {
+      const touch = event.touches[0]
+      const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
+      press.current =
+        event.touches.length === 1 && touch !== undefined && coarse
+          ? { x: touch.clientX, y: touch.clientY, dragged: false, onControl: event.target instanceof Element && event.target.closest(control) !== null }
+          : null
+    },
+    onTouchMove: (event: TouchEvent<HTMLDivElement>) => {
+      const start = press.current
+      const touch = event.touches[0]
+      if (start === null || touch === undefined || start.dragged) return
+      if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > dragSlop) {
+        start.dragged = true
+        closeKeyboard()
+      }
+    },
+    onTouchEnd: () => {
+      const start = press.current
+      press.current = null
+      if (start !== null && !start.dragged && !start.onControl) closeKeyboard()
+    },
+    onTouchCancel: () => {
+      press.current = null
+    },
+  }
+}
 
 export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
   /** Stays at the top while the body scrolls, such as a Back bar. */
@@ -45,12 +100,20 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * body, such as a Start button kept at its foot, uses it as its offset,
  * `bottom: 'var(--scroll-frame-inset, 0px)'`, so it sticks above the bar;
  * the body's end spacer keeps its last line above that element.
+ *
+ * On a touch screen, a drag of the body by more than 10 px, or a tap on it
+ * that is not on a link, button or field, blurs a focused text field (such
+ * as the `Composer` in the footer), so the on-screen keyboard closes and the
+ * user can scroll up and read. The draft stays, and a tap on the field opens
+ * the keyboard again. A scroll from code never closes it; with a mouse
+ * nothing changes.
  */
 export function ScrollFrame({ header, footer, children, className, bodyClassName, gap, footerShrink }: ScrollFrameProps) {
+  const keyboardClose = useKeyboardClose()
   return (
     <Root gap={gap} footerShrink={footerShrink} className={className}>
       {header === undefined ? null : <Header>{header}</Header>}
-      <Body tabIndex={0} className={bodyClassName}>
+      <Body tabIndex={0} className={bodyClassName} {...keyboardClose}>
         {children}
       </Body>
       {footer === undefined ? null : <Footer>{footer}</Footer>}

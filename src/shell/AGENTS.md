@@ -61,7 +61,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   viewport meta for Chrome on Android.
 - The `AppShell` detail is an inline-size query container. A detail
   `Container` in it widens to `shell.detailWide` and centres itself
-  when the detail is at least `shell.detailWideFrom` wide.
+  when the detail is at least `shell.detailWideFrom` wide; an item or
+  page `Container` then stops at `shell.itemWide` or `shell.pageWide`
+  and centres itself.
 - `DetailSplit` is the child of the detail for an open item with a side
   pane beside it (the Inbox and Artifacts discussions). The item keeps
   its content's width, the side takes the rest up to

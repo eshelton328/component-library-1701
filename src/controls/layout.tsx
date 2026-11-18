@@ -57,6 +57,11 @@ export function Grid(props: GridProps) {
  * Inside an `AppShell` detail at least 1600 px wide (`shell.detailWideFrom`),
  * `detail` keeps the content at most 1024 px wide (`shell.detailWide`), in the
  * middle of its parent.
+ * `item` (an open Toolkit item) pads as `desktop` does and `page` (a Toolkit
+ * full page) pads 24 top, 32 bottom and 32 sides. Both fill their parent
+ * below 1600 px; inside an `AppShell` detail at least `shell.detailWideFrom`
+ * wide, `item` is at most 1028 px (`shell.itemWide`) and `page` at most
+ * 1448 px (`shell.pageWide`), padding included, in the middle of the parent.
  */
 export function Container(props: ContainerProps) {
   return <StyledContainer {...props} />

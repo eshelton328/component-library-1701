@@ -9,6 +9,9 @@ import { TruncatedText } from '../controls/tooltip'
 
 const { withProvider, withContext } = createSlotRecipeContext(composer)
 const Root = withProvider('div', 'root')
+const Row = withContext('div', 'row')
+const Text = withContext('div', 'text')
+const Model = withContext('div', 'model')
 const Attachment = withContext('span', 'attachment')
 const AttachmentIcon = withContext('span', 'attachmentIcon')
 const AttachmentName = withContext('span', 'attachmentName')
@@ -52,13 +55,27 @@ export type ComposerProps = {
   /** The model control after the attach button, such as a `ModelChip`. */
   model?: ReactNode
   disabled?: boolean | undefined
+  /**
+   * `stacked` (the default) draws the text over a row of buttons: the
+   * attach button and the model at the start, Stop and send at the end
+   * (78 px with one line of text).
+   * `inline` draws one row, as the side chat in a pane does (Workspaces D5
+   * 158:545): the text, then the model, Stop and send as 24 px buttons
+   * (the attach button, when set, comes first), 42 px high with one line
+   * of text. The text grows as it wraps, and the buttons stay at the
+   * bottom. In a narrow row the text keeps 40 % of the width and the
+   * model shrinks (a `ModelChip` cuts its text), so Send stays inside.
+   * Attachments show above the row in both layouts.
+   */
+  layout?: 'stacked' | 'inline' | undefined
 }
 
 /**
  * The message box at the bottom of a chat: the attached files, the text,
- * an attach button, the model, and Stop and send buttons. It shows the
- * data it gets and reports through callbacks; it calls `onSubmit` and
- * does not send a message (d-068, d-069).
+ * an attach button, the model, and Stop and send buttons, in two rows or,
+ * with `layout="inline"`, in one. It shows the data it gets and reports
+ * through callbacks; it calls `onSubmit` and does not send a message
+ * (d-068, d-069).
  */
 export function Composer({
   label = 'Message',
@@ -74,6 +91,7 @@ export function Composer({
   onAttach,
   model,
   disabled = false,
+  layout = 'stacked',
 }: ComposerProps) {
   const [draft, setDraft] = useState(defaultValue ?? '')
   const text = value ?? draft
@@ -95,65 +113,92 @@ export function Composer({
     event.preventDefault()
     submit()
   }
+  const inline = layout === 'inline'
+  const buttonSize = inline ? 'xs' : 'sm'
+  const chips =
+    attachments.length === 0 ? null : (
+      <Inline gap="6" wrap>
+        {attachments.map((file) => (
+          <Attachment key={file.id}>
+            <AttachmentIcon aria-hidden="true">
+              <ClipIcon size="12" />
+            </AttachmentIcon>
+            <AttachmentName>
+              <TruncatedText>{file.name}</TruncatedText>
+            </AttachmentName>
+            {onRemoveAttachment === undefined ? null : (
+              <AttachmentRemove
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                disabled={disabled ? true : undefined}
+                onClick={() => {
+                  onRemoveAttachment(file.id)
+                }}
+              >
+                <CloseIcon size="12" />
+              </AttachmentRemove>
+            )}
+          </Attachment>
+        ))}
+      </Inline>
+    )
+  const textArea = (
+    <TextArea
+      variant="bare"
+      labelHidden
+      label={label}
+      placeholder={placeholder}
+      value={text}
+      onValueChange={change}
+      onKeyDown={onKeyDown}
+      autoresize
+      rows={1}
+      disabled={disabled}
+    />
+  )
+  const attach =
+    onAttach === undefined ? null : (
+      <Button size={buttonSize} iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
+        <ClipIcon size="16" />
+      </Button>
+    )
+  const stop = running ? (
+    <Button size={buttonSize} textSize={inline ? 'xs' : 'md'} disabled={disabled} onClick={onStop}>
+      <StopIcon size="16" />
+      Stop
+    </Button>
+  ) : null
+  const send = (
+    <Button variant="primary" size={buttonSize} iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
+      <ArrowUpIcon size="16" />
+    </Button>
+  )
+  if (inline) {
+    return (
+      <Root layout="inline">
+        {chips}
+        <Row>
+          {attach}
+          <Text>{textArea}</Text>
+          {model === undefined || model === null ? null : <Model>{model}</Model>}
+          {stop}
+          {send}
+        </Row>
+      </Root>
+    )
+  }
   return (
     <Root>
-      {attachments.length === 0 ? null : (
-        <Inline gap="6" wrap>
-          {attachments.map((file) => (
-            <Attachment key={file.id}>
-              <AttachmentIcon aria-hidden="true">
-                <ClipIcon size="12" />
-              </AttachmentIcon>
-              <AttachmentName>
-                <TruncatedText>{file.name}</TruncatedText>
-              </AttachmentName>
-              {onRemoveAttachment === undefined ? null : (
-                <AttachmentRemove
-                  type="button"
-                  aria-label={`Remove ${file.name}`}
-                  disabled={disabled ? true : undefined}
-                  onClick={() => {
-                    onRemoveAttachment(file.id)
-                  }}
-                >
-                  <CloseIcon size="12" />
-                </AttachmentRemove>
-              )}
-            </Attachment>
-          ))}
-        </Inline>
-      )}
-      <TextArea
-        variant="bare"
-        labelHidden
-        label={label}
-        placeholder={placeholder}
-        value={text}
-        onValueChange={change}
-        onKeyDown={onKeyDown}
-        autoresize
-        rows={1}
-        disabled={disabled}
-      />
+      {chips}
+      {textArea}
       <Inline justify="between" gap="6">
         <Inline gap="6">
-          {onAttach === undefined ? null : (
-            <Button size="sm" iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
-              <ClipIcon size="16" />
-            </Button>
-          )}
+          {attach}
           {model}
         </Inline>
         <Inline gap="6">
-          {running ? (
-            <Button size="sm" disabled={disabled} onClick={onStop}>
-              <StopIcon size="16" />
-              Stop
-            </Button>
-          ) : null}
-          <Button variant="primary" size="sm" iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
-            <ArrowUpIcon size="16" />
-          </Button>
+          {stop}
+          {send}
         </Inline>
       </Inline>
     </Root>

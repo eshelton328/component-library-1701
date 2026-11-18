@@ -347,6 +347,7 @@ export type ComposerProps = {
     onAttach?: (() => void) | undefined;
     model?: ReactNode;
     disabled?: boolean | undefined;
+    layout?: 'stacked' | 'inline' | undefined;
 };
 
 // @public

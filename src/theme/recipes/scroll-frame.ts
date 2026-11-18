@@ -25,7 +25,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // footer by the inset, so a sticky Start button sits just above the bar.
 // With no footer, the body ends with a spacer of that height (shown only
 // under the bar, so it adds no gap elsewhere), so its last line scrolls
-// above the bar.
+// above the bar. --scroll-frame-inset is public: a sticky element inside
+// the body (the-bridge DetailFrame's Start) sticks at
+// bottom: var(--scroll-frame-inset, 0px), and the spacer below it keeps
+// the body's last line above it at the end of the scroll.
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],

@@ -29,7 +29,10 @@ under their purpose group, never under "Controls" (d-065).
   30% of that parent; a page caps no reply box itself. As the direct
   child of an `AppShell` detail with `tabBarOverlay`, it reaches under
   the tab bar and lifts its footer and its body's end above it; anywhere
-  else the two custom properties are unset and it draws as before.
+  else the two custom properties are unset and it draws as before. A
+  sticky element inside its body (a Start button at its foot) sticks at
+  `bottom: 'var(--scroll-frame-inset, 0px)'`, the frame's public bottom
+  offset, so it stays above the bar.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

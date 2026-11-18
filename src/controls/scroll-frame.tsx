@@ -30,6 +30,14 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * so the keyboard can scroll it. `gap` sets the space between the three.
  * The footer takes at most 30% of the frame's height; a taller footer, such
  * as a chat box with a long draft, scrolls inside, so the body keeps room.
+ *
+ * As the direct child of an `AppShell` detail with `tabBarOverlay`, the
+ * frame reaches under the tab bar and lifts its footer and the end of its
+ * body above it. `--scroll-frame-inset` holds that bottom offset (the
+ * bar's height there, `0px` anywhere else). A sticky element inside the
+ * body, such as a Start button kept at its foot, uses it as its offset,
+ * `bottom: 'var(--scroll-frame-inset, 0px)'`, so it sticks above the bar;
+ * the body's end spacer keeps its last line above that element.
  */
 export function ScrollFrame({ header, footer, children, className, bodyClassName, gap }: ScrollFrameProps) {
   return (

@@ -256,9 +256,11 @@ export const EmptySlots: StoryObj<typeof meta> = {
 const phoneFrame = css({ display: 'flex', flexDirection: 'column', h: 'shell.detail', w: 'shell.popoverLg' })
 const startBar = css({ px: '16' })
 const frameBody = css({ px: '16', gap: '8' })
+// A Start button that sticks at the foot of the body, above the tab bar, as the-bridge's DetailFrame draws it.
+const stickyStart = css({ position: 'sticky', bottom: 'var(--scroll-frame-inset, 0px)', bg: 'surface.pane' })
 const listLines = Array.from({ length: 40 }, (_, i) => `Task ${String(i + 1)}`)
 
-function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | 'body'; tabBarOverlay?: boolean }) {
+function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | 'body' | 'sticky'; tabBarOverlay?: boolean }) {
   const detail =
     content === 'list' ? (
       <Container>
@@ -284,6 +286,11 @@ function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | '
             {l}
           </p>
         ))}
+        {content === 'sticky' ? (
+          <div className={stickyStart}>
+            <Button variant="primary">Start</Button>
+          </div>
+        ) : null}
       </ScrollFrame>
     )
   return (
@@ -370,6 +377,29 @@ const overlayBody: StoryObj<typeof meta> = {
 /** Phone with `tabBarOverlay` and a `ScrollFrame` page with no footer: the body's last line scrolls above the tab bar. */
 export const OverlayBodyDark: StoryObj<typeof meta> = { ...overlayBody, globals: { mode: 'dark' } }
 export const OverlayBodyLight: StoryObj<typeof meta> = { ...overlayBody, globals: { mode: 'light' } }
+
+const overlayStickyInBody: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="sticky" tabBarOverlay />,
+  play: async ({ canvasElement }) => {
+    const { canvas, phone, bar } = phoneParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const start = () => rect(canvas.getByRole('button', { name: 'Start' }))
+    // The body runs under the bar; the Start that sticks at --scroll-frame-inset sits at the bar's top, not under it.
+    await expect(Math.round(rect(body).bottom)).toBe(Math.round(phone.bottom))
+    await expect(getComputedStyle(body).getPropertyValue('--scroll-frame-inset')).toBe('77px')
+    await expect(start().bottom).toBeLessThanOrEqual(bar.top)
+    await expect(Math.round(start().bottom)).toBe(Math.round(bar.top))
+    // At the body's end, its last line is above Start, and Start is still above the bar.
+    scrollToEnd(body)
+    await expect(body.scrollTop).toBeGreaterThan(0)
+    await expect(rect(canvas.getByText('Line 60 of the task')).bottom).toBeLessThanOrEqual(start().top)
+    await expect(start().bottom).toBeLessThanOrEqual(bar.top)
+  },
+}
+
+/** Phone with `tabBarOverlay` and a Start that sticks inside the `ScrollFrame` body at `--scroll-frame-inset`: it stays above the tab bar. */
+export const OverlayStickyInBodyDark: StoryObj<typeof meta> = { ...overlayStickyInBody, globals: { mode: 'dark' } }
+export const OverlayStickyInBodyLight: StoryObj<typeof meta> = { ...overlayStickyInBody, globals: { mode: 'light' } }
 
 const tabBarBelow: StoryObj<typeof meta> = {
   render: () => <PhoneScreen content="frame" />,

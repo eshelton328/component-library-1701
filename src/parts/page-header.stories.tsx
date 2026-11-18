@@ -195,3 +195,71 @@ export const LongTitle: StoryObj<typeof meta> = {
     await expect(within(canvasElement).getByRole('heading', { level: 1, name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }
+
+/**
+ * `countSize="lg"`: the Artifacts header's count, Regular 16/20 (D1 402:15373 "24" is 20 × 21,
+ * D4 403:7774 "3 of 24" 53 × 21), beside the default count of Toolkit (425:31, body 14/20).
+ */
+function LargeCountHeaders() {
+  return (
+    <main className={page}>
+      <Stack gap="32">
+        <div data-testid="artifacts">
+          <PageHeader title="Artifacts" count={24} countSize="lg">
+            <span className={found}>Checked Claude and Codex 2m ago</span>
+            <Button>+ Add a link</Button>
+          </PageHeader>
+        </div>
+        <div data-testid="search">
+          <PageHeader title="Artifacts" count="3 of 24" countSize="lg" />
+        </div>
+        <div className={phone} data-testid="tablet">
+          <PageHeader size="phone" title="Artifacts" count={24} countSize="lg" />
+        </div>
+        <div data-testid="toolkit">
+          <PageHeader title="Toolkit" count={27} />
+        </div>
+      </Stack>
+      <div hidden>
+        <span data-swatch="muted" className={swatches.muted} />
+      </div>
+    </main>
+  )
+}
+
+const largeCount: StoryObj<typeof meta> = {
+  render: () => <LargeCountHeaders />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const part = (id: string, slot: string) => {
+      const el = canvas.getByTestId(id).querySelector(`.page-header__${slot}`)
+      if (!(el instanceof HTMLElement)) throw new Error(`no ${slot} in ${id}`)
+      return el
+    }
+    const muted = canvasElement.querySelector('[data-swatch="muted"]')
+    if (muted === null) throw new Error('no swatch')
+    // countSize lg: Regular 16/20 in Geist, fg.muted, on the page and the phone size.
+    for (const id of ['artifacts', 'search', 'tablet']) {
+      const c = getComputedStyle(part(id, 'count'))
+      await expect([c.fontSize, c.fontWeight]).toEqual(['16px', '400'])
+      await expect(parseFloat(c.lineHeight)).toBeCloseTo(20, 0)
+      await expect(c.fontFamily).toMatch(/^"Geist Variable"/)
+      await expect(c.color).toBe(getComputedStyle(muted).color)
+    }
+    // "3 of 24" is about Figma's 53 px wide; body 14 draws it about 45.
+    await expect(part('search', 'count').getBoundingClientRect().width).toBeGreaterThan(50)
+    // The title keeps its size: page 20/28, phone 28/40; the count stays 8 after it.
+    const title = getComputedStyle(part('artifacts', 'title'))
+    await expect([title.fontSize, title.fontWeight]).toEqual(['20px', '600'])
+    await expect(parseFloat(title.lineHeight)).toBeCloseTo(28, 0)
+    await expect(getComputedStyle(part('tablet', 'title')).fontSize).toBe('28px')
+    await expect(part('artifacts', 'count').getBoundingClientRect().left - part('artifacts', 'title').getBoundingClientRect().right).toBe(8)
+    // The default count stays body 14/20.
+    const plain = getComputedStyle(part('toolkit', 'count'))
+    await expect([plain.fontSize, plain.fontWeight]).toEqual(['14px', '400'])
+    await expect(parseFloat(plain.lineHeight)).toBeCloseTo(20, 0)
+  },
+}
+
+export const LargeCountDark: StoryObj<typeof meta> = { ...largeCount, globals: { mode: 'dark' } }
+export const LargeCountLight: StoryObj<typeof meta> = { ...largeCount, globals: { mode: 'light' } }

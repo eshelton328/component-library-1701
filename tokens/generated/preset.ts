@@ -956,6 +956,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
+            "pageCount": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
+            },
             "paneTitle": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
@@ -1127,6 +1131,10 @@ export default definePreset({
               "value": "10px",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
+            "pageCount": {
+              "value": "16px",
+              "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
+            },
             "paneTitle": {
               "value": "15px",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
@@ -1226,6 +1234,10 @@ export default definePreset({
             "navLabel": {
               "value": "1.2",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
+            },
+            "pageCount": {
+              "value": "1.25",
+              "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
             },
             "paneTitle": {
               "value": "1.3333",
@@ -1327,6 +1339,10 @@ export default definePreset({
               "value": "500",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
+            "pageCount": {
+              "value": "400",
+              "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
+            },
             "paneTitle": {
               "value": "600",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
@@ -1427,6 +1443,10 @@ export default definePreset({
               "value": "0px",
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
+            "pageCount": {
+              "value": "0px",
+              "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
+            },
             "paneTitle": {
               "value": "0px",
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
@@ -1470,7 +1490,7 @@ export default definePreset({
           }
         },
         "body": {
-          "description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg.",
+          "description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg. Not for the Artifacts page count, which uses pageCount.",
           "value": {
             "fontFamily": "text.body",
             "fontSize": "text.body",
@@ -1629,6 +1649,16 @@ export default definePreset({
             "lineHeight": "text.navLabel",
             "fontWeight": "text.navLabel",
             "letterSpacing": "text.navLabel"
+          }
+        },
+        "pageCount": {
+          "description": "Regular 16/20 for the count after a page title in a PageHeader with countSize lg, as the Artifacts header draws it (D1 402:15373 and D4 403:7774, 21 high in Figma, 20 on the 4 px grid, d-100). Not for other counts, which use body or mono, or for body text.",
+          "value": {
+            "fontFamily": "text.pageCount",
+            "fontSize": "text.pageCount",
+            "lineHeight": "text.pageCount",
+            "fontWeight": "text.pageCount",
+            "letterSpacing": "text.pageCount"
           }
         },
         "paneTitle": {

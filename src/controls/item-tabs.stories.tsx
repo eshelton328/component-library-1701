@@ -318,6 +318,9 @@ const phonePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
   // The list's edge is checked only when the labels are no wider than Figma's (248 in all), as they draw on
   // macOS; then Evals ends inside the list's 378, as in M27. Wider labels (CI's Linux Chromium) move every tab
   // right whatever the border, so the edge proves nothing there.
+  // So CI may never run this edge check. The real proof on every machine is the checks above: each idle
+  // tab is its label plus 20 with no border, the selected tab its label plus 22 with a 1 px border, and
+  // Evals ends where that model puts it, 2 px less for each idle tab than a border on every tab gives.
   const figmaLabels = Object.values(m27Labels).reduce((sum, w) => sum + w, 0)
   if (labels <= figmaLabels) await expect(r.right).toBeLessThanOrEqual(box.right)
   // A newly selected tab takes the same border and padding; the one it leaves drops its border.

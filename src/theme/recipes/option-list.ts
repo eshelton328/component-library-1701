@@ -27,7 +27,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // outlined in cyan on the selected fill. Padding 12 by 14 (16, d-072),
 // radius 10 (`lg`), 12 from the radio to the text, 3 from the title to the
 // description (4, d-072), items at the top. Figma's outline is cyan 0.6;
-// the token is border.selected (0.5), as the selected chip's is. The
+// the token is border.selected (0.5 dark, 0.75 light), as the selected chip's is. The
 // unselected card and the gap between cards were not read; they take
 // border.default and 8. The card title is Medium 13 (346:793, `labelSm`
 // with `size="sm"`) and the description Regular 12 (346:796, `small` at

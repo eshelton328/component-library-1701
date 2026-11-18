@@ -63,6 +63,7 @@ import {
   SnoozeIcon,
   SortDescIcon,
   SortIcon,
+  SparkFilledIcon,
   SparkIcon,
   SparkleIcon,
   SplitIcon,
@@ -163,6 +164,7 @@ const groups: { title: string; icons: Entry[] }[] = [
     title: 'Objects',
     icons: [
       { name: 'spark', Icon: SparkIcon },
+      { name: 'sparkFilled', Icon: SparkFilledIcon },
       { name: 'sparkle', Icon: SparkleIcon },
       { name: 'file', Icon: FileIcon },
       { name: 'folder', Icon: FolderIcon },
@@ -260,7 +262,7 @@ function Icons() {
   )
 }
 
-const filled = ['more', 'play']
+const filled = ['more', 'play', 'sparkFilled']
 
 const svgIn = (el: HTMLElement) => {
   const svg = el.querySelector('svg')
@@ -305,7 +307,7 @@ const meta = {
       for (const path of paths) {
         const style = getComputedStyle(path)
         if (filled.includes(name)) {
-          // More (346:5607) and Play (346:397) are filled, not stroked, as in Figma.
+          // More (346:5607), Play (346:397) and the filled spark (406:145) are filled, not stroked, as in Figma.
           await expect(style.fill).toBe(text)
           await expect(style.stroke).toBe('none')
         } else {

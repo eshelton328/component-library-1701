@@ -320,6 +320,20 @@ export function SparkIcon(props: IconProps) {
   )
 }
 
+/**
+ * A filled spark: a four-point star, filled, not stroked. The star of the
+ * New badge on the phone's artifact rows (Figma node 406:145, and M3
+ * 407:99, M4 407:601, M5 408:99, M6 408:513, M8 415:99), drawn at 9 px and
+ * scaled to 24; use it at 12 px. `SparkIcon` is its stroked outline.
+ */
+export function SparkFilledIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" />
+    </Svg>
+  )
+}
+
 /** A sparkle: a tall four-point star. Figma node 105:2956, drawn at 18 px and scaled to 24. */
 export function SparkleIcon(props: IconProps) {
   return (

@@ -146,6 +146,7 @@ export {
   SnoozeIcon,
   SortDescIcon,
   SortIcon,
+  SparkFilledIcon,
   SparkIcon,
   SparkleIcon,
   SplitIcon,

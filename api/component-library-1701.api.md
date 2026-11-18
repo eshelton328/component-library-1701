@@ -1374,6 +1374,9 @@ export function SortDescIcon(props: IconProps): JSX.Element;
 export function SortIcon(props: IconProps): JSX.Element;
 
 // @public
+export function SparkFilledIcon(props: IconProps): JSX.Element;
+
+// @public
 export function SparkIcon(props: IconProps): JSX.Element;
 
 // @public

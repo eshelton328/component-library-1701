@@ -107,8 +107,13 @@ under their purpose group, never under "Controls" (d-065).
   it. It reads pointer events on window during a drag, so a test drives a
   touch with synthetic `PointerEvent`s; a mouse story uses the test
   runner's real mouse (`userEvent` from `vitest/browser`), as only a real
-  press selects text. The sheet has no open or close motion:
-  the token build has no duration or easing type yet.
+  press selects text. It slides up as its scrim fades in
+  (`durations.sheetOpen`) and the close reverses both
+  (`durations.sheetClose`), on `easings.sheet`; a swiped sheet slides
+  down from the finger. With prefers-reduced-motion it only fades. Ark
+  unmounts it when the close motion ends, so a play function that
+  measures an open sheet first awaits `motionDone` from
+  `bottom-sheet.testing.ts`.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

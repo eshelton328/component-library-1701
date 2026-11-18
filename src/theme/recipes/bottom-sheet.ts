@@ -18,7 +18,15 @@ export const bottomSheet = defineSlotRecipe({
   staticCss: ['*'],
   slots: [...dialogAnatomy.keys(), 'grabber', 'header', 'headerLeading', 'headerActions'],
   base: {
-    backdrop: { position: 'fixed', inset: '0', bg: 'overlay.scrim' },
+    // Open and close motion (screen review R13): the scrim fades in while the sheet slides up, and the close
+    // reverses both. The close keeps its last frame, so nothing shows again before Ark unmounts the sheet.
+    backdrop: {
+      position: 'fixed',
+      inset: '0',
+      bg: 'overlay.scrim',
+      _open: { animationName: 'fadeIn', animationDuration: 'sheetOpen', animationTimingFunction: 'sheet' },
+      _closed: { animationName: 'fadeOut', animationDuration: 'sheetClose', animationTimingFunction: 'sheet', animationFillMode: 'forwards' },
+    },
     // The top padding keeps a strip of scrim above a tall sheet, so a click there can close it.
     positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', pt: '40' },
     content: {
@@ -44,6 +52,20 @@ export const bottomSheet = defineSlotRecipe({
       // component sets. No translate at rest, so the box makes no containing block.
       overscrollBehavior: 'contain',
       '&[data-dragging]': { translate: '0 var(--bottom-sheet-drag, 0px)' },
+      // The sheet slides up as it opens and down as it closes; with prefers-reduced-motion it only fades.
+      _open: {
+        animationName: 'sheetIn',
+        animationDuration: 'sheetOpen',
+        animationTimingFunction: 'sheet',
+        _motionReduce: { animationName: 'fadeIn' },
+      },
+      _closed: {
+        animationName: 'sheetOut',
+        animationDuration: 'sheetClose',
+        animationTimingFunction: 'sheet',
+        animationFillMode: 'forwards',
+        _motionReduce: { animationName: 'fadeOut' },
+      },
     },
     // The grabber (Inbox M6 346:10209, Artifacts M4 407:816, More drawer 415:317): 36x5 (d-074 merges
     // Workbench's 40x5 into it), centred at the top. Figma's radius 3 on a 5 px bar draws a full pill, as

@@ -9,6 +9,13 @@
           "$ref": "layout.json"
         }
       ]
+    },
+    "motion": {
+      "sources": [
+        {
+          "$ref": "motion.json"
+        }
+      ]
     }
   },
   "modifiers": {
@@ -41,6 +48,9 @@
   "resolutionOrder": [
     {
       "$ref": "#/sets/layout"
+    },
+    {
+      "$ref": "#/sets/motion"
     },
     {
       "$ref": "#/modifiers/theme"

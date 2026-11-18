@@ -7,6 +7,30 @@ export default definePreset({
   "theme": {
     "extend": {
       "tokens": {
+        "durations": {
+          "keyboard": {
+            "value": "250ms",
+            "description": "How long the composer dock takes to follow the on-screen keyboard up or down (screen review R18, Workbench M10 147:97). Use with easing.keyboard. Not for sheets or other overlays."
+          },
+          "sheetClose": {
+            "value": "250ms",
+            "description": "How long a bottom sheet takes to slide down and its scrim to fade out (screen review R13). Use with easing.sheet. Not for opening; use duration.sheetOpen."
+          },
+          "sheetOpen": {
+            "value": "300ms",
+            "description": "How long a bottom sheet takes to slide up and its scrim to fade in (screen review R13). Use with easing.sheet. Not for closing; use duration.sheetClose."
+          }
+        },
+        "easings": {
+          "keyboard": {
+            "value": "cubic-bezier(0.38, 0.7, 0.125, 1)",
+            "description": "The curve of the composer dock as it follows the on-screen keyboard, close to the iOS keyboard curve (screen review R18). Use with duration.keyboard. Not for sheets; use easing.sheet."
+          },
+          "sheet": {
+            "value": "cubic-bezier(0.38, 0.7, 0.125, 1)",
+            "description": "The curve of a bottom sheet and its scrim as they open and close (screen review R13). Use with duration.sheetOpen or duration.sheetClose. Not for the keyboard dock; use easing.keyboard."
+          }
+        },
         "sizes": {
           "control": {
             "lg": {

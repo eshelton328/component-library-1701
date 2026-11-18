@@ -8,7 +8,8 @@
 //
 // Checks, for every theme and mode the resolver lists:
 //   complete    every theme and mode has the same tokens, with the same types
-//   layout      spacing and sizes have the same value in every theme and mode
+//   layout      spacing, sizes, durations and easings have the same value in
+//               every theme and mode
 //   described   every token has a $description (in the default theme and mode)
 //   colorspace  every colour, also inside a shadow, is in srgb
 //   hex         a colour's hex matches its components, also inside a shadow
@@ -23,6 +24,8 @@ type Colour = Extract<TokenNormalized, { $type: 'color' }>['$value']
 type Shadow = Extract<TokenNormalized, { $type: 'shadow' }>['$value'][number]
 type Typography = Extract<TokenNormalized, { $type: 'typography' }>['$value']
 type Dimension = Shadow['blur']
+type Duration = Extract<TokenNormalized, { $type: 'duration' }>['$value']
+type CubicBezier = Extract<TokenNormalized, { $type: 'cubicBezier' }>['$value']
 type Problem = { check: string; detail: string }
 type Pair = { fg: string; on: string[]; min: number }
 type Rgb = [number, number, number]
@@ -66,7 +69,9 @@ const setOf = (theme: string, mode: string): TokenNormalizedSet => {
   return set
 }
 const base = setOf(defaultTheme, defaultMode)
-const isLayout = (id: string) => id.startsWith('spacing.') || id.startsWith('size.')
+// Layout and motion tokens: no theme or mode may change them (d-035).
+const fixedPrefixes = ['spacing.', 'size.', 'duration.', 'easing.']
+const isLayout = (id: string) => fixedPrefixes.some((p) => id.startsWith(p))
 
 // complete, layout
 for (const [key, set] of Object.entries(sets)) {
@@ -77,7 +82,7 @@ for (const [key, set] of Object.entries(sets)) {
     if (!got) fail('complete', `${key} has no ${id}`)
     else if (got.$type !== want.$type) fail('complete', `${key} ${id} is ${got.$type}, not ${want.$type}`)
     else if (isLayout(id) && JSON.stringify(got.$value) !== JSON.stringify(want.$value)) {
-      fail('layout', `${key} changes ${id}; spacing and sizes are the same in every theme and mode (d-035)`)
+      fail('layout', `${key} changes ${id}; spacing, sizes, durations and easings are the same in every theme and mode (d-035)`)
     }
   }
   for (const id of Object.keys(set)) if (!base[id]) fail('complete', `${key} has ${id}, which ${defaultTheme}/${defaultMode} lacks`)
@@ -172,6 +177,8 @@ const css = {
     return v.alpha === 1 ? toHex(v) : `rgba(${String(r)}, ${String(g)}, ${String(b)}, ${String(v.alpha)})`
   },
   dimension: (v: Dimension) => `${String(v.value)}${v.unit}`,
+  duration: (v: Duration) => `${String(v.value)}${v.unit}`,
+  cubicBezier: (v: CubicBezier) => `cubic-bezier(${v.map((n) => String(n)).join(', ')})`,
   fontFamily: (v: Typography['fontFamily']) => [v].flat().map((f) => (/\s/.test(f) ? `"${f}"` : f)).join(', '),
   lineHeight: (v: Typography['lineHeight']) => (typeof v === 'number' ? String(v) : css.dimension(v)),
   shadow: (v: Shadow[]) => v.map((s) => `${s.inset ? 'inset ' : ''}${css.dimension(s.offsetX)} ${css.dimension(s.offsetY)} ${css.dimension(s.blur)} ${css.dimension(s.spread)} ${css.color(s.color)}`).join(', '),
@@ -186,13 +193,15 @@ const cssValue = (t: TokenNormalized): string => {
     case 'shadow': return css.shadow(t.$value)
     case 'fontFamily': return css.fontFamily(t.$value)
     case 'fontWeight': return String(t.$value)
-    case 'boolean': case 'border': case 'cubicBezier': case 'duration': case 'gradient':
+    case 'duration': return css.duration(t.$value)
+    case 'cubicBezier': return css.cubicBezier(t.$value)
+    case 'boolean': case 'border': case 'gradient':
     case 'link': case 'string': case 'strokeStyle': case 'transition': case 'typography':
       throw new Error(`${t.id}: no CSS formatter for $type ${t.$type}`)
   }
 }
 const category = (id: string): [string, string] => {
-  const map: [string, string][] = [['color.', 'colors'], ['shadow.', 'shadows'], ['radius.', 'radii'], ['borderWidth.', 'borderWidths'], ['blur.', 'blurs'], ['opacity.', 'opacity'], ['font.family.', 'fonts'], ['text.', 'text'], ['spacing.', 'spacing'], ['size.', 'sizes']]
+  const map: [string, string][] = [['color.', 'colors'], ['shadow.', 'shadows'], ['radius.', 'radii'], ['borderWidth.', 'borderWidths'], ['blur.', 'blurs'], ['opacity.', 'opacity'], ['font.family.', 'fonts'], ['text.', 'text'], ['spacing.', 'spacing'], ['size.', 'sizes'], ['duration.', 'durations'], ['easing.', 'easings']]
   const hit = map.find(([prefix]) => id.startsWith(prefix))
   if (!hit) throw new Error(`no Panda category for ${id}`)
   return [hit[1], id.slice(hit[0].length)]
@@ -220,6 +229,8 @@ const leaf = (value: unknown, description: string | undefined): Leaf => {
   leaves.add(node)
   return node
 }
+// The Panda categories of the fixed tokens, which ship as tokens, not semantic tokens.
+const fixedCategories = ['spacing', 'sizes', 'durations', 'easings']
 const modal = (light: string, dark: string) => (light === dark ? dark : { base: light, _dark: dark })
 
 const tokens: Tree = {}
@@ -240,7 +251,7 @@ const semantic = (theme: string) => {
   const light = setOf(theme, 'light')
   for (const [id, t] of Object.entries(base)) {
     const [cat, name] = category(id)
-    if (cat === 'spacing' || cat === 'sizes') continue
+    if (fixedCategories.includes(cat)) continue
     const desc = t.$description
     if (cat === 'text') {
       // Each part of a text style is its own semantic token, so a theme or
@@ -268,7 +279,7 @@ const semantic = (theme: string) => {
 }
 for (const [id, t] of Object.entries(base)) {
   const [cat, name] = category(id)
-  if (cat === 'spacing' || cat === 'sizes') put(branch(tokens, cat), name, leaf(cssValue(t), t.$description))
+  if (fixedCategories.includes(cat)) put(branch(tokens, cat), name, leaf(cssValue(t), t.$description))
 }
 const otherThemes = themes.filter((t) => t !== defaultTheme)
 const preset = {

@@ -18,6 +18,8 @@ export type ClampProps = {
    * ellipsis, and fades the last 40 px out, as Figma draws the Inbox prompt. A text that fits does not fade.
    */
   fade?: boolean | undefined
+  /** Keeps the height of `lines` lines when the text is shorter, so the box does not change size with its text. */
+  reserve?: boolean | undefined
   /** Called with `true` when the text is longer than the lines, and `false` when it fits, such as to show a "Read the whole prompt" link. */
   onCutChange?: ((cut: boolean) => void) | undefined
 }
@@ -27,7 +29,7 @@ export type ClampProps = {
  * long prompt in the Inbox task. With `fade` the end fades out with no ellipsis. It does not
  * open the rest; the caller shows a link or button that does.
  */
-export function Clamp({ children, lines = 4, fade = false, onCutChange }: ClampProps) {
+export function Clamp({ children, lines = 4, fade = false, reserve = false, onCutChange }: ClampProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [cut, setCut] = useState(false)
   // The latest callback, so a new function each render does not restart the observer.
@@ -58,7 +60,7 @@ export function Clamp({ children, lines = 4, fade = false, onCutChange }: ClampP
     report.current?.(cut)
   }, [cut])
   return (
-    <Root ref={ref} lines={lineVariants[lines]} fade={fade} data-cut={cut ? '' : undefined}>
+    <Root ref={ref} lines={lineVariants[lines]} fade={fade} reserve={reserve} data-cut={cut ? '' : undefined}>
       {children}
     </Root>
   )

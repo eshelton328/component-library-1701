@@ -114,5 +114,45 @@ const fadePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(ellipsis.maxHeight).toBe('none')
 }
 
+// Figma keeps the Inbox prompt box at five lines' height for a prompt of three (D16 403:1854). With `reserve` a short
+// text keeps the height of its lines; without it the block hugs the text.
+function Reserves() {
+  return (
+    <main className={page}>
+      <div className={box} data-testid="reserved">
+        <Clamp lines={5} fade reserve>
+          Fix the typo in the README.
+        </Clamp>
+      </div>
+      <div className={box} data-testid="hugged">
+        <Clamp lines={5} fade>
+          Fix the typo in the README.
+        </Clamp>
+      </div>
+      <div className={box} data-testid="long">
+        <Clamp lines={5} fade reserve>
+          {prompt}
+        </Clamp>
+      </div>
+    </main>
+  )
+}
+
+const reservePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const reserved = clampOf(canvasElement, 'reserved')
+  const line = parseFloat(getComputedStyle(reserved).lineHeight)
+  await expect(Math.round(reserved.getBoundingClientRect().height)).toBe(Math.round(5 * line))
+  await expect(reserved).not.toHaveAttribute('data-cut')
+  const hugged = clampOf(canvasElement, 'hugged')
+  await expect(Math.round(hugged.getBoundingClientRect().height)).toBe(Math.round(line))
+  // A long text is still cut at five lines and fades.
+  const long = clampOf(canvasElement, 'long')
+  await expect(Math.round(long.getBoundingClientRect().height)).toBe(Math.round(5 * line))
+  await waitFor(() => expect(long).toHaveAttribute('data-cut'))
+}
+
+export const ReserveDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Reserves />, play: reservePlay }
+export const ReserveLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Reserves />, play: reservePlay }
+
 export const FadeDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Fades />, play: fadePlay }
 export const FadeLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Fades />, play: fadePlay }

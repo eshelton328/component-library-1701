@@ -283,6 +283,7 @@ export type ClampProps = {
     children: ReactNode;
     lines?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | undefined;
     fade?: boolean | undefined;
+    reserve?: boolean | undefined;
     onCutChange?: ((cut: boolean) => void) | undefined;
 };
 

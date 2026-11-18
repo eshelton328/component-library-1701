@@ -265,16 +265,17 @@ const tabRouteChange: StoryObj<typeof meta> = {
     const root = canvasElement.querySelector('.app-shell__root')
     if (!(root instanceof HTMLElement)) throw new Error('no shell')
     const full = async () => {
-      await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
-      await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+      await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('')
       await expect(Math.round(root.getBoundingClientRect().height)).toBe(844)
       const bar = canvas.getByRole('navigation', { name: 'Main' }).getBoundingClientRect()
       await expect(Math.round(bar.bottom)).toBe(Math.round(root.getBoundingClientRect().bottom))
     }
+    // The keyboard covers the 300 px foot of the overlaid detail, the tab bar included: the Send row docks on it.
     const openKeyboard = async () => {
       await userEvent.click(await canvas.findByRole('textbox', { name: 'Message' }))
       fakeViewport.move(544)
-      await expect(Math.round(root.getBoundingClientRect().height)).toBe(544)
+      await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
+      await expect(Math.round(canvas.getByRole('button', { name: 'Send' }).getBoundingClientRect().bottom)).toBeLessThanOrEqual(544)
     }
     // The keyboard is open for the Inbox chat's message, and a tab press opens Workspaces, which unmounts the field.
     await openKeyboard()
@@ -299,7 +300,7 @@ const tabRouteChange: StoryObj<typeof meta> = {
   },
 }
 
-/** A tab press while the Inbox chat's keyboard is open swaps the page and unmounts the focused field (no focusout): the shell goes back to the full screen, with the tab bar at its foot, and follows no later shrink of the browser's bars. */
+/** A tab press while the Inbox chat's keyboard is open swaps the page and unmounts the focused field (no focusout): the dock ends, the tab bar stays at the shell's foot, and no later shrink of the browser's bars docks anything. */
 export const TabRouteChangeDark: StoryObj<typeof meta> = { ...tabRouteChange, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const TabRouteChangeLight: StoryObj<typeof meta> = { ...tabRouteChange, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
@@ -312,20 +313,19 @@ const blurParts = async (canvasElement: HTMLElement) => {
   if (!(root instanceof HTMLElement)) throw new Error('no shell')
   const field = canvas.getByRole('textbox', { name: 'Message' })
   const full = async () => {
-    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
-    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('')
     await expect(Math.round(root.getBoundingClientRect().height)).toBe(844)
     const bar = canvas.getByRole('navigation', { name: 'Main' }).getBoundingClientRect()
     await expect(Math.round(bar.bottom)).toBe(Math.round(root.getBoundingClientRect().bottom))
   }
   await userEvent.click(field)
   fakeViewport.move(544)
-  await expect(Math.round(root.getBoundingClientRect().height)).toBe(544)
+  await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
   field.blur()
   await expect(field).not.toHaveFocus()
   // The fit stays for the keyboard's own resize to end it, then ends on its own after about 300 ms.
-  await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
-  await waitFor(() => expect(Math.round(root.getBoundingClientRect().height)).toBe(844), { timeout: 2000 })
+  await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
+  await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 2000 })
   await full()
   return { full }
 }
@@ -338,12 +338,12 @@ const blurNoResize: StoryObj<typeof meta> = {
   },
   play: async ({ canvasElement }) => {
     await blurParts(canvasElement)
-    // The visual viewport never grows back (iOS standalone): the shell stays the full screen, the bar at its foot.
+    // The visual viewport never grows back (iOS standalone): nothing docks, and the bar stays at the shell's foot.
     await expect(fakeViewport.height).toBe(544)
   },
 }
 
-/** A blur with no pointer and no viewport resize after it: the shell ends its fit after 300 ms and is the full screen, with the tab bar at its foot. */
+/** A blur with no pointer and no viewport resize after it: the dock ends after 300 ms, with the tab bar at the shell's foot. */
 export const BlurNoResizeDark: StoryObj<typeof meta> = { ...blurNoResize, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const BlurNoResizeLight: StoryObj<typeof meta> = { ...blurNoResize, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
@@ -351,7 +351,7 @@ const blurLateResize: StoryObj<typeof meta> = {
   ...blurNoResize,
   play: async ({ canvasElement }) => {
     const { full } = await blurParts(canvasElement)
-    // The visual viewport grows back late and in steps, after the fit has ended: the shell stays 844 through them.
+    // The visual viewport grows back late and in steps, after the dock has ended: nothing docks through them.
     fakeViewport.move(700)
     await full()
     fakeViewport.move(844)
@@ -359,7 +359,7 @@ const blurLateResize: StoryObj<typeof meta> = {
   },
 }
 
-/** A blur whose viewport resize comes late and in steps (544, 700, 844): the shell is the full screen at each step. */
+/** A blur whose viewport resize comes late and in steps (544, 700, 844): nothing docks at any step. */
 export const BlurLateResizeDark: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const BlurLateResizeLight: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
@@ -373,12 +373,13 @@ const blurThenPress: StoryObj<typeof meta> = {
     const field = canvas.getByRole('textbox', { name: 'Message' })
     const send = canvas.getByRole('button', { name: 'Send' })
     const height = () => Math.round(root.getBoundingClientRect().height)
-    // The shell's height at each click on Send.
-    const atClick: number[] = []
-    send.addEventListener('click', () => atClick.push(height()))
+    const dock = () => root.style.getPropertyValue('--app-shell-keyboard')
+    // The dock at each click on Send.
+    const atClick: string[] = []
+    send.addEventListener('click', () => atClick.push(dock()))
     await userEvent.click(field)
     fakeViewport.move(544)
-    await expect(height()).toBe(544)
+    await expect(dock()).toBe('300px')
     // A blur with no pointer down starts the 300 ms end; within it the finger comes down on Send and stays down.
     field.blur()
     await expect(field).not.toHaveFocus()
@@ -386,24 +387,24 @@ const blurThenPress: StoryObj<typeof meta> = {
     const at = { bubbles: true, cancelable: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
     send.dispatchEvent(new PointerEvent('pointerdown', at))
     send.dispatchEvent(new MouseEvent('mousedown', at))
-    // Past the 300 ms with the pointer down: the shell keeps its 544 and Send stays under the finger.
+    // Past the 300 ms with the pointer down: the dock stays and Send stays under the finger.
     await new Promise((resolve) => setTimeout(resolve, 500))
-    await expect(height()).toBe(544)
-    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    await expect(dock()).toBe('300px')
     await expect(send.getBoundingClientRect().top).toBe(box.top)
     await expect(document.elementFromPoint(at.clientX, at.clientY)?.closest('button')).toBe(send)
-    // The release: the click lands on Send while the shell is still 544, and one frame later the shell is 844.
+    // The release: the click lands on Send while it is still docked, and one frame later the dock ends.
     send.dispatchEvent(new PointerEvent('pointerup', at))
     send.dispatchEvent(new MouseEvent('mouseup', at))
     send.dispatchEvent(new MouseEvent('click', at))
-    await expect(atClick).toEqual([544])
-    await expect(height()).toBe(544)
+    await expect(atClick).toEqual(['300px'])
+    await expect(dock()).toBe('300px')
     await new Promise((resolve) => requestAnimationFrame(resolve))
-    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(dock()).toBe('')
+    // The shell keeps its 844 all along.
     await expect(height()).toBe(844)
   },
 }
 
-/** A blur with no pointer, then a press on Send within the 300 ms that stays down past them: the shell keeps its 544 fit until the release, the click lands on Send, and one frame later the shell is the full screen. */
+/** A blur with no pointer, then a press on Send within the 300 ms that stays down past them: the composer stays docked until the release, the click lands on Send, and one frame later the dock ends. */
 export const BlurThenPressDark: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const BlurThenPressLight: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'light', viewport: { value: 'm390' } } }

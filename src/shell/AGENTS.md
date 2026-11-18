@@ -24,19 +24,25 @@ Layout, Navigation or Overlays (d-065, d-066).
   app picks; they never measure the window to pick a layout.
 - The one thing `AppShell` reads from the window is `visualViewport`, in
   an effect: when an on-screen keyboard covers the layout and the browser
-  does not resize it (iOS Safari), it sets `--app-shell-visible-height`
-  and `--app-shell-visible-top` on its root with `style.setProperty`, the
-  measured runtime values, and the recipe caps and moves the root with
-  them. The keyboard-free height is `visualViewport.height * scale`, so
-  Safari's focus zoom on a field under 16 px keeps the fit, and under a
-  zoom the top stays at the last scale-1 `offsetTop`, moved only as far as
-  the shell must to cover the visible area. Where the browser resizes the
+  does not resize it (iOS Safari), it sets `--app-shell-keyboard` on its
+  root with `style.setProperty`, the measured runtime value of how far the
+  keyboard covers the detail's bottom (the fit). The shell keeps its full
+  height and nothing in the layout moves: the detail ends its scroll that
+  far up (`--app-shell-detail-end`), and a `ScrollFrame` that is the
+  detail's child moves its footer (the composer) up onto the keyboard
+  with `translateY` and ends its body's view above it. The tab bar and
+  the safe area stay under the keyboard; hiding them would move the
+  layout as the keyboard opens and closes. The keyboard's top is the
+  visible area's bottom, with the keyboard-free height
+  `visualViewport.height * scale`, so Safari's focus zoom on a field
+  under 16 px keeps the fit, and under a zoom the top stays at the last
+  scale-1 `offsetTop`, moved only as far as the visible area needs. Where the browser resizes the
   layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
   nothing is set. The fit applies only while a field that opens the
   keyboard has the focus (`editable` in `../controls/editable.ts`, shared
   with `ScrollFrame`): with none, the browser's bars that show and hide on
-  a scroll also shrink the visual viewport, and the shell removes both
-  properties and keeps its parent's height, so the page stays still. It
+  a scroll also shrink the visual viewport, and the shell removes the
+  property, so the page stays still. It
   listens to `focusin` and `focusout` on the document as well as the
   viewport's `resize` and `scroll`. A field taking the focus starts the
   fit at once; a `focusout` whose `relatedTarget` is another field keeps
@@ -94,9 +100,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   `tabBarHeight` in `../theme/recipes/tab-bar-height.ts`: the tab-bar
   recipe's height and the overlay's `--app-shell-tab-bar-inset` (the
   detail's end padding and scroll padding, and the `ScrollFrame` inset)
-  both use it, so the shell keeps the bar's full height. A gap under it is the shell being
-  shorter than its parent: a fit (`--app-shell-visible-height`) that
-  stayed set.
+  both use it, so the shell keeps the bar's full height. The shell is
+  always as tall as its parent, so a gap under the bar is the parent
+  being shorter than the screen.
 - With no tab bar (inside a chat), a tablet or phone `AppShell` keeps
   `shell.safeAreaBottom` clear under the pane for the home indicator.
   Pages set no padding for it.

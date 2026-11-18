@@ -26,9 +26,11 @@ export type FlowLineProps = {
   /**
    * Where the line points. `right` and `left` draw it across its box, 12 px
    * high, as wide as its container gives it; `down` and `up` draw it down
-   * its box, 12 px wide, as high as its container gives it. The head's tip
-   * is the box's end, so a box from one step's edge to the next one's
-   * edge draws the arrow between them. Defaults to `right`.
+   * its box, 12 px wide, as high as its container gives it. The line starts
+   * at the box's start and the head's tip stops 2 px (spacing `2`) before
+   * the box's end, as in Figma, so a box from one step's edge to the next
+   * one's edge draws the arrow between them without touching the next
+   * step. Defaults to `right`.
    */
   direction?: FlowLineDirection | undefined
   /** `default` (muted) or `needsYou` (amber, for a gate's way out). Defaults to `default`. */
@@ -75,7 +77,9 @@ export type FlowBranchProps = {
    * side by side, and the one step is above (fork) or below (join) it.
    * `right`: the box spans the two steps one over the other, and the one
    * step is left (fork) or right (join) of it. The box fills its container;
-   * the spine is halfway along the flow. Defaults to `down`.
+   * the spine is halfway along the flow, and each head's tip stops 2 px
+   * (spacing `2`) before the box's far side, off the step it points at.
+   * Defaults to `down`.
    */
   direction?: 'right' | 'down' | undefined
   /** The space between the two parallel steps, so each arm meets the middle of its step. Defaults to `8`. */
@@ -104,7 +108,8 @@ export function FlowBranch({ kind, direction = 'down', gap = '8' }: FlowBranchPr
 
 const loop = createSlotRecipeContext(flowLoop)
 const LoopRoot = loop.withProvider('span', 'root')
-const LoopPath = loop.withContext('span', 'path')
+const LoopDown = loop.withContext('span', 'down')
+const LoopBack = loop.withContext('span', 'back')
 const LoopHead = loop.withContext('span', 'head')
 const LoopLabel = loop.withContext('span', 'label')
 
@@ -116,15 +121,17 @@ export type FlowLoopProps = {
 /**
  * A dashed connector in the needs-you colour from a later step back to an
  * earlier point. It runs down the right side of its box from the top right
- * corner and back along the bottom into the bottom left corner, where its
- * head points left. Give it a box from the earlier point's right edge to
- * the middle of the later step, and from under the later step down to the
- * height of the earlier point's middle.
+ * corner and back along the bottom towards the bottom left corner, where its
+ * head points left, its tip 4 px (spacing `4`) in from the corner, as in
+ * Figma. Give it a box from the earlier point's right edge to the middle of
+ * the later step, and from under the later step down to the height of the
+ * earlier point's middle.
  */
 export function FlowLoop({ label }: FlowLoopProps) {
   return (
     <LoopRoot>
-      <LoopPath aria-hidden="true" />
+      <LoopDown aria-hidden="true" />
+      <LoopBack aria-hidden="true" />
       <LoopHead aria-hidden="true" />
       {present(label) ? <LoopLabel>{label}</LoopLabel> : null}
     </LoopRoot>

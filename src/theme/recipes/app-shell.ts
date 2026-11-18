@@ -45,7 +45,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   the focus (checked at each fit, so a field removed with no focusout
 //   counts as gone), and after it leaves until the next viewport event: the
 //   keyboard closing, or a window resize, orientationchange, pageshow or
-//   visibilitychange, which drop a fit no focused field needs; the browser's
+//   visibilitychange, which drop a fit no focused field needs, and at the
+//   latest one frame after the press that took the focus, or 300 ms after
+//   a blur with no press; the browser's
 //   bars that show and hide on a scroll shrink the visual viewport too, and
 //   the shell does not follow them. Unset, as with
 //   no focused field, no keyboard or where the browser resizes the layout,

@@ -19,6 +19,11 @@ const SafeArea = withContext('div', 'safeArea')
 // The custom properties that the recipe's root reads: the visible height and the visible area's top.
 const visibleHeight = '--app-shell-visible-height'
 const visibleTop = '--app-shell-visible-top'
+// How long the fit stays after the focus leaves the fields with no pointer down (the keyboard's Done, the iOS form
+// bar's check, a blur from code) when no viewport event ends it first. iOS animates the keyboard away in 250 ms and
+// reports the visual viewport's resize during it, so 300 lets that resize come first and end the fit in step with
+// the keyboard. Only an iOS standalone app that reports the resize late, in steps or never needs the timer.
+const blurEndDelay = 300
 
 /**
  * Keeps the shell inside the visual viewport when the browser does not resize the layout for the on-screen
@@ -36,8 +41,12 @@ const visibleTop = '--app-shell-visible-top'
  * gives it. A `focusin` on a field starts the fit at once. When the focus leaves the fields (to a button, or to
  * nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the keyboard closing: a
  * tap on the composer's Send takes the focus on its press, and if the shell grew then, the button would move
- * from under the finger before the click and the tap would miss it. A `focusout` whose `relatedTarget` is
- * another field keeps the fit too, so moving from one field to another never drops it. The window's `resize`,
+ * from under the finger before the click and the tap would miss it. With no such event the fit ends on its own,
+ * as iOS standalone may grow the visual viewport late, in steps or never: one frame after the release of the press
+ * that took the focus (`pointerup` or `pointercancel`, after its click), or 300 ms after a focusout with no pointer
+ * down (the keyboard's Done, a blur from code); a field taking the focus first cancels it. A `focusout` whose
+ * `relatedTarget` is another field keeps the fit too, so moving from one field to another never drops it. The
+ * window's `resize`,
  * `orientationchange` and `pageshow` (a page back from the back-forward cache) and the document's
  * `visibilitychange` (an installed app back on screen) count as such an event: they read the focus again and fit,
  * so a fit that no focused field needs is dropped there too, and a stale small visual viewport with no field
@@ -84,7 +93,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
     const focusIn = () => {
       typing = editable(document.activeElement)
-      if (typing) fit()
+      if (!typing) return
+      cancelEnd()
+      fit()
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
     // Only `typing` changes, and nothing is fitted: the fit stays as it is, the leaving state, until the next
@@ -93,6 +104,48 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // the fit.
     const focusOut = (event: FocusEvent) => {
       typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
+      if (!typing) scheduleEnd()
+    }
+    // The end of the fit after the focus left the fields, when the browser reports no viewport change (iOS standalone
+    // may grow the visual viewport late, in steps, or not at all). With a pointer down at the focusout (the press
+    // on Send), it comes one frame after that press's release (`pointerup` or `pointercancel`), so the press's
+    // `click` lands on the button where it started first. With no pointer down, it comes after `blurEndDelay`. The
+    // first viewport or window event before then ends the fit the same way, and a field taking the focus cancels
+    // the end. If the viewport is still short then, no fit starts again: with no field focused it is the bars.
+    let pressing = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let frame: number | undefined
+    const press = () => {
+      pressing = true
+    }
+    const release = () => {
+      pressing = false
+    }
+    const end = () => {
+      cancelEnd()
+      if (!editable(document.activeElement)) refit()
+    }
+    const afterRelease = () => {
+      document.removeEventListener('pointerup', afterRelease)
+      document.removeEventListener('pointercancel', afterRelease)
+      frame = requestAnimationFrame(end)
+    }
+    const cancelEnd = () => {
+      if (timer !== undefined) clearTimeout(timer)
+      if (frame !== undefined) cancelAnimationFrame(frame)
+      timer = undefined
+      frame = undefined
+      document.removeEventListener('pointerup', afterRelease)
+      document.removeEventListener('pointercancel', afterRelease)
+    }
+    const scheduleEnd = () => {
+      cancelEnd()
+      if (pressing) {
+        document.addEventListener('pointerup', afterRelease)
+        document.addEventListener('pointercancel', afterRelease)
+      } else {
+        timer = setTimeout(end, blurEndDelay)
+      }
     }
     // The window resizes or turns, the page comes back from the back-forward cache, or the installed app comes
     // back on screen: these may change the viewport with no visualViewport event, and they end a tap, so they
@@ -107,6 +160,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     viewport.addEventListener('scroll', fit)
     document.addEventListener('focusin', focusIn)
     document.addEventListener('focusout', focusOut)
+    document.addEventListener('pointerdown', press, true)
+    document.addEventListener('pointerup', release, true)
+    document.addEventListener('pointercancel', release, true)
     document.addEventListener('visibilitychange', refit)
     window.addEventListener('resize', refit)
     window.addEventListener('orientationchange', refit)
@@ -116,7 +172,11 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       viewport.removeEventListener('scroll', fit)
       document.removeEventListener('focusin', focusIn)
       document.removeEventListener('focusout', focusOut)
+      document.removeEventListener('pointerdown', press, true)
+      document.removeEventListener('pointerup', release, true)
+      document.removeEventListener('pointercancel', release, true)
       document.removeEventListener('visibilitychange', refit)
+      cancelEnd()
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)
@@ -167,8 +227,9 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * the layout for it (iOS Safari, which only shrinks `window.visualViewport`),
  * the shell shrinks to the visible area and moves with it, so a composer at
  * its foot stays above the keyboard. It does so only while a text field has
- * the focus, and after the focus leaves it until the keyboard closes (so a
- * tap on Send lands): otherwise the browser's bars that show and hide on a
+ * the focus, and after the focus leaves it until the keyboard closes, the
+ * tap that took the focus ends or 300 ms pass (so a tap on Send lands):
+ * otherwise the browser's bars that show and hide on a
  * scroll leave the shell at its parent's height; where the browser resizes the layout
  * (Chrome on Android with `interactive-widget=resizes-content`), or with no
  * `visualViewport`, it keeps its height. The scrolling pane is focusable, so the keyboard can scroll it

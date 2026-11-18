@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Container } from '../controls/layout'
 import { ScrollFrame } from '../controls/scroll-frame'
@@ -162,3 +162,63 @@ const tabRouteChange: StoryObj<typeof meta> = {
 /** A tab press while the Inbox chat's keyboard is open swaps the page and unmounts the focused field (no focusout): the shell goes back to the full screen, with the tab bar at its foot, and follows no later shrink of the browser's bars. */
 export const TabRouteChangeDark: StoryObj<typeof meta> = { ...tabRouteChange, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const TabRouteChangeLight: StoryObj<typeof meta> = { ...tabRouteChange, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The shell after a blur with no viewport event: the field loses the focus with no pointer down (the keyboard's Done,
+// the iOS form bar's check, or a blur from code), and the visual viewport stays at the keyboard's 544.
+const blurParts = async (canvasElement: HTMLElement) => {
+  await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+  const canvas = within(canvasElement)
+  const root = canvasElement.querySelector('.app-shell__root')
+  if (!(root instanceof HTMLElement)) throw new Error('no shell')
+  const field = canvas.getByRole('textbox', { name: 'Message' })
+  const full = async () => {
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+    await expect(Math.round(root.getBoundingClientRect().height)).toBe(844)
+    const bar = canvas.getByRole('navigation', { name: 'Main' }).getBoundingClientRect()
+    await expect(Math.round(bar.bottom)).toBe(Math.round(root.getBoundingClientRect().bottom))
+  }
+  await userEvent.click(field)
+  fakeViewport.move(544)
+  await expect(Math.round(root.getBoundingClientRect().height)).toBe(544)
+  field.blur()
+  await expect(field).not.toHaveFocus()
+  // The fit stays for the keyboard's own resize to end it, then ends on its own after about 300 ms.
+  await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+  await waitFor(() => expect(Math.round(root.getBoundingClientRect().height)).toBe(844), { timeout: 2000 })
+  await full()
+  return { full }
+}
+
+const blurNoResize: StoryObj<typeof meta> = {
+  render: () => <TabRoutes />,
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    await blurParts(canvasElement)
+    // The visual viewport never grows back (iOS standalone): the shell stays the full screen, the bar at its foot.
+    await expect(fakeViewport.height).toBe(544)
+  },
+}
+
+/** A blur with no pointer and no viewport resize after it: the shell ends its fit after 300 ms and is the full screen, with the tab bar at its foot. */
+export const BlurNoResizeDark: StoryObj<typeof meta> = { ...blurNoResize, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const BlurNoResizeLight: StoryObj<typeof meta> = { ...blurNoResize, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const blurLateResize: StoryObj<typeof meta> = {
+  ...blurNoResize,
+  play: async ({ canvasElement }) => {
+    const { full } = await blurParts(canvasElement)
+    // The visual viewport grows back late and in steps, after the fit has ended: the shell stays 844 through them.
+    fakeViewport.move(700)
+    await full()
+    fakeViewport.move(844)
+    await full()
+  },
+}
+
+/** A blur whose viewport resize comes late and in steps (544, 700, 844): the shell is the full screen at each step. */
+export const BlurLateResizeDark: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const BlurLateResizeLight: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'light', viewport: { value: 'm390' } } }

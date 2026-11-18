@@ -8,10 +8,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // the space between the header, the body and the footer (0 by default).
 // The body takes the focus, so the keyboard can scroll it, with the ring
 // inside, as the AppShell detail does.
-// The footer takes at most 30% of the frame's height and scrolls inside past
-// that, so a long draft in a chat box still leaves the body room to read
-// (d-107). In a 1232 x 400 window, a box capped at half the window left the
-// Inbox discussion's messages 18 px; at 30% they keep 108 (Artifacts 60).
+// The frame does not cap the footer: a Composer in it caps its own long
+// draft at 30% of the nearest size container (the composer recipe), so the
+// body keeps room to read (d-107) and a composer at rest keeps its height,
+// as Figma draws it. A footer cap of 30% clipped the 112 px Workbench
+// composer at rest in a 373 px pane. The frame is not a size container
+// itself: in a parent sized by its content (the Workspaces side chat) that
+// shrank the parent; give the frame's bounded parent containerType 'size'.
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],
@@ -37,16 +40,18 @@ export const scrollFrame = defineSlotRecipe({
     footer: {
       display: 'flex',
       flexDirection: 'column',
-      flexShrink: '0',
+      // A footer taller than the room the header leaves shrinks to it and scrolls inside, so it never reaches past
+      // the frame. The body grows from 0, so the footer shrinks only when the body has no room left.
+      flexShrink: '1',
       minW: '0',
-      maxH: '30%',
+      minH: '0',
       overflowY: 'auto',
       overscrollBehavior: 'contain',
-      // A footer that scrolls clips what reaches past its box. Its 4 px of padding, taken back by the margin, keep a
+      // A footer taller than the frame scrolls, so it clips what reaches past its box. Its 4 px of padding, taken back by the margin, keep a
       // child's focus ring (2 px, 2 out) inside it, and the content stays where it was.
       p: '4',
       m: '-4',
-      // As in the body: a child that clips (a Card) keeps its height, so the footer scrolls instead of cutting it.
+      // As in the body: a child that clips (a Card) keeps its height.
       '& > *': { flexShrink: '0' },
     },
   },

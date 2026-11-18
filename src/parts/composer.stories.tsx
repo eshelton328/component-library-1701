@@ -2,7 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Stack } from '../controls/layout'
+import { Button } from '../controls/button'
+import { Inline, Stack } from '../controls/layout'
+import { ScrollFrame } from '../controls/scroll-frame'
 import { Composer, type ComposerAttachment } from './composer'
 import { ModelChip } from './model-chip'
 import { expectCutText } from '../controls/tooltip.testing'
@@ -342,3 +344,132 @@ const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `layout="inline"`: the side chat's one-row composer (Workspaces D5 158:545). */
 export const InlineDark: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'dark' }, play: inlinePlay }
 export const InlineLight: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'light' }, play: inlinePlay }
+
+// A pane with a bounded height around a ScrollFrame whose footer is a composer, as a chat pane or the Inbox
+// discussion has. The pane is a size container, as a Workspaces pane is, so the composer's cap is 30% of it.
+// The play functions set the pane's height to a window's.
+const pane = css({ display: 'flex', flexDirection: 'column', w: 'shell.listPane', bg: 'surface.pane', p: '16', containerType: 'size' })
+const message = css({ textStyle: 'body', color: 'fg.default', m: '0', py: '8', overflow: 'hidden' })
+const messages = Array.from({ length: 20 }, (_, i) => `Message ${String(i + 1)}`)
+const manyFiles: readonly ComposerAttachment[] = [
+  { id: 'f1', name: 'theme-ideas.md' },
+  { id: 'f2', name: 'requirements.md' },
+  { id: 'f3', name: 'screen-notes.md' },
+]
+
+function InFrame({ layout }: { layout: 'stacked' | 'inline' }) {
+  return (
+    <div className={pane} data-testid={`pane-${layout}`}>
+      <ScrollFrame
+        gap="12"
+        header={<Button size="sm">Back</Button>}
+        footer={
+          <Composer
+            label={layout === 'stacked' ? 'Reply' : 'Side chat'}
+            layout={layout}
+            running={layout === 'stacked'}
+            attachments={layout === 'stacked' ? manyFiles : []}
+            onAttach={layout === 'stacked' ? () => undefined : undefined}
+            model={<ModelChip model="Opus 5.5" options={[]} />}
+          />
+        }
+      >
+        {messages.map((text) => (
+          <p key={text} className={message}>
+            {text}
+          </p>
+        ))}
+      </ScrollFrame>
+    </div>
+  )
+}
+
+function Frames() {
+  return (
+    <main className={page}>
+      <Inline gap="16" align="start">
+        <InFrame layout="stacked" />
+        <InFrame layout="inline" />
+      </Inline>
+    </main>
+  )
+}
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 100))
+/** The pane, its ScrollFrame, the footer, the body and the composer's text area. */
+const frameParts = (canvasElement: HTMLElement, layout: 'stacked' | 'inline') => {
+  const paneEl = canvasElement.querySelector(`[data-testid="pane-${layout}"]`)
+  const field = paneEl?.querySelector('textarea')
+  const footer = field?.closest('.scroll-frame__footer')
+  const frame = footer?.parentElement
+  const body = frame?.querySelector('.scroll-frame__body')
+  const composerBox = field?.closest('.composer__root')
+  if (
+    !(paneEl instanceof HTMLElement) ||
+    !(field instanceof HTMLTextAreaElement) ||
+    !(footer instanceof HTMLElement) ||
+    !(frame instanceof HTMLElement) ||
+    !(body instanceof HTMLElement) ||
+    !(composerBox instanceof HTMLElement)
+  )
+    throw new Error('no frame')
+  return { pane: paneEl, field, footer, frame, body, composerBox }
+}
+// Pane heights: the Workbench chat pane at 1512 x 982 and 1512 x 600, the Inbox discussion at 1232 x 400,
+// and the Workspaces D5 side chat (280 px, where 30% is 84 px).
+const heights = [900, 520, 383, 280] as const
+
+/**
+ * A composer at rest keeps its height in any frame: its cap stops only a long draft, so a Workbench composer
+ * (attachments, the model and Stop) in a short pane is not cut, nor is the one-row side chat.
+ */
+export const InFrameRestDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Frames />,
+  play: async ({ canvasElement }) => {
+    for (const layout of ['stacked', 'inline'] as const) {
+      const parts = frameParts(canvasElement, layout)
+      const rest = parts.composerBox.getBoundingClientRect().height
+      for (const h of heights) {
+        parts.pane.style.height = `${String(h)}px`
+        await settle()
+        await expect(parts.composerBox.getBoundingClientRect().height).toBe(rest)
+        await expect(parts.footer.scrollHeight).toBe(parts.footer.clientHeight)
+      }
+      // In the side chat's pane, the composer at rest is taller than 30% of the frame, and still whole.
+      await expect(rest).toBeGreaterThan(layout === 'stacked' ? parts.frame.getBoundingClientRect().height * 0.3 : 0)
+    }
+  },
+}
+export const InFrameRestLight: StoryObj<typeof meta> = { ...InFrameRestDark, globals: { mode: 'light' } }
+
+/**
+ * A long draft (40 lines) grows the composer to at most 30% of the frame, then the text scrolls inside: the
+ * messages keep the rest, and Send stays in view.
+ */
+export const InFrameLongDraftDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Frames />,
+  play: async ({ canvasElement }) => {
+    const draft = Array.from({ length: 40 }, (_, i) => `Line ${String(i + 1)}`).join('\n')
+    for (const layout of ['stacked', 'inline'] as const) {
+      const parts = frameParts(canvasElement, layout)
+      await userEvent.click(parts.field)
+      await userEvent.paste(draft)
+      for (const h of heights.slice(0, 3)) {
+        parts.pane.style.height = `${String(h)}px`
+        await settle()
+        const frameH = parts.pane.getBoundingClientRect().height
+        // The attachments sit above the text, outside the cap.
+        const chips = layout === 'stacked' ? (parts.composerBox.firstElementChild?.getBoundingClientRect().height ?? 0) + 8 : 0
+        await expect(parts.composerBox.getBoundingClientRect().height).toBeLessThanOrEqual(frameH * 0.3 + chips + 1)
+        await expect(parts.field.scrollHeight).toBeGreaterThan(parts.field.clientHeight)
+        await expect(parts.footer.scrollHeight).toBe(parts.footer.clientHeight)
+        const send = within(parts.footer).getByRole('button', { name: 'Send' }).getBoundingClientRect()
+        await expect(send.bottom).toBeLessThanOrEqual(parts.frame.getBoundingClientRect().bottom)
+        await expect(parts.body.getBoundingClientRect().height).toBeGreaterThan(0)
+      }
+    }
+  },
+}
+export const InFrameLongDraftLight: StoryObj<typeof meta> = { ...InFrameLongDraftDark, globals: { mode: 'light' } }

@@ -75,7 +75,9 @@ export type ComposerProps = {
  * an attach button, the model, and Stop and send buttons, in two rows or,
  * with `layout="inline"`, in one. It shows the data it gets and reports
  * through callbacks; it calls `onSubmit` and does not send a message
- * (d-068, d-069).
+ * (d-068, d-069). A long draft grows the composer to at most 30% of the
+ * nearest size container (or of the window), and the text scrolls inside
+ * past that; at rest it keeps its full height in any frame.
  */
 export function Composer({
   label = 'Message',

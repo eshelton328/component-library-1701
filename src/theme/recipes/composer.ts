@@ -37,7 +37,14 @@ export const composer = defineSlotRecipe({
       borderColor: 'border.default',
       _focusWithin: { borderColor: 'border.selected' },
       // The caret is the accent colour, as Workbench D1 105:240 draws it.
-      '& textarea': { caretColor: 'accent.default' },
+      // A long draft grows the text to at most 30% of the nearest size container (a pane, or the parent of a
+      // ScrollFrame; with none, 30% of the window), less the composer's own padding, border, gap and button
+      // row, so the whole box stops at 30%. Past that the text scrolls inside. The cap never goes below one
+      // line, so a composer at rest keeps its height in any frame and nothing clips it (d-107).
+      '& textarea': {
+        caretColor: 'accent.default',
+        maxH: 'max(token(spacing.20), calc(30cqh - 2 * token(spacing.10) - token(spacing.8) - token(sizes.control.sm) - 2 * token(borderWidths.default)))',
+      },
     },
     // The one row of `layout="inline"`: the text, then the buttons, bottom-aligned.
     // When the row is too narrow, it stays one row, as Figma draws it (d-100):
@@ -87,7 +94,16 @@ export const composer = defineSlotRecipe({
     layout: {
       stacked: {},
       inline: {
-        root: { py: '8', ps: '10', pe: '8', '& textarea': { py: '2' } },
+        root: {
+          py: '8',
+          ps: '10',
+          pe: '8',
+          // One row: the text (2 px above and below its line, a control.xs high) beside the buttons.
+          '& textarea': {
+            py: '2',
+            maxH: 'max(token(sizes.control.xs), calc(30cqh - 2 * token(spacing.8) - 2 * token(borderWidths.default)))',
+          },
+        },
       },
     },
   },

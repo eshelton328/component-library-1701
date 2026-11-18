@@ -78,11 +78,10 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 
-// The draft clips, as a Card does: in the footer it keeps its height and the footer scrolls.
+// The footer clips, as a Card does: it keeps its height, so nothing in it is cut.
 const clip = css({ overflow: 'hidden' })
-const draft = Array.from({ length: 30 }, (_, i) => `Draft line ${String(i + 1)}`).join('\n')
 
-function LongFooter() {
+function TallFooter() {
   return (
     <main className={page}>
       <div className={box} data-testid="box">
@@ -91,7 +90,7 @@ function LongFooter() {
           header={<Button size="sm">Back to the inbox</Button>}
           footer={
             <div data-testid="draft" className={clip}>
-              <TextArea label="Reply" labelHidden rows={30} defaultValue={draft} />
+              <TextArea label="Reply" labelHidden rows={6} defaultValue="Draft" />
             </div>
           }
         >
@@ -107,29 +106,37 @@ function LongFooter() {
 }
 
 /**
- * A footer taller than the frame, such as a chat box with a long draft (a 30-line text area): it stops at 30% of the frame and scrolls
- * inside, and the body between the bars keeps the rest, so the messages stay readable in a short window.
+ * A footer at rest that is more than 30% of a short frame, such as a Workbench composer (130 px) in a pane:
+ * the frame does not cap the footer, so it keeps its height and nothing in it is cut. A Composer caps its own
+ * long draft (Conversation/Composer, In a frame). Only a footer taller than the whole frame scrolls.
  */
-export const LongFooterDark: StoryObj<typeof meta> = {
+export const TallFooterDark: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
-  render: () => <LongFooter />,
+  render: () => <TallFooter />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const draft = canvas.getByTestId('draft')
     const footer = draft.parentElement
-    const body = canvas.getByText('Message 1').parentElement
-    const root = body?.parentElement
-    if (footer === null || body === null || root === null || root === undefined) throw new Error('no frame')
-    const frame = root.getBoundingClientRect().height
-    await expect(footer.getBoundingClientRect().height).toBeLessThanOrEqual(frame * 0.3 + 1)
-    await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
+    const box = canvas.getByTestId('box')
+    if (footer === null) throw new Error('no footer')
+    // A frame of 280 px, as the Workspaces D5 side chat has: 30% of it is less than the footer.
+    box.style.height = '280px'
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    const frame = footer.parentElement?.getBoundingClientRect().height ?? 0
+    await expect(footer.getBoundingClientRect().height).toBeGreaterThan(frame * 0.3)
+    await expect(footer.scrollHeight).toBe(footer.clientHeight)
     await expect(draft.clientHeight).toBe(draft.scrollHeight)
-    // The body keeps more room than the footer: the header, the two gaps and the capped footer leave it the rest.
-    await expect(body.getBoundingClientRect().height).toBeGreaterThan(footer.getBoundingClientRect().height)
-    // The end of the draft can be reached by scrolling the footer.
+    // A box shorter than the footer (Codex review of #128): the footer stops at the frame and scrolls inside.
+    box.style.height = '120px'
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    const frameBox = footer.parentElement?.getBoundingClientRect()
+    if (frameBox === undefined) throw new Error('no frame')
+    // The footer's 4 px ring space reaches 4 px past the frame by design, as it does at rest.
+    await expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(frameBox.bottom + 4 + 1)
+    await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
     footer.scrollTop = footer.scrollHeight
     await expect(draft.getBoundingClientRect().bottom).toBeLessThanOrEqual(footer.getBoundingClientRect().bottom + 1)
   },
 }
-export const LongFooterLight: StoryObj<typeof meta> = { ...LongFooterDark, globals: { mode: 'light' } }
+export const TallFooterLight: StoryObj<typeof meta> = { ...TallFooterDark, globals: { mode: 'light' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }

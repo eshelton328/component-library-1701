@@ -299,6 +299,99 @@ void test('a new optional member is breaking when an intersected type is not in 
   assert.deepEqual(diffApi(popoverProps, after).narrowed, ['PopoverProps.opaque'])
 })
 
+// Scalar and a recipe's variant props, as the report and Panda's
+// styled-system/recipes/dialog.d.ts declare them on 2026-11-18.
+const scalarDecl = `// @public
+export type Scalar<T> = {
+    [K in keyof T]?: Exclude<T[K], readonly unknown[] | {
+        readonly [key: string]: unknown;
+    }>;
+};
+
+`
+const dialogVariantTypes = report(`export type DialogVariant = {
+  size?: "md" | "lg" | "wide"
+}
+
+export type DialogVariantProps = {
+  [K in keyof DialogVariant]?: ConditionalValue<DialogVariant[K]>
+}`)
+
+// DialogProps as the v1.0.0-beta.42 report has it, shortened.
+const dialogPropsBody = `// @public (undocumented)
+export type DialogProps = Scalar<DialogVariantProps> & {
+    title: string;
+    description?: ReactNode;
+    className?: string | undefined;
+} & PopoverDataAttributes;`
+const dialogProps = report(popoverData + scalarDecl + dialogPropsBody)
+const addDialogMember = (r: string, member: string) => r.replace('    title: string;\n', `    title: string;\n    ${member}\n`)
+
+void test('an alias with a generic reference before its object splits into members (#158)', () => {
+  assert.deepEqual(
+    apiItems(dialogProps).filter((i) => i.key.startsWith('DialogProps')).map((i) => [i.key, i.text]),
+    [
+      ['DialogProps', 'export type DialogProps = Scalar<DialogVariantProps> & {'],
+      ['DialogProps.title', 'title: string;'],
+      ['DialogProps.description', 'description?: ReactNode;'],
+      ['DialogProps.className', 'className?: string | undefined;'],
+      ['DialogProps.&', 'Scalar<DialogVariantProps> & {…} & PopoverDataAttributes;'],
+    ],
+  )
+})
+
+void test('a new optional member of an alias with a generic reference is not breaking when the reference has no such key (#158)', () => {
+  const d = diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), dialogVariantTypes)
+  assert.deepEqual(d, { removed: [], added: ['meta?: ReactNode;'], addedRequired: [], narrowed: [], breaking: false })
+})
+
+void test('a removed or narrowed member of an alias with a generic reference is breaking', () => {
+  const removed = diffApi(dialogProps, dialogProps.replace('    description?: ReactNode;\n', ''), dialogVariantTypes)
+  assert.equal(removed.breaking, true)
+  assert.ok(removed.removed.some((t) => t.includes('description?: ReactNode;')))
+  const retyped = diffApi(dialogProps, dialogProps.replace('description?: ReactNode;', 'description?: string;'), dialogVariantTypes)
+  assert.equal(retyped.breaking, true)
+  assert.ok(retyped.removed.some((t) => t.includes('description?: ReactNode;')))
+  // `size` is a key of the variant props, so a new `size` narrows it.
+  const shadow = diffApi(dialogProps, addDialogMember(dialogProps, 'size?: "md";'), dialogVariantTypes)
+  assert.equal(shadow.breaking, true)
+  const required = diffApi(dialogProps, addDialogMember(dialogProps, 'meta: ReactNode;'), dialogVariantTypes)
+  assert.equal(required.breaking, true)
+})
+
+void test('a new optional member is breaking when the keys of a generic reference are not known', () => {
+  const meta = (before: string, types?: string) => diffApi(before, addDialogMember(before, 'meta?: ReactNode;'), types)
+  // No declaration of DialogVariantProps.
+  assert.deepEqual(meta(dialogProps).narrowed, ['DialogProps.meta'])
+  // No declaration of Scalar.
+  const noScalar = report(popoverData + dialogPropsBody)
+  assert.deepEqual(meta(noScalar, dialogVariantTypes).narrowed, ['DialogProps.meta'])
+  // A Scalar that is not a mapped type over the keys of its parameter.
+  for (const scalar of [
+    'export type Scalar<T> = {\n    [K in keyof T as `x${string}`]?: T[K];\n};\n\n',
+    'export type Scalar<T> = {\n    [K in keyof T]?: T[K];\n    extra?: string;\n};\n\n',
+    'export type Scalar<T> = {\n    [K in keyof Other]?: T;\n};\n\n',
+    'export type Scalar<T> = Partial<T>;\n\n',
+  ]) {
+    const r = report(popoverData + scalar + dialogPropsBody)
+    assert.deepEqual(meta(r, dialogVariantTypes).narrowed, ['DialogProps.meta'], scalar)
+  }
+})
+
+void test('any change to the generic references before the object is breaking', () => {
+  for (const head of ['Scalar<OtherVariantProps> & ', 'ComponentProps<"div"> & Scalar<DialogVariantProps> & ', '']) {
+    const after = dialogProps.replace('Scalar<DialogVariantProps> & {', `${head}{`)
+    assert.equal(diffApi(dialogProps, after, dialogVariantTypes).breaking, true, head)
+  }
+})
+
+void test('a generic reference before the object with a union, a body or a type argument it cannot read stays one item', () => {
+  for (const head of ['A | Scalar<B> & ', 'Scalar<{ a: string }> & ', 'Scalar<(a: B) => C> & ', 'A.B<C> & ', 'typeof a & ']) {
+    const r = report(`export type P = ${head}{\n    label: string;\n};`)
+    assert.deepEqual(apiItems(r).map((i) => i.key), ['P'], head)
+  }
+})
+
 void test('a new optional member is breaking when an intersected type has it, or a key type allows it (Codex review of #110)', () => {
   const props = (named: string, ...members: string[]) => report(`${named}\nexport type P = {\n${members.map((m) => `    ${m}\n`).join('')}} & A;`)
   const cases: [named: string, member: string, breaking: boolean][] = [

@@ -8,7 +8,7 @@
 // reverted breaking commit does not count. With no release tag there is no
 // published API to break, so it passes.
 import { spawnSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
 import { diffApi } from './release-lib.ts'
 
@@ -23,7 +23,20 @@ if (tag.status !== 0) {
 }
 const from = tag.stdout.trim()
 const old = git(['show', `${from}:${report}`])
-const diff = diffApi(old.status === 0 ? old.stdout : '', readFileSync(report, 'utf8'))
+// The report imports the recipe variant types (such as DialogVariantProps)
+// from styled-system, so it does not declare them. Panda codegen (the
+// `prepare` script) writes them, and the diff reads their declarations to
+// find the names that `Scalar<DialogVariantProps>` allows. Without them,
+// every new optional member of such an alias counts as breaking.
+const recipes = 'styled-system/recipes'
+const recipeTypes = existsSync(recipes)
+  ? readdirSync(recipes)
+      .filter((f) => f.endsWith('.d.ts'))
+      .sort()
+      .map((f) => readFileSync(`${recipes}/${f}`, 'utf8'))
+      .join('\n')
+  : ''
+const diff = diffApi(old.status === 0 ? old.stdout : '', readFileSync(report, 'utf8'), `\`\`\`ts\n${recipeTypes}\n\`\`\`\n`)
 
 const log = git(['log', '--no-merges', '--format=%H%x1f%B%x00', `${from}..HEAD`])
 if (log.status !== 0) {

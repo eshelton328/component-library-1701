@@ -42,16 +42,26 @@ Repository scripts that are not part of the package.
   template such as `data-${string}`), because it can narrow that
   property. When a named type is not in the report, is not a plain
   object or interface, or has a key type the parser cannot read, every
-  new member of the alias is breaking. Any other type alias (a union, a second object
-  literal, a generic, a mapped type or a tail that is not plain names) is
-  one item. The `api-report`
+  new member of the alias is breaking. The same holds for a type alias
+  whose object literal comes after named types or generic references
+  (`Scalar<DialogVariantProps> & { ... } & A;`): its head and tail are the
+  one item `Name.&`. A generic reference `G<X>` allows the names of `X`
+  only when `G` is a mapped type over the keys of its one parameter (as
+  `Scalar` is); otherwise every new member of the alias is breaking. Any
+  other type alias (a union, a second object literal, a generic alias, a
+  mapped type, a type argument with a body or a function, or a tail that
+  is not plain names) is one item. The `api-report`
   workflow runs on `pull_request_target`, so GitHub runs the base
   branch's copy of the workflow and of this script, and reads the PR's
   report as data. A change to either takes effect only after it merges.
 - `check-commits.ts` checks every commit header since the last release
   tag; the release job runs it before semantic-release.
 - `check-release-api.ts` (`pnpm check:release-api`) compares the API with
-  the last release tag. When it broke, `@semantic-release/commit-analyzer`
+  the last release tag. It also reads the recipe types that Panda
+  codegen writes to `styled-system/recipes/`, because the report imports
+  the variant props (such as `DialogVariantProps`) and does not declare
+  them. `check-api-diff.ts` reads only the two reports, so the
+  `api-report` workflow counts a new member of such an alias as breaking. When it broke, `@semantic-release/commit-analyzer`
   with `release.config.js` must return `major` for the commits in the
   range, so a reverted breaking commit does not count. The release job
   runs it, because a squash message can drop the `!` that the PR title

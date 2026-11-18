@@ -1,7 +1,7 @@
 import { tabsAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
-import { scrollArea } from './scroll-area'
+import { scrollAreaX } from './scroll-area'
 
 // The workspace tabs above the Workbench panes (D9 402:1565), with the
 // selected workspace's panes below them.
@@ -54,7 +54,7 @@ export const workspaceTabs = defineSlotRecipe({
       py: '2',
       pr: '2',
       overflowX: 'auto',
-      ...scrollArea,
+      ...scrollAreaX,
     },
     // Each tab shows its own selected state, so the moving indicator is not drawn.
     indicator: { display: 'none' },

@@ -9,21 +9,44 @@ const find = (root: ParentNode, selector: string): HTMLElement => {
   return box
 }
 
+/** The axes on which a scroll area keeps a scroll at its end from chaining on: its style in `scroll-area.ts`. */
+export type Contain = 'both' | 'x' | 'none'
+
+const behaviour = { both: { x: 'contain', y: 'contain' }, x: { x: 'contain', y: 'auto' }, none: { x: 'auto', y: 'auto' } } as const
+
 /**
  * Checks that each box that `selectors` names under `root` draws no scroll bar
- * (`scrollbar-width: none`) and keeps a scroll that reaches its end from
- * chaining to the page (`overscroll-behavior: contain` on both axes).
+ * (`scrollbar-width: none`) and has `overscroll-behavior: contain` on the
+ * `contain` axes and `auto` on the others: `both` for a box that bounds a
+ * pane (`scrollArea`), `x` for a row that scrolls sideways (`scrollAreaX`)
+ * and `none` for a box in a page's flow (`scrollAreaNested`).
  */
-export async function expectScrollAreas(root: ParentNode, ...selectors: readonly string[]): Promise<void> {
+export async function expectScrollAreas(root: ParentNode, contain: Contain, ...selectors: readonly string[]): Promise<void> {
   for (const selector of selectors) {
     const style = getComputedStyle(find(root, selector))
     await expect({ selector, scrollbarWidth: style.scrollbarWidth }).toEqual({ selector, scrollbarWidth: 'none' })
-    await expect({ selector, x: style.overscrollBehaviorX, y: style.overscrollBehaviorY }).toEqual({
-      selector,
-      x: 'contain',
-      y: 'contain',
-    })
+    await expect({ selector, x: style.overscrollBehaviorX, y: style.overscrollBehaviorY }).toEqual({ selector, ...behaviour[contain] })
   }
+}
+
+/**
+ * Checks that a vertical mouse wheel over `box`, a scroll area in the flow of
+ * `scroller`, scrolls `scroller` when `box` has no room to scroll down.
+ * Chrome 144 and later stop it when `box` contains the y axis, even when
+ * `box` does not overflow. It uses the test runner's real wheel (DevTools
+ * through `vitest/browser`), so a story that calls it carries
+ * `tags: ['!dev']`.
+ */
+export async function expectWheelScrollsPast(box: HTMLElement, scroller: HTMLElement): Promise<void> {
+  const { cdp } = await import('vitest/browser')
+  await expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight)
+  scroller.scrollTop = 0
+  box.scrollTop = box.scrollHeight
+  const r = box.getBoundingClientRect()
+  const at = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + Math.min(r.height, scroller.clientHeight) / 2) }
+  await cdp().send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...at, deltaX: 0, deltaY: 200 })
+  await waitFor(() => expect(scroller.scrollTop).toBeGreaterThan(0))
+  scroller.scrollTop = 0
 }
 
 /**

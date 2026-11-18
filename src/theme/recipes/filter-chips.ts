@@ -1,7 +1,7 @@
 import { toggleGroupAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
-import { scrollArea } from './scroll-area'
+import { scrollAreaX } from './scroll-area'
 
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
@@ -56,7 +56,7 @@ export const filterChips = defineSlotRecipe({
       // The row scrolls, which clips anything outside it; the padding keeps the focus ring visible.
       p: '2',
       overflowX: 'auto',
-      ...scrollArea,
+      ...scrollAreaX,
       // A focused chip scrolls into view clear of the fade, so its focus ring shows.
       scrollPaddingInline: '24',
       '--filter-chips-fade-start': '0px',

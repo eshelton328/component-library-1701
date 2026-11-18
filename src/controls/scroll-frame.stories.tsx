@@ -45,7 +45,7 @@ const meta = {
     const body = canvas.getByText('Message 1').parentElement
     if (body === null) throw new Error('no body')
     // The body and the footer scroll with no scroll bar and keep a scroll at their end from moving the page.
-    await expectScrollAreas(canvasElement, '.scroll-frame__body', '.scroll-frame__footer')
+    await expectScrollAreas(canvasElement, 'both', '.scroll-frame__body', '.scroll-frame__footer')
     // No line shrinks to fit: each keeps the height of its text.
     for (const el of canvas.getAllByText(/^Message /)) await expect(el.clientHeight).toBe(el.scrollHeight)
     // The box does not grow to its content: the body scrolls inside it.
@@ -475,7 +475,7 @@ export const DragInFieldKeepsKeyboard: StoryObj<typeof meta> = {
 const scrolls: StoryObj<typeof meta> = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    await expectScrollAreas(canvasElement, '.scroll-frame__body')
+    await expectScrollAreas(canvasElement, 'both', '.scroll-frame__body')
     const body = within(canvasElement).getByText('Message 1').parentElement
     if (body === null) throw new Error('no body')
     await expectScrollsByWheelAndKeys(body)

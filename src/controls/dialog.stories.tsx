@@ -77,7 +77,7 @@ const meta = {
     const body = within(document.body)
     const box = await body.findByRole('alertdialog', { name: 'Remove this task?' })
     // The dialog scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(document.body, '.dialog__content')
+    await expectScrollAreas(document.body, 'both', '.dialog__content')
     await expect(box).toHaveAccessibleDescription('The task leaves Inbox, and its chat stays in Workbench.')
     await expect(box.getBoundingClientRect().width).toBe(440)
     const style = getComputedStyle(box)

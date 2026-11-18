@@ -39,7 +39,7 @@ const meta = {
   component: Chips,
   play: async ({ canvasElement }) => {
     // The chip row scrolls with no scroll bar and keeps a swipe at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.filter-chips__root')
+    await expectScrollAreas(canvasElement, 'x', '.filter-chips__root')
     const canvas = within(canvasElement)
     const row = within(canvas.getByRole('group', { name: 'Filter by kind' }))
     const skills = row.getByRole('button', { name: /Skills/ })

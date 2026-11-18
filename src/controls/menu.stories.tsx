@@ -59,7 +59,7 @@ const meta = {
     const body = within(document.body)
     const menu = await body.findByRole('menu')
     // The menu scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(document.body, '.menu__content')
+    await expectScrollAreas(document.body, 'both', '.menu__content')
     const rename = within(menu).getByRole('menuitem', { name: 'Rename' })
     await expect(rename.getBoundingClientRect().height).toBe(32)
     const remove = within(menu).getByRole('menuitem', { name: 'Delete chat' })

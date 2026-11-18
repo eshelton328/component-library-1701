@@ -80,7 +80,7 @@ const meta = {
     const sheet = await body.findByRole('dialog', { name: 'Sort by' })
     await motionDone(sheet)
     // The sheet scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(document.body, '.bottom-sheet__content')
+    await expectScrollAreas(document.body, 'both', '.bottom-sheet__content')
     const box = sheet.getBoundingClientRect()
     // Full width, flush with the bottom of the window.
     await expect(box.width).toBe(window.innerWidth)

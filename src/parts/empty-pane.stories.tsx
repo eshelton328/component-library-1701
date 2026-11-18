@@ -47,7 +47,7 @@ const meta = {
   component: Empty,
   play: async ({ canvasElement }) => {
     // The empty pane scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.empty-pane__root')
+    await expectScrollAreas(canvasElement, 'none', '.empty-pane__root')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

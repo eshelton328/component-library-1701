@@ -29,7 +29,7 @@ const meta = {
   component: Fields,
   play: async ({ canvasElement }) => {
     // A text area scrolls its text with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.text-field__textarea')
+    await expectScrollAreas(canvasElement, 'none', '.text-field__textarea')
     const canvas = within(canvasElement)
     // The sizes come from a list, so their CSS comes only from staticCss.
     const heights = sizes.map((s) => canvas.getByRole('textbox', { name: `Name, ${s}` }).getBoundingClientRect().height)

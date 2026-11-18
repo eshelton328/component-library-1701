@@ -88,7 +88,7 @@ const meta = {
     // With only text in it, the detail takes focus, so the keyboard can scroll it.
     await expect(detail).toHaveAttribute('tabindex', '0')
     // The detail scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.app-shell__detail')
+    await expectScrollAreas(canvasElement, 'both', '.app-shell__detail')
   },
 } satisfies Meta<typeof Desktop>
 export default meta
@@ -103,7 +103,7 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 const scrolls: StoryObj<typeof meta> = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
-    await expectScrollAreas(canvasElement, '.app-shell__detail')
+    await expectScrollAreas(canvasElement, 'both', '.app-shell__detail')
     await expectScrollsByWheelAndKeys(within(canvasElement).getByRole('main'))
   },
 }

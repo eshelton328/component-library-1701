@@ -1,5 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
-import { scrollArea } from './scroll-area'
+import { scrollAreaNested } from './scroll-area'
 
 // The bordered box that holds a list or side content, with an optional
 // header: a title, a count or other meta, and actions at the end.
@@ -51,7 +51,7 @@ export const panel = defineSlotRecipe({
     title: { minW: '0' },
     meta: { flexShrink: '0', color: 'fg.muted' },
     actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ml: 'auto' },
-    body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto', ...scrollArea },
+    body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto', ...scrollAreaNested },
   },
   variants: {
     tone: {

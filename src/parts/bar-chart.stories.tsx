@@ -90,7 +90,7 @@ const meta = {
   component: Charts,
   play: async ({ canvasElement }) => {
     // The chart scrolls sideways with no scroll bar and keeps a swipe at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.grouped-bar-chart__root')
+    await expectScrollAreas(canvasElement, 'x', '.grouped-bar-chart__root')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

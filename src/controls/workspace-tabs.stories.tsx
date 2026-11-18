@@ -41,7 +41,7 @@ const meta = {
   component: Tabs,
   play: async ({ canvasElement }) => {
     // The tab list scrolls with no scroll bar and keeps a swipe at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.workspace-tabs__list')
+    await expectScrollAreas(canvasElement, 'x', '.workspace-tabs__list')
     onValueChange.mockClear()
     const canvas = within(canvasElement)
     const swatch = (name: string) => {

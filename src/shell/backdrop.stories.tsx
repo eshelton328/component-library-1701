@@ -71,7 +71,7 @@ const meta = {
   component: Page,
   play: async ({ canvasElement }) => {
     // The backdrop scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.backdrop')
+    await expectScrollAreas(canvasElement, 'both', '.backdrop')
     const el = backdropOf(canvasElement)
     const s = getComputedStyle(el)
     // bg.canvas under the image layers, which do not repeat.

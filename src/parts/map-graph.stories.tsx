@@ -98,7 +98,7 @@ const meta = {
   args: { onSelect: fn(), onOpen: fn() },
   play: async ({ canvasElement, args }) => {
     // The map scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.map-graph__scroller')
+    await expectScrollAreas(canvasElement, 'x', '.map-graph__scroller')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

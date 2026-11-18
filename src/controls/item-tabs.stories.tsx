@@ -42,7 +42,7 @@ const meta = {
   component: Tabs,
   play: async ({ canvasElement }) => {
     // The tab list scrolls with no scroll bar and keeps a swipe at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.item-tabs__list')
+    await expectScrollAreas(canvasElement, 'x', '.item-tabs__list')
     const canvas = within(canvasElement)
     // The sizes come from a list, so their CSS comes only from staticCss.
     const heights = sizes.map((s) => within(canvas.getByRole('tablist', { name: `Sections, ${s}` })).getByRole('tab', { name: 'Overview' }).getBoundingClientRect().height)

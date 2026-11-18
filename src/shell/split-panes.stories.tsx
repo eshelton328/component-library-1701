@@ -80,7 +80,7 @@ const meta = {
   args: { count: 2 },
   play: async ({ canvasElement }) => {
     // A pane body scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(canvasElement, '.pane__body')
+    await expectScrollAreas(canvasElement, 'both', '.pane__body')
     const canvas = within(canvasElement)
     const a = canvas.getByRole('region', { name: 'bridge themes' })
     const b = canvas.getByRole('region', { name: 'drift check' })

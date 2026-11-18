@@ -70,7 +70,7 @@ const meta = {
     const body = within(document.body)
     const box = await body.findByRole('dialog', { name: 'Filters' })
     // The popover scrolls with no scroll bar and keeps a scroll at its end from moving the page.
-    await expectScrollAreas(document.body, '.popover__content')
+    await expectScrollAreas(document.body, 'both', '.popover__content')
     await expect(box.getBoundingClientRect().width).toBe(320)
     const style = getComputedStyle(box)
     await expect(style.borderTopLeftRadius).toBe('12px')

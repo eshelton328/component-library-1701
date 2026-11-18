@@ -1,5 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
-import { scrollArea } from './scroll-area'
+import { scrollAreaX } from './scroll-area'
 
 // The bar colours, one per tone. Figma draws the eval chart in cyan (with
 // the skill) and grey (without), Toolkit D20 482:1933 and 482:1934; the
@@ -23,7 +23,7 @@ export const groupedBarChart = defineSlotRecipe({
   staticCss: ['*'],
   slots: ['root', 'svg', 'bar', 'axisLabel', 'data'],
   base: {
-    root: { display: 'block', maxW: '100%', overflowX: 'auto', ...scrollArea },
+    root: { display: 'block', maxW: '100%', overflowX: 'auto', ...scrollAreaX },
     svg: { display: 'block', overflow: 'visible' },
     bar: { rx: 'token(radii.hair)', ...tones },
     axisLabel: { textStyle: 'mono', fill: 'fg.muted' },

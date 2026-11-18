@@ -259,10 +259,26 @@ const frameBody = css({ px: '16', gap: '8' })
 // A Start button that sticks at the foot of the body, above the tab bar, as the-bridge's DetailFrame draws it.
 const stickyStart = css({ position: 'sticky', bottom: 'var(--scroll-frame-inset, 0px)', bg: 'surface.pane' })
 const listLines = Array.from({ length: 40 }, (_, i) => `Task ${String(i + 1)}`)
+// A bright, opaque block in the page, to scroll under the tab bar: it must not show through the bar.
+const brightBlock = css({ h: 'shell.tabBar', bg: 'accent.default', flexShrink: '0' })
 
-function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | 'body' | 'sticky'; tabBarOverlay?: boolean }) {
+function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'block' | 'frame' | 'body' | 'sticky'; tabBarOverlay?: boolean }) {
   const detail =
-    content === 'list' ? (
+    content === 'block' ? (
+      <Container>
+        {listLines.slice(0, 36).map((l) => (
+          <p key={l} className={text}>
+            {l}
+          </p>
+        ))}
+        <div className={brightBlock} data-testid="bright" />
+        {listLines.slice(36).map((l) => (
+          <p key={l} className={text}>
+            {l}
+          </p>
+        ))}
+      </Container>
+    ) : content === 'list' ? (
       <Container>
         {listLines.map((l) => (
           <p key={l} className={text}>
@@ -438,3 +454,67 @@ const tabBarBelow: StoryObj<typeof meta> = {
 /** Phone with no `tabBarOverlay`: the tab bar sits below the page, as it always has. */
 export const TabBarBelowDark: StoryObj<typeof meta> = { ...tabBarBelow, globals: { mode: 'dark' } }
 export const TabBarBelowLight: StoryObj<typeof meta> = { ...tabBarBelow, globals: { mode: 'light' } }
+
+type Rgba = { r: number; g: number; b: number; a: number }
+
+// A computed background colour as numbers: Chromium writes rgb(), rgba() or, for a token in another space, color(srgb …).
+const parseColor = (value: string): Rgba => {
+  const nums = (value.match(/-?[\d.]+(e-?\d+)?/g) ?? []).map(Number)
+  const [x = 0, y = 0, z = 0, a = 1] = nums
+  if (value.startsWith('color(srgb')) return { r: x * 255, g: y * 255, b: z * 255, a }
+  if (value.startsWith('rgb')) return { r: x, g: y, b: z, a }
+  throw new Error(`unexpected colour ${value}`)
+}
+
+// Lay `under` beneath `top` (source-over), as the browser paints a translucent fill over what is behind it.
+const over = (top: Rgba, under: Rgba): Rgba => {
+  const a = top.a + under.a * (1 - top.a)
+  if (a === 0) return { r: 0, g: 0, b: 0, a: 0 }
+  const mix = (t: number, u: number) => (t * top.a + u * under.a * (1 - top.a)) / a
+  return { r: mix(top.r, under.r), g: mix(top.g, under.g), b: mix(top.b, under.b), a }
+}
+
+// Paint the background fills at a point from the top down, as far as the first element of `page`, and return the
+// colour they make together. Its alpha is 1 when nothing of the page can show through.
+const fillAbovePage = (x: number, y: number, page: HTMLElement): Rgba => {
+  let paint: Rgba = { r: 0, g: 0, b: 0, a: 0 }
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (page.contains(el)) break
+    const style = getComputedStyle(el)
+    // Only a flat fill is counted; a gradient layer would need the pixels.
+    if (style.backgroundImage !== 'none') throw new Error(`${el.className} has a background image`)
+    paint = over(paint, parseColor(style.backgroundColor))
+  }
+  return paint
+}
+
+const overlayOpaque: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="block" tabBarOverlay />,
+  play: async ({ canvasElement }) => {
+    const { canvas, detail, bar } = phoneParts(canvasElement)
+    const nav = canvas.getByRole('navigation', { name: 'Tabs' })
+    const block = canvas.getByTestId('bright')
+    // Scroll the bright block in the page under the bar.
+    detail.scrollTop += rect(block).top - bar.top
+    await expect(Math.round(rect(block).top)).toBe(Math.round(bar.top))
+    const x = bar.left + bar.width / 2
+    const y = bar.top + bar.height / 2
+    await expect(document.elementsFromPoint(x, y)).toContain(block)
+    // The bar itself keeps its translucent surface.chrome fill (0.96).
+    const chrome = parseColor(getComputedStyle(nav).backgroundColor)
+    await expect(chrome.a).toBeCloseTo(0.96, 2)
+    // Over the page, the bar's layers are opaque: the block does not show through.
+    const fill = fillAbovePage(x, y, detail)
+    await expect(fill.a).toBeCloseTo(1, 3)
+    // They make surface.chrome over bg.canvas, the colour Figma shows on its dark backdrop, with no new value.
+    const canvasColor = parseColor(getComputedStyle(slotOf(canvasElement, 'backdrop')).backgroundColor)
+    const want = over(chrome, canvasColor)
+    for (const c of ['r', 'g', 'b'] as const) await expect(Math.abs(fill[c] - want[c])).toBeLessThan(0.5)
+    // The page under the bar still scrolls and is still the block.
+    await expect(rect(block).bottom).toBeGreaterThan(y)
+  },
+}
+
+/** Phone with `tabBarOverlay` and a bright block scrolled under the tab bar: the bar is opaque, surface.chrome over bg.canvas, so the page does not show through. */
+export const OverlayOpaqueDark: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'dark' } }
+export const OverlayOpaqueLight: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'light' } }

@@ -35,6 +35,9 @@ function onKeyDown(event: KeyboardEvent) {
   // A modifier alone, such as the Shift of a screenshot shortcut, does not move the focus.
   if (event.metaKey || event.ctrlKey || event.altKey) return
   modality = 'keyboard'
+  // A key on the element a click focused, such as Space on the same button, shows its ring again.
+  const focused = event.target instanceof Element ? event.target : null
+  focused?.removeAttribute(quietFocusAttribute)
 }
 
 function onPointerDown() {

@@ -531,6 +531,39 @@ const swipePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await closed()
 }
 
+// A sheet with a text field: a downward drag in the field selects text and leaves the sheet in place.
+function NoteSheet() {
+  const [open, setOpen] = useState(false)
+  return (
+    <main className={page}>
+      <BottomSheet title="Note" trigger={<Button>Note</Button>} open={open} onOpenChange={setOpen}>
+        <textarea aria-label="Note" rows={4} defaultValue={'One\nTwo\nThree\nFour'} />
+      </BottomSheet>
+    </main>
+  )
+}
+
+const noteDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Note' }))
+  const sheet = await body.findByRole('dialog', { name: 'Note' })
+  const top = sheet.getBoundingClientRect().top
+  const field = within(sheet).getByRole('textbox', { name: 'Note' })
+  const from = field.getBoundingClientRect().top + 4
+  touch('pointerdown', field, from)
+  for (let dy = 20; dy <= 200; dy += 20) touch('pointermove', field, from + dy)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  touch('pointerup', field, from + 200)
+  await pause(50)
+  await expect(body.getByRole('dialog', { name: 'Note' })).toBe(sheet)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+}
+
+/** A drag in a text field of the sheet selects text; the sheet stays open and in place. */
+export const SwipeInTextField: StoryObj<typeof meta> = { render: () => <NoteSheet />, play: noteDragPlay }
+
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }
 export const SwipeLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'light' } }
@@ -604,6 +637,10 @@ const focusReturnPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
   await userEvent.click(within(await opened()).getByRole('button', { name: 'In 2 hours' }))
   await closed()
   await expectRing(trigger, false)
+
+  // A key on the trigger that keeps the focus there shows the ring again.
+  await userEvent.keyboard('{ArrowDown}')
+  await expectRing(trigger, true)
 }
 
 /** The focus goes back to the trigger with no ring after a click, a tap or a swipe closes the sheet, and with the ring after the keyboard does. */

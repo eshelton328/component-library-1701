@@ -158,6 +158,9 @@ const flickWindow = 100
 /** The offset of a dragged sheet; the recipe moves the content by it while `data-dragging` is set. */
 const dragOffset = '--bottom-sheet-drag'
 
+/** The elements a press selects text in, so a drag there is a selection, not a swipe. */
+const editableTarget = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])'
+
 type Sample = { y: number; t: number }
 type Drag = { pointerId: number; startY: number; handle: boolean; active: boolean; samples: Sample[]; stop: () => void }
 
@@ -210,6 +213,8 @@ function DraggableContent({ children, ...props }: ComponentProps<typeof Content>
     const target = event.target
     if (!(target instanceof Element)) return
     const handle = target.closest('[data-drag-handle]') !== null
+    // A press in a text field selects text or moves the caret; it never drags the sheet.
+    if (!handle && target.closest(editableTarget) !== null) return
     if (!handle && scrolledDown(target, sheet)) return
     const win = sheet.ownerDocument.defaultView ?? window
     const move = (e: PointerEvent) => {

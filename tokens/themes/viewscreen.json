@@ -156,7 +156,7 @@
             "alpha": 0.5,
             "hex": "#5ee1ff"
           },
-          "$description": "The border of a selected or running item."
+          "$description": "The border of a selected or running item, and of a pressed Button with pressedBorder=\"selected\" (a selected toggle chip). Not for an open menu trigger or a pressed Sort or Filter, which use border.active. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha (Figma's 0.5 gives 2.13 on light bg.canvas); dark keeps Figma's 0.5."
         },
         "active": {
           "$type": "color",
@@ -1029,7 +1029,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.0549, 0.4549, 0.5647],
-            "alpha": 0.5,
+            "alpha": 0.75,
             "hex": "#0e7490"
           }
         },

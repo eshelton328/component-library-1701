@@ -10,8 +10,10 @@ const Root = withProvider('div', 'root')
 const Nest = withContext('span', 'nest')
 const Leading = withContext('span', 'leading')
 const Body = withContext('div', 'body')
+const TitleRow = withContext('span', 'titleRow')
 const TitleButton = withContext('button', 'title')
 const TitleText = withContext('span', 'title')
+const Dot = withContext('span', 'dot')
 const Meta = withContext('span', 'meta')
 const Lines = withContext('div', 'lines')
 const Actions = withContext('div', 'actions')
@@ -49,6 +51,8 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
   level?: 0 | 1 | 2 | undefined
   /** Called when the user clicks the row or presses Enter on it. Without it, the row is not a button. */
   onSelect?: (() => void) | undefined
+  /** What a screen reader reads for the `dot`, such as "New". Without it the dot is hidden from screen readers. */
+  dotLabel?: string | undefined
 }
 
 /**
@@ -61,8 +65,22 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * at level 0 pads 20 at the start, where Figma draws the Workbench sidebar
  * chat's kind mark (D2 105:705), so a model and a context meter fit beside
  * a status pill; a nested row keeps 24.
+ *
+ * The Artifacts rows add, on the `inbox` variant:
+ * - `padding`: `default` pads 10 inside the 1 px border; `sm` pads 8, so a
+ *   title and meta row is 58 tall (Artifacts D2); `lg` pads 12 (the list
+ *   view, D4); `phone` pads 4 at the sides and 10 above and below (M1).
+ * - `surface="card"` draws the row on `surface.pane` in a `border.default`
+ *   border, as a Card; `default` has no fill and a clear border.
+ * - `trailingAlign="center"` centres the trailing items down the row (D2's
+ *   age, D4's age and Open); `start`, the default, puts them on the title line.
+ * - `dot` ends the title row with a 6 px dot in that status colour, such as
+ *   `working` for a new item; `dotLabel` names it for screen readers.
+ *   `dotPosition="title"` (the default) puts it 8 after the title (D4);
+ *   `end` puts it at the end of the title line, 12 before the trailing
+ *   items (D2).
  */
-export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, variant, density }: ListRowProps) {
+export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, dot, dotPosition }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -79,18 +97,24 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
   const selectFromText = (event: MouseEvent<HTMLElement>) => {
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
   }
+  const titleNode =
+    onSelect === undefined ? (
+      <TitleText aria-current={selected ? 'true' : undefined}>{titleText}</TitleText>
+    ) : (
+      <TitleButton type="button" aria-current={selected ? 'true' : undefined} onClick={onSelect}>
+        {titleText}
+      </TitleButton>
+    )
   return (
-    <Root variant={variant} density={density} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} dot={dot} dotPosition={dotPosition} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
-        {onSelect === undefined ? (
-          <TitleText aria-current={selected ? 'true' : undefined}>{titleText}</TitleText>
-        ) : (
-          <TitleButton type="button" aria-current={selected ? 'true' : undefined} onClick={onSelect}>
-            {titleText}
-          </TitleButton>
-        )}
+        {/* The title row is always there, so the title button keeps its focus when the dot comes or goes. */}
+        <TitleRow>
+          {titleNode}
+          {dot === undefined ? null : dotLabel === undefined ? <Dot aria-hidden="true" /> : <Dot role="img" aria-label={dotLabel} />}
+        </TitleRow>
         {meta === undefined ? null : <Meta>{metaText}</Meta>}
         {children === undefined ? null : <Lines>{children}</Lines>}
         {actions === undefined ? null : <Actions>{actions}</Actions>}

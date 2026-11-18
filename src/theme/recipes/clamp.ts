@@ -16,6 +16,10 @@ import { defineRecipe } from '@pandacss/dev'
 // block and needs no colour token: #000 is opaque. The component sets
 // data-cut when the text is longer than the lines; a block that fits has no
 // mask.
+//
+// `reserve` keeps the height of the lines when the text is shorter: Figma
+// keeps the Inbox prompt box 128 px high for a prompt of three lines (D16
+// 403:1854), as for one of five (D1 346:370).
 export const clamp = defineRecipe({
   className: 'clamp',
   jsx: ['Clamp'],
@@ -42,6 +46,10 @@ export const clamp = defineRecipe({
       },
       false: { lineClamp: 'var(--clamp-lines)' },
     },
+    reserve: {
+      true: { minH: 'calc(var(--clamp-lines) * 1lh)' },
+      false: {},
+    },
   },
-  defaultVariants: { lines: '4', fade: false },
+  defaultVariants: { lines: '4', fade: false, reserve: false },
 })

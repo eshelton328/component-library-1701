@@ -160,9 +160,16 @@ export const button = defineRecipe({
     // because base `_pressed` and the secondary variant's own `_pressed`
     // would win over a variant here. `_expanded` is not changed;
     // `expandedBorder` sets that.
+    // `selected` draws border.selected, for a selected toggle chip that is not
+    // a menu trigger: Workspaces M07's own folder chip (128:30, #5ee1ff at
+    // 0.6) and M08's chosen recent folder (128:766, at 0.5). Figma's cyan at
+    // 0.5-0.6 is border.selected's colour; its light value is 0.75 so the
+    // border over the pressed fill keeps 3:1 against bg.canvas, surface.pane
+    // and surface.raised, as border.active does.
     pressedBorder: {
       active: {},
       discuss: {},
+      selected: {},
     },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
@@ -191,6 +198,7 @@ export const button = defineRecipe({
       css: { _expanded: { borderColor: 'transparent' } },
     },
     { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
+    { pressedBorder: 'selected', css: { _pressed: { borderColor: 'border.selected' } } },
   ],
   defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false },
 })

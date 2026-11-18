@@ -20,7 +20,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // tint, and 0.5 is the nearest value that keeps 3:1 in dark mode.
 // `tone="accent"` is the Inbox run card (D6 346:2688, also D9-D11): Figma
 // draws a 1 px border in #5ee1ff at 0.45 on #14263f, the look of a selected
-// or running row: border.selected (0.5) on surface.selected, where
+// or running row: border.selected (0.5 dark, 0.75 light) on surface.selected, where
 // fg.default, fg.muted and fg.accent pass 4.5:1 in both modes.
 // `tone="done"` is D7's result card (346:3067), a pane with a green border:
 // status.done.border. `tone="danger"` is the card of a removed task (D21

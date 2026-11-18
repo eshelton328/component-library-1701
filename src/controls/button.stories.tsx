@@ -599,7 +599,9 @@ export const ExpandedBorderLight: StoryObj<typeof meta> = { render: () => <Expan
 
 // The Discuss toggle with its discussion open beside Sort with a sort applied, a
 // closed Discuss and a pressed primary Discuss, all with textSize sm as the-bridge draws them.
-// Below them a pressed Discuss and a pressed Sort on each surface the-bridge draws them on.
+// Below them a pressed Discuss, a pressed Sort and a pressed selected folder chip
+// (pressedBorder="selected", Workspaces M07 128:30, M08 128:766) on each surface the-bridge
+// draws them on.
 const discussSurfaces = {
   'bg.canvas': css({ bg: 'bg.canvas', p: '12' }),
   'surface.pane': css({ bg: 'surface.pane', p: '12' }),
@@ -632,12 +634,16 @@ function DiscussButtons() {
             <Button textSize="sm" pressed>
               {`Sort on ${name}`}
             </Button>
+            <Button textSize="sm" pressed pressedBorder="selected">
+              {`Folder on ${name}`}
+            </Button>
           </div>
         ))}
       </div>
       <div hidden>
         <span data-swatch="active" className={css({ color: 'border.active' })} />
         <span data-swatch="discuss" className={css({ color: 'accent.discuss' })} />
+        <span data-swatch="selectedBorder" className={css({ color: 'border.selected' })} />
         <span data-swatch="default" className={css({ color: 'border.default' })} />
         <span data-swatch="selected" className={css({ color: 'surface.selected' })} />
       </div>
@@ -699,13 +705,20 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
   // it, reaches 3:1 against each surface around the button.
   // Sort, with the default pressedBorder, draws border.active over surface.selected; in
   // light that needs border.active at 0.75 alpha (0.7 gave 2.94 on bg.canvas).
+  // Folder, with pressedBorder="selected", draws border.selected over surface.selected; in
+  // light that needs border.selected at 0.75 alpha (Figma's 0.5 gave 2.13 on bg.canvas).
   for (const name of Object.keys(discussSurfaces)) {
-    for (const toggle of ['Discuss', 'Sort']) {
+    for (const toggle of ['Discuss', 'Sort', 'Folder']) {
       const button = canvas.getByRole('button', { name: `${toggle} on ${name}` })
       const surface = paintedBackground(button.parentElement)
       const border = over(parseRgba(getComputedStyle(button).borderTopColor), paintedBackground(button))
       await expect(contrast(border, surface), `pressed ${toggle} border on ${name}`).toBeGreaterThanOrEqual(3)
     }
+    // The selected chip draws border.selected on each side, over the pressed fill.
+    const folder = getComputedStyle(canvas.getByRole('button', { name: `Folder on ${name}` }))
+    await expect(folder.borderTopColor, `pressed Folder border on ${name}`).toBe(swatch('selectedBorder'))
+    await expect(folder.borderBottomColor).toBe(swatch('selectedBorder'))
+    await expect(folder.backgroundColor).toBe(swatch('selected'))
   }
   await expect(swatch('discuss')).not.toBe(swatch('active'))
   await expect(style('Sort').borderTopColor).toBe(swatch('active'))
@@ -717,6 +730,9 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
   await expect(style('Discuss primary').borderTopColor).toBe(swatch('discuss'))
 }
 
-/** `pressedBorder="discuss"`: a pressed Discuss toggle draws accent.discuss; Sort keeps border.active. Both borders reach 3:1 on each surface. */
+/**
+ * `pressedBorder="discuss"`: a pressed Discuss toggle draws accent.discuss; Sort keeps border.active.
+ * `pressedBorder="selected"`: a pressed folder chip draws border.selected. Each border reaches 3:1 on each surface.
+ */
 export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedBorderPlay }
 export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }

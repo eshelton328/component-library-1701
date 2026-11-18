@@ -852,7 +852,7 @@ const zoomPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElem
   pointer('pointerdown', 1, 50, 50, ambitious)
   pointer('pointermove', 1, 52, 51, ambitious)
   pointer('pointerup', 1, 52, 51, ambitious)
-  ambitious.click()
+  ambitious.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
   await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
   // A drag that starts and ends on a node moves the drawing and selects nothing.
   const ste100 = node('ste100')
@@ -860,7 +860,8 @@ const zoomPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElem
   pointer('pointerdown', 1, 150, 50, ste100)
   pointer('pointermove', 1, 120, 50, ste100)
   pointer('pointerup', 1, 120, 50, ste100)
-  ste100.click()
+  // A pointer's click has detail 1; HTMLElement.click() would send detail 0, a keyboard click.
+  ste100.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
   await expect(drawing().left).toBeCloseTo(before - 30, 1)
   await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
   await expect(args.onSelect).not.toHaveBeenCalledWith('ste100')
@@ -880,3 +881,55 @@ const zoomPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElem
 
 export const ZoomDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'dark' } }
 export const ZoomLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'light' } }
+
+// The window's size in px, and a touch pointer event at x and y in it, for the zoom stories.
+const zoomParts = (canvasElement: HTMLElement) => {
+  const map = within(canvasElement).getByRole('group', { name: 'Zoom map' })
+  const scroller = map.querySelector<HTMLElement>('.map-graph__scroller')
+  const svg = map.querySelector('svg')
+  if (scroller === null || svg === null) throw new Error('no drawing')
+  const drawing = () => {
+    const w = scroller.getBoundingClientRect()
+    const d = svg.getBoundingClientRect()
+    return { left: d.left - w.left, top: d.top - w.top, width: d.width, height: d.height }
+  }
+  const pointer = (type: string, id: number, x: number, y: number, target: Element = scroller) => {
+    const w = scroller.getBoundingClientRect()
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: w.left + x, clientY: w.top + y, bubbles: true, cancelable: true }))
+  }
+  return { map, scroller, svg, drawing, pointer, node: (name: string) => within(map).getByRole('button', { name }) }
+}
+const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+// A drag released outside the window fires no click there, and must not swallow the next key press or tap.
+const releaseOutsidePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
+  const { drawing, pointer, node } = zoomParts(canvasElement)
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, 150, 100)
+  pointer('pointerup', 1, 150, 600, document.body)
+  await expect(drawing().left).toBeCloseTo(-50, 1)
+  await nextTask()
+  // Enter on a node selects it.
+  const writer = node('writer')
+  writer.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(args.onSelect).toHaveBeenLastCalledWith('writer')
+  // A key press right after a drag that ends on a node selects too: only a pointer click is swallowed.
+  const ambitious = node('ambitious')
+  pointer('pointerdown', 1, 150, 50, ambitious)
+  pointer('pointermove', 1, 120, 50, ambitious)
+  pointer('pointerup', 1, 120, 50, ambitious)
+  ambitious.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  // After a drag released outside, a later pointer click on a node selects it.
+  pointer('pointerdown', 1, 150, 100)
+  pointer('pointermove', 1, 120, 100)
+  pointer('pointerup', 1, 120, 600, document.body)
+  await nextTask()
+  node('ste100').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ste100')
+}
+
+export const ZoomReleaseOutsideDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'dark' } }
+export const ZoomReleaseOutsideLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'light' } }

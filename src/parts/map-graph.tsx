@@ -312,8 +312,8 @@ export type MapGraphProps = {
    * touch gestures itself (`touch-action: none`): two pointers scale the
    * drawing about their midpoint within the range, and one pointer drags
    * it, so far that the drawing never leaves the window. A press that moves
-   * less than 4 px is a tap, so a node still selects; the click after a
-   * drag selects nothing. A node that takes the keyboard focus is moved
+   * less than 4 px is a tap, so a node still selects; the pointer click
+   * that ends a drag selects nothing, and a key press always does. A node that takes the keyboard focus is moved
    * into the window.
    */
   zoom?: boolean | MapGraphZoom | undefined
@@ -402,15 +402,25 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       dragging = true
       show({ scale: start.view.scale, x: start.view.x + a.x - a0.x, y: start.view.y + a.y - a0.y })
     }
+    let clearSkip: ReturnType<typeof setTimeout> | undefined
     const up = (event: PointerEvent) => {
       if (!pointers.delete(event.pointerId)) return
-      if (dragging) skipClick = true
+      // The browser fires the click of a release in the same task, so the flag lasts one task: a drag released
+      // outside the window, which fires no click here, cannot swallow a later one.
+      if (dragging && pointers.size === 0) {
+        skipClick = true
+        clearTimeout(clearSkip)
+        clearSkip = setTimeout(() => {
+          skipClick = false
+        }, 0)
+      }
       // From two pointers to one: the one left drags on from the view the pinch left.
       restart()
     }
-    // The click after a drag or a pinch selects no node.
+    // The click after a drag or a pinch selects no node. A click from the keyboard (Enter or Space, detail 0)
+    // always goes through.
     const click = (event: MouseEvent) => {
-      if (!skipClick) return
+      if (!skipClick || event.detail === 0) return
       skipClick = false
       event.preventDefault()
       event.stopPropagation()
@@ -438,6 +448,7 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
+      clearTimeout(clearSkip)
       scroller.style.removeProperty('--map-graph-scale')
       scroller.style.removeProperty('--map-graph-x')
       scroller.style.removeProperty('--map-graph-y')

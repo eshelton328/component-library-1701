@@ -9,9 +9,10 @@ export type ListPaneToggleProps = {
   /** Called with the new state, `!open`, when the user clicks the button. */
   onOpenChange: (open: boolean) => void
   /**
-   * The button's accessible name, which the page sets for each state, such
-   * as "Hide the workspace sidebar" while open and "Show the workspace
-   * sidebar" while closed.
+   * The button's accessible name, the same in both states, such as
+   * "Workspace sidebar". `aria-pressed` tells whether the pane is open, so a
+   * name that changed with the state ("Hide …" while pressed) would say the
+   * state twice and in conflict (WAI-ARIA toggle button pattern).
    */
   label: string
   /** The id of the list pane the button opens and closes; sets `aria-controls`. */
@@ -23,7 +24,7 @@ export type ListPaneToggleProps = {
  * sidebar: a `sm` icon-only `Button` with the panel icon at 16. Open, it is
  * pressed (`aria-pressed`) and draws `border.selected` (Workbench D2 158:6);
  * closed, it is the plain `sm` button (D1 158:2). It is controlled: the page
- * keeps the open state and passes it in. `data-*` props, such as
+ * keeps the open state and passes it in, with one `label` for both states. `data-*` props, such as
  * `data-figma`, go on the button.
  */
 export function ListPaneToggle({ open, onOpenChange, label, controls, ...rest }: ListPaneToggleProps) {

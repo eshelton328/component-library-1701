@@ -6,7 +6,7 @@ import { ListPaneToggle } from './list-pane-toggle'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'flex', gap: '12', alignItems: 'center' })
 
-const labels = { open: 'Hide the workspace sidebar', closed: 'Show the workspace sidebar' }
+const label = 'Workspace sidebar'
 
 // The open toggle (Workbench D2 158:6) and the closed one (D1 158:2), and a
 // controlled one that the page's state opens and closes.
@@ -14,11 +14,11 @@ function Toggles({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
   const [open, setOpen] = useState(true)
   return (
     <main className={page}>
-      <ListPaneToggle open label={labels.open} onOpenChange={() => undefined} data-figma="158:6" />
-      <ListPaneToggle open={false} label={labels.closed} onOpenChange={() => undefined} data-figma="158:2" />
+      <ListPaneToggle open label={label} onOpenChange={() => undefined} data-figma="158:6" />
+      <ListPaneToggle open={false} label={label} onOpenChange={() => undefined} data-figma="158:2" />
       <ListPaneToggle
         open={open}
-        label={open ? 'Hide the list' : 'Show the list'}
+        label="List"
         controls="list-pane"
         onOpenChange={(next) => {
           onOpenChange(next)
@@ -49,7 +49,14 @@ const meta = {
       return getComputedStyle(el).color
     }
     // Open: pressed, border.selected on each side over the pressed fill, a 28 px square with a 16 px icon.
-    const open = canvas.getByRole('button', { name: labels.open })
+    const button = (figma: string) => {
+      const el = canvasElement.querySelector<HTMLElement>(`[data-figma="${figma}"]`)
+      if (el === null) throw new Error(`no button ${figma}`)
+      return el
+    }
+    // Both states have the one name; aria-pressed says which one it is.
+    await expect(canvas.getAllByRole('button', { name: label })).toHaveLength(2)
+    const open = button('158:6')
     await expect(open).toHaveAttribute('aria-pressed', 'true')
     await expect(open).toHaveAttribute('data-figma', '158:6')
     const o = getComputedStyle(open)
@@ -61,24 +68,25 @@ const meta = {
     if (icon === null) throw new Error('no icon')
     await expect(getComputedStyle(icon).width).toBe('16px')
     // Closed: not pressed, the plain sm button's border.default.
-    const closed = canvas.getByRole('button', { name: labels.closed })
+    const closed = button('158:2')
     await expect(closed).toHaveAttribute('aria-pressed', 'false')
     await expect(closed).toHaveAttribute('data-figma', '158:2')
     const c = getComputedStyle(closed)
     await expect(c.borderTopColor).toBe(swatch('default'))
     await expect(c.borderTopColor).not.toBe(selectedBorder)
     await expect([c.height, c.width]).toEqual(['28px', '28px'])
-    // Controlled: a click calls onOpenChange with the new state, and the page's state toggles aria-pressed.
-    const toggle = canvas.getByRole('button', { name: 'Hide the list' })
+    // Controlled: a click calls onOpenChange with the new state, and the page's state toggles aria-pressed while the
+    // name stays "List".
+    const toggle = canvas.getByRole('button', { name: 'List' })
     await expect(toggle).toHaveAttribute('aria-controls', 'list-pane')
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
     await userEvent.click(toggle)
     await expect(args.onOpenChange).toHaveBeenLastCalledWith(false)
-    const shown = canvas.getByRole('button', { name: 'Show the list' })
-    await expect(shown).toHaveAttribute('aria-pressed', 'false')
+    await expect(canvas.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'false')
     await expect(canvas.queryByText('The list')).not.toBeVisible()
-    await userEvent.click(shown)
+    await userEvent.click(toggle)
     await expect(args.onOpenChange).toHaveBeenLastCalledWith(true)
-    await expect(canvas.getByRole('button', { name: 'Hide the list' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(canvas.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true')
     await expect(args.onOpenChange).toHaveBeenCalledTimes(2)
   },
 } satisfies Meta<typeof Toggles>

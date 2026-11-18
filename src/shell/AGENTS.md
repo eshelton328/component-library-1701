@@ -47,5 +47,6 @@ Layout, Navigation or Overlays (d-065, d-066).
 - `ListPaneToggle` is the one open and close button of a list pane, such
   as the Workbench sidebar: a `sm` icon-only `Button` with the panel
   icon, pressed and `border.selected` while open. It is controlled
-  (`open`, `onOpenChange`); the page keeps the state and passes the
-  `label` for each state, and `data-*` props go on the button.
+  (`open`, `onOpenChange`); the page keeps the state and passes one
+  `label` for both states (such as "Workspace sidebar"), as `aria-pressed`
+  tells the state, and `data-*` props go on the button.

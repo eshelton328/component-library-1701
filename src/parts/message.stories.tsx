@@ -192,3 +192,41 @@ export const LongName: StoryObj<typeof meta> = {
     await expect(within(canvasElement).getByRole('article', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }
+
+// The Inbox discussion (D15 403:1442 and 403:1444) draws both messages in Geist Regular 13/19: `size="sm"` sets the body
+// in `bodySm` (13/20, d-090); `md` keeps `body` (14/20).
+const compactLine = 'Can you also link each ticket to its Figma frame? The frames are listed in pages.md.'
+const narrow = css({ bg: 'surface.pane', p: '24', w: 'shell.popover' })
+
+function Compact() {
+  return (
+    <main className={narrow}>
+      <Stack gap="16">
+        <div data-testid="sm-user">
+          <Message from="user" size="sm">
+            {compactLine}
+          </Message>
+        </div>
+        <div data-testid="sm-claude">
+          <Message size="sm">{compactLine}</Message>
+        </div>
+        <div data-testid="md-user">
+          <Message from="user">{compactLine}</Message>
+        </div>
+      </Stack>
+    </main>
+  )
+}
+
+const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  for (const id of ['sm-user', 'sm-claude']) {
+    const body = getComputedStyle(slot(canvasElement, id, 'body'))
+    await expect([body.fontSize, body.fontWeight]).toEqual(['13px', '400'])
+    await expect(parseFloat(body.lineHeight)).toBeCloseTo(20, 0)
+  }
+  const md = getComputedStyle(slot(canvasElement, 'md-user', 'body'))
+  await expect(md.fontSize).toBe('14px')
+}
+
+export const CompactDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Compact />, play: compactPlay }
+export const CompactLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Compact />, play: compactPlay }

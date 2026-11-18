@@ -55,15 +55,25 @@ export type MessageProps = Scalar<MessageVariantProps> & {
  * width of the transcript. `from="assistant"` (the default) is an agent's
  * message: an author row with its kind mark, name and time, the content,
  * and its actions. The content comes as children; the message renders no
- * Markdown itself.
+ * Markdown itself. `size="sm"` sets the content in the compact 13 px body (`bodySm`), as the Inbox discussion
+ * draws it; `md` (the default) keeps `body`.
  */
-export function Message({ from = 'assistant', name, kind = 'claude', time, dateTime, children, actions }: MessageProps) {
+export function Message({
+  from = 'assistant',
+  size = 'md',
+  name,
+  kind = 'claude',
+  time,
+  dateTime,
+  children,
+  actions,
+}: MessageProps) {
   const nameId = useId()
   const hasTime = time !== undefined && time !== ''
   const timeNode = hasTime ? <Time dateTime={dateTime}>{time}</Time> : null
   if (from === 'user') {
     return (
-      <Root from="user" aria-labelledby={nameId}>
+      <Root from="user" size={size} aria-labelledby={nameId}>
         <SrName id={nameId}>{name === undefined || name.trim() === '' ? 'You' : name}</SrName>
         <Body>{children}</Body>
         {timeNode}
@@ -72,7 +82,7 @@ export function Message({ from = 'assistant', name, kind = 'claude', time, dateT
   }
   const shown = name === undefined || name.trim() === '' ? kindNames[kind] : name
   return (
-    <Root from="assistant" aria-labelledby={nameId}>
+    <Root from="assistant" size={size} aria-labelledby={nameId}>
       <Author>
         <KindMark kind={kind} size="12" />
         <Name id={nameId}>

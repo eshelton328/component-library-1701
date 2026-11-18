@@ -9,6 +9,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   a 13 px kind mark (KindMark size 12) and the name in Geist SemiBold 12
 //   #e6ecff, which no text style has; it uses `label`. The body (105:879)
 //   is Geist Regular 13/19 #e6ecff (`body`).
+// `size="sm"` sets the body in `bodySm` (13/20, d-090): the Inbox
+// discussion draws Erik's message and the reply in Geist Regular 13/19
+// (D15 403:1442 and 403:1444), and a 14 px body wraps where Figma's does
+// not.
 // Figma draws no time on a message; the time here is `mono` in fg.subtle on
 // the transcript, or fg.muted inside the user's bubble.
 export const message = defineSlotRecipe({
@@ -35,6 +39,10 @@ export const message = defineSlotRecipe({
       },
       assistant: {},
     },
+    size: {
+      md: {},
+      sm: { body: { textStyle: 'bodySm' } },
+    },
   },
-  defaultVariants: { from: 'assistant' },
+  defaultVariants: { from: 'assistant', size: 'md' },
 })

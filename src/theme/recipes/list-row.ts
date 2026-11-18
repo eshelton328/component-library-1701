@@ -54,11 +54,19 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   frame (403:8230 at y 218) in the 98 px row (403:8216 at y 200): 18 below
 //   the row's top, not the 13 of the border and `lg`'s 12. `start`, the
 //   default, keeps the body at the top.
+// - `metaTrailing` (a prop, no variant) ends the meta line with a part, as
+//   the phone search match row (M5) ends its meta line 408:94 (y 240) with
+//   New (408:99, 48 x 16 at x 326, y 240.5) after a flexible spacer
+//   (408:98, 112 wide there). The meta line becomes the `metaRow` slot: the
+//   meta text fills it and the part sits at the body's right edge, centred
+//   on the meta line. The 8 between them only keeps a long meta off the
+//   part; Figma's spacer is the free width. Without the prop there is no
+//   `metaRow`, and the meta is the body's own child as before.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
   staticCss: ['*'],
-  slots: ['root', 'nest', 'leading', 'body', 'titleRow', 'title', 'dot', 'meta', 'lines', 'actions', 'trailing'],
+  slots: ['root', 'nest', 'leading', 'body', 'titleRow', 'title', 'dot', 'meta', 'metaRow', 'metaTrailing', 'lines', 'actions', 'trailing'],
   base: {
     root: {
       position: 'relative',
@@ -106,6 +114,9 @@ export const listRow = defineSlotRecipe({
       },
     },
     meta: { textStyle: 'mono', color: 'fg.muted' },
+    // The meta line with a `metaTrailing` part: the meta text takes the free width, so the part ends the line.
+    metaRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0', '& > .list-row__meta': { flex: '1', minW: '0' } },
+    metaTrailing: { display: 'inline-flex', flexShrink: '0', ms: 'auto' },
     lines: { display: 'flex', flexDirection: 'column', gap: '4', textStyle: 'small', color: 'fg.muted' },
     // Buttons in the row, such as Approve. They sit above the title's ::after, so a click reaches them.
     // The space between the buttons passes clicks to the title cover; only the buttons take them.

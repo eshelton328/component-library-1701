@@ -694,6 +694,60 @@ const phoneRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 export const PhoneRowDark: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'dark' }, play: phoneRowsPlay }
 export const PhoneRowLight: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'light' }, play: phoneRowsPlay }
 
+/**
+ * The phone search match row (M5 408:99): New ends the meta line (408:94)
+ * at the body's right edge, level with the meta text, after a flexible
+ * gap (the 112 px spacer 408:98). A row without `metaTrailing` keeps its
+ * meta as the body's own child, with no meta row.
+ */
+function MetaTrailingRows() {
+  return (
+    <main className={page}>
+      <div className={phoneList}>
+        <ListRow padding="phone" title="Logo options" meta="ncc-1701" metaTrailing={<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" />} leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
+        <ListRow padding="phone" title="Without a meta part" meta="ncc-1701" leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const metaTrailingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rowOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const part = (row: HTMLElement, slot: string) => {
+    const el = row.querySelector(`.list-row__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot}`)
+    return el.getBoundingClientRect()
+  }
+  const match = rowOf('Logo options')
+  const badge = canvas.getByText('New').closest('.badge__root')
+  if (!(badge instanceof HTMLElement)) throw new Error('no badge')
+  await expect(match.querySelector('.list-row__metaTrailing')?.contains(badge)).toBe(true)
+  const end = badge.getBoundingClientRect()
+  const body = part(match, 'body')
+  const metaText = part(match, 'meta')
+  // New ends at the body's right edge, after the meta text, and is centred on the meta line (Figma y 240.5 against 240).
+  await expect(end.height).toBe(16)
+  await expect(end.right).toBe(body.right)
+  await expect(end.left).toBeGreaterThan(metaText.left)
+  await expect(end.top + end.height / 2).toBe(metaText.top + metaText.height / 2)
+  // The part does not grow the row: it is still the 66 px phone row (M1).
+  await expect(match.getBoundingClientRect().height).toBe(66)
+  // Without `metaTrailing` the meta is the body's own child, with no meta row, in the same 66 px row.
+  const plain = rowOf('Without a meta part')
+  await expect(plain.querySelector('.list-row__metaRow')).toBeNull()
+  await expect(plain.querySelector('.list-row__meta')?.parentElement).toBe(plain.querySelector('.list-row__body'))
+  await expect(plain.getBoundingClientRect().height).toBe(66)
+}
+
+/** `metaTrailing`: a New badge that ends the meta line of a phone search match row (M5). */
+export const MetaTrailingDark: StoryObj<typeof meta> = { render: () => <MetaTrailingRows />, globals: { mode: 'dark' }, play: metaTrailingPlay }
+export const MetaTrailingLight: StoryObj<typeof meta> = { render: () => <MetaTrailingRows />, globals: { mode: 'light' }, play: metaTrailingPlay }
+
 /** A row whose Enter marks it read and unread: the select clears the New dot, and selecting again brings it back. */
 function DotToggle() {
   const [read, setRead] = useState(false)

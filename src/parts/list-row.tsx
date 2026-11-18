@@ -15,6 +15,8 @@ const TitleButton = withContext('button', 'title')
 const TitleText = withContext('span', 'title')
 const Dot = withContext('span', 'dot')
 const Meta = withContext('span', 'meta')
+const MetaRow = withContext('span', 'metaRow')
+const MetaTrailing = withContext('span', 'metaTrailing')
 const Lines = withContext('div', 'lines')
 const Actions = withContext('div', 'actions')
 const Trailing = withContext('span', 'trailing')
@@ -26,6 +28,13 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
   highlight?: string | readonly string[] | undefined
   /** The meta line under the title, such as the project and the source. */
   meta?: ReactNode
+  /**
+   * A part that ends the meta line, such as a New badge in a search match
+   * row (Artifacts M5). The meta line becomes a row: the meta text first,
+   * a flexible gap, then this part at the body's right edge, centred on
+   * the meta line. Without it the meta line is as before.
+   */
+  metaTrailing?: ReactNode
   /** The element before the text, such as a kind tile or a kind mark. */
   leading?: ReactNode
   /** The elements at the end, such as the age and a status pill. */
@@ -84,8 +93,11 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   the gap is 10.
  * - `bodyAlign="center"` centres the body down the row (D4's text beside
  *   its 72 px preview); `start`, the default, puts it at the row's top.
+ * - `metaTrailing` ends the meta line with a part at the body's right
+ *   edge, level with the meta text, such as the New badge of a phone
+ *   search match row (M5).
  */
-export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition }: ListRowProps) {
+export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -120,7 +132,14 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
           {titleNode}
           {dot === undefined ? null : dotLabel === undefined ? <Dot aria-hidden="true" /> : <Dot role="img" aria-label={dotLabel} />}
         </TitleRow>
-        {meta === undefined ? null : <Meta>{metaText}</Meta>}
+        {metaTrailing === undefined ? (
+          meta === undefined ? null : <Meta>{metaText}</Meta>
+        ) : (
+          <MetaRow>
+            {meta === undefined ? null : <Meta>{metaText}</Meta>}
+            <MetaTrailing>{metaTrailing}</MetaTrailing>
+          </MetaRow>
+        )}
         {children === undefined ? null : <Lines>{children}</Lines>}
         {actions === undefined ? null : <Actions>{actions}</Actions>}
       </Body>

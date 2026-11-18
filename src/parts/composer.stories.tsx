@@ -253,6 +253,16 @@ function InlineComposers() {
         <div className={sideChat}>
           <Composer label="Stacked" placeholder="Ask a side question" />
         </div>
+        <div className={sideChat}>
+          <Composer
+            layout="inline"
+            label="Side crowded"
+            placeholder="Ask a side question"
+            running
+            onAttach={() => undefined}
+            model={<ModelChip model="Sonnet 5.5" effort="high effort" options={[]} />}
+          />
+        </div>
       </Stack>
       {swatchRow}
     </main>
@@ -310,6 +320,23 @@ const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const stackedSend = within(stackedBox).getByRole('button', { name: 'Send' })
   await expect(rect(stackedSend).height).toBe(28)
   await expect(rect(stackedSend).top).toBeGreaterThan(rect(stacked).bottom)
+  // With attach, Stop and a long model chip at 300 px, the controls stay on one row: the text keeps
+  // 40 % of the row, the model chip is cut (its tooltip shows it whole) and Send stays inside.
+  const crowded = canvas.getByRole('textbox', { name: 'Side crowded' })
+  const crowdedBox = crowded.closest<HTMLElement>('.composer__root')
+  if (crowdedBox === null) throw new Error('no crowded composer')
+  await expect(rect(crowded).width).toBeGreaterThanOrEqual(80)
+  const crowdedSend = within(crowdedBox).getByRole('button', { name: 'Send' })
+  await expect(rect(crowdedSend).right).toBeLessThanOrEqual(rect(crowdedBox).right - 9)
+  await expect(rect(crowdedSend).left).toBeGreaterThanOrEqual(rect(crowdedBox).left)
+  // The controls stay on the text's row (bottom-aligned); the 112 px text wraps its placeholder.
+  const chip = within(crowdedBox).getByRole('button', { name: 'Model: Sonnet 5.5 · high effort' })
+  await expect(rect(chip).right).toBeLessThanOrEqual(rect(crowdedSend).left)
+  await expect(rect(chip).left).toBeGreaterThanOrEqual(rect(crowded).right)
+  await expect(rect(crowdedSend).bottom).toBe(rect(crowded).bottom)
+  const chipText = chip.querySelector('.truncated-text')
+  if (chipText === null) throw new Error('no chip text')
+  await expect(chipText.scrollWidth).toBeGreaterThan(chipText.clientWidth)
 }
 
 /** `layout="inline"`: the side chat's one-row composer (Workspaces D5 158:545). */

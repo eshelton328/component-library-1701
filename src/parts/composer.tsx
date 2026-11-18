@@ -11,6 +11,7 @@ const { withProvider, withContext } = createSlotRecipeContext(composer)
 const Root = withProvider('div', 'root')
 const Row = withContext('div', 'row')
 const Text = withContext('div', 'text')
+const Model = withContext('div', 'model')
 const Attachment = withContext('span', 'attachment')
 const AttachmentIcon = withContext('span', 'attachmentIcon')
 const AttachmentName = withContext('span', 'attachmentName')
@@ -62,7 +63,9 @@ export type ComposerProps = {
    * 158:545): the text, then the model, Stop and send as 24 px buttons
    * (the attach button, when set, comes first), 42 px high with one line
    * of text. The text grows as it wraps, and the buttons stay at the
-   * bottom. Attachments show above the row in both layouts.
+   * bottom. In a narrow row the text keeps 40 % of the width and the
+   * model shrinks (a `ModelChip` cuts its text), so Send stays inside.
+   * Attachments show above the row in both layouts.
    */
   layout?: 'stacked' | 'inline' | undefined
 }
@@ -177,7 +180,7 @@ export function Composer({
         <Row>
           {attach}
           <Text>{textArea}</Text>
-          {model}
+          {model === undefined || model === null ? null : <Model>{model}</Model>}
           {stop}
           {send}
         </Row>

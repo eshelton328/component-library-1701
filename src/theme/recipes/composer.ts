@@ -21,7 +21,7 @@ export const composer = defineSlotRecipe({
   className: 'composer',
   jsx: ['Composer'],
   staticCss: ['*'],
-  slots: ['root', 'row', 'text', 'attachment', 'attachmentIcon', 'attachmentName', 'attachmentRemove'],
+  slots: ['root', 'row', 'text', 'model', 'attachment', 'attachmentIcon', 'attachmentName', 'attachmentRemove'],
   base: {
     root: {
       display: 'flex',
@@ -40,8 +40,13 @@ export const composer = defineSlotRecipe({
       '& textarea': { caretColor: 'accent.default' },
     },
     // The one row of `layout="inline"`: the text, then the buttons, bottom-aligned.
+    // When the row is too narrow, it stays one row, as Figma draws it (d-100):
+    // the text keeps at least 40 % of the row, the buttons keep their size, and
+    // the model control shrinks; a ModelChip cuts its text and shows it whole
+    // in a tooltip. Send so stays inside the border.
     row: { display: 'flex', alignItems: 'flex-end', gap: '8', minW: '0' },
-    text: { flex: '1', minW: '0' },
+    text: { flex: '1', minW: '40%' },
+    model: { display: 'flex', flexShrink: '1', minW: '0' },
     // An attached file (105:890): surface.overlay, a border.default border,
     // radius.sm, 4 × 8 padding and Medium 11 text.
     attachment: {

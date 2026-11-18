@@ -44,6 +44,8 @@ export type ItemTabsProps = Scalar<ItemTabsVariantProps> & {
  * `compact` starts the tabs at the list's edge with 10 px sides, as the
  * Toolkit item draws them on a phone and a tablet, and draws the focus ring
  * inside the tab.
+ * Only the selected tab draws a 1 px border, outside its padding, so it is
+ * 2 px wider and its label 1 px further in than when it is not selected.
  * `tone` sets the selected tab's look: `default` draws the selected fill
  * with a `border.selected` border and the label in `fg.default`; `accent`
  * keeps the fill and the border and draws the label and icon in `fg.accent`

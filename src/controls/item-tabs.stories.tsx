@@ -240,3 +240,79 @@ const accent: StoryObj<typeof meta> = {
 /** `tone="accent"`: the Toolkit item's selected tab, its label cyan on the selected fill and border. */
 export const AccentDark: StoryObj<typeof meta> = { ...accent, globals: { mode: 'dark' } }
 export const AccentLight: StoryObj<typeof meta> = { ...accent, globals: { mode: 'light' } }
+
+// The phone's Toolkit item tabs (M27 `item tabs` 492:3974): 12 px in from each side of the 390 px screen, with
+// Evals selected. Figma draws a border only on the selected tab: an unselected tab is its label plus 10 at each
+// side (`tab · Overview` 492:3975, 82 × 30; How it works 105, Files 51, Links 55, Activity 71), and the selected
+// tab adds its 1 px border outside that padding (`tab · Evals` 492:3983, 57 × 32, its label 11 in), so Evals ends
+// at 378, the list's edge.
+const m27 = { m27: { name: 'Phone (M27)', styles: { width: '390px', height: '844px' } } }
+const phoneItem = css({ bg: 'bg.canvas', color: 'fg.default', px: '12', py: '12' })
+// Each idle tab's Figma width and its label's (492:3976 to 492:3986).
+const m27Widths: Record<string, readonly [number, number]> = { Overview: [82, 62], 'How it works': [105, 85], Files: [51, 31], Links: [55, 35], Activity: [71, 51] }
+// The width of a tab's label text, from the page.
+const labelWidth = (tab: HTMLElement) => {
+  const range = document.createRange()
+  range.selectNodeContents(tab)
+  return range.getBoundingClientRect().width
+}
+
+function Phone() {
+  return (
+    <main className={phoneItem}>
+      <ItemTabs density="compact" tone="accent" label="Rule sections" items={toolkit} defaultValue="evals" />
+    </main>
+  )
+}
+
+const phonePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(window.innerWidth).toBe(390)
+  const list = canvas.getByRole('tablist', { name: 'Rule sections' })
+  const box = list.getBoundingClientRect()
+  await expect([box.left, box.right]).toEqual([12, 378])
+  const tab = (name: string) => within(list).getByRole('tab', { name })
+  const evals = tab('Evals')
+  await expect(evals).toHaveAttribute('aria-selected', 'true')
+  // The selected tab's outline ends inside the list, so its scroll clip cuts none of it.
+  const r = evals.getBoundingClientRect()
+  await expect(r.right).toBeLessThanOrEqual(box.right)
+  await expect(Math.abs(r.width - 57)).toBeLessThanOrEqual(1)
+  await expect(r.height).toBe(32)
+  const s = getComputedStyle(evals)
+  await expect([s.borderLeftWidth, s.paddingLeft]).toEqual(['1px', '10px'])
+  await expect(Math.abs(r.width - labelWidth(evals) - 22)).toBeLessThan(0.5)
+  // Each unselected tab has no border: it is its label and 10 at each side, as Figma's 20 around the label, and
+  // its width matches Figma's within 1 px. Activity's label renders 1.06 px narrower than Figma's 51 (the font,
+  // not the tab), so its tab is held to Figma's 20 px around the label and to 1.5 px of Figma's width.
+  for (const [name, [width, label]] of Object.entries(m27Widths)) {
+    const t = tab(name)
+    const w = t.getBoundingClientRect().width
+    await expect(getComputedStyle(t).borderLeftWidth).toBe('0px')
+    await expect({ name, chrome: Math.abs(w - labelWidth(t) - (width - label)) < 0.5 }).toEqual({ name, chrome: true })
+    await expect({ name, width: Math.abs(w - width) <= (name === 'Activity' ? 1.5 : 1) }).toEqual({ name, width: true })
+    await expect(t.getBoundingClientRect().height).toBe(32)
+  }
+  // A newly selected tab takes the same border and size; the one it leaves drops its border.
+  await userEvent.click(tab('Overview'))
+  await expect(tab('Overview')).toHaveAttribute('aria-selected', 'true')
+  await expect(Math.abs(tab('Overview').getBoundingClientRect().width - 84)).toBeLessThanOrEqual(1)
+  await expect(getComputedStyle(tab('Overview')).borderLeftWidth).toBe('1px')
+  await expect(Math.abs(evals.getBoundingClientRect().width - 55)).toBeLessThanOrEqual(1)
+  await expect(getComputedStyle(evals).borderLeftWidth).toBe('0px')
+  await expect([tab('Overview').getBoundingClientRect().height, evals.getBoundingClientRect().height]).toEqual([32, 32])
+}
+
+/** The phone's item tabs (Toolkit M27) on a 390 px screen: a border only on the selected tab, so Evals ends inside the list. */
+export const PhoneDark: StoryObj<typeof meta> = {
+  render: () => <Phone />,
+  play: phonePlay,
+  parameters: { viewport: { options: m27 } },
+  globals: { mode: 'dark', viewport: { value: 'm27' } },
+}
+export const PhoneLight: StoryObj<typeof meta> = {
+  render: () => <Phone />,
+  play: phonePlay,
+  parameters: { viewport: { options: m27 } },
+  globals: { mode: 'light', viewport: { value: 'm27' } },
+}

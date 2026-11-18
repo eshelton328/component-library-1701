@@ -79,8 +79,8 @@ export const listRow = defineSlotRecipe({
     nest: { flexShrink: '0', textStyle: 'body', color: 'fg.muted', '[data-level="2"] > &': { ms: '24' } },
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
-    // The title and the dot, when the row has a dot.
-    titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
+    // The title and the dot. Without a dot the title row draws no box, so the title lays out as the body's own child.
+    titleRow: { display: 'contents', '&:has(> .list-row__dot)': { display: 'flex', alignItems: 'center', gap: '8', minW: '0' } },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
     title: {
       textStyle: 'label',
@@ -146,7 +146,7 @@ export const listRow = defineSlotRecipe({
     },
     dotPosition: {
       title: {},
-      end: { titleRow: { '& > .list-row__title': { flex: '1' } }, dot: { me: '2' } },
+      end: { titleRow: { '&:has(> .list-row__dot) > .list-row__title': { flex: '1' } }, dot: { me: '2' } },
     },
   },
   compoundVariants: [

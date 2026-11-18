@@ -110,14 +110,11 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
-        {dot === undefined ? (
-          titleNode
-        ) : (
-          <TitleRow>
-            {titleNode}
-            {dotLabel === undefined ? <Dot aria-hidden="true" /> : <Dot role="img" aria-label={dotLabel} />}
-          </TitleRow>
-        )}
+        {/* The title row is always there, so the title button keeps its focus when the dot comes or goes. */}
+        <TitleRow>
+          {titleNode}
+          {dot === undefined ? null : dotLabel === undefined ? <Dot aria-hidden="true" /> : <Dot role="img" aria-label={dotLabel} />}
+        </TitleRow>
         {meta === undefined ? null : <Meta>{metaText}</Meta>}
         {children === undefined ? null : <Lines>{children}</Lines>}
         {actions === undefined ? null : <Actions>{actions}</Actions>}

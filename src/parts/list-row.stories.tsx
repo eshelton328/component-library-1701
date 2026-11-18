@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
@@ -600,3 +601,37 @@ const artifactRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 /** `padding`, `surface="card"`, `trailingAlign` and `dot`: the Artifacts rows (D2, D4, M1). */
 export const ArtifactRowsDark: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'dark' }, play: artifactRowsPlay }
 export const ArtifactRowsLight: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'light' }, play: artifactRowsPlay }
+
+/** A row whose Enter marks it read and unread: the select clears the New dot, and selecting again brings it back. */
+function DotToggle() {
+  const [read, setRead] = useState(false)
+  return (
+    <main className={page}>
+      <div className={artifactList}>
+        <ListRow padding="sm" trailingAlign="center" dot={read ? undefined : 'working'} dotLabel="New" dotPosition="end" title="Skill eval pass rates" meta="skill-evals" trailing="12m" onSelect={() => { setRead((value) => !value) }} />
+      </div>
+    </main>
+  )
+}
+
+/** The title button keeps the keyboard focus when the dot goes and comes back, so it stays mounted. */
+export const DotChangeKeepsFocus: StoryObj<typeof meta> = {
+  render: () => <DotToggle />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByRole('img', { name: 'New' })).toBeInTheDocument()
+    await userEvent.tab()
+    const title = canvas.getByRole('button', { name: 'Skill eval pass rates' })
+    await expect(document.activeElement).toBe(title)
+    // Enter selects the row, and the caller clears the dot: the same button keeps the focus.
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.queryByRole('img', { name: 'New' })).toBeNull()
+    await expect(document.activeElement).toBe(title)
+    await expect(title.isConnected).toBe(true)
+    // Enter again brings the dot back, and the focus stays.
+    await userEvent.keyboard('{Enter}')
+    await expect(canvas.getByRole('img', { name: 'New' })).toBeInTheDocument()
+    await expect(document.activeElement).toBe(title)
+    await expect(title.isConnected).toBe(true)
+  },
+}

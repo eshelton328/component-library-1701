@@ -579,7 +579,7 @@ export const HorizontalNarrowDark: Story = {
   globals: { mode: 'dark', viewport: { value: 'narrow' } },
   play: apartAt(390),
 }
-export const HorizontalNarrowLight: Story = { ...HorizontalNarrowDark, globals: { mode: 'light', viewport: { value: 'narrow' } } }
+export const HorizontalNarrowLight: Story = { ...HorizontalNarrowDark, globals: { mode: 'light', viewport: { value: 'narrow' } }, play: apartAt(390) }
 
 /** D13's flow at 1200 px, as the Design System gate draws it: no connector touches a step card. */
 export const HorizontalMediumDark: Story = {
@@ -588,4 +588,4 @@ export const HorizontalMediumDark: Story = {
   globals: { mode: 'dark', viewport: { value: 'medium' } },
   play: apartAt(1200),
 }
-export const HorizontalMediumLight: Story = { ...HorizontalMediumDark, globals: { mode: 'light', viewport: { value: 'medium' } } }
+export const HorizontalMediumLight: Story = { ...HorizontalMediumDark, globals: { mode: 'light', viewport: { value: 'medium' } }, play: apartAt(1200) }

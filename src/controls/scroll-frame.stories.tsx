@@ -108,7 +108,7 @@ function TallFooter() {
 /**
  * A footer at rest that is more than 30% of a short frame, such as a Workbench composer (130 px) in a pane:
  * the frame does not cap the footer, so it keeps its height and nothing in it is cut. A Composer caps its own
- * long draft (Conversation/Composer, In a frame).
+ * long draft (Conversation/Composer, In a frame). Only a footer taller than the whole frame scrolls.
  */
 export const TallFooterDark: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
@@ -126,6 +126,16 @@ export const TallFooterDark: StoryObj<typeof meta> = {
     await expect(footer.getBoundingClientRect().height).toBeGreaterThan(frame * 0.3)
     await expect(footer.scrollHeight).toBe(footer.clientHeight)
     await expect(draft.clientHeight).toBe(draft.scrollHeight)
+    // A box shorter than the footer (Codex review of #128): the footer stops at the frame and scrolls inside.
+    box.style.height = '120px'
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    const frameBox = footer.parentElement?.getBoundingClientRect()
+    if (frameBox === undefined) throw new Error('no frame')
+    // The footer's 4 px ring space reaches 4 px past the frame by design, as it does at rest.
+    await expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(frameBox.bottom + 4 + 1)
+    await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
+    footer.scrollTop = footer.scrollHeight
+    await expect(draft.getBoundingClientRect().bottom).toBeLessThanOrEqual(footer.getBoundingClientRect().bottom + 1)
   },
 }
 export const TallFooterLight: StoryObj<typeof meta> = { ...TallFooterDark, globals: { mode: 'light' } }

@@ -40,8 +40,11 @@ export const scrollFrame = defineSlotRecipe({
     footer: {
       display: 'flex',
       flexDirection: 'column',
-      flexShrink: '0',
+      // A footer taller than the room the header leaves shrinks to it and scrolls inside, so it never reaches past
+      // the frame. The body grows from 0, so the footer shrinks only when the body has no room left.
+      flexShrink: '1',
       minW: '0',
+      minH: '0',
       overflowY: 'auto',
       overscrollBehavior: 'contain',
       // A footer taller than the frame scrolls, so it clips what reaches past its box. Its 4 px of padding, taken back by the margin, keep a

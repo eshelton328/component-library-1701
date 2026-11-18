@@ -20,6 +20,23 @@ const kindNames: Record<ToolkitKind, string> = { skill: 'Skill', agent: 'Agent',
 /** How a node shows: `lit` (the default), `dim` (not linked to the selection) or `selected`. */
 export type MapNodeState = 'lit' | 'dim' | 'selected'
 
+/**
+ * The border of a lit node: `kind` (the default) in the full kind colour, as
+ * on the toolkit map (D2); `muted` in kindBorder, about 60 % of it, for the
+ * Links graph's nodes that are not the open item (D19 493:84); `faint` in
+ * kindBorderFaint, about 45 %, for the nodes of the Links panels' rows (D19
+ * 482:549). The icon stays in the full kind colour, and a dim or selected
+ * node keeps its own border.
+ */
+export type MapNodeTone = 'kind' | 'muted' | 'faint'
+
+/**
+ * How a node draws its name: `mono` (the default) in mono 12 from the
+ * node's start; `label` in the label style (14/20), with the icon and name
+ * centred, for the open item on the Links graph (D19 writer 493:78).
+ */
+export type MapNodeLabelStyle = 'mono' | 'label'
+
 const node = createSlotRecipeContext(mapNode)
 const NodeRoot = node.withProvider('button', 'root')
 const NodeIcon = node.withContext('span', 'icon')
@@ -35,6 +52,10 @@ export type MapNodeProps = {
   meta?: string | undefined
   /** `lit` (the default), `dim` or `selected`. */
   state?: MapNodeState | undefined
+  /** The border of a lit node: `kind` (the default), `muted` or `faint`; see `MapNodeTone`. */
+  tone?: MapNodeTone | undefined
+  /** `mono` (the default) or `label`; see `MapNodeLabelStyle`. */
+  labelStyle?: MapNodeLabelStyle | undefined
   /** Called when the node is clicked, or pressed with Enter or Space. */
   onClick?: (() => void) | undefined
   /** Called on a key press, before the button handles it. */
@@ -50,10 +71,20 @@ export type MapNodeProps = {
  * and keyboard focus. `aria-pressed`
  * tells assistive technology whether it is the selected item.
  */
-export function MapNode({ label, kind, meta, state = 'lit', onClick, onKeyDown, describedBy }: MapNodeProps) {
+export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', labelStyle = 'mono', onClick, onKeyDown, describedBy }: MapNodeProps) {
   const Icon = kindIcons[kind]
   return (
-    <NodeRoot type="button" kind={kind} aria-pressed={state === 'selected'} aria-describedby={describedBy} data-state={state} onClick={onClick} onKeyDown={onKeyDown}>
+    <NodeRoot
+      type="button"
+      kind={kind}
+      labelStyle={labelStyle}
+      aria-pressed={state === 'selected'}
+      aria-describedby={describedBy}
+      data-state={state}
+      data-tone={tone}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+    >
       <NodeIcon>
         <Icon size="16" />
       </NodeIcon>
@@ -192,12 +223,20 @@ export type MapGraphNode = {
   x: number
   /** The top edge of the node on the canvas, in px. */
   y: number
+  /**
+   * The width and height of this node, in px, in place of the map's
+   * `nodeSize`; its lines meet its own edges. The Links graph's open item is
+   * 150 × 40 where the others are 180 × 32 (D19 493:78).
+   */
+  size?: { width: number; height: number } | undefined
+  /** How the node draws its name: `mono` (the default) or `label`, as the open item on the Links graph. */
+  labelStyle?: MapNodeLabelStyle | undefined
 }
 
 export type MapGraphEdge = {
   /** The id of the node that links. */
   from: string
-  /** The id of the node it links to; the line ends in a dot there. */
+  /** The id of the node it links to; the line ends there, in a dot unless `edgeEnd` is `none`. */
   to: string
 }
 
@@ -223,8 +262,16 @@ export type MapGraphProps = {
   edges?: readonly MapGraphEdge[] | undefined
   /** Column headings. */
   columns?: readonly MapGraphColumn[] | undefined
-  /** The width and height of every node, in px. Defaults to 220 × 34, as in Figma (426:464). */
+  /** The width and height of each node with no `size` of its own, in px. Defaults to 220 × 34, as in Figma (426:464). */
   nodeSize?: { width: number; height: number } | undefined
+  /** The border of each lit node: `kind` (the default), or `muted` for the Links graph (D19); see `MapNodeTone`. */
+  nodeTone?: MapNodeTone | undefined
+  /**
+   * What each line ends in: `dot` (the default), a 6 px dot at the node it
+   * links to, as on the toolkit map (D2 426:447); or `none`, a line that
+   * ends at the node's edge, as on the Links graph (D19 493:89).
+   */
+  edgeEnd?: 'dot' | 'none' | undefined
   /**
    * How the lines run. `horizontal` (the default) joins each pair of nodes
    * side to side, for columns of nodes. `vertical` is for nodes in rows over
@@ -258,9 +305,26 @@ const DOT = 3
  * is a button in the tab order; Enter or Space selects it, and Escape
  * clears the selection. The map does no layout: the caller places nodes.
  * With `orientation="vertical"` the lines run between nodes in rows over
- * and under each other, for the phone.
+ * and under each other, for the phone. For the Links graph (Toolkit D19)
+ * the open item takes its own `size` and `labelStyle`, `nodeTone="muted"`
+ * softens the other nodes' borders and `edgeEnd="none"` drops the dots.
  */
-export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, orientation = 'horizontal', selectedId = null, onSelect, legend, card }: MapGraphProps) {
+export function MapGraph({
+  label,
+  width,
+  height,
+  nodes,
+  edges = [],
+  columns = [],
+  nodeSize = NODE_SIZE,
+  nodeTone = 'kind',
+  edgeEnd = 'dot',
+  orientation = 'horizontal',
+  selectedId = null,
+  onSelect,
+  legend,
+  card,
+}: MapGraphProps) {
   const idBase = useId()
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
@@ -269,7 +333,7 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
     const into = edges.filter((e) => e.to === id && e.from !== id).flatMap((e) => names.get(e.from) ?? [])
     return [out.length > 0 ? `Links to ${out.join(', ')}.` : '', into.length > 0 ? `Linked from ${into.join(', ')}.` : ''].filter((t) => t !== '').join(' ')
   }
-  const boxes = new Map(nodes.map((n) => [n.id, { x: n.x, y: n.y, width: nodeSize.width, height: nodeSize.height }]))
+  const boxes = new Map(nodes.map((n) => [n.id, { x: n.x, y: n.y, ...(n.size ?? nodeSize) }]))
   const selected = selectedId !== null && boxes.has(selectedId) ? selectedId : null
   const linked = new Set<string>()
   if (selected !== null) {
@@ -328,7 +392,7 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
             {ordered.map((e) => (
               <g key={e.key}>
                 <Edge d={e.d} data-lit={e.lit ? '' : undefined} />
-                <EdgeEnd cx={e.end.x} cy={e.end.y} r={DOT} data-lit={e.lit ? '' : undefined} />
+                {edgeEnd === 'dot' ? <EdgeEnd cx={e.end.x} cy={e.end.y} r={DOT} data-lit={e.lit ? '' : undefined} /> : null}
               </g>
             ))}
           </g>
@@ -336,12 +400,14 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
             const links = linksOf(n.id)
             const linksId = `${idBase}-links-${String(i)}`
             return (
-              <NodeBox key={n.id} x={n.x} y={n.y} width={nodeSize.width} height={nodeSize.height}>
+              <NodeBox key={n.id} x={n.x} y={n.y} width={(n.size ?? nodeSize).width} height={(n.size ?? nodeSize).height}>
                 <MapNode
                   label={n.label}
                   kind={n.kind}
                   meta={n.meta}
                   state={stateOf(n.id)}
+                  tone={nodeTone}
+                  labelStyle={n.labelStyle}
                   onClick={() => onSelect?.(n.id)}
                   onKeyDown={onKeyDown}
                   describedBy={links === '' ? undefined : linksId}

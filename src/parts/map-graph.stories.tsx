@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapSelectionCard } from './map-graph'
+import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapNode, MapSelectionCard } from './map-graph'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -529,3 +529,217 @@ const uprightDetourPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ c
 }
 export const UprightDetourDark: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'dark' } }
 export const UprightDetourLight: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'light' } }
+
+/**
+ * Per-node sizes: `a` (180 × 32) and `b` (150 × 40) overlap in x but sit in
+ * different rows. In both orientations the lines, one each way, go round
+ * the real boxes and pass behind neither node.
+ */
+function Overlap() {
+  const nodes: MapGraphNode[] = [
+    { id: 'a', label: 'a', kind: 'rule', x: 0, y: 0, size: { width: 180, height: 32 } },
+    { id: 'b', label: 'b', kind: 'skill', x: 160, y: 80, size: { width: 150, height: 40 } },
+  ]
+  const links: MapGraphEdge[] = [
+    { from: 'a', to: 'b' },
+    { from: 'b', to: 'a' },
+  ]
+  return (
+    <main className={phoneItem}>
+      <MapGraph label="Overlap map" width={400} height={140} nodes={nodes} edges={links} />
+      <MapGraph label="Upright overlap map" orientation="vertical" width={400} height={140} nodes={nodes} edges={links} />
+    </main>
+  )
+}
+const overlapPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Overlap map' }), 2)
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Upright overlap map' }), 2)
+}
+export const OverlapDark: StoryObj<typeof meta> = { render: () => <Overlap />, play: overlapPlay, globals: { mode: 'dark' } }
+export const OverlapLight: StoryObj<typeof meta> = { render: () => <Overlap />, play: overlapPlay, globals: { mode: 'light' } }
+
+// The Links tab of Toolkit D19 (`links graph` 493:6, 948 × 320, 946 × 318 inside its border): the four items that link
+// to writer on the left (493:84 to 493:102), the open item `node · writer (focus)` (493:78, 150 × 40) in the middle and
+// the seven it links to on the right (493:108 to 493:142), each 180 × 32; then the nodes of the Links panels' rows
+// (482:549 to 482:653), each in a box `control.sm` high.
+const linksSide = (side: 'from' | 'to', x: number, top: number, items: readonly (readonly [string, MapGraphNode['kind']])[]): MapGraphNode[] =>
+  items.map(([label, kind], i) => ({ id: `${side}:${label}`, label, kind, x, y: top + i * 38 }))
+const linksFrom = linksSide('from', 15, 103, [
+  ['writer', 'agent'],
+  ['writing-reviewer', 'agent'],
+  ['ste100', 'rule'],
+  ['writing', 'rule'],
+])
+const linksTo = linksSide('to', 751, 46, [
+  ['pr-description', 'skill'],
+  ['audit-slop', 'skill'],
+  ['writing-reviewer', 'agent'],
+  ['readmes', 'rule'],
+  ['writing', 'rule'],
+  ['ste100', 'rule'],
+  ['commits-and-prs', 'rule'],
+])
+const linksFocus = { width: 150, height: 40 }
+const linksNodes: MapGraphNode[] = [
+  ...linksFrom,
+  { id: 'item', label: 'writer', kind: 'skill', x: 398, y: 156, size: linksFocus, labelStyle: 'label' },
+  ...linksTo,
+]
+const linksEdges: MapGraphEdge[] = [...linksFrom.map((n) => ({ from: n.id, to: 'item' })), ...linksTo.map((n) => ({ from: 'item', to: n.id }))]
+const rowKinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
+const rowBox = css({ display: 'flex', h: 'control.sm', w: 'max-content' })
+const rowList = css({ display: 'flex', gap: '8' })
+const linksSwatches = {
+  selected: css({ bg: 'surface.selected' }),
+  accent: css({ bg: 'accent.default' }),
+  border: css({ bg: 'border.default' }),
+  'kind.skill': css({ bg: 'kind.skill' }),
+  'kindBorder.skill': css({ bg: 'kindBorder.skill' }),
+  'kindBorderFaint.skill': css({ bg: 'kindBorderFaint.skill' }),
+  'kind.agent': css({ bg: 'kind.agent' }),
+  'kindBorder.agent': css({ bg: 'kindBorder.agent' }),
+  'kindBorderFaint.agent': css({ bg: 'kindBorderFaint.agent' }),
+  'kind.rule': css({ bg: 'kind.rule' }),
+  'kindBorder.rule': css({ bg: 'kindBorder.rule' }),
+  'kindBorderFaint.rule': css({ bg: 'kindBorderFaint.rule' }),
+  'kind.workflow': css({ bg: 'kind.workflow' }),
+  'kindBorder.workflow': css({ bg: 'kindBorder.workflow' }),
+  'kindBorderFaint.workflow': css({ bg: 'kindBorderFaint.workflow' }),
+  'kind.hook': css({ bg: 'kind.hook' }),
+  'kindBorder.hook': css({ bg: 'kindBorder.hook' }),
+  'kindBorderFaint.hook': css({ bg: 'kindBorderFaint.hook' }),
+}
+const labelText = css({ textStyle: 'label' })
+const monoText = css({ textStyle: 'mono' })
+
+/**
+ * The Links graph (D19): `nodeTone="muted"` draws each lit node's border in
+ * kindBorder, the open item has its own `size` (150 × 40) and
+ * `labelStyle="label"`, and `edgeEnd="none"` ends each line at the node's
+ * edge with no dot. Under it, the Links panels' row nodes with
+ * `tone="faint"`.
+ */
+function LinksGraph() {
+  const [selected, setSelected] = useState<string | null>('item')
+  return (
+    <main className={page}>
+      <MapGraph
+        label="Links of writer"
+        width={946}
+        height={318}
+        nodeSize={{ width: 180, height: 32 }}
+        nodeTone="muted"
+        edgeEnd="none"
+        nodes={linksNodes}
+        edges={linksEdges}
+        columns={[
+          { label: 'Linked from 4', x: 15, y: 13 },
+          { label: 'Links to 7', x: 751, y: 13 },
+        ]}
+        selectedId={selected}
+        onSelect={setSelected}
+      />
+      <ul aria-label="Link rows" className={rowList}>
+        {rowKinds.map((k) => (
+          <li key={k} className={rowBox}>
+            <MapNode label={`${k}-row`} kind={k} tone="faint" />
+          </li>
+        ))}
+      </ul>
+      <div hidden>
+        {Object.entries(linksSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+        <span data-text="label" className={labelText} />
+        <span data-text="mono" className={monoText} />
+      </div>
+    </main>
+  )
+}
+
+const linksPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).backgroundColor
+  }
+  const text = (name: string) => {
+    const el = canvasElement.querySelector(`[data-text="${name}"]`)
+    if (el === null) throw new Error(`no text ${name}`)
+    const t = getComputedStyle(el)
+    return [t.fontFamily, t.fontSize, t.lineHeight, t.fontWeight]
+  }
+  const map = within(canvasElement).getByRole('group', { name: 'Links of writer' })
+  const svg = map.querySelector('svg')
+  if (svg === null) throw new Error('no svg')
+  const origin = svg.getBoundingClientRect()
+  const buttons = within(map).getAllByRole('button')
+  const focus = buttons.find((b) => b.getAttribute('aria-pressed') === 'true')
+  if (focus === undefined) throw new Error('no open item')
+  const sides = buttons.filter((b) => b !== focus)
+  await expect(sides).toHaveLength(linksNodes.length - 1)
+
+  // Each side node is lit, 180 × 32, its border the kind colour at about 60 % and its icon the full kind colour.
+  for (const b of sides) {
+    const kind = b.className.match(/map-node__root--kind_(\w+)/)?.[1] ?? ''
+    await expect(b).toHaveAttribute('data-state', 'lit')
+    const r = b.getBoundingClientRect()
+    await expect([r.width, r.height]).toEqual([180, 32])
+    const s = getComputedStyle(b)
+    await expect([s.borderTopColor, s.borderTopWidth], `${b.textContent} border`).toEqual([swatch(`kindBorder.${kind}`), '1px'])
+    await expect(s.borderTopColor).not.toBe(swatch(`kind.${kind}`))
+    await expect(getComputedStyle(b.firstElementChild ?? b).color, `${b.textContent} icon`).toBe(swatch(`kind.${kind}`))
+    // Its name stays mono 12.
+    const name = within(b).getByText(b.textContent)
+    const n = getComputedStyle(name)
+    await expect([n.fontFamily, n.fontSize, n.lineHeight, n.fontWeight]).toEqual(text('mono'))
+  }
+  await expect(new Set(sides.map((b) => b.className.match(/map-node__root--kind_(\w+)/)?.[1]))).toEqual(new Set(['agent', 'rule', 'skill']))
+
+  // The open item is 150 × 40, selected, with its name in the label style (14/20, weight 500) and its icon and name centred.
+  const f = focus.getBoundingClientRect()
+  await expect([f.width, f.height, f.left - origin.left, f.top - origin.top]).toEqual([150, 40, 398, 156])
+  const fs = getComputedStyle(focus)
+  await expect([fs.backgroundColor, fs.borderTopColor, fs.borderTopWidth]).toEqual([swatch('selected'), swatch('accent'), '2px'])
+  const focusName = within(focus).getByText('writer')
+  const fn = getComputedStyle(focusName)
+  await expect([fn.fontFamily, fn.fontSize, fn.lineHeight, fn.fontWeight]).toEqual(text('label'))
+  await expect([fn.fontSize, Math.round(parseFloat(fn.lineHeight)), fn.fontWeight]).toEqual(['14px', 20, '500'])
+  await expect(fn.fontFamily).not.toContain('Mono')
+  const icon = (focus.firstElementChild ?? focus).getBoundingClientRect()
+  const nameBox = (focusName.parentElement ?? focusName).getBoundingClientRect()
+  await expect(Math.abs(icon.left - f.left - (f.right - nameBox.right))).toBeLessThan(1)
+
+  // Each line ends at the edges of the open item and a side node, and no line has a dot at its end.
+  const paths = Array.from(map.querySelectorAll<SVGPathElement>('path.map-graph__edge'))
+  await expect(paths).toHaveLength(linksEdges.length)
+  await expect(map.querySelectorAll('circle')).toHaveLength(0)
+  const fx = [f.left - origin.left, f.right - origin.left]
+  for (const path of paths) {
+    const length = path.getTotalLength()
+    const ends = [path.getPointAtLength(0), path.getPointAtLength(length)]
+    await expect(ends.some((p) => fx.some((x) => Math.abs(p.x - x) < 0.5) && p.y > f.top - origin.top && p.y < f.bottom - origin.top), `line ${path.getAttribute('d') ?? ''} meets the open item's edge`).toBe(true)
+  }
+
+  // A link row's node: its border the kind colour at about 45 %, its icon the full kind colour.
+  const rows = within(canvasElement).getByRole('list', { name: 'Link rows' })
+  for (const k of rowKinds) {
+    const node = within(rows).getByRole('button', { name: `${k}-row` })
+    const s = getComputedStyle(node)
+    await expect(s.borderTopColor, `${k} row border`).toBe(swatch(`kindBorderFaint.${k}`))
+    await expect(s.borderTopColor).not.toBe(swatch(`kindBorder.${k}`))
+    await expect(getComputedStyle(node.firstElementChild ?? node).color, `${k} row icon`).toBe(swatch(`kind.${k}`))
+  }
+
+  // A tone sets only a lit node's border: selecting a side node dims the others to border.default.
+  const pr = within(map).getByRole('button', { name: 'pr-description' })
+  await userEvent.click(pr)
+  await waitFor(() => expect(pr).toHaveAttribute('aria-pressed', 'true'))
+  const readmes = within(map).getByRole('button', { name: 'readmes' })
+  await expect(readmes).toHaveAttribute('data-state', 'dim')
+  await expect(getComputedStyle(readmes).borderTopColor).toBe(swatch('border'))
+  await expect(getComputedStyle(pr).borderTopColor).toBe(swatch('accent'))
+}
+
+export const LinksGraphDark: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'dark' } }
+export const LinksGraphLight: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'light' } }

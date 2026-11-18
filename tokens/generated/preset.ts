@@ -523,6 +523,80 @@ export default definePreset({
               "description": "Mark and tile colour for a toolkit workflow."
             }
           },
+          "kindBorder": {
+            "agent": {
+              "value": {
+                "base": "rgba(91, 75, 214, 0.6)",
+                "_dark": "rgba(158, 143, 255, 0.6)"
+              },
+              "description": "Border of a toolkit agent node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.agent); its icon keeps kind.agent. Not for the toolkit map (D2), whose nodes use kind.agent, and not for text or icons."
+            },
+            "hook": {
+              "value": {
+                "base": "rgba(176, 33, 57, 0.6)",
+                "_dark": "rgba(255, 154, 171, 0.6)"
+              },
+              "description": "Border of a toolkit hook node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.hook); its icon keeps kind.hook. Not for the toolkit map (D2), whose nodes use kind.hook, and not for text or icons."
+            },
+            "rule": {
+              "value": {
+                "base": "rgba(154, 74, 6, 0.6)",
+                "_dark": "rgba(255, 184, 107, 0.6)"
+              },
+              "description": "Border of a toolkit rule node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.rule); its icon keeps kind.rule. Not for the toolkit map (D2), whose nodes use kind.rule, and not for text or icons."
+            },
+            "skill": {
+              "value": {
+                "base": "rgba(14, 106, 133, 0.6)",
+                "_dark": "rgba(94, 225, 255, 0.6)"
+              },
+              "description": "Border of a toolkit skill node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.skill); its icon keeps kind.skill. Not for the toolkit map (D2), whose nodes use kind.skill, and not for text or icons."
+            },
+            "workflow": {
+              "value": {
+                "base": "rgba(22, 115, 63, 0.6)",
+                "_dark": "rgba(110, 231, 168, 0.6)"
+              },
+              "description": "Border of a toolkit workflow node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.workflow); its icon keeps kind.workflow. Not for the toolkit map (D2), whose nodes use kind.workflow, and not for text or icons."
+            }
+          },
+          "kindBorderFaint": {
+            "agent": {
+              "value": {
+                "base": "rgba(91, 75, 214, 0.45)",
+                "_dark": "rgba(158, 143, 255, 0.45)"
+              },
+              "description": "Border of a toolkit agent node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.agent), a step fainter than kindBorder.agent. Not for graph nodes, text or icons."
+            },
+            "hook": {
+              "value": {
+                "base": "rgba(176, 33, 57, 0.45)",
+                "_dark": "rgba(255, 154, 171, 0.45)"
+              },
+              "description": "Border of a toolkit hook node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.hook), a step fainter than kindBorder.hook. Not for graph nodes, text or icons."
+            },
+            "rule": {
+              "value": {
+                "base": "rgba(154, 74, 6, 0.45)",
+                "_dark": "rgba(255, 184, 107, 0.45)"
+              },
+              "description": "Border of a toolkit rule node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.rule), a step fainter than kindBorder.rule. Not for graph nodes, text or icons."
+            },
+            "skill": {
+              "value": {
+                "base": "rgba(14, 106, 133, 0.45)",
+                "_dark": "rgba(94, 225, 255, 0.45)"
+              },
+              "description": "Border of a toolkit skill node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.skill), a step fainter than kindBorder.skill. Not for graph nodes, text or icons."
+            },
+            "workflow": {
+              "value": {
+                "base": "rgba(22, 115, 63, 0.45)",
+                "_dark": "rgba(110, 231, 168, 0.45)"
+              },
+              "description": "Border of a toolkit workflow node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.workflow), a step fainter than kindBorder.workflow. Not for graph nodes, text or icons."
+            }
+          },
           "kindTint": {
             "agent": {
               "value": {
@@ -1421,7 +1495,7 @@ export default definePreset({
           }
         },
         "label": {
-          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high.",
+          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, and the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81).",
           "value": {
             "fontFamily": "text.label",
             "fontSize": "text.label",

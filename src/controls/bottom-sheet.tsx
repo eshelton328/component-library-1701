@@ -5,6 +5,7 @@ import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
+import { useInputModality } from './input-modality'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(bottomSheet)
 const Root = withRootProvider(ArkDialog.Root)
@@ -85,6 +86,7 @@ type SizedBottomSheetProps = WithoutSize<BottomSheetProps> &
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
 export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, focusSheet = false }: SizedBottomSheetProps) {
+  useInputModality()
   const hasLeading = present(leading)
   // The sheet's own id, so the focus can find it when it opens.
   const contentId = useId()

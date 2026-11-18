@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
@@ -38,7 +39,8 @@ export const mapNode = defineSlotRecipe({
       color: 'fg.default',
       textAlign: 'start',
       cursor: 'pointer',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
       '&[data-state=selected]': { bg: 'surface.selected', borderWidth: 'ring' },
     },
     icon: { display: 'inline-flex', flexShrink: '0', '[data-state=dim] > &': { opacity: 'disabled' } },

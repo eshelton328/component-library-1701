@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The chat composer of Workbench (D2 105:889, composer states 402:8809,
 // phone 402:8962, side chat 105:948): a surface.raised box with radius.xl,
@@ -86,7 +87,7 @@ export const composer = defineSlotRecipe({
       borderRadius: 'xs',
       cursor: 'pointer',
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
       _disabled: { cursor: 'not-allowed' },
     },
   },

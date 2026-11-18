@@ -4,6 +4,9 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet, BottomSheetClose } from './bottom-sheet'
 import { Button } from './button'
+import { Dialog } from './dialog'
+import { Menu } from './menu'
+import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
 
@@ -12,6 +15,7 @@ const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.d
 const scrimSwatch = css({ bg: 'overlay.scrim' })
 const surfaceSwatch = css({ bg: 'surface.overlay' })
 const borderSwatch = css({ bg: 'border.default' })
+const focusSwatch = css({ bg: 'border.focus' })
 
 const sorts = [
   { value: 'newest', label: 'Newest first', description: 'Most recently found at the top' },
@@ -418,6 +422,7 @@ function SwipeSheet() {
           ))}
         </Stack>
       </BottomSheet>
+      <span hidden data-swatch="focus" className={focusSwatch} />
     </main>
   )
 }
@@ -529,3 +534,152 @@ const swipePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }
 export const SwipeLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'light' } }
+
+// The trigger's focus ring: none after a pointer, the library's ring (border.focus, strong) after the keyboard.
+async function expectRing(trigger: HTMLElement, shown: boolean) {
+  await waitFor(() => expect(trigger).toHaveFocus())
+  const style = getComputedStyle(trigger)
+  if (shown) {
+    await expect(trigger).not.toHaveAttribute('data-focus-quiet')
+    await expect(style.outlineStyle).toBe('solid')
+    await expect(style.outlineWidth).not.toBe('0px')
+    await expect(style.outlineColor).toBe(swatch('focus'))
+  } else {
+    await expect(trigger).toHaveAttribute('data-focus-quiet')
+    // Panda writes `outline: 'none'` as a transparent outline, so forced colours still show one.
+    await expect(style.outlineColor).toBe('rgba(0, 0, 0, 0)')
+  }
+}
+
+const focusReturnPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Snooze' })
+  const closed = () => waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  // Ark listens for a click outside and Escape only once the focus is inside the sheet.
+  const opened = async () => {
+    const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true))
+    return sheet
+  }
+
+  // Opened by a click and closed by a click on the scrim: the trigger has the focus and no ring.
+  await userEvent.click(trigger)
+  await opened()
+  const above = document.elementFromPoint(20, 10)
+  if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
+  await userEvent.click(above)
+  await closed()
+  await expectRing(trigger, false)
+
+  // Closed by a row (BottomSheetClose) under a tap: no ring.
+  await userEvent.click(trigger)
+  await userEvent.click(within(await opened()).getByRole('button', { name: 'In 1 hours' }))
+  await closed()
+  await expectRing(trigger, false)
+
+  // Closed by a swipe: no ring.
+  await userEvent.click(trigger)
+  const sheet = await opened()
+  const grabber = grabberOf(sheet)
+  const from = middleY(grabber)
+  touch('pointerdown', grabber, from)
+  touch('pointermove', grabber, from + 20)
+  touch('pointermove', grabber, from + 80)
+  touch('pointerup', grabber, from + 80)
+  await closed()
+  await expectRing(trigger, false)
+
+  // By the keyboard: Tab away and back, Enter opens, Escape closes, and the trigger shows the ring.
+  await userEvent.tab()
+  await userEvent.tab({ shift: true })
+  await expectRing(trigger, true)
+  await userEvent.keyboard('{Enter}')
+  await opened()
+  await userEvent.keyboard('{Escape}')
+  await closed()
+  await expectRing(trigger, true)
+
+  // Opened by the keyboard and closed by a tap on a row: the tap wins, no ring.
+  await userEvent.keyboard('{Enter}')
+  await userEvent.click(within(await opened()).getByRole('button', { name: 'In 2 hours' }))
+  await closed()
+  await expectRing(trigger, false)
+}
+
+/** The focus goes back to the trigger with no ring after a click, a tap or a swipe closes the sheet, and with the ring after the keyboard does. */
+export const FocusReturnDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: focusReturnPlay, globals: { mode: 'dark' } }
+export const FocusReturnLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: focusReturnPlay, globals: { mode: 'light' } }
+
+// The focus return of the other overlays: the same tracker marks the trigger quiet after a pointer close.
+function Overlays() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <Dialog title="Rename chat" trigger={<Button>Rename</Button>}>
+          <p>drift check</p>
+        </Dialog>
+        <Menu trigger={<Button>Chat actions</Button>} items={[{ value: 'pin', label: 'Pin to sidebar' }]} />
+        <Popover trigger={<Button>Filters</Button>} label="Filters">
+          <p>No filters</p>
+        </Popover>
+      </Stack>
+      <span hidden data-swatch="focus" className={focusSwatch} />
+    </main>
+  )
+}
+
+const overlayFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const body = within(document.body)
+  const inside = async (role: 'dialog' | 'menu', name: string) => {
+    const box = await body.findByRole(role, { name })
+    await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))
+    return box
+  }
+  const gone = (role: 'dialog' | 'menu', name: string) => waitFor(() => expect(body.queryByRole(role, { name })).toBeNull())
+
+  // Dialog: a click on the scrim, then Escape after the keyboard opened it.
+  const rename = canvas.getByRole('button', { name: 'Rename' })
+  await userEvent.click(rename)
+  await inside('dialog', 'Rename chat')
+  const corner = document.elementFromPoint(2, 2)
+  if (!(corner instanceof HTMLElement)) throw new Error('no scrim')
+  await userEvent.click(corner)
+  await gone('dialog', 'Rename chat')
+  await expectRing(rename, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('dialog', 'Rename chat')
+  await userEvent.keyboard('{Escape}')
+  await gone('dialog', 'Rename chat')
+  await expectRing(rename, true)
+
+  // Menu: a click on an action, then Escape after the keyboard opened it.
+  const actions = canvas.getByRole('button', { name: 'Chat actions' })
+  await userEvent.click(actions)
+  const menu = await inside('menu', 'Chat actions')
+  await userEvent.click(within(menu).getByRole('menuitem', { name: 'Pin to sidebar' }))
+  await gone('menu', 'Chat actions')
+  await expectRing(actions, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('menu', 'Chat actions')
+  await userEvent.keyboard('{Escape}')
+  await gone('menu', 'Chat actions')
+  await expectRing(actions, true)
+
+  // Popover: a click on its trigger closes it, then Escape after the keyboard opened it.
+  const filters = canvas.getByRole('button', { name: 'Filters' })
+  await userEvent.click(filters)
+  await inside('dialog', 'Filters')
+  await userEvent.click(filters)
+  await gone('dialog', 'Filters')
+  await expectRing(filters, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('dialog', 'Filters')
+  await userEvent.keyboard('{Escape}')
+  await gone('dialog', 'Filters')
+  await expectRing(filters, true)
+}
+
+/** A dialog, a menu and a popover give the focus back to their trigger with no ring after a pointer, and with the ring after the keyboard. */
+export const OverlayFocusReturnDark: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'dark' } }
+export const OverlayFocusReturnLight: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'light' } }

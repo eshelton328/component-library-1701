@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The desktop nav rail: Inbox rail 346:105. Selected item 346:114, idle item
 // 346:123, label 346:122 and 346:131, icon frame 346:115, logo wrapper
@@ -54,7 +55,7 @@ export const navRail = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _hover: { bg: 'accent.faint' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[aria-current="page"]': { bg: 'surface.selected', color: 'fg.accent' },
     },
     // Figma draws 22 px icons; the inventory merges 22 into `icon.24`.

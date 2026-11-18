@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The one-line record of a tool call in a chat. Workbench D2 105:871 and
 // phone M3 105:2787: a row with gap 6, centred, no fill, border or padding;
@@ -34,7 +35,7 @@ export const toolLine = defineSlotRecipe({
       textAlign: 'start',
       outline: 'none',
       '&:is(button)': { cursor: 'pointer' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
     // TruncatedText inside cuts a long tool and target and shows it whole in a tooltip.

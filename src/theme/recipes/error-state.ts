@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The error and not-found states of the-bridge's error boundaries (d-086).
 // Figma draws no error state, so this one is built from the tokens and the
@@ -51,7 +52,7 @@ export const errorState = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _hover: { color: 'fg.default' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     stack: {
       m: '0',

@@ -7,6 +7,7 @@ import { dialog, type DialogVariantProps } from '../../styled-system/recipes'
 import { dataAttributesOf } from './data-attributes'
 import type { PopoverDataAttributes } from './popover'
 import type { Scalar } from './scalar'
+import { useInputModality } from './input-modality'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(dialog)
 const Root = withRootProvider(ArkDialog.Root)
@@ -68,6 +69,7 @@ export type DialogProps = Scalar<DialogVariantProps> & {
  * trigger.
  */
 export function Dialog({ title, meta, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, headerAction, className, ...rest }: DialogProps) {
+  useInputModality()
   return (
     <Root
       size={size}

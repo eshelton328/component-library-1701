@@ -1,5 +1,6 @@
 import { fieldAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The text inputs of Inbox and Workbench: the rename field (D21), the notes
 // field, the dialog inputs, and the prompt while it is edited. The fill is
@@ -21,7 +22,7 @@ const box = {
   borderColor: 'border.default',
   outline: 'none',
   _placeholder: { color: 'fg.subtle' },
-  _focusVisible: { borderColor: 'border.focus' },
+  [focusRing]: { borderColor: 'border.focus' },
   // Only Ark's invalid state, set by the `error` prop. Panda's `_invalid` also
   // matches `:invalid`, which marks an empty required field before any input.
   '&[data-invalid]': { borderColor: 'status.danger.border' },

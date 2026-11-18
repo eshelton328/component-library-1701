@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The row at the top of a detail screen on tablet and phone: a back button
 // (chevron and the name of the list it returns to) and, at the end of the
@@ -34,7 +35,7 @@ export const backRow = defineSlotRecipe({
       textStyle: 'labelLg',
       cursor: 'pointer',
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     icon: { w: 'icon.20', h: 'icon.20', flexShrink: '0' },
     // TruncatedText inside cuts a long label and shows it whole in a tooltip.

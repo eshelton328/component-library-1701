@@ -79,6 +79,14 @@ under their purpose group, never under "Controls" (d-065).
   and its description stay on one line each, cut with `TruncatedText`;
   on a touch screen (`pointer: coarse`) they wrap and show whole, as no
   tooltip opens under a finger.
+- `input-modality.ts` tracks the last key or pointer press on the page.
+  After a mouse, pen or touch press, the element that takes the focus (such
+  as the trigger that gets it back when a sheet, dialog, menu or popover
+  closes) gets `data-focus-quiet`, and the recipes' `focusRing` draws no
+  ring on it; a text field keeps its focus border. A key press never sets
+  it, so the keyboard always shows the ring (WCAG 2.4.7). Ark returns the
+  focus with `preventScroll`. A control that takes or returns the focus
+  calls `useInputModality()` (Button, BottomSheet, Dialog, Menu, Popover).
 - `BottomSheet` closes on a swipe down from the grabber or the title row,
   or from its content when that is scrolled to the top: a release past 30%
   of the sheet's height or a flick faster than 0.5 px/ms calls

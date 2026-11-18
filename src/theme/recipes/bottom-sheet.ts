@@ -1,5 +1,6 @@
 import { dialogAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The phone bottom sheets: Inbox M6 snooze (346:10207), Artifacts M4 sort
 // (407:814) and Workbench M9 chat actions (146:273). A full-width box on a
@@ -68,7 +69,7 @@ export const bottomSheet = defineSlotRecipe({
       outline: 'none',
       '& svg': { w: 'icon.16', h: 'icon.16' },
       _hover: { color: 'fg.default' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
   },
   variants: {

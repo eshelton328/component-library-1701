@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The header above a group of rows. Inbox list 346:188 (expanded) and
 // 346:299 (collapsed): padding 14/4/6/4, gap 6, a 12 px chevron, the label
@@ -64,7 +65,7 @@ export const groupHeader = defineSlotRecipe({
       borderRadius: 'xs',
       outline: 'none',
       '&:is(button)': { cursor: 'pointer' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     chevron: { display: 'inline-flex', flexShrink: '0' },
     // TruncatedText inside cuts a long label and shows it whole in a tooltip.

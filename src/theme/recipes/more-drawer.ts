@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The items of the phone More drawer: Artifacts M8 (415:315) and Toolkit M4
 // (424:6940). The drawer itself is the `lg` bottom sheet. Selected
@@ -40,7 +41,7 @@ export const moreDrawer = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _hover: { bg: 'accent.faint' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[aria-current="page"]': { bg: 'surface.selected', borderWidth: 'default', borderColor: 'border.selected' },
       _disabled: { opacity: 'disabled', cursor: 'default', bg: 'transparent', '& .more-drawer__tile': { bg: 'surface.inset' } },
     },

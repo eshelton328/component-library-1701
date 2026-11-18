@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The tablet and phone tab bar: tablet Inbox 346:5574 and phone Workbench
 // 252:2. Idle tab 346:5575 (label 346:5580), selected tab 346:5581 (label
@@ -47,7 +48,7 @@ export const tabBar = defineSlotRecipe({
       color: 'fg.muted',
       cursor: 'pointer',
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[aria-current="page"]': { color: 'fg.accent' },
     },
     icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24!', h: 'icon.24!' } },

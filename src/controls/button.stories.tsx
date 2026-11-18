@@ -538,3 +538,61 @@ const pressedTonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `pressedTone="accent"`: the pressed view button draws its icon in fg.accent, as the Toolkit phone header does. */
 export const PressedAccentDark: StoryObj<typeof meta> = { render: () => <ViewButtons />, globals: { mode: 'dark' }, play: pressedTonePlay }
 export const PressedAccentLight: StoryObj<typeof meta> = { render: () => <ViewButtons />, globals: { mode: 'light' }, play: pressedTonePlay }
+
+const borderSwatches = {
+  active: css({ color: 'border.active' }),
+  default: css({ color: 'border.default' }),
+  danger: css({ color: 'status.danger.border' }),
+}
+
+// A menu trigger and disclosure toggles, all open (aria-expanded).
+function ExpandedButtons() {
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button aria-expanded="true" aria-haspopup="menu">
+          Sort
+        </Button>
+        <Button aria-expanded="true" expandedBorder="default">
+          Hide transcript
+        </Button>
+        <Button variant="dangerSoft" aria-expanded="true" expandedBorder="default">
+          Hide errors
+        </Button>
+        <Button variant="primary" aria-expanded="true" expandedBorder="default">
+          Hide plan
+        </Button>
+        <Button aria-expanded="false" expandedBorder="default">
+          Show transcript
+        </Button>
+      </div>
+      <div hidden>
+        {Object.entries(borderSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// Workbench D3 105:1350, T3 105:2059, M6 105:3215: Hide transcript keeps #24314f (border.default)
+// while open; an open menu trigger draws border.active.
+const expandedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const border = (name: string) => getComputedStyle(canvas.getByRole('button', { name })).borderTopColor
+  await expect(swatch('active')).not.toBe(swatch('default'))
+  await expect(border('Sort')).toBe(swatch('active'))
+  await expect(border('Hide transcript')).toBe(swatch('default'))
+  await expect(border('Hide transcript')).toBe(border('Show transcript'))
+  await expect(border('Hide errors')).toBe(swatch('danger'))
+  await expect(border('Hide plan')).toBe('rgba(0, 0, 0, 0)')
+}
+
+/** `expandedBorder="default"`: an open disclosure toggle keeps its own border; an open menu trigger draws border.active. */
+export const ExpandedBorderDark: StoryObj<typeof meta> = { render: () => <ExpandedButtons />, globals: { mode: 'dark' }, play: expandedBorderPlay }
+export const ExpandedBorderLight: StoryObj<typeof meta> = { render: () => <ExpandedButtons />, globals: { mode: 'light' }, play: expandedBorderPlay }

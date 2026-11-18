@@ -232,23 +232,95 @@ function pointing(head: HTMLElement): Direction | 'none' {
   return 'none'
 }
 
-// The head points at the target and its tip touches the target's edge, in the middle of where the line meets it.
-async function expectHead(head: HTMLElement, direction: Direction, tip: { x: number; y: number }, what: string) {
+// Figma ends each arrow's tip 2 px (spacing `2`) before the step it points
+// at (D13 447:74 to 447:83), and the dashed loop 4 px (spacing `4`) before
+// the stop (447:84).
+const tipGap = 2
+const loopTipGap = 4
+
+// The space between a head's tip and the edge of the target it points at.
+function tipToTarget(head: HTMLElement, direction: Direction, target: DOMRect) {
+  const h = box(head)
+  if (direction === 'right') return target.left - h.right
+  if (direction === 'left') return h.left - target.right
+  if (direction === 'down') return target.top - h.bottom
+  return h.top - target.bottom
+}
+
+// The tip stops `gap` px before the target's edge, within 0.5 px.
+async function expectTipGap(head: HTMLElement, direction: Direction, target: DOMRect, gap: number, what: string) {
+  const off = tipToTarget(head, direction, target)
+  await expect({ what, gap: Math.abs(off - gap) <= 0.5 ? gap : off }).toEqual({ what, gap })
+}
+
+// The head points at the target, its tip stops `gap` px before the target's
+// edge, and it sits at `at` across the line, in the middle of where the line
+// meets the target.
+async function expectHead(head: HTMLElement, direction: Direction, target: DOMRect, at: number, gap: number, what: string) {
   await expect({ what, pointing: pointing(head) }).toEqual({ what, pointing: direction })
+  await expectTipGap(head, direction, target, gap, what)
   const h = box(head)
   const centre = { x: (h.left + h.right) / 2, y: (h.top + h.bottom) / 2 }
-  if (direction === 'right') {
-    await near(h.right, tip.x, `${what} tip x`)
-    await near(centre.y, tip.y, `${what} tip y`)
-  } else if (direction === 'left') {
-    await near(h.left, tip.x, `${what} tip x`)
-    await near(centre.y, tip.y, `${what} tip y`)
-  } else if (direction === 'down') {
-    await near(h.bottom, tip.y, `${what} tip y`)
-    await near(centre.x, tip.x, `${what} tip x`)
-  } else {
-    await near(h.top, tip.y, `${what} tip y`)
-    await near(centre.x, tip.x, `${what} tip x`)
+  if (direction === 'right' || direction === 'left') await near(centre.y, at, `${what} tip y`)
+  else await near(centre.x, at, `${what} tip x`)
+}
+
+// Each connector, by its test id, with the steps it leaves and the steps its heads point at, in the heads' order.
+type Link = { id: string; from: string[]; to: string[] }
+const desktopLinks: Link[] = [
+  { id: 'line-2', from: ['gate'], to: ['s1'] },
+  { id: 'line-4', from: ['s1'], to: ['s2'] },
+  { id: 'line-6', from: ['s2'], to: ['s3'] },
+  { id: 'line-12', from: ['s6'], to: ['s7'] },
+  { id: 'line-14', from: ['s7'], to: ['owner'] },
+  { id: 'fork', from: ['s3'], to: ['s4', 's5'] },
+  { id: 'join', from: ['s4', 's5'], to: ['s6'] },
+  { id: 'exit', from: ['gate'], to: ['stop'] },
+  { id: 'loop', from: ['owner'], to: ['stop'] },
+]
+const desktopCards = ['gate', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 'owner', 'stop']
+const columnLinks: Link[] = [
+  { id: 'c-line-1', from: ['c-gate'], to: ['c-s3'] },
+  { id: 'c-fork', from: ['c-s3'], to: ['c-s4', 'c-s5'] },
+  { id: 'c-join', from: ['c-s4', 'c-s5'], to: ['c-s6'] },
+  { id: 'c-line-2', from: ['c-s6'], to: ['c-owner'] },
+]
+const columnCards = ['c-gate', 'c-s3', 'c-s4', 'c-s5', 'c-s6', 'c-owner']
+
+// The space between two boxes: positive when apart (along the axis that
+// separates them), 0 when they meet, negative when they overlap.
+function apartBy(a: DOMRect, b: DOMRect) {
+  const across = Math.max(b.left - a.right, a.left - b.right)
+  const along = Math.max(b.top - a.bottom, a.top - b.bottom)
+  return Math.max(across, along)
+}
+
+// No drawn part of a connector (line, stem, spine, arm, loop stroke or head)
+// touches or overlaps a step card: each stays at least 1.5 px from every
+// card (the Design System gate counts boxes under 1.5 px apart as touching),
+// except that it may start on the edge of a step it leaves, as Figma starts
+// each arrow there. Each head's tip stops its gap before its target.
+async function expectApart(canvasElement: HTMLElement, links: Link[], cards: string[]) {
+  const canvas = within(canvasElement)
+  for (const link of links) {
+    const drawn = parts(canvas.getByTestId(link.id), '[class*="flow-"]:not([class*="__root"]):not([class*="__label"])')
+    await expect(drawn.length).toBeGreaterThan(0)
+    for (const piece of drawn) {
+      for (const id of cards) {
+        const gap = apartBy(box(piece), box(canvas.getByTestId(id)))
+        const leaves = link.from.includes(id)
+        const what = `${link.id} ${piece.className.split(' ')[0] ?? ''} and ${id}`
+        await expect({ what, apart: leaves ? gap >= -1 : gap >= 1.5 }).toEqual({ what, apart: true })
+      }
+    }
+    const heads = parts(canvas.getByTestId(link.id), '[class*="__head"]')
+    await expect(heads).toHaveLength(link.to.length)
+    for (const [i, head] of heads.entries()) {
+      const target = link.to[i] ?? ''
+      const direction = pointing(head)
+      if (direction === 'none') throw new Error(`${link.id} head points nowhere`)
+      await expectTipGap(head, direction, box(canvas.getByTestId(target)), link.id === 'loop' ? loopTipGap : tipGap, `${link.id} into ${target}`)
+    }
   }
 }
 
@@ -294,8 +366,8 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
     const stroke = part(root, '.flow-line__line')
     await expectStroke(stroke, 'top', muted, 'solid', id)
     await near(box(stroke).left, a.right, `${id} line starts at ${from}`)
-    await near(box(stroke).right, b.left, `${id} line reaches ${to}`)
-    await expectHead(part(root, '.flow-line__head'), 'right', { x: b.left, y: midY(b) }, id)
+    await near(box(stroke).right, b.left - tipGap, `${id} line ends at the tip, 2 before ${to}`)
+    await expectHead(part(root, '.flow-line__head'), 'right', b, midY(b), tipGap, id)
     await expect(root.querySelectorAll('.flow-line__label')).toHaveLength(0)
   }
 
@@ -316,7 +388,8 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
   if (forkStart === undefined || forkEnd === undefined) throw new Error('fork arms')
   await near(midY(box(forkStart)), midY(s4), 'fork arm at step 4 middle')
   await near(midY(box(forkEnd)), midY(s5), 'fork arm at step 5 middle')
-  await near(box(forkStart).right, s4.left, 'fork arm reaches step 4')
+  await near(box(forkStart).right, s4.left - tipGap, 'fork arm ends 2 before step 4')
+  await near(box(forkEnd).right, s5.left - tipGap, 'fork arm ends 2 before step 5')
   const spine = box(part(fork, '.flow-branch__spine'))
   await near(spine.top, midY(s4) - 0.75, 'fork spine from step 4')
   await near(spine.bottom, midY(s5) + 0.75, 'fork spine to step 5')
@@ -324,8 +397,8 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
   await expectStroke(part(fork, '.flow-branch__spine'), 'left', muted, 'solid', 'fork spine')
   const forkHeads = parts(fork, '.flow-branch__head')
   await expect(forkHeads).toHaveLength(2)
-  await expectHead(forkHeads[0] ?? fork, 'right', { x: s4.left, y: midY(s4) }, 'fork into step 4')
-  await expectHead(forkHeads[1] ?? fork, 'right', { x: s5.left, y: midY(s5) }, 'fork into step 5')
+  await expectHead(forkHeads[0] ?? fork, 'right', s4, midY(s4), tipGap, 'fork into step 4')
+  await expectHead(forkHeads[1] ?? fork, 'right', s5, midY(s5), tipGap, 'fork into step 5')
   await expect(fork).toHaveAttribute('aria-hidden', 'true')
 
   // The join runs from the right edges of steps 4 and 5 into step 6's left edge, at its middle.
@@ -338,10 +411,10 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
   await near(midY(box(joinStart)), midY(s4), 'join arm at step 4 middle')
   await near(midY(box(joinEnd)), midY(s5), 'join arm at step 5 middle')
   await near(box(joinStart).left, s4.right, 'join arm leaves step 4')
-  await near(box(part(join, '.flow-branch__stem')).right, s6.left, 'join stem reaches step 6')
+  await near(box(part(join, '.flow-branch__stem')).right, s6.left - tipGap, 'join stem ends 2 before step 6')
   const joinHeads = parts(join, '.flow-branch__head')
   await expect(joinHeads).toHaveLength(1)
-  await expectHead(joinHeads[0] ?? join, 'right', { x: s6.left, y: midY(s6) }, 'join into step 6')
+  await expectHead(joinHeads[0] ?? join, 'right', s6, midY(s6), tipGap, 'join into step 6')
 
   // The gate's way out runs down from the gate's foot to the stop's top, in amber, with "no" 8 beside it and 12 under its start.
   const exit = part(el('exit'), '.flow-line__root')
@@ -352,7 +425,9 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
   await near(midX(box(exit)), midX(gateBox), 'exit under the gate middle')
   await expect(Math.round(box(exit).width)).toBe(12)
   await expectStroke(part(exit, '.flow-line__line'), 'left', amber, 'solid', 'exit')
-  await expectHead(part(exit, '.flow-line__head'), 'down', { x: midX(box(exit)), y: stopBox.top }, 'exit into the stop')
+  await near(box(part(exit, '.flow-line__line')).top, gateBox.bottom, 'exit line starts at the gate')
+  await near(box(part(exit, '.flow-line__line')).bottom, stopBox.top - tipGap, 'exit line ends 2 before the stop')
+  await expectHead(part(exit, '.flow-line__head'), 'down', stopBox, midX(box(exit)), tipGap, 'exit into the stop')
   const no = within(el('exit')).getByText('no')
   const n = getComputedStyle(no)
   // The `small` text style, 12/16 on the 4 px grid (Figma draws 12/17).
@@ -368,20 +443,28 @@ const horizontal: Meta<typeof Desktop>['play'] = async ({ canvasElement }) => {
   await near(l.right, midX(owner), 'loop turns under the middle of Owner decides')
   await near(l.left, stopBox.right, 'loop ends at the stop')
   await near(l.bottom, midY(stopBox), 'loop meets the stop at its middle')
-  const path = part(loop, '.flow-loop__path')
-  await expectStroke(path, 'right', amber, 'dashed', 'loop down')
-  await expectStroke(path, 'bottom', amber, 'dashed', 'loop back')
-  await expect([getComputedStyle(path).borderTopWidth, getComputedStyle(path).borderLeftWidth]).toEqual(['0px', '0px'])
+  const down = part(loop, '.flow-loop__down')
+  const back = part(loop, '.flow-loop__back')
+  await expectStroke(down, 'right', amber, 'dashed', 'loop down')
+  await expectStroke(back, 'bottom', amber, 'dashed', 'loop back')
+  for (const stroke of [down, back]) {
+    await expect([getComputedStyle(stroke).borderTopWidth, getComputedStyle(stroke).borderLeftWidth]).toEqual(['0px', '0px'])
+  }
   // The strokes are centred on the box's right and bottom edges.
-  await near(box(path).right - 0.75, l.right, 'loop down on the right edge')
-  await near(box(path).bottom - 0.75, l.bottom, 'loop back on the bottom edge')
-  await expectHead(part(loop, '.flow-loop__head'), 'left', { x: stopBox.right, y: midY(stopBox) }, 'loop into the stop')
+  await near(box(down).right - 0.75, l.right, 'loop down on the right edge')
+  await near(box(back).bottom - 0.75, l.bottom, 'loop back on the bottom edge')
+  // The way down starts right under Owner decides, as Figma's does; the way back ends at the tip, 4 before the stop.
+  await near(box(down).top, owner.bottom, 'loop down starts under Owner decides')
+  await near(box(back).left, stopBox.right + loopTipGap, 'loop back ends 4 before the stop')
+  await expectHead(part(loop, '.flow-loop__head'), 'left', stopBox, midY(stopBox), loopTipGap, 'loop into the stop')
   await expect(getComputedStyle(part(loop, '.flow-loop__head')).borderBottomColor).toBe(amber)
   const label = within(el('loop')).getByText('new failure')
   const lb = getComputedStyle(label)
   await expect([lb.color, lb.fontFamily.includes('Mono'), lb.fontSize]).toEqual([amber, true, '12px'])
   await expect(box(label).top).toBeGreaterThan(l.bottom)
   await near(midX(box(label)), midX(l), 'label in the middle of the loop')
+
+  await expectApart(canvasElement, desktopLinks, desktopCards)
 }
 
 const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
@@ -403,7 +486,8 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
     await near(r.bottom, b.top, `${id} ends at ${to}`)
     await near(midX(r), midX(b), `${id} in the middle`)
     await expectStroke(part(root, '.flow-line__line'), 'left', muted, 'solid', id)
-    await expectHead(part(root, '.flow-line__head'), 'down', { x: midX(b), y: b.top }, id)
+    await near(box(part(root, '.flow-line__line')).bottom, b.top - tipGap, `${id} line ends at the tip, 2 before ${to}`)
+    await expectHead(part(root, '.flow-line__head'), 'down', b, midX(b), tipGap, id)
   }
 
   // The fork runs from step 3's foot to the tops of steps 4 and 5, its arms at their middles.
@@ -421,7 +505,8 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
   if (a4 === undefined || a5 === undefined) throw new Error('fork arms')
   await near(midX(box(a4)), midX(s4), 'arm at step 4 middle')
   await near(midX(box(a5)), midX(s5), 'arm at step 5 middle')
-  await near(box(a4).bottom, s4.top, 'arm reaches step 4')
+  await near(box(a4).bottom, s4.top - tipGap, 'arm ends 2 before step 4')
+  await near(box(a5).bottom, s5.top - tipGap, 'arm ends 2 before step 5')
   const spine = box(part(fork, '.flow-branch__spine'))
   await near(spine.left, midX(s4) - 0.75, 'spine from step 4')
   await near(spine.right, midX(s5) + 0.75, 'spine to step 5')
@@ -429,8 +514,8 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
   for (const piece of [part(fork, '.flow-branch__stem'), a4, a5]) await expectStroke(piece, 'left', muted, 'solid', 'fork')
   const heads = parts(fork, '.flow-branch__head')
   await expect(heads).toHaveLength(2)
-  await expectHead(heads[0] ?? fork, 'down', { x: midX(s4), y: s4.top }, 'fork into step 4')
-  await expectHead(heads[1] ?? fork, 'down', { x: midX(s5), y: s5.top }, 'fork into step 5')
+  await expectHead(heads[0] ?? fork, 'down', s4, midX(s4), tipGap, 'fork into step 4')
+  await expectHead(heads[1] ?? fork, 'down', s5, midX(s5), tipGap, 'fork into step 5')
   await expect(Math.round(box(fork).height)).toBe(24)
 
   // The join runs from the feet of steps 4 and 5 into step 6's top, in its middle.
@@ -441,10 +526,10 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
   if (j4 === undefined || j5 === undefined) throw new Error('join arms')
   await near(midX(box(j4)), midX(s4), 'join arm at step 4 middle')
   await near(midX(box(j5)), midX(s5), 'join arm at step 5 middle')
-  await near(box(part(join, '.flow-branch__stem')).bottom, s6.top, 'join stem reaches step 6')
+  await near(box(part(join, '.flow-branch__stem')).bottom, s6.top - tipGap, 'join stem ends 2 before step 6')
   const joinHeads = parts(join, '.flow-branch__head')
   await expect(joinHeads).toHaveLength(1)
-  await expectHead(joinHeads[0] ?? join, 'down', { x: midX(s6), y: s6.top }, 'join into step 6')
+  await expectHead(joinHeads[0] ?? join, 'down', s6, midX(s6), tipGap, 'join into step 6')
 
   // Nothing runs past the 390 px phone.
   await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390)
@@ -452,7 +537,19 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
     await expect(box(node).right).toBeLessThanOrEqual(390 + 0.5)
     await expect(box(node).left).toBeGreaterThanOrEqual(-0.5)
   }
+
+  await expectApart(canvasElement, columnLinks, columnCards)
 }
+
+// D13's flow squeezed to the widths the Design System gate checks (390 and
+// 1200 px): no connector part touches or overlaps a step card, and each tip
+// keeps its gap.
+const apartAt =
+  (width: number): NonNullable<Meta<typeof Desktop>['play']> =>
+  async ({ canvasElement }) => {
+    await expect(window.innerWidth).toBe(width)
+    await expectApart(canvasElement, desktopLinks, desktopCards)
+  }
 
 const meta = {
   title: 'Data display/Flow connector',
@@ -464,6 +561,8 @@ type Story = StoryObj<typeof meta>
 
 const desktop = { d13: { name: 'Desktop (D13)', styles: { width: '1512px', height: '982px' } } }
 const phone = { m09: { name: 'Phone (M09)', styles: { width: '390px', height: '844px' } } }
+const narrow = { narrow: { name: 'Narrow (390)', styles: { width: '390px', height: '844px' } } }
+const medium = { medium: { name: 'Medium (1200)', styles: { width: '1200px', height: '900px' } } }
 
 /** D13's flow: stages joined by lines, a fork and a join around steps 4 and 5, the gate's way out with "no", and the dashed loop back to the stop. */
 export const HorizontalDark: Story = { render: () => <Desktop />, parameters: { viewport: { options: desktop } }, globals: { mode: 'dark', viewport: { value: 'd13' } }, play: horizontal }
@@ -472,3 +571,21 @@ export const HorizontalLight: Story = { ...HorizontalDark, globals: { mode: 'lig
 /** T08 and M09's column on a 390 px phone: down lines between steps, and the fork and join around steps 4 and 5 side by side. */
 export const ColumnDark: Story = { render: () => <Column />, parameters: { viewport: { options: phone } }, globals: { mode: 'dark', viewport: { value: 'm09' } }, play: column }
 export const ColumnLight: Story = { ...ColumnDark, globals: { mode: 'light', viewport: { value: 'm09' } }, play: column }
+
+/** D13's flow at 390 px, as the Design System gate draws it: no connector touches a step card. */
+export const HorizontalNarrowDark: Story = {
+  render: () => <Desktop />,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'dark', viewport: { value: 'narrow' } },
+  play: apartAt(390),
+}
+export const HorizontalNarrowLight: Story = { ...HorizontalNarrowDark, globals: { mode: 'light', viewport: { value: 'narrow' } }, play: apartAt(390) }
+
+/** D13's flow at 1200 px, as the Design System gate draws it: no connector touches a step card. */
+export const HorizontalMediumDark: Story = {
+  render: () => <Desktop />,
+  parameters: { viewport: { options: medium } },
+  globals: { mode: 'dark', viewport: { value: 'medium' } },
+  play: apartAt(1200),
+}
+export const HorizontalMediumLight: Story = { ...HorizontalMediumDark, globals: { mode: 'light', viewport: { value: 'medium' } }, play: apartAt(1200) }

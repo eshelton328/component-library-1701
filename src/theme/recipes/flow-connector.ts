@@ -19,6 +19,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 const stroke = 'token(borderWidths.strong)'
 const half = `${stroke} / 2`
 
+// Where a connector stops short of the step it points at. Figma starts each
+// arrow on its source step's edge and ends its tip 2 px before the target
+// step (D13 447:74 ends at 283, `step · Runs` 447:9 starts at 285; 447:75 to
+// 447:78, the fork and join elbows 447:79 to 447:82 and the gate's way out
+// 447:83, which ends at 649 over the stop 447:68 at 651), so a box from one
+// step's edge to the next one's keeps the head off the target. The dashed
+// loop (447:84) ends 4 px before the stop (296, the stop's right edge 292).
+const tipGap = 'token(spacing.2)'
+const loopTipGap = 'token(spacing.4)'
+
 // The head: the two drawn sides of a square, turned 45° about the corner
 // between them, so that corner is the tip. Each direction draws other sides.
 const headBase = {
@@ -48,7 +58,8 @@ const tones = {
 // (D13 447:74 to 447:78, 20 px between stages; the gate's way out 447:83,
 // 90 px down; T08 448:223 and M09 448:500, 18 px between column steps). The
 // box is the 12 px head wide across the line and fills its container along
-// it; the line runs the whole length and the head's tip is the box's end.
+// it; the line starts at the box's start and runs to the head's tip, 2 px
+// (tipGap) before the box's end.
 // A label stands beside a vertical line, 8 from it and 12 under its start
 // (`no`, 447:85), and under a horizontal one, in the middle.
 export const flowLine = defineSlotRecipe({
@@ -66,23 +77,23 @@ export const flowLine = defineSlotRecipe({
     direction: {
       right: {
         root: { w: '100%', minW: 'icon.12', h: 'icon.12' },
-        line: { insetInline: '0', top: `calc(50% - ${half})`, borderTopWidth: 'strong' },
-        head: { ...heads.right, right: '0', top: '50%' },
+        line: { left: '0', right: tipGap, top: `calc(50% - ${half})`, borderTopWidth: 'strong' },
+        head: { ...heads.right, right: tipGap, top: '50%' },
       },
       left: {
         root: { w: '100%', minW: 'icon.12', h: 'icon.12' },
-        line: { insetInline: '0', top: `calc(50% - ${half})`, borderTopWidth: 'strong' },
-        head: { ...heads.left, left: '0', bottom: '50%' },
+        line: { left: tipGap, right: '0', top: `calc(50% - ${half})`, borderTopWidth: 'strong' },
+        head: { ...heads.left, left: tipGap, bottom: '50%' },
       },
       down: {
         root: { h: '100%', minH: 'icon.12', w: 'icon.12' },
-        line: { insetBlock: '0', left: `calc(50% - ${half})`, borderLeftWidth: 'strong' },
-        head: { ...heads.down, right: '50%', bottom: '0' },
+        line: { top: '0', bottom: tipGap, left: `calc(50% - ${half})`, borderLeftWidth: 'strong' },
+        head: { ...heads.down, right: '50%', bottom: tipGap },
       },
       up: {
         root: { h: '100%', minH: 'icon.12', w: 'icon.12' },
-        line: { insetBlock: '0', left: `calc(50% - ${half})`, borderLeftWidth: 'strong' },
-        head: { ...heads.up, left: '50%', top: '0' },
+        line: { top: tipGap, bottom: '0', left: `calc(50% - ${half})`, borderLeftWidth: 'strong' },
+        head: { ...heads.up, left: '50%', top: tipGap },
       },
     },
     tone: tones,
@@ -122,7 +133,9 @@ const branchGap = {
 // steps have, and fills its container along the flow; the stem runs from
 // the middle of the one side to the spine halfway, and an arm from the
 // spine to the middle of each branch on the other side. A fork has a head
-// on each arm, a join one on the stem.
+// on each arm, a join one on the stem; each head's tip, and the line it
+// ends, stops 2 px (tipGap) before the box's far side, as 447:79 to 447:82
+// stop 2 px before their cards.
 // - right: D13 447:79 and 447:80 (step 3 into steps 4 and 5, 20 × 160, the
 //   spine 11 in) and 447:81, 447:82 (steps 4 and 5 into step 6); the
 //   parallel cards are 32 apart.
@@ -166,10 +179,10 @@ export const flowBranch = defineSlotRecipe({
       direction: 'down',
       css: {
         stem: { top: '0', bottom: '50%' },
-        arm: { top: '50%', bottom: '0' },
+        arm: { top: '50%', bottom: tipGap },
         head: {
           ...heads.down,
-          bottom: '0',
+          bottom: tipGap,
           '&[data-side=start]': { right: `calc(100% - ${arm})` },
           '&[data-side=end]': { right: arm },
         },
@@ -179,9 +192,9 @@ export const flowBranch = defineSlotRecipe({
       kind: 'join',
       direction: 'down',
       css: {
-        stem: { top: '50%', bottom: '0' },
+        stem: { top: '50%', bottom: tipGap },
         arm: { top: '0', bottom: '50%' },
-        head: { ...heads.down, bottom: '0', right: '50%' },
+        head: { ...heads.down, bottom: tipGap, right: '50%' },
       },
     },
     {
@@ -189,10 +202,10 @@ export const flowBranch = defineSlotRecipe({
       direction: 'right',
       css: {
         stem: { left: '0', right: '50%' },
-        arm: { left: '50%', right: '0' },
+        arm: { left: '50%', right: tipGap },
         head: {
           ...heads.right,
-          right: '0',
+          right: tipGap,
           '&[data-side=start]': { top: arm },
           '&[data-side=end]': { top: armFar },
         },
@@ -202,9 +215,9 @@ export const flowBranch = defineSlotRecipe({
       kind: 'join',
       direction: 'right',
       css: {
-        stem: { left: '50%', right: '0' },
+        stem: { left: '50%', right: tipGap },
         arm: { left: '0', right: '50%' },
-        head: { ...heads.right, right: '0', top: '50%' },
+        head: { ...heads.right, right: tipGap, top: '50%' },
       },
     },
   ],
@@ -212,19 +225,30 @@ export const flowBranch = defineSlotRecipe({
 })
 
 // A dashed loop from a later step back to an earlier point (D13 `arrow`
-// 447:84, 1094 × 107.5): from its box's top right corner, under the later
-// step, down the right side and back along the bottom into the earlier
-// point, with the head on the bottom left corner pointing at it. The lines
-// sit on the box's edges, so the box runs from the later step's middle to
-// the earlier point's edge across, and from under the later step to the
-// height the line meets the earlier point. In the needs-you colour,
-// dashed; an optional label in mono under the line, in its middle
-// (`new failure`, 447:86, in Figma 4 under the line, nearer the turn).
+// 447:84, 1094 × 107.5 from y 559): from its box's top right corner, right
+// under the later step (`Owner decides` 447:61 ends at 559), down the right
+// side and back along the bottom towards the earlier point, with the head
+// pointing at it 4 px (loopTipGap) in from the bottom left corner (Figma
+// ends the loop at 296, the stop 447:68 at 292). The lines sit on the box's
+// edges, so the box runs from the later step's middle to the earlier
+// point's edge across, and from under the later step to the height the
+// line meets the earlier point. The way down and the way back are two
+// strokes, so neither draws a box over the steps the loop passes. In the
+// needs-you colour, dashed; an optional label in mono under the line, in
+// its middle (`new failure`, 447:86, in Figma 4 under the line, nearer the
+// turn).
+const loopStroke = {
+  position: 'absolute',
+  borderWidth: '0',
+  borderStyle: 'dashed',
+  borderColor: 'currentColor',
+} as const
+
 export const flowLoop = defineSlotRecipe({
   className: 'flow-loop',
   jsx: ['FlowLoop'],
   staticCss: ['*'],
-  slots: ['root', 'path', 'head', 'label'],
+  slots: ['root', 'down', 'back', 'head', 'label'],
   base: {
     root: {
       position: 'relative',
@@ -235,19 +259,13 @@ export const flowLoop = defineSlotRecipe({
       minH: 'icon.12',
       color: 'status.needsYou.fg',
     },
-    path: {
-      position: 'absolute',
-      top: '0',
-      left: '0',
-      right: `calc(-1 * ${half})`,
-      bottom: `calc(-1 * ${half})`,
-      borderWidth: '0',
-      borderStyle: 'dashed',
-      borderColor: 'currentColor',
-      borderRightWidth: 'strong',
-      borderBottomWidth: 'strong',
-    },
-    head: { ...headBase, ...heads.left, left: '0', bottom: '0' },
+    // Down the right side, centred on the box's right edge, to the outer
+    // edge of the way back.
+    down: { ...loopStroke, top: '0', bottom: `calc(-1 * ${half})`, right: `calc(-1 * ${half})`, borderRightWidth: 'strong' },
+    // Back along the bottom, centred on the box's bottom edge, from the
+    // head's tip to the way down.
+    back: { ...loopStroke, left: loopTipGap, right: `calc(-1 * ${half})`, bottom: `calc(-1 * ${half})`, borderBottomWidth: 'strong' },
+    head: { ...headBase, ...heads.left, left: loopTipGap, bottom: '0' },
     label: {
       position: 'absolute',
       top: `calc(100% + ${half} + token(spacing.4))`,

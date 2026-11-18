@@ -77,18 +77,18 @@ export const At1440Dark: Story = {
   play: splitAt({ column: 828, item: 828, side: 612 }),
 }
 export const At1440Light: Story = { ...At1440Dark, globals: { mode: 'light', viewport: { value: 'w1440' } } }
-/** At 1920 px the column is 1104 wide and the side takes the other 816, under its 1108 cap. */
+/** At 1920 px the side stops at 800 (shell.discussionPane) and the item takes the other 1120, its 1104 px column in the middle. */
 export const At1920Dark: Story = {
   parameters: { viewport: { options: vp1920 } },
   globals: { mode: 'dark', viewport: { value: 'w1920' } },
-  play: splitAt({ column: 1104, item: 1104, side: 816 }),
+  play: splitAt({ column: 1104, item: 1120, side: 800 }),
 }
 export const At1920Light: Story = { ...At1920Dark, globals: { mode: 'light', viewport: { value: 'w1920' } } }
-/** At 3540 px the side stops at 1108 (shell.discussionPane) and the item takes the rest, its column in the middle. */
+/** At 3540 px the side stops at 800 (shell.discussionPane) and the item takes the rest, its column in the middle. */
 export const At3540Dark: Story = {
   parameters: { viewport: { options: vp3540 } },
   globals: { mode: 'dark', viewport: { value: 'w3540' } },
-  play: splitAt({ column: 1104, item: 2432, side: 1108 }),
+  play: splitAt({ column: 1104, item: 2740, side: 800 }),
 }
 export const At3540Light: Story = { ...At3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }
 

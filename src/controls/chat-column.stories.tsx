@@ -17,7 +17,7 @@ function Columns() {
       <Stack gap="24">
         <div data-testid="wide">
           <ChatColumn gap="12" data-testid="column">
-            <p className={text}>A message in a chat column. On a wide screen the column stops at 1076 px, in the middle.</p>
+            <p className={text}>A message in a chat column. On a wide screen the column stops at 768 px, in the middle.</p>
             <p className={text}>The reply box in its own column lines up with this message.</p>
           </ChatColumn>
         </div>
@@ -37,11 +37,11 @@ const box = (root: HTMLElement, id: string) => {
   return el.getBoundingClientRect()
 }
 
-// The column stops at shell.thread (1076) in the middle of a wider parent, fills a narrower one, and its children stack 12 apart.
+// The column stops at shell.thread (768) in the middle of a wider parent, fills a narrower one, and its children stack 12 apart.
 const play: Story['play'] = async ({ canvasElement }) => {
   const parent = box(canvasElement, 'wide')
   const column = box(canvasElement, 'column')
-  await expect(column.width).toBe(Math.min(parent.width, 1076))
+  await expect(column.width).toBe(Math.min(parent.width, 768))
   await expect(column.left - parent.left).toBe(parent.right - column.right)
   await expect(box(canvasElement, 'column-narrow').width).toBe(box(canvasElement, 'narrow').width)
   const el = canvasElement.querySelector<HTMLElement>('[data-testid="column"]')
@@ -55,9 +55,9 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** At 1440 px the column is 1076 wide, in the middle; the 420 px pane's column fills it. */
+/** At 1440 px the column is 768 wide, in the middle; the 420 px pane's column fills it. */
 export const At1440Dark: Story = { parameters: { viewport: { options: vp1440 } }, globals: { mode: 'dark', viewport: { value: 'w1440' } }, play }
 export const At1440Light: Story = { ...At1440Dark, globals: { mode: 'light', viewport: { value: 'w1440' } } }
-/** At 3540 px the column still stops at 1076, in the middle. */
+/** At 3540 px the column still stops at 768, in the middle. */
 export const At3540Dark: Story = { parameters: { viewport: { options: vp3540 } }, globals: { mode: 'dark', viewport: { value: 'w3540' } }, play }
 export const At3540Light: Story = { ...At3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }

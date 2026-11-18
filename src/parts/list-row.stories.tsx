@@ -614,6 +614,55 @@ const rowParts = (canvasElement: HTMLElement, name: string) => {
 }
 
 /**
+ * The library's list view row (D4 403:8216): the body 16 after the 128 × 72
+ * preview (403:8217 ends at x 237, the title 403:8232 starts at x 253) and
+ * centred down the 98 px row (the text frame 403:8230, 62 high, 18 below the
+ * row's top). A row without the props keeps the 10 gap and the body at the top.
+ */
+function ListViewRows() {
+  const body = (
+    <>
+      <span>A spike of the Hono server</span>
+      <span>Codex · ncc-1701</span>
+    </>
+  )
+  return (
+    <main className={page}>
+      <div className={libraryList}>
+        <ListRow surface="card" padding="lg" leadingGap="16" bodyAlign="center" trailingAlign="center" title="Hono server spike" leading={<Thumbnail kind="chart" size="lg" />} trailing="40m">
+          {body}
+        </ListRow>
+        <ListRow surface="card" padding="lg" trailingAlign="center" title="Without the list view props" leading={<Thumbnail kind="chart" size="lg" />} trailing="40m">
+          {body}
+        </ListRow>
+      </div>
+    </main>
+  )
+}
+
+const listViewRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const d4 = rowParts(canvasElement, 'Hono server spike')
+  const preview = d4.slot('leading')
+  const text = d4.slot('body')
+  await expect([preview.width, preview.height]).toEqual([128, 72])
+  // 1 + 12 + 72 + 12 + 1: Figma's 98 px row.
+  await expect(d4.row.height).toBe(98)
+  // The body starts 16 after the preview (Figma 237 to 253).
+  await expect(text.left - preview.right).toBe(16)
+  // The body is centred down the row: for Figma's 62 px text frame that is 18 below the row's top.
+  await expect(text.top - d4.row.top).toBe((d4.row.height - text.height) / 2)
+  await expect(text.top - d4.row.top).toBeGreaterThan(13)
+  // Without the props the body is 10 after the preview and at the top, 13 below the row's top (the border and 12).
+  const plain = rowParts(canvasElement, 'Without the list view props')
+  await expect(plain.slot('body').left - plain.slot('leading').right).toBe(10)
+  await expect(plain.slot('body').top - plain.row.top).toBe(13)
+}
+
+/** `leadingGap="16"` and `bodyAlign="center"`: the Artifacts library's list view row (D4). */
+export const ListViewRowDark: StoryObj<typeof meta> = { render: () => <ListViewRows />, globals: { mode: 'dark' }, play: listViewRowsPlay }
+export const ListViewRowLight: StoryObj<typeof meta> = { render: () => <ListViewRows />, globals: { mode: 'light' }, play: listViewRowsPlay }
+
+/**
  * The phone library's rows (M1 406:121, 406:148): 66 high around the 48 px
  * preview (406:122), which sits 9 below the row's top, the 1 px border and
  * 8 inside it.

@@ -80,8 +80,12 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   `dotPosition="title"` (the default) puts it 8 after the title (D4);
  *   `end` puts it at the end of the title line, 12 before the trailing
  *   items (D2).
+ * - `leadingGap="16"` puts the body 16 after the leading (D4); without it
+ *   the gap is 10.
+ * - `bodyAlign="center"` centres the body down the row (D4's text beside
+ *   its 72 px preview); `start`, the default, puts it at the row's top.
  */
-export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, dot, dotPosition }: ListRowProps) {
+export function ListRow({ title, highlight, meta, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -107,7 +111,7 @@ export function ListRow({ title, highlight, meta, leading, trailing, children, a
       </TitleButton>
     )
   return (
-    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} dot={dot} dotPosition={dotPosition} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>

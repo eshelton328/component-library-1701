@@ -46,6 +46,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   403:8233, the gap of the Card's title row); with `end` the title fills
 //   the line and the dot ends it, 12 before the trailing column (D2 403:213
 //   at x 420, the age at 438): the 10 px row gap and 2 more.
+// - `leadingGap="16"` puts the body 16 after the leading, as D4's title
+//   (403:8232 at x 253) after its 128 px preview (403:8217, x 109 to 237):
+//   the 10 px row gap and 6 more after the leading. Without it the gap
+//   stays 10.
+// - `bodyAlign="center"` centres the body down the row, as D4's 62 px text
+//   frame (403:8230 at y 218) in the 98 px row (403:8216 at y 200): 18 below
+//   the row's top, not the 13 of the border and `lg`'s 12. `start`, the
+//   default, keeps the body at the top.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -146,6 +154,13 @@ export const listRow = defineSlotRecipe({
       done: { dot: { bg: 'status.done.fg' } },
       danger: { dot: { bg: 'status.danger.fg' } },
     },
+    leadingGap: {
+      '16': { leading: { me: '6' } },
+    },
+    bodyAlign: {
+      start: {},
+      center: { body: { alignSelf: 'center' } },
+    },
     dotPosition: {
       title: {},
       end: { titleRow: { '&:has(> .list-row__dot) > .list-row__title': { flex: '1' } }, dot: { me: '2' } },
@@ -157,5 +172,5 @@ export const listRow = defineSlotRecipe({
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
     { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
   ],
-  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', dotPosition: 'title' },
+  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title' },
 })

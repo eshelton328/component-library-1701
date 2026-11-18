@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Grid, Inline } from '../controls/layout'
+import { Grid, Inline, Stack } from '../controls/layout'
 import { Card } from './card'
+import { KindTile } from './kind-tile'
 import { StatusPill } from './status-pill'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -271,3 +272,73 @@ export const LongText: StoryObj<typeof meta> = {
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }
+
+/**
+ * The Toolkit tablet row (T1 428:59): `padding="compact"` pads 10 above and
+ * below and 12 at the sides, so the tile starts 13 in and the row is 60
+ * high (Figma 59), and `trailing` ends the header row with the counts
+ * (428:67), centred down it. A card without them keeps the 16 inset and no
+ * trailing slot.
+ */
+function TabletRows() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <div className={column} data-testid="compact">
+          <Card
+            title="agents-md"
+            leading={<KindTile kind="skill" size="sm" />}
+            subtitle="toolkit/skills/agents-md"
+            trailing={
+              <>
+                <span>→0</span>
+                <span>←1</span>
+              </>
+            }
+            padding="compact"
+            onSelect={() => undefined}
+          />
+        </div>
+        <div className={column} data-testid="plain">
+          <Card title="agents-md" leading={<KindTile kind="skill" size="sm" />} subtitle="toolkit/skills/agents-md" />
+        </div>
+      </Stack>
+      <div hidden>
+        <span data-swatch="muted" className={swatches.muted} />
+      </div>
+    </main>
+  )
+}
+
+const tabletRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const muted = getComputedStyle(find(canvasElement, '[data-swatch="muted"]')).backgroundColor
+  const row = find(canvasElement, '[data-testid="compact"] article')
+  const box = row.getBoundingClientRect()
+  const body = getComputedStyle(find(row, '.card__body'))
+  await expect([body.paddingTop, body.paddingRight, body.paddingBottom, body.paddingLeft]).toEqual(['10px', '12px', '10px', '12px'])
+  // 1 + 10 + 38 (the 20 px name, 2, the 16 px path) + 10 + 1: Figma's row is 59.
+  await expect(box.height).toBe(60)
+  // The 28 px tile starts 13 in, as Figma's 30 px tile (428:60), and is centred down the row.
+  const tile = find(row, '.card__leading').getBoundingClientRect()
+  await expect(tile.left - box.left).toBe(13)
+  await expect(tile.top + tile.height / 2).toBe(box.top + box.height / 2)
+  // The counts end the row 13 from its right edge, centred down it, in mono fg.muted.
+  const trailingEl = find(row, '.card__trailing')
+  const trailing = trailingEl.getBoundingClientRect()
+  await expect(box.right - trailing.right).toBe(13)
+  await expect(trailing.top + trailing.height / 2).toBe(box.top + box.height / 2)
+  await expect(trailing.left).toBeGreaterThan(find(row, '.card__subtitle').getBoundingClientRect().right)
+  const counts = getComputedStyle(trailingEl)
+  await expect([counts.fontSize, counts.color]).toEqual(['12px', muted])
+  await expect(counts.fontFamily).toContain('Mono')
+  await expect(within(trailingEl).getByText('←1')).toBeVisible()
+  // Without them: the 16 inset, a 72 px card, and no trailing slot.
+  const plain = find(canvasElement, '[data-testid="plain"] article')
+  await expect(getComputedStyle(find(plain, '.card__body')).paddingTop).toBe('16px')
+  await expect(plain.getBoundingClientRect().height).toBe(72)
+  await expect(plain.querySelector('.card__trailing')).toBeNull()
+}
+
+/** `padding="compact"` and `trailing`: the Toolkit tablet row (T1 428:59). */
+export const TabletRowDark: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'dark' }, play: tabletRowsPlay }
+export const TabletRowLight: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'light' }, play: tabletRowsPlay }

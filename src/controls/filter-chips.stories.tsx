@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { FilterChips, type FilterChip } from './filter-chips'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 // A phone-width frame, so the row must scroll.
@@ -37,6 +38,8 @@ const meta = {
   title: 'Forms/Filter chips',
   component: Chips,
   play: async ({ canvasElement }) => {
+    // The chip row scrolls with no scroll bar and keeps a swipe at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.filter-chips__root')
     const canvas = within(canvasElement)
     const row = within(canvas.getByRole('group', { name: 'Filter by kind' }))
     const skills = row.getByRole('button', { name: /Skills/ })

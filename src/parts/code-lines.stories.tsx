@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { CodeLines, type CodeSegment } from './code-lines'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // The viewer panel of Toolkit D6 (#0f1626, merged into surface.overlay).
@@ -66,6 +67,8 @@ const meta = {
   title: 'Data display/Code lines',
   component: Code,
   play: async ({ canvasElement }) => {
+    // The code scrolls sideways with no scroll bar and keeps a swipe at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.code-lines__root')
     const rows = texts(canvasElement, 'highlighted')
     const [shebang, , , def, , ret] = rows
     if (shebang === undefined || def === undefined || ret === undefined) throw new Error('no lines')

@@ -5,6 +5,7 @@ import { Button } from '../controls/button'
 import { EmptyPane } from './empty-pane'
 import { KindMark } from './kind-mark'
 import { ListRow } from './list-row'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 // The empty pane of Workbench D1 (105:347) in a pane-sized box.
 const pane = css({ display: 'flex', flexDirection: 'column', bg: 'surface.pane', w: 'shell.dialogWide', h: 'shell.dialogWide', p: '10' })
@@ -45,6 +46,8 @@ const meta = {
   title: 'Layout/Empty pane',
   component: Empty,
   play: async ({ canvasElement }) => {
+    // The empty pane scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.empty-pane__root')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

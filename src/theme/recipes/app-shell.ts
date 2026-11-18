@@ -1,6 +1,7 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
 import { tabBarHeight } from './tab-bar-height'
+import { scrollArea } from './scroll-area'
 
 // The frame that pages sit in, on the backdrop. It only places the slots;
 // each slot brings its own surface (the nav rail, a Panel, the tab bar).
@@ -89,6 +90,7 @@ export const appShell = defineSlotRecipe({
       minW: '0',
       minH: '0',
       overflowY: 'auto',
+      ...scrollArea,
       // A query container for its width: a detail Container widens and centres itself in a wide one (layout recipe).
       // Its width comes from the row, never from its content, so the containment changes no size.
       containerType: 'inline-size',

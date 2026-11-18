@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { scrollArea } from './scroll-area'
 
 // A Workbench pane with no chat (D1 105:347): no header and no fill, a
 // dashed border.default outline, and in its middle the title (105:348,
@@ -26,6 +27,7 @@ export const emptyPane = defineSlotRecipe({
       minW: '0',
       minH: '0',
       overflowY: 'auto',
+      ...scrollArea,
       p: '16',
       borderRadius: 'xl',
       borderWidth: 'default',

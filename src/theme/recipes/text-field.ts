@@ -1,6 +1,7 @@
 import { fieldAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollArea } from './scroll-area'
 
 // The text inputs of Inbox and Workbench: the rename field (D21), the notes
 // field, the dialog inputs, and the prompt while it is edited. The fill is
@@ -52,7 +53,7 @@ export const textField = defineSlotRecipe({
     label: { textStyle: 'small', color: 'fg.muted' },
     requiredIndicator: { color: 'status.danger.fg', ms: '2' },
     input: box,
-    textarea: { ...box, py: '8', minH: 'control.xl', resize: 'vertical' },
+    textarea: { ...box, ...scrollArea, py: '8', minH: 'control.xl', resize: 'vertical' },
     helperText: { textStyle: 'small', color: 'fg.muted' },
     errorText: { textStyle: 'small', color: 'status.danger.fg' },
   },

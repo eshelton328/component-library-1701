@@ -5,6 +5,7 @@ import { Button } from '../controls/button'
 import { Grid } from '../controls/layout'
 import { Panel } from './panel'
 import { expectCutText } from '../controls/tooltip.testing'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const tall = css({ h: 'shell.dialog', display: 'flex', flexDirection: 'column' })
@@ -60,6 +61,8 @@ const meta = {
   title: 'Layout/Panel',
   component: Panels,
   play: async ({ canvasElement }) => {
+    // A panel body scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.panel__body')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

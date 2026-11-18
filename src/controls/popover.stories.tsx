@@ -7,6 +7,7 @@ import { Checkbox } from './checkbox'
 import { Inline } from './layout'
 import { OptionList } from './option-list'
 import { Popover, PopoverSection } from './popover'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialogLg' })
 
@@ -68,6 +69,8 @@ const meta = {
     // The popover renders in a portal, outside the story's canvas.
     const body = within(document.body)
     const box = await body.findByRole('dialog', { name: 'Filters' })
+    // The popover scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(document.body, '.popover__content')
     await expect(box.getBoundingClientRect().width).toBe(320)
     const style = getComputedStyle(box)
     await expect(style.borderTopLeftRadius).toBe('12px')

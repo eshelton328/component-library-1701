@@ -25,7 +25,7 @@ export type PanelProps = Scalar<PanelVariantProps> & {
   meta?: ReactNode
   /** Controls at the end of the header, such as an icon button or a link. */
   actions?: ReactNode
-  /** The content, such as list rows. It scrolls when the panel is shorter than it. */
+  /** The content, such as list rows. It scrolls, with no scroll bar, when the panel is shorter than it. */
   children?: ReactNode
 }
 

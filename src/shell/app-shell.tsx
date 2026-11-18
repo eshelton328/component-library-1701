@@ -201,7 +201,7 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
   rail?: ReactNode
   /** The list pane, such as the Inbox list or the Workbench sidebar. */
   list?: ReactNode
-  /** The detail pane: the open item. It takes the rest of the width and scrolls. */
+  /** The detail pane: the open item. It takes the rest of the width and scrolls, with no scroll bar. */
   detail?: ReactNode
   /** The side panel, such as the side chat. Shown only at `size="desktop"`; on a tablet or phone, open it as a bottom sheet. */
   side?: ReactNode
@@ -245,7 +245,8 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * scroll leave the shell at its parent's height; where the browser resizes the layout
  * (Chrome on Android with `interactive-widget=resizes-content`), or with no
  * `visualViewport`, it keeps its height. The scrolling pane is focusable, so the keyboard can scroll it
- * when it holds only text.
+ * when it holds only text. It draws no scroll bar, and a scroll that reaches its end stops there and does not move
+ * the page (the shared `scrollArea` style); a wheel, a trackpad, a touch drag and the keys still scroll it.
  */
 export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false }: AppShellProps) {
   useInputModality()

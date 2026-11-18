@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollArea } from './scroll-area'
 
 // A page or pane whose top bar and bottom bar stay in view while only the
 // content between them scrolls (brain decision d-107: a Back bar sticks to
@@ -67,7 +68,7 @@ export const scrollFrame = defineSlotRecipe({
       minW: '0',
       minH: '0',
       overflowY: 'auto',
-      overscrollBehavior: 'contain',
+      ...scrollArea,
       // A flex column shrinks its children to fit; a child that clips (overflow hidden, such as a Card) would lose its
       // content instead of making the body scroll. The children keep their height.
       '& > *': { flexShrink: '0' },
@@ -96,7 +97,7 @@ export const scrollFrame = defineSlotRecipe({
       minW: '0',
       minH: '0',
       overflowY: 'auto',
-      overscrollBehavior: 'contain',
+      ...scrollArea,
       // The footer's box is its content's box and stays inside the frame: no padding and no negative margin, so
       // it never reaches past the frame (a 4 px margin made the-bridge's phone detail overflow, Workspaces #64).
       // A footer that scrolls clips what reaches past its box, so a control deeper in it keeps its focus ring (2

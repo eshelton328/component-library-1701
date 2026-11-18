@@ -6,6 +6,7 @@ import { HomeIcon, InboxIcon, MoreIcon, ProjectsIcon, WorkspacesIcon } from '../
 import { Logo } from './logo'
 import type { NavItem } from './nav-item'
 import { NavRail } from './nav-rail'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ display: 'flex', overflow: 'hidden', bg: 'bg.canvas', color: 'fg.default', w: 'shell.dialogLg', h: 'shell.dialogLg' })
 // Content as wide as the page, so the rail must keep its own width.
@@ -67,6 +68,8 @@ const meta = {
   title: 'Navigation/Nav rail',
   component: Rail,
   play: async ({ canvasElement }) => {
+    // The rail scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.nav-rail__root')
     const canvas = within(canvasElement)
     const nav = canvas.getByRole('navigation', { name: 'Main' })
     // The rail: 64 wide, surface.chrome, a 1 px border.default on the right, padding 16 / 6, gap 6.

@@ -31,7 +31,7 @@ export type PaneProps = {
   focused?: boolean | undefined
   /** Called when the user clicks or tabs into a pane that is not focused, so the app can focus it. */
   onActivate?: (() => void) | undefined
-  /** The pane's content, such as the chat. It scrolls under the header. */
+  /** The pane's content, such as the chat. It scrolls under the header, with no scroll bar. */
   children?: ReactNode
 }
 

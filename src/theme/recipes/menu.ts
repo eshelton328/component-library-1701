@@ -1,5 +1,6 @@
 import { menuAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { scrollArea } from './scroll-area'
 
 // The menus of Workbench (chat actions, D2b and M9), the row menu and the
 // sort menu: items with an icon, separators, a highlighted item, a danger
@@ -87,6 +88,7 @@ export const menu = defineSlotRecipe({
       // Ark measures the space between the trigger and the screen edge; a long menu scrolls.
       maxH: 'var(--available-height)',
       overflowY: 'auto',
+      ...scrollArea,
       p: '6',
       bg: 'surface.overlay',
       color: 'fg.default',

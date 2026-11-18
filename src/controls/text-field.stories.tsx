@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { TextArea, TextField } from './text-field'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '20', w: 'shell.dialog' })
 const sizes = ['sm', 'md', 'lg', 'xl'] as const
@@ -27,6 +28,8 @@ const meta = {
   title: 'Forms/Text field',
   component: Fields,
   play: async ({ canvasElement }) => {
+    // A text area scrolls its text with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, '.text-field__textarea')
     const canvas = within(canvasElement)
     // The sizes come from a list, so their CSS comes only from staticCss.
     const heights = sizes.map((s) => canvas.getByRole('textbox', { name: `Name, ${s}` }).getBoundingClientRect().height)

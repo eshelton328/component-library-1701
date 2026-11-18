@@ -77,6 +77,14 @@ export default definePreset({
               "value": "748px",
               "description": "Most content width of a detail column, such as the Inbox task (D1 346:306). Use it through Container size detail; not for a pane or a dialog."
             },
+            "detailWide": {
+              "value": "1024px",
+              "description": "Largest content width of a detail column (Container size detail) when its space is at least detailWideFrom wide; the column then sits in the middle. Below that it is shell.detail (748), as every Figma frame draws it."
+            },
+            "detailWideFrom": {
+              "value": "1600px",
+              "description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
+            },
             "dialog": {
               "value": "440px",
               "description": "Width of a confirm dialog."
@@ -88,6 +96,10 @@ export default definePreset({
             "dialogWide": {
               "value": "720px",
               "description": "Width of a dialog that shows a long text to read, such as the Inbox suggested prompt (D8 346:3543). Not for a confirm dialog or a form."
+            },
+            "discussionPane": {
+              "value": "1108px",
+              "description": "Largest width of the side pane beside an open item (DetailSplit side), such as the Inbox and Artifacts discussion: shell.thread (1076) plus the panel's 12 start and 20 end padding (Inbox D14 403:947). Below it the pane takes what the item leaves, 628 in the 1512 px frames. Not for the AppShell side slot, which takes sidePane or widePane."
             },
             "listPane": {
               "value": "420px",
@@ -160,6 +172,10 @@ export default definePreset({
             "tabGroup": {
               "value": "456px",
               "description": "Width of the centred tab group of the tablet tab bar (TabBar size tablet): Toolkit T01 424:3864 to 424:3899 and Inbox T1 346:5575 to 346:5605, x 150 to 606 of the 756 px frame, shared equally by five or six tabs. Not for the phone tab bar, whose tabs share the whole width, or for a pane or a dialog."
+            },
+            "thread": {
+              "value": "1076px",
+              "description": "Largest width of a chat column, its messages and its reply box (ChatColumn). The widest chat column in the 1512 px Figma frames is 1074 (Workspaces D06 158:914 and 158:934, D15 to D21), on the 4 px grid 1076, so no frame changes. On a wider screen the column stops here, centred. Not for a pane or a dialog."
             },
             "widePane": {
               "value": "420px",

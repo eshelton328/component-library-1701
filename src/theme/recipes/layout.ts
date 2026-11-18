@@ -76,6 +76,10 @@ export const layoutGrid = defineRecipe({
  *   at the start of the pane. Figma draws 820 with 36 sides; 36 takes 40
  *   (d-072), so the column is at most 828 wide. The box is content-box,
  *   so the max width holds the content and the padding sits outside it.
+ *   In a query container (the AppShell detail) at least
+ *   `shell.detailWideFrom` (1600) wide, the content is at most
+ *   `shell.detailWide` (1024) and the column sits in the middle. Every
+ *   Figma desktop frame is narrower, so none of them changes.
  * The other sizes have no max width.
  */
 export const layoutContainer = defineRecipe({
@@ -88,9 +92,34 @@ export const layoutContainer = defineRecipe({
       desktop: { pt: '24', pb: '32', px: '40' },
       tablet: { pt: '12', pb: '20', px: '24' },
       phone: { pt: '4', pb: '12', px: '12' },
-      detail: { pt: '24', pb: '32', px: '40', boxSizing: 'content-box', w: 'auto', maxW: 'shell.detail' },
+      detail: {
+        pt: '24',
+        pb: '32',
+        px: '40',
+        boxSizing: 'content-box',
+        w: 'auto',
+        maxW: 'shell.detail',
+        // The AppShell detail is an inline-size container. A wide one gives the column more room, in its middle.
+        '@container (min-width: token(sizes.shell.detailWideFrom))': { maxW: 'shell.detailWide', mx: 'auto' },
+      },
     },
     gap,
   },
   defaultVariants: { size: 'desktop', gap: '0' },
+})
+
+/**
+ * A chat's column: its messages, its empty state or its reply box. It
+ * fills its parent up to `shell.thread` (1076, the widest chat column in
+ * the Figma frames) and sits in the middle of a wider one, so on a wide
+ * screen the lines stay short enough to read and the reply box lines up
+ * with the messages. Children stack, `gap` apart.
+ */
+export const layoutChatColumn = defineRecipe({
+  className: 'chat-column',
+  jsx: ['ChatColumn'],
+  staticCss: ['*'],
+  base: { display: 'flex', flexDirection: 'column', minWidth: '0', w: '100%', maxW: 'shell.thread', mx: 'auto' },
+  variants: { gap },
+  defaultVariants: { gap: '0' },
 })

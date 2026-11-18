@@ -193,6 +193,26 @@
         "$value": { "value": 420, "unit": "px" },
         "$description": "Width of the Workbench subagents pane."
       },
+      "thread": {
+        "$type": "dimension",
+        "$value": { "value": 1076, "unit": "px" },
+        "$description": "Largest width of a chat column, its messages and its reply box (ChatColumn). The widest chat column in the 1512 px Figma frames is 1074 (Workspaces D06 158:914 and 158:934, D15 to D21), on the 4 px grid 1076, so no frame changes. On a wider screen the column stops here, centred. Not for a pane or a dialog."
+      },
+      "discussionPane": {
+        "$type": "dimension",
+        "$value": { "value": 1108, "unit": "px" },
+        "$description": "Largest width of the side pane beside an open item (DetailSplit side), such as the Inbox and Artifacts discussion: shell.thread (1076) plus the panel's 12 start and 20 end padding (Inbox D14 403:947). Below it the pane takes what the item leaves, 628 in the 1512 px frames. Not for the AppShell side slot, which takes sidePane or widePane."
+      },
+      "detailWide": {
+        "$type": "dimension",
+        "$value": { "value": 1024, "unit": "px" },
+        "$description": "Largest content width of a detail column (Container size detail) when its space is at least detailWideFrom wide; the column then sits in the middle. Below that it is shell.detail (748), as every Figma frame draws it."
+      },
+      "detailWideFrom": {
+        "$type": "dimension",
+        "$value": { "value": 1600, "unit": "px" },
+        "$description": "The width of the space (the AppShell detail) from which a detail column takes shell.detailWide and centres itself. Wider than the 1448 px detail of the 1512 px Figma frames, so no frame changes. Only for that container query; not a width of a box."
+      },
       "popoverXs": {
         "$type": "dimension",
         "$value": { "value": 160, "unit": "px" },

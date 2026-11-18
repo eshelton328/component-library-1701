@@ -32,6 +32,14 @@ Layout, Navigation or Overlays (d-065, d-066).
   nothing is set. Pages set nothing for the keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
+- The `AppShell` detail is an inline-size query container. A detail
+  `Container` in it widens to `shell.detailWide` and centres itself
+  when the detail is at least `shell.detailWideFrom` wide.
+- `DetailSplit` is the child of the detail for an open item with a side
+  pane beside it (the Inbox and Artifacts discussions). The item keeps
+  its content's width, the side takes the rest up to
+  `shell.discussionPane`, and past that the item takes the rest. The
+  Toolkit discussion uses the `AppShell` side slot (420), not this part.
 - On a tablet or phone the tab bar sits below the pane, or over its
   bottom with `tabBarOverlay`, as Figma draws the phone pages. The
   detail then ends its scroll with the bar's height and sets

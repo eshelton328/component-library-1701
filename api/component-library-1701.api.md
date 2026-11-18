@@ -312,6 +312,7 @@ export type CodeLinesProps = {
     lines: readonly string[];
     segments?: readonly (readonly CodeSegment[] | undefined)[] | undefined;
     start?: number | undefined;
+    wrap?: boolean | undefined;
 };
 
 // @public

@@ -30,18 +30,30 @@ export type CodeLinesProps = {
   segments?: readonly (readonly CodeSegment[] | undefined)[] | undefined
   /** The number of the first line. Defaults to 1. */
   start?: number | undefined
+  /**
+   * What a line longer than the box does. `false` (the default): it stays on
+   * one line and the code scrolls sideways. `true`: it wraps inside the text
+   * column, as the phone's file preview draws a script (Toolkit M22). The
+   * spaces stay, a word longer than the column breaks, the number stays on
+   * the line's first visual line, the rest lines up with the text column, and
+   * nothing scrolls sideways.
+   */
+  wrap?: boolean | undefined
 }
 
 /**
  * Code with its line numbers, such as a script in the Toolkit file
  * viewer. The numbers are right-aligned in their own column, hidden from
  * assistive technology and not selected with the code. Long lines scroll
- * sideways. Pass `segments` to colour keywords, strings, comments, numbers
+ * sideways, and the box then takes the keyboard focus so the arrow keys
+ * scroll it; with `wrap` they wrap under themselves instead and the box is
+ * not a tab stop. Pass `segments` to colour keywords, strings, comments, numbers
  * and function names.
  */
-export function CodeLines({ lines, segments, start = 1 }: CodeLinesProps) {
+export function CodeLines({ lines, segments, start = 1, wrap = false }: CodeLinesProps) {
   return (
-    <Root>
+    // A box that can scroll sideways takes the focus, so the keyboard can scroll it; a wrapped box never scrolls.
+    <Root wrap={wrap} tabIndex={wrap ? undefined : 0}>
       {lines.map((line, i) => (
         <LineRow key={String(i)} number={start + i} text={line} parts={segments?.[i]} />
       ))}

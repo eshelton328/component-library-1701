@@ -838,6 +838,11 @@ export type MapGraphNode = {
     meta?: string | undefined;
     x: number;
     y: number;
+    size?: {
+        width: number;
+        height: number;
+    } | undefined;
+    labelStyle?: MapNodeLabelStyle | undefined;
 };
 
 // @public (undocumented)
@@ -852,6 +857,8 @@ export type MapGraphProps = {
         width: number;
         height: number;
     } | undefined;
+    nodeTone?: MapNodeTone | undefined;
+    edgeEnd?: 'dot' | 'none' | undefined;
     orientation?: 'horizontal' | 'vertical' | undefined;
     selectedId?: string | null | undefined;
     onSelect?: ((id: string | null) => void) | undefined;
@@ -874,12 +881,17 @@ export type MapLegendProps = {
 // @public
 export function MapNode(input: MapNodeProps): JSX.Element;
 
+// @public
+export type MapNodeLabelStyle = 'mono' | 'label';
+
 // @public (undocumented)
 export type MapNodeProps = {
     label: string;
     kind: ToolkitKind;
     meta?: string | undefined;
     state?: MapNodeState | undefined;
+    tone?: MapNodeTone | undefined;
+    labelStyle?: MapNodeLabelStyle | undefined;
     onClick?: (() => void) | undefined;
     onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
     describedBy?: string | undefined;
@@ -887,6 +899,9 @@ export type MapNodeProps = {
 
 // @public
 export type MapNodeState = 'lit' | 'dim' | 'selected';
+
+// @public
+export type MapNodeTone = 'kind' | 'muted' | 'faint';
 
 // @public
 export function MapSelectionCard(input: MapSelectionCardProps): JSX.Element;

@@ -189,6 +189,72 @@ export const PhoneNoTabBar: StoryObj<typeof meta> = {
   },
 }
 
+// The iPad screen of Workbench T2b (744 x 1133). The frame fills the viewport, so the shell is the screen.
+const tabletScreen = { t02b: { name: 'Tablet (T2b)', styles: { width: '744px', height: '1133px' } } }
+const screenFrame = css({ display: 'flex', flexDirection: 'column', h: 'dvh' })
+
+function TabletChat({ withTabBar }: { withTabBar: boolean }) {
+  return (
+    <div className={screenFrame} data-testid="tablet">
+      <AppShell
+        size="tablet"
+        view="detail"
+        list={<section aria-label="Workspaces" className={pane}>Workspaces</section>}
+        detail={<section aria-label="Chat" className={pane}>Chat with its composer at the foot</section>}
+        tabBar={withTabBar ? <nav aria-label="Tabs" className={tabs}>Tab bar</nav> : null}
+      />
+    </div>
+  )
+}
+
+const tabletParts = (root: HTMLElement) => {
+  const canvas = within(root)
+  return { canvas, shell: rect(slot(root, 'root')), detail: rect(canvas.getByRole('main')), content: rect(canvas.getByRole('region', { name: 'Chat' })) }
+}
+
+const tabletNoTabBar: StoryObj<typeof meta> = {
+  render: () => <TabletChat withTabBar={false} />,
+  parameters: { viewport: { options: tabletScreen } },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([744, 1133])
+    const { shell, detail, content } = tabletParts(canvasElement)
+    await expect(Math.round(shell.height)).toBe(1133)
+    // The chat ends 34 (shell.safeAreaBottom) over the screen's end, as on the phone; Figma's 37 (402:5783) is off the token.
+    const safeArea = getComputedStyle(document.documentElement).getPropertyValue('--sizes-shell-safe-area-bottom').trim()
+    await expect(safeArea).toBe('34px')
+    await expect(Math.round(shell.bottom - content.bottom)).toBe(34)
+    await expect(Math.round(detail.bottom)).toBe(Math.round(content.bottom))
+    const safe = slot(canvasElement, 'safeArea')
+    await expect(safe).toHaveAttribute('aria-hidden', 'true')
+    await expect(Math.round(rect(safe).top)).toBe(Math.round(detail.bottom))
+    await expect(Math.round(rect(safe).bottom)).toBe(Math.round(shell.bottom))
+  },
+}
+
+/** Tablet with no tab bar, as inside a chat (Workbench T2b): the 34 px home-indicator area stays clear under the chat. */
+export const TabletNoTabBarDark: StoryObj<typeof meta> = { ...tabletNoTabBar, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const TabletNoTabBarLight: StoryObj<typeof meta> = { ...tabletNoTabBar, globals: { mode: 'light', viewport: { value: 't02b' } } }
+
+const tabletTabBar: StoryObj<typeof meta> = {
+  render: () => <TabletChat withTabBar />,
+  parameters: { viewport: { options: tabletScreen } },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([744, 1133])
+    const { canvas, shell, detail, content } = tabletParts(canvasElement)
+    const bar = rect(canvas.getByRole('navigation', { name: 'Tabs' }))
+    // As before: the 77 px bar ends at the screen's end and the chat ends at its top, with no safe area.
+    await expect(Math.round(bar.height)).toBe(77)
+    await expect(Math.round(bar.bottom)).toBe(Math.round(shell.bottom))
+    await expect(Math.round(detail.bottom)).toBe(Math.round(bar.top))
+    await expect(Math.round(content.bottom)).toBe(Math.round(bar.top))
+    await expect(canvasElement.querySelector('.app-shell__safeArea')).toBeNull()
+  },
+}
+
+/** Tablet with a tab bar at 744 x 1133: the chat ends at the bar's top, as it always has. */
+export const TabletTabBarDark: StoryObj<typeof meta> = { ...tabletTabBar, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const TabletTabBarLight: StoryObj<typeof meta> = { ...tabletTabBar, globals: { mode: 'light', viewport: { value: 't02b' } } }
+
 /** A list left out on a phone shows the detail, whatever `view` says. */
 export const NoList: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },

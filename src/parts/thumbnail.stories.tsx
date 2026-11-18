@@ -156,3 +156,99 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The row sizes: sm (64 × 40, D2 403:194), md (76 × 48, M1 406:122) and lg
+// (128 × 72 with shape wide, D4 403:8217). The default fill stays as it was.
+function RowSizes() {
+  return (
+    <main className={page}>
+      {(['sm', 'md'] as const).map((size) => (
+        <div key={size} className={row}>
+          {kinds.map((k) => (
+            <div key={k} data-testid={`${size}-${k}`}>
+              <Thumbnail kind={k} size={size} />
+            </div>
+          ))}
+        </div>
+      ))}
+      <div className={row}>
+        <div data-testid="lg-chart">
+          <Thumbnail kind="chart" shape="wide" size="lg" />
+        </div>
+        <div className={w334} data-testid="fill-grid">
+          <Thumbnail kind="grid" shape="compact" />
+        </div>
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const rowMeta = {
+  render: () => <RowSizes />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    for (const [size, w, h, scale] of [
+      ['sm', 64, 40, 1],
+      ['md', 76, 48, 1.2],
+    ] as const) {
+      for (const k of kinds) {
+        const t = thumb(canvas.getByTestId(`${size}-${k}`))
+        const box = t.root.getBoundingClientRect()
+        await expect(box.width).toBe(w)
+        await expect(box.height).toBeCloseTo(h, 1)
+        await expect(getComputedStyle(t.root, '::after').borderTopWidth).toBe('1px')
+        await expect(getComputedStyle(t.root).borderTopLeftRadius).toBe('6px')
+        // The row drawing's window bar is 4 high (at 64 wide) with three 5 px dots.
+        const [chrome] = shapes(t.svg, 'chrome')
+        if (chrome === undefined) throw new Error('no chrome')
+        await expect(chrome.getBoundingClientRect().height).toBeCloseTo(4 * scale, 1)
+        const dots = shapes(t.svg, 'dot')
+        await expect(dots.length).toBe(3)
+        for (const d of dots) await expect(d.getBoundingClientRect().width).toBeCloseTo(5 * scale, 1)
+      }
+      // Grid: six outlined cells, 12 × 10 with radius 3.5 at 64 wide, and no label bars.
+      const grid = thumb(canvas.getByTestId(`${size}-grid`)).svg
+      const cells = ['accentEdge', 'amberEdge', 'violetEdge', 'greenEdge'].flatMap((slot) => shapes(grid, slot))
+      await expect(cells.length).toBe(6)
+      for (const c of cells) {
+        await expect(c.getBoundingClientRect().width).toBeCloseTo(12 * scale, 0)
+        await expect(c.getAttribute('rx')).toBe('3.5')
+      }
+      await expect(shapes(grid, 'accent').length).toBe(0)
+      // UI: a side bar 12 wide and four rows, each with a green pill.
+      const ui = thumb(canvas.getByTestId(`${size}-ui`)).svg
+      const [side] = shapes(ui, 'well')
+      if (side === undefined) throw new Error('no side bar')
+      await expect(side.getBoundingClientRect().width).toBeCloseTo(12 * scale, 1)
+      await expect(getComputedStyle(side).fill).toBe(swatch(canvasElement, 'well'))
+      await expect(shapes(ui, 'inset').length).toBe(4)
+      await expect(shapes(ui, 'green').length).toBe(4)
+      // Chart: nine bars 4 wide on the baseline, every third violet.
+      const bars = Array.from(thumb(canvas.getByTestId(`${size}-chart`)).svg.querySelectorAll('[data-bars] rect'))
+      await expect(bars.length).toBe(9)
+      for (const [i, bar] of bars.entries()) {
+        await expect(bar.getBoundingClientRect().width).toBeCloseTo(4 * scale, 1)
+        await expect(getComputedStyle(bar).fill).toBe(swatch(canvasElement, i % 3 === 2 ? 'violet' : 'accent'))
+      }
+    }
+    // lg is 128 × 72 at 16:9 with the card's drawing (its 17-high bar at 188 high).
+    const lg = thumb(canvas.getByTestId('lg-chart'))
+    const lbox = lg.root.getBoundingClientRect()
+    await expect(lbox.width).toBe(128)
+    await expect(lbox.height).toBe(72)
+    await expect(lg.svg.querySelectorAll('[data-bars] rect').length).toBe(9)
+    // fill (the default) keeps the card drawing at its container's width: labelled cells, 320 × 200.
+    const fill = thumb(canvas.getByTestId('fill-grid'))
+    await expect(fill.root.getBoundingClientRect().width).toBe(320)
+    await expect(fill.root.getBoundingClientRect().height).toBe(200)
+    await expect(shapes(fill.svg, 'accent').length).toBe(2)
+  },
+} satisfies StoryObj<typeof meta>
+
+export const RowSizeDark: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'dark' } }
+export const RowSizeLight: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'light' } }

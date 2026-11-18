@@ -12,7 +12,8 @@ export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui'
 
 /**
  * The shape of a thumbnail: `wide` (16:9, the default), `compact` (8:5) or
- * `banner` (2:1). The thumbnail fills its container's width.
+ * `banner` (2:1). With `size="fill"` the thumbnail fills its container's
+ * width; `sm` and `md` are always compact.
  */
 export type ThumbnailShape = 'wide' | 'compact' | 'banner'
 
@@ -150,19 +151,142 @@ function Ui() {
 
 const drawings: Record<ThumbnailKind, () => ReactNode> = { chart: Chart, diagram: Diagram, doc: Doc, grid: Grid, ui: Ui }
 
+// The row drawings, on Figma's 64 × 40 row preview (D2 403:194 and its
+// siblings): each kind drawn for its size, with no labels, as the card
+// drawing scaled down would cut its shapes to slivers. The values are read
+// from the saved frame at 1:1.
+
+// Chart 403:194: a title bar, nine bars on a baseline, every third violet.
+const rowBars = [10, 23, 9, 22, 13, 21, 17, 20, 20]
+function RowChart() {
+  return (
+    <>
+      <Rect x={5} y={7} w={21} h={3} r={1.5} fill="accent" />
+      <g data-bars="">
+        {rowBars.map((h, i) => (
+          <Rect key={String(i)} x={6 + i * 6} y={36 - h} w={4} h={h} r={1} fill={i % 3 === 2 ? 'violet' : 'accent'} />
+        ))}
+      </g>
+      <Rect x={5} y={36} w={54} h={1} r={0} fill="muted" />
+    </>
+  )
+}
+
+// Diagram 403:246: four violet-edged nodes, joined as the card's are.
+const rowNodes = [
+  [9.5, 14.5],
+  [28, 10.5],
+  [28, 23],
+  [46.5, 16.5],
+] as const
+function RowDiagram() {
+  return (
+    <>
+      <Rect x={19.5} y={17.25} w={15.5} h={1} r={0} fill="muted" />
+      <Rect x={34.5} y={17} w={1} h={6} r={0} fill="muted" />
+      <Rect x={34.5} y={21.25} w={12} h={1} r={0} fill="muted" />
+      {rowNodes.map(([x, y]) => (
+        <Rect key={`${String(x)}-${String(y)}`} x={x} y={y} w={10} h={6.5} r={3} fill="violetEdge" />
+      ))}
+    </>
+  )
+}
+
+// Doc 414:759: a title and seven text lines, as the card's; no chips.
+const rowLines = [51, 51, 32, 51, 51, 32, 51]
+function RowDoc() {
+  return (
+    <>
+      <Rect x={5} y={7} w={29} h={3} r={1.5} fill="accent" />
+      {rowLines.map((w, i) => (
+        <Rect key={String(i)} x={5} y={12 + i * 2.5} w={w} h={1.5} r={0.75} fill="muted" />
+      ))}
+    </>
+  )
+}
+
+// Grid 403:274: two rows of three outlined cells with wide rounded corners, no labels.
+function RowGrid() {
+  return (
+    <>
+      {cells.map(([edge], i) => (
+        <Rect key={String(i)} x={5.5 + (i % 3) * 20.5} y={i < 3 ? 7.5 : 25} w={12} h={10} r={3.5} fill={edge} />
+      ))}
+    </>
+  )
+}
+
+// UI 403:220: a window with a side bar and four rows, each with a green pill.
+function RowUi() {
+  return (
+    <>
+      <Rect x={5} y={7} w={12} h={29} r={2} fill="well" />
+      {[0, 1, 2, 3].map((i) => {
+        const y = 7 + (i * 22) / 3
+        return (
+          <g key={`row-${String(i)}`}>
+            <Rect x={19} y={y} w={39} h={4.5} r={1.5} fill="inset" />
+            <Rect x={53.5} y={y + 3} w={3.5} h={2} r={1} fill="green" />
+          </g>
+        )
+      })}
+    </>
+  )
+}
+
+const rowDrawings: Record<ThumbnailKind, () => ReactNode> = { chart: RowChart, diagram: RowDiagram, doc: RowDoc, grid: RowGrid, ui: RowUi }
+
+// The row sizes' boxes. md is 76 × 48 (M1 406:122): the 64 × 40 drawing at
+// 1.2, 76.8 wide, centred, so 0.4 of the window bar's ends is cut.
+const rowBoxes = { sm: { w: 64, h: 40, scale: 1 }, md: { w: 76, h: 48, scale: 1.2 } } as const
+
+function RowThumbnail({ kind, size, framed, label }: { kind: ThumbnailKind; size: keyof typeof rowBoxes; framed: boolean | undefined; label: string | undefined }) {
+  const box = rowBoxes[size]
+  const Drawing = rowDrawings[kind]
+  const named = label !== undefined && label.trim() !== ''
+  return (
+    <Root framed={framed} size={size} data-kind={kind} data-shape="compact" data-size={size}>
+      <Svg
+        viewBox={`0 0 ${String(box.w)} ${String(box.h)}`}
+        role={named ? 'img' : undefined}
+        aria-label={named ? label : undefined}
+        aria-hidden={named ? undefined : true}
+        focusable="false"
+      >
+        <g transform={`translate(${String((box.w - 64 * box.scale) / 2)} 0) scale(${String(box.scale)})`}>
+          <rect x={0} y={0} width={64} height={4} className={slots.chrome} />
+          {[10.5, 19.5, 28.5].map((cx) => (
+            <circle key={String(cx)} cx={cx} cy={2} r={2.5} className={slots.dot} />
+          ))}
+          <Drawing />
+        </g>
+      </Svg>
+    </Root>
+  )
+}
+
 /**
  * The preview of an artifact: a window bar and sample content for its
  * kind (`chart`, `diagram`, `doc`, `grid` or `ui`), as on the Artifacts
- * page. It fills its container's width at its `shape`'s ratio, so the
- * caller sets the size. `framed` (the default) draws a border and radius
- * for a thumbnail on its own; set it to `false` inside a card that clips.
+ * page. `framed` (the default) draws a border and radius for a thumbnail
+ * on its own; set it to `false` inside a card that clips.
+ *
+ * `size` sets the width. `fill` (the default) fills the container's width
+ * at `shape`'s ratio, with the card's drawing. `sm` is the 64 × 40 preview
+ * at the start of a desktop artifact row and `md` the 76 × 48 one of a
+ * phone row; both draw each kind's row drawing (a grid of six round-cornered
+ * cells, a window with a side bar and rows), not the card's drawing
+ * scaled down, and ignore `shape`. `lg` is 128 wide at `shape`'s ratio
+ * with the card's drawing, 128 × 72 with `shape="wide"`, as the desktop
+ * list view and search results draw it.
  */
-export function Thumbnail({ kind = 'doc', shape = 'wide', framed, label }: ThumbnailProps) {
+export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label }: ThumbnailProps) {
+  if (size === 'sm' || size === 'md') return <RowThumbnail kind={kind} size={size} framed={framed} label={label} />
   const width = widths[shape]
   const Drawing = drawings[kind]
   const named = label !== undefined && label.trim() !== ''
   return (
-    <Root framed={framed} data-kind={kind} data-shape={shape}>
+    <Root framed={framed} size={size} data-kind={kind} data-shape={shape}>
       <Svg
         viewBox={`0 0 ${String(width)} ${String(height)}`}
         role={named ? 'img' : undefined}

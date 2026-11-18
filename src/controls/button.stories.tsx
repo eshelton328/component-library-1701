@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { ChartIcon, CopyIcon, GridIcon, ListIcon, MapIcon, MoveIcon } from '../foundations/icons'
+import { ChartIcon, ChevronDownIcon, CopyIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -736,3 +736,55 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
  */
 export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedBorderPlay }
 export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }
+
+// Toolkit's Sort button (D1 425:62): a 36 px secondary button with the sort icon, the label and a chevron, 13 px
+// sides in Figma. `padding="compact"` pads it 12 (nearest token); the default `lg` keeps 16, and an icon-only
+// button keeps its square.
+function CompactButtons() {
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button size="lg" padding="compact">
+          <SortIcon />
+          Sort
+          <ChevronDownIcon />
+        </Button>
+        <Button size="lg">
+          <SortIcon />
+          Sort default
+          <ChevronDownIcon />
+        </Button>
+        <Button size="md" padding="compact">
+          Medium compact
+        </Button>
+        <Button size="lg" padding="compact" iconOnly aria-label="Icon only compact">
+          <SortIcon />
+        </Button>
+      </div>
+    </main>
+  )
+}
+
+const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const sides = (name: string) => {
+    const s = getComputedStyle(canvas.getByRole('button', { name }))
+    return [s.paddingLeft, s.paddingRight, s.height]
+  }
+  const sort = canvas.getByRole('button', { name: 'Sort' })
+  await expect(sides('Sort')).toEqual(['12px', '12px', '36px'])
+  // The sort icon starts 13 in, with the 1 px border, as Figma's (425:63).
+  const icon = sort.querySelector('svg')
+  if (icon === null) throw new Error('no icon')
+  await expect(icon.getBoundingClientRect().left - sort.getBoundingClientRect().left).toBe(13)
+  await expect(getComputedStyle(sort).fontSize).toBe('14px')
+  // The default lg keeps 16, md keeps 12, and an icon-only lg stays a 36 px square.
+  await expect(sides('Sort default')).toEqual(['16px', '16px', '36px'])
+  await expect(sides('Medium compact')).toEqual(['12px', '12px', '32px'])
+  const square = canvas.getByRole('button', { name: 'Icon only compact' }).getBoundingClientRect()
+  await expect([square.width, square.height]).toEqual([36, 36])
+}
+
+/** `padding="compact"`: Toolkit's Sort button with 12 px sides (D1 425:62). */
+export const CompactPaddingDark: StoryObj<typeof meta> = { render: () => <CompactButtons />, globals: { mode: 'dark' }, play: compactPlay }
+export const CompactPaddingLight: StoryObj<typeof meta> = { render: () => <CompactButtons />, globals: { mode: 'light' }, play: compactPlay }

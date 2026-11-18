@@ -7,7 +7,7 @@ const StyledButton = styled('button', button)
 
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
- * `textSize`, `pressedTone`, `pressedBorder`, `expandedBorder` and
+ * `textSize`, `padding`, `pressedTone`, `pressedBorder`, `expandedBorder` and
  * `iconOnly`, `pressed` and `indicator`. `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
@@ -17,6 +17,10 @@ const StyledButton = styled('button', button)
  * 13/16), as Start and Remove task do; `xs` draws `labelXs` (Medium 12/16),
  * as the small Inbox buttons (Reset, Edit, Snooze, Dismiss) do. It keeps the
  * height and padding of `size`.
+ *
+ * `padding="compact"` pads a `lg` button 12 at the sides, where `default`
+ * pads it 16, as Toolkit's Sort button (D1 425:62) does. It changes only a
+ * `lg` button that is not `iconOnly`.
  *
  * `expandedBorder` sets the border while `aria-expanded` is true. `active`
  * (the default) draws `border.active` (cyan): keep it on the trigger of a

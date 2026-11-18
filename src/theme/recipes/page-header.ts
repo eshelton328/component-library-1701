@@ -7,6 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // M1 429:51. `size` picks the title style: `pane` for a list pane title
 // (Inbox D1, 15), `page` for a desktop page (Artifacts and Toolkit D1, 20)
 // and `phone` for tablet and phone (28; the inventory merges tablet's 26).
+// Figma's desktop page title is 20 px in a 29 px box (Artifacts D1 402:15372
+// and Toolkit D1 425:30, both 29 high; Workbench title 20/29, d-041), so
+// `page` keeps `title` (20/28 on the grid).
 export const pageHeader = defineSlotRecipe({
   className: 'page-header',
   jsx: ['PageHeader'],
@@ -28,6 +31,16 @@ export const pageHeader = defineSlotRecipe({
       page: { title: { textStyle: 'title' }, count: { textStyle: 'body' } },
       phone: { title: { textStyle: 'heading' }, count: { textStyle: 'body' } },
     },
+    // The count's text style. `md` keeps the size's own count. `lg` sets
+    // `pageCount` (Regular 16/20) on every size, as the Artifacts header
+    // draws its count: "24" (D1 402:15373, T1 405:108) is 20 × 21 and
+    // "3 of 24" (D4 403:7774) 53 × 21, where Toolkit's "27" (425:31) is
+    // 16 × 20 in body. Figma's 21 px line takes 20 on the 4 px grid (d-100).
+    // The size keeps the count's colour.
+    countSize: {
+      md: {},
+      lg: { count: { textStyle: 'pageCount' } },
+    },
   },
-  defaultVariants: { size: 'page' },
+  defaultVariants: { size: 'page', countSize: 'md' },
 })

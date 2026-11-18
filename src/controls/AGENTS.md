@@ -41,6 +41,12 @@ under their purpose group, never under "Controls" (d-065).
   sticky element inside its body (a Start button at its foot) sticks at
   `bottom: 'var(--scroll-frame-inset, 0px)'`, the frame's public bottom
   offset, so it stays above the bar.
+- On a touch screen (`pointer: coarse`), a user's drag of the
+  `ScrollFrame` body by more than 10 px, or a tap on it that is not on a
+  link, button or field, blurs a focused text field, so the keyboard
+  closes and the user can read; the draft stays. It reads touch events,
+  never the scroll event, so a scroll from code never closes it. With a
+  mouse nothing changes. A chat page sets nothing for it.
 - `Button` draws `border.active` while `aria-expanded` is true. Keep that
   default on the trigger of a menu, popover or sheet. A disclosure toggle,
   a button that shows or hides a section in place (Hide transcript on a

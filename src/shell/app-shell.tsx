@@ -1,8 +1,9 @@
-import { Children, Fragment, isValidElement, useEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { Backdrop } from './backdrop'
+import { shown } from './shown'
 
 const { withProvider, withContext } = createSlotRecipeContext(appShell)
 const Root = withProvider('div', 'root')
@@ -13,12 +14,6 @@ const Side = withContext('aside', 'side')
 const TabBar = withContext('div', 'tabBar')
 const SafeArea = withContext('div', 'safeArea')
 
-// A slot that renders nothing is left out: `false`, `null`, `''`, an empty
-// array, or a fragment of those.
-const shown = (node: ReactNode): boolean =>
-  Children.toArray(node).some((child) =>
-    isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment ? shown(child.props.children) : child !== '',
-  )
 
 // The custom properties that the recipe's root reads: the visible height and the visible area's top.
 const visibleHeight = '--app-shell-visible-height'

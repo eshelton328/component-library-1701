@@ -79,3 +79,59 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The viewports of the stories: the 1440 px of the review frames, a 1920 px screen and Erik's 3540 px screen.
+const vp1440 = { w1440: { name: 'Desktop (1440)', styles: { width: '1440px', height: '900px' } } }
+const vp1920 = { w1920: { name: 'Wide (1920)', styles: { width: '1920px', height: '1080px' } } }
+const vp3540 = { w3540: { name: 'Ultra-wide (3540)', styles: { width: '3540px', height: '1440px' } } }
+
+// A query container as wide as the window, as the AppShell detail is.
+// A block fills the width, so the main element is as wide as the window.
+const space = css({ containerType: 'inline-size', bg: 'bg.canvas' })
+
+function DetailSpace() {
+  return (
+    <main className={space} data-testid="space">
+      <Container size="detail" data-testid="detail-space">
+        <p className={text}>A detail column. From a 1600 px space it is 1024 wide, in the middle; below, 748 at the start.</p>
+      </Container>
+    </main>
+  )
+}
+
+// Below shell.detailWideFrom (1600) the column is 748 + 2 × 40 at the start; from it, 1024 + 2 × 40 in the middle.
+const detailAt =
+  (wide: boolean): NonNullable<StoryObj<typeof meta>['play']> =>
+  async ({ canvasElement }) => {
+    const parent = canvasElement.querySelector<HTMLElement>('[data-testid="space"]')?.getBoundingClientRect()
+    const column = canvasElement.querySelector<HTMLElement>('[data-testid="detail-space"]')?.getBoundingClientRect()
+    if (parent === undefined || column === undefined) throw new Error('no detail space')
+    await expect(column.width).toBe(wide ? 1104 : 828)
+    if (wide) await expect(column.left - parent.left).toBe(parent.right - column.right)
+    else await expect(column.left).toBe(parent.left)
+  }
+
+/** At 1440 px nothing moves: the column is 828 wide at the start, as in every Figma desktop frame. */
+export const DetailAt1440Dark: StoryObj<typeof meta> = {
+  render: () => <DetailSpace />,
+  parameters: { viewport: { options: vp1440 } },
+  globals: { mode: 'dark', viewport: { value: 'w1440' } },
+  play: detailAt(false),
+}
+export const DetailAt1440Light: StoryObj<typeof meta> = { ...DetailAt1440Dark, globals: { mode: 'light', viewport: { value: 'w1440' } } }
+/** At 1920 px the column is 1104 wide (1024 and its padding), in the middle. */
+export const DetailAt1920Dark: StoryObj<typeof meta> = {
+  render: () => <DetailSpace />,
+  parameters: { viewport: { options: vp1920 } },
+  globals: { mode: 'dark', viewport: { value: 'w1920' } },
+  play: detailAt(true),
+}
+export const DetailAt1920Light: StoryObj<typeof meta> = { ...DetailAt1920Dark, globals: { mode: 'light', viewport: { value: 'w1920' } } }
+/** At 3540 px it stays 1104 wide, in the middle. */
+export const DetailAt3540Dark: StoryObj<typeof meta> = {
+  render: () => <DetailSpace />,
+  parameters: { viewport: { options: vp3540 } },
+  globals: { mode: 'dark', viewport: { value: 'w3540' } },
+  play: detailAt(true),
+}
+export const DetailAt3540Light: StoryObj<typeof meta> = { ...DetailAt3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }

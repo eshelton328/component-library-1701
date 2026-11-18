@@ -57,6 +57,14 @@ import { tabBarHeight } from './tab-bar-height'
 //   no focused field, no keyboard or where the browser resizes the layout,
 //   the fallbacks (none, 0px) keep the root as tall as its parent, which
 //   gives the stable height.
+// - Keyboard dock (every size): --app-shell-keyboard on the root, how far
+//   an on-screen keyboard covers the detail's bottom (0px when unset). The
+//   detail sets --app-shell-detail-end, its end padding and scroll padding,
+//   to that value (under tabBarOverlay the larger of it and the bar's
+//   height), so its own content and a focused control end above the
+//   keyboard; a ScrollFrame that is the detail's child reaches through that
+//   padding and docks its footer on the keyboard (the scroll-frame recipe).
+//   Both are reset deeper down, as the tab bar's are. Unset, nothing moves.
 export const appShell = defineSlotRecipe({
   className: 'app-shell',
   jsx: ['AppShell'],
@@ -84,6 +92,12 @@ export const appShell = defineSlotRecipe({
       // A query container for its width: a detail Container widens and centres itself in a wide one (layout recipe).
       // Its width comes from the row, never from its content, so the containment changes no size.
       containerType: 'inline-size',
+      // Its end padding and scroll padding: the on-screen keyboard's reach over its bottom (0px with none), so its
+      // last item and a focused control end above the keyboard. Its direct child reads the value; deeper it is 0.
+      '--app-shell-detail-end': 'var(--app-shell-keyboard, 0px)',
+      pb: 'var(--app-shell-detail-end)',
+      scrollPaddingBottom: 'var(--app-shell-detail-end)',
+      '& > * *': { '--app-shell-keyboard': '0px', '--app-shell-detail-end': '0px' },
       // It takes focus so the keyboard can scroll it; the ring sits inside, as the pane abuts its neighbours.
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
@@ -113,10 +127,10 @@ export const appShell = defineSlotRecipe({
         detail: {
           '--app-shell-tab-bar-inset': tabBarHeight,
           '--app-shell-tab-bar-spacer': 'block',
-          pb: 'var(--app-shell-tab-bar-inset)',
           // The end padding lets the last item scroll clear; the scroll padding makes focus (Tab) scroll a control out
-          // from under the bar, too, as the browser scrolls only a control outside the padded view.
-          scrollPaddingBottom: 'var(--app-shell-tab-bar-inset)',
+          // from under the bar, too, as the browser scrolls only a control outside the padded view. With the keyboard
+          // open over the bar, the keyboard's reach is the larger.
+          '--app-shell-detail-end': 'max(var(--app-shell-tab-bar-inset), var(--app-shell-keyboard, 0px))',
           '& > * *': { '--app-shell-tab-bar-inset': '0px', '--app-shell-tab-bar-spacer': 'none' },
         },
         tabBar: { position: 'absolute', insetInline: '0', bottom: '0', bg: 'bg.canvas' },

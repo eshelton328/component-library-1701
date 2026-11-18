@@ -52,7 +52,11 @@ under their purpose group, never under "Controls" (d-065).
   else the two custom properties are unset and it draws as before. A
   sticky element inside its body (a Start button at its foot) sticks at
   `bottom: 'var(--scroll-frame-inset, 0px)'`, the frame's public bottom
-  offset, so it stays above the bar.
+  offset, so it stays above the bar. As the detail's direct child it is
+  also the keyboard dock: while `AppShell` sets `--app-shell-keyboard`,
+  its footer rides up onto the keyboard with `translateY` and its body
+  gets an equal clear bottom border, so its view ends at the raised
+  footer; the frame's layout does not change.
 - On a touch screen (`pointer: coarse`), a user's drag of the
   `ScrollFrame` body by more than 10 px, or a tap on it that is not on a
   link, button or field, blurs a focused text field, so the keyboard

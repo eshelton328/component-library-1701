@@ -19,6 +19,7 @@ import { KeyboardEvent as KeyboardEvent_2 } from 'react';
 import { KindBadgeVariantProps } from '../../styled-system/recipes';
 import { KindMarkVariantProps } from '../../styled-system/recipes';
 import { KindTileVariantProps } from '../../styled-system/recipes';
+import { LayoutChatColumnVariantProps } from '../../styled-system/recipes';
 import { LayoutContainerVariantProps } from '../../styled-system/recipes';
 import { LayoutGridVariantProps } from '../../styled-system/recipes';
 import { LayoutInlineVariantProps } from '../../styled-system/recipes';
@@ -201,6 +202,12 @@ export type CardProps = {
 
 // @public
 export function ChartIcon(props: IconProps): JSX.Element;
+
+// @public
+export function ChatColumn(props: ChatColumnProps): JSX.Element;
+
+// @public
+export type ChatColumnProps = ComponentProps<'div'> & Scalar<LayoutChatColumnVariantProps>;
 
 // @public
 export function ChatIcon(props: IconProps): JSX.Element;
@@ -405,6 +412,15 @@ export type DailyBarChartProps = {
     legend?: string | undefined;
     axisLabels?: DailyAxisLabels | undefined;
     formatValue?: ((value: number) => string) | undefined;
+};
+
+// @public
+export function DetailSplit(input: DetailSplitProps): JSX.Element;
+
+// @public (undocumented)
+export type DetailSplitProps = {
+    children?: ReactNode;
+    side?: ReactNode;
 };
 
 // @public

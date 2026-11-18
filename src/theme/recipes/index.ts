@@ -13,6 +13,7 @@ import { card } from './card'
 import { checkbox } from './checkbox'
 import { composer } from './composer'
 import { contextMeter } from './context-meter'
+import { detailSplit } from './detail-split'
 import { dialog } from './dialog'
 import { dragPreview } from './drag-preview'
 import { emptyPane } from './empty-pane'
@@ -49,7 +50,7 @@ import { modelChip } from './model-chip'
 import { popover } from './popover'
 import { proposalBlock } from './proposal-block'
 import { proposalSection } from './proposal-section'
-import { layoutContainer, layoutGrid, layoutInline, layoutStack } from './layout'
+import { layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack } from './layout'
 import { scrollFrame } from './scroll-frame'
 import { searchField } from './search-field'
 import { splitter } from './splitter'
@@ -72,6 +73,6 @@ import { workspaceTabs } from './workspace-tabs'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, clamp, highlight, icon, kindMark, kindTile, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
+export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, clamp, highlight, icon, kindMark, kindTile, layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, dialog, dragPreview, emptyPane, errorState, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, dialog, dragPreview, emptyPane, errorState, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

@@ -67,6 +67,9 @@ export const appShell = defineSlotRecipe({
       minW: '0',
       minH: '0',
       overflowY: 'auto',
+      // A query container for its width: a detail Container widens and centres itself in a wide one (layout recipe).
+      // Its width comes from the row, never from its content, so the containment changes no size.
+      containerType: 'inline-size',
       // It takes focus so the keyboard can scroll it; the ring sits inside, as the pane abuts its neighbours.
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },

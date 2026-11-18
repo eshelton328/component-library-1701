@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { ScrollFrame } from './scroll-frame'
@@ -61,13 +61,21 @@ const meta = {
     await expect(back.getBoundingClientRect().top).toBe(top)
     await expect(inside(back)).toBe(true)
     await expect(inside(reply)).toBe(true)
-    // The footer scrolls past its cap, so it clips: it leaves 4 px around the reply button for its focus ring.
+    // The footer stays inside the frame: it does not reach past its sides or its bottom.
     const footerBox = reply.parentElement?.getBoundingClientRect()
-    if (footerBox === undefined) throw new Error('no footer')
-    const button = reply.getBoundingClientRect()
-    await expect(footerBox.top).toBeLessThanOrEqual(button.top - 4)
-    await expect(footerBox.left).toBeLessThanOrEqual(button.left - 4)
-    await expect(footerBox.bottom).toBeGreaterThanOrEqual(button.bottom + 4)
+    const frameBox = reply.parentElement?.parentElement?.getBoundingClientRect()
+    if (footerBox === undefined || frameBox === undefined) throw new Error('no footer')
+    await expect(footerBox.left).toBeGreaterThanOrEqual(frameBox.left)
+    await expect(footerBox.right).toBeLessThanOrEqual(frameBox.right)
+    await expect(footerBox.bottom).toBeLessThanOrEqual(frameBox.bottom)
+    // The reply button sits at the footer's edge. Focused by the keyboard, it draws its ring inside its own box,
+    // so the footer does not cut it (Codex review of #134), with a bg.canvas line inside the ring.
+    await userEvent.tab({ shift: true })
+    while (document.activeElement !== reply) await userEvent.tab()
+    const ringStyle = getComputedStyle(reply)
+    await expect(ringStyle.outlineStyle).toBe('solid')
+    await expect(parseFloat(ringStyle.outlineWidth) + parseFloat(ringStyle.outlineOffset)).toBeLessThanOrEqual(0)
+    await expect(ringStyle.boxShadow).toContain('inset')
     // The last line is in view above the reply box, the first has scrolled out.
     const last = canvas.getByText('Message 30').getBoundingClientRect()
     await expect(last.bottom).toBeLessThanOrEqual(reply.getBoundingClientRect().top)
@@ -80,8 +88,7 @@ export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 
 /**
  * With gap 0, as the Workbench chat pane has, the footer starts where the body ends: it does not lie over the
- * body, so the last line of the body is not under the reply box. The footer still keeps 4 px around the reply
- * button for its focus ring.
+ * body, so the last line of the body is not under the reply box, and it stays inside the frame.
  */
 export const GapZeroDark: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },

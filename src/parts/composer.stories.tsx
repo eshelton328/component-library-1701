@@ -473,3 +473,55 @@ export const InFrameLongDraftDark: StoryObj<typeof meta> = {
   },
 }
 export const InFrameLongDraftLight: StoryObj<typeof meta> = { ...InFrameLongDraftDark, globals: { mode: 'light' } }
+
+/**
+ * A phone page (390 px wide) with a gap of 0, as the Workbench phone chat has: the footer is inside the frame on
+ * every side, and Send, which the keyboard focuses, keeps its whole focus ring inside the footer, because the
+ * composer's own padding holds it.
+ */
+export const InFramePhoneDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={pane} data-testid="pane-phone">
+        <ScrollFrame header={<Button size="sm">Back</Button>} footer={<Composer label="Reply" model={<ModelChip model="Opus 5.5" options={[]} />} />}>
+          {messages.map((text) => (
+            <p key={text} className={message}>
+              {text}
+            </p>
+          ))}
+        </ScrollFrame>
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const paneEl = canvasElement.querySelector('[data-testid="pane-phone"]')
+    if (!(paneEl instanceof HTMLElement)) throw new Error('no pane')
+    paneEl.style.width = '390px'
+    paneEl.style.height = '700px'
+    await settle()
+    const footer = paneEl.querySelector('.scroll-frame__footer')
+    const frame = footer?.parentElement
+    const body = frame?.querySelector('.scroll-frame__body')
+    if (!(footer instanceof HTMLElement) || !(frame instanceof HTMLElement) || !(body instanceof HTMLElement))
+      throw new Error('no frame')
+    const f = footer.getBoundingClientRect()
+    const r = frame.getBoundingClientRect()
+    await expect(f.left).toBeGreaterThanOrEqual(r.left)
+    await expect(f.right).toBeLessThanOrEqual(r.right)
+    await expect(f.bottom).toBeLessThanOrEqual(r.bottom)
+    await expect(f.top).toBeCloseTo(body.getBoundingClientRect().bottom, 1)
+    // Focus Send with the keyboard and check its ring (2 px wide, 2 px out) is inside the footer's box.
+    const send = within(footer).getByRole('button', { name: 'Send' })
+    within(footer).getByRole('textbox', { name: 'Reply' }).focus()
+    while (document.activeElement !== send) await userEvent.tab()
+    const style = getComputedStyle(send)
+    await expect(style.outlineStyle).toBe('solid')
+    const ring = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset)
+    const s = send.getBoundingClientRect()
+    await expect(s.top - ring).toBeGreaterThanOrEqual(f.top)
+    await expect(s.right + ring).toBeLessThanOrEqual(f.right)
+    await expect(s.bottom + ring).toBeLessThanOrEqual(f.bottom)
+  },
+}
+export const InFramePhoneLight: StoryObj<typeof meta> = { ...InFramePhoneDark, globals: { mode: 'light' } }

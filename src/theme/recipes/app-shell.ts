@@ -35,13 +35,29 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   the dark backdrop behind them, so this is the colour Figma shows, from
 //   the two tokens and no new value. A bar below the page (no overlay)
 //   keeps its fill over the backdrop, as before.
+// - Visual viewport (every size): when an on-screen keyboard covers the
+//   bottom of the layout and the browser does not resize it (iOS Safari),
+//   AppShell sets --app-shell-visible-height and --app-shell-visible-top on
+//   the root from window.visualViewport, the measured runtime values. The
+//   root then is at most that tall and starts at that top, so the slots at
+//   its foot (a composer, the tab bar, the safe area) end at the keyboard's
+//   top. Unset, as with no keyboard or where the browser resizes the layout,
+//   the fallbacks (none, 0px) keep the root as tall as its parent.
 export const appShell = defineSlotRecipe({
   className: 'app-shell',
   jsx: ['AppShell'],
   staticCss: ['*'],
   slots: ['root', 'rail', 'list', 'detail', 'side', 'tabBar', 'safeArea'],
   base: {
-    root: { display: 'flex', flex: '1', minW: '0', minH: '0', h: '100%' },
+    root: {
+      display: 'flex',
+      flex: '1',
+      minW: '0',
+      minH: '0',
+      h: '100%',
+      maxH: 'var(--app-shell-visible-height, none)',
+      mt: 'var(--app-shell-visible-top, 0px)',
+    },
     rail: { display: 'flex', flexDirection: 'column', flexShrink: '0', w: 'shell.rail', minH: '0' },
     list: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
     detail: {

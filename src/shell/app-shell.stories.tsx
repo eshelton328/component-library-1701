@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, spyOn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
@@ -584,3 +584,231 @@ const overlayOpaque: StoryObj<typeof meta> = {
 /** Phone with `tabBarOverlay` and a bright block scrolled under the tab bar: the bar is opaque, surface.chrome over bg.canvas, so the page does not show through. */
 export const OverlayOpaqueDark: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'dark' } }
 export const OverlayOpaqueLight: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'light' } }
+
+// The iPhone screen of the phone pages (390 x 844), and a stand-in for window.visualViewport that a play test moves
+// as iOS Safari does when its keyboard opens: the layout keeps its height, and only the visual viewport shrinks and
+// may pan down.
+const phoneScreen = { m390: { name: 'Phone (390 x 844)', styles: { width: '390px', height: '844px' } } }
+const composerBox = css({ bg: 'surface.chrome', borderTopWidth: 'default', borderColor: 'border.default', textStyle: 'body', color: 'fg.default', p: '12' })
+// The message field, in the Composer's 14 px body text: under 16 px, so iOS Safari zooms in when it takes focus.
+const messageField = css({ display: 'block', textStyle: 'body', color: 'fg.default', bg: 'transparent' })
+
+class FakeViewport extends EventTarget {
+  height = document.documentElement.clientHeight
+  width = document.documentElement.clientWidth
+  offsetTop = 0
+  offsetLeft = 0
+  scale = 1
+  readonly listening = new Set<string>()
+  override addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean) {
+    this.listening.add(type)
+    super.addEventListener(type, listener, options)
+  }
+  override removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean) {
+    this.listening.delete(type)
+    super.removeEventListener(type, listener, options)
+  }
+  move(change: { height?: number; offsetTop?: number; scale?: number }, event: 'resize' | 'scroll' = 'resize') {
+    this.height = change.height ?? this.height
+    this.offsetTop = change.offsetTop ?? this.offsetTop
+    this.scale = change.scale ?? this.scale
+    this.dispatchEvent(new Event(event))
+  }
+}
+
+let fakeViewport = new FakeViewport()
+
+// Puts `value` in place of window.visualViewport for one story, and puts the browser's own back after it.
+const replaceVisualViewport = (value: FakeViewport | undefined) => {
+  const own = Object.getOwnPropertyDescriptor(window, 'visualViewport')
+  Object.defineProperty(window, 'visualViewport', { configurable: true, value })
+  return () => {
+    if (own) Object.defineProperty(window, 'visualViewport', own)
+    else Reflect.deleteProperty(window, 'visualViewport')
+  }
+}
+
+function PhoneChat() {
+  return (
+    <div className={screenFrame} data-testid="phone">
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <>
+            <section aria-label="Chat" className={pane}>
+              Chat
+            </section>
+            <div role="group" aria-label="Composer" className={composerBox}>
+              <textarea aria-label="Message" rows={1} className={messageField} />
+            </div>
+          </>
+        }
+      />
+    </div>
+  )
+}
+
+const shellRoot = (root: HTMLElement) => slot(root, 'root')
+
+const keyboard: StoryObj<typeof meta> = {
+  render: () => <PhoneChat />,
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
+    const shown = (el: DOMRect) => {
+      const top = fakeViewport.offsetTop
+      return { top: Math.round(el.top) >= Math.round(top), bottom: Math.round(el.bottom) <= Math.round(top + fakeViewport.height) }
+    }
+    // No keyboard: the visual viewport is the layout's height, the shell fills the screen and sets nothing.
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    // The keyboard opens and covers 300 px; the layout keeps its 844, as on iOS Safari. The shell shrinks to the
+    // visible 544, so the composer ends 34 (the safe area) over the keyboard's top, not under it.
+    fakeViewport.move({ height: 544 })
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(Math.round(rect(root).bottom)).toBe(544)
+    await expect(shown(composer())).toEqual({ top: true, bottom: true })
+    await expect(Math.round(composer().bottom)).toBe(544 - 34)
+    // Safari pans the visual viewport 200 down (a scroll event): the shell moves with it and stays in view.
+    fakeViewport.move({ offsetTop: 200 }, 'scroll')
+    await expect(Math.round(rect(root).top)).toBe(200)
+    await expect(Math.round(rect(root).bottom)).toBe(744)
+    await expect(shown(composer())).toEqual({ top: true, bottom: true })
+    // A pinch zoom also shrinks the visual viewport; the page keeps its size.
+    fakeViewport.move({ height: 422, offsetTop: 0, scale: 2 })
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    // The keyboard closes: the shell is the full screen again, with nothing set.
+    fakeViewport.move({ height: 844, offsetTop: 0, scale: 1 })
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+  },
+}
+
+/** Phone chat on iOS Safari: when the keyboard covers the bottom of the screen, the shell shrinks to the visible area, so the composer stays above the keyboard. */
+export const KeyboardDark: StoryObj<typeof meta> = { ...keyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardLight: StoryObj<typeof meta> = { ...keyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const focusZoom: StoryObj<typeof meta> = {
+  render: () => <PhoneChat />,
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const shown = (el: DOMRect) => {
+      const top = fakeViewport.offsetTop
+      return { top: Math.round(el.top) >= Math.round(top), bottom: Math.round(el.bottom) <= Math.round(top + fakeViewport.height) }
+    }
+    // The field's text is 14 px, under Safari's 16, so focusing it zooms the page in by 16 / 14.
+    await userEvent.click(field)
+    await expect(field).toHaveFocus()
+    await expect(getComputedStyle(field).fontSize).toBe('14px')
+    // The keyboard opens over 300 px and Safari zooms in at once: the visual viewport is 544 / 1.14 CSS px tall and
+    // panned down to the field at the screen's foot. The keyboard-free screen is still 544 CSS px at scale 1, so the
+    // shell is 544 tall, keeps its top at the screen's, and the composer ends inside the visible area.
+    const scale = 16 / 14
+    const height = 544 / scale
+    fakeViewport.move({ height, offsetTop: 544 - height, scale })
+    await expect(Math.abs(rect(root).height - 544)).toBeLessThanOrEqual(1)
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(shown(composer())).toEqual({ top: true, bottom: true })
+    await expect(shown(rect(field))).toEqual({ top: true, bottom: true })
+    // The zoom pans back up (a scroll event): the zoom moves over the shell, which stays put.
+    fakeViewport.move({ offsetTop: 0 }, 'scroll')
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(Math.abs(rect(root).height - 544)).toBeLessThanOrEqual(1)
+    // The keyboard closes under a pinch zoom (scale 2, 422 CSS px tall): the screen is the layout's 844, nothing is set.
+    field.blur()
+    fakeViewport.move({ height: 422, offsetTop: 0, scale: 2 })
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+  },
+}
+
+/** Phone chat on iOS Safari with the keyboard open and the focus zoom of the 14 px message field: the shell keeps the keyboard-free height, so the composer stays above the keyboard. */
+export const FocusZoomDark: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FocusZoomLight: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const noVisualViewport: StoryObj<typeof meta> = {
+  render: () => <PhoneChat />,
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => replaceVisualViewport(undefined),
+  play: async ({ canvasElement }) => {
+    await expect(window.visualViewport).toBeUndefined()
+    const root = shellRoot(canvasElement)
+    // With no visualViewport the shell renders as always: the full screen, and no inline style at all.
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root).not.toHaveAttribute('style')
+    await expect(Math.round(rect(within(canvasElement).getByRole('group', { name: 'Composer' })).bottom)).toBe(844 - 34)
+  },
+}
+
+/** A browser with no `window.visualViewport`: the shell keeps its normal height. */
+export const NoVisualViewportDark: StoryObj<typeof meta> = { ...noVisualViewport, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const NoVisualViewportLight: StoryObj<typeof meta> = { ...noVisualViewport, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+function ClosingChat() {
+  const [open, setOpen] = useState(true)
+  return open ? (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <Button
+            onClick={() => {
+              setOpen(false)
+            }}
+          >
+            Close the chat
+          </Button>
+        }
+      />
+    </div>
+  ) : (
+    <p className={text}>Closed</p>
+  )
+}
+
+/** The shell stops listening to the visual viewport when it unmounts. */
+export const VisualViewportUnmount: StoryObj<typeof meta> = {
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+  render: () => <ClosingChat />,
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect([...fakeViewport.listening].sort()).toEqual(['resize', 'scroll'])
+    const remove = spyOn(fakeViewport, 'removeEventListener')
+    await userEvent.click(canvas.getByRole('button', { name: 'Close the chat' }))
+    await expect(canvas.getByText('Closed')).toBeVisible()
+    await expect(remove).toHaveBeenCalledWith('resize', expect.any(Function))
+    await expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function))
+    await expect(fakeViewport.listening.size).toBe(0)
+    // A keyboard after the unmount reaches nothing and throws nothing.
+    fakeViewport.move({ height: 544 })
+    await expect(canvasElement.querySelector('.app-shell__root')).toBeNull()
+  },
+}

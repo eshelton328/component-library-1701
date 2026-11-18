@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, type ReactNode } from 'react'
+import { Children, Fragment, isValidElement, useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -19,6 +19,61 @@ const shown = (node: ReactNode): boolean =>
   Children.toArray(node).some((child) =>
     isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment ? shown(child.props.children) : child !== '',
   )
+
+// The custom properties that the recipe's root reads: the visible height and the visible area's top.
+const visibleHeight = '--app-shell-visible-height'
+const visibleTop = '--app-shell-visible-top'
+
+/**
+ * Keeps the shell inside the visual viewport when the browser does not resize the layout for the on-screen
+ * keyboard. Chrome on Android with `interactive-widget=resizes-content` shrinks the layout viewport itself, so the
+ * visual viewport stays as tall as the layout (`documentElement.clientHeight`) and nothing is set. iOS Safari
+ * only shrinks `visualViewport` and may pan it down (`offsetTop`); then the root gets the visible height and top
+ * as two custom properties, the measured runtime values, which the recipe turns into `max-height` and
+ * `margin-top`. A zoom (`scale` above 1) shrinks the visual viewport's CSS height by the scale too, so the
+ * keyboard-free part of the screen is `height * scale` CSS px: a pinch zoom with no keyboard gives the layout's
+ * height and sets nothing, and Safari's focus zoom on a field under 16 px (the Composer's 14) keeps the fit while
+ * the keyboard is open. Without `visualViewport` (an old browser, or no window when rendered on the server)
+ * nothing changes: the hook reads the window only in its effect.
+ */
+function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const viewport = window.visualViewport
+    const root = ref.current
+    if (!viewport || !root) return
+    // The shell's top in the layout, kept between measures. At scale 1 it is `offsetTop`, where Safari panned the
+    // visible area. Under a zoom `offsetTop` also holds the zoom's own pan inside that area, so following it would
+    // push the shell's foot (the composer) below the screen. The zoom pans over a page that stays put, so the top
+    // stays where the last scale-1 measure put it, moved only as far as needed for the shell to cover the visible
+    // area (`offsetTop` to `offsetTop + height`), so no page shows above or below it.
+    let top = 0
+    const fit = () => {
+      const layout = document.documentElement.clientHeight
+      const visible = viewport.height * viewport.scale
+      if (viewport.scale === 1) top = viewport.offsetTop
+      // More than a pixel of rounding smaller: a keyboard (or other browser chrome) covers the layout.
+      if (layout - visible > 1) {
+        top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
+        root.style.setProperty(visibleHeight, `${String(visible)}px`)
+        root.style.setProperty(visibleTop, `${String(top)}px`)
+      } else {
+        root.style.removeProperty(visibleHeight)
+        root.style.removeProperty(visibleTop)
+      }
+    }
+    fit()
+    viewport.addEventListener('resize', fit)
+    viewport.addEventListener('scroll', fit)
+    return () => {
+      viewport.removeEventListener('resize', fit)
+      viewport.removeEventListener('scroll', fit)
+      root.style.removeProperty(visibleHeight)
+      root.style.removeProperty(visibleTop)
+    }
+  }, [])
+  return ref
+}
 
 export type AppShellProps = Scalar<AppShellVariantProps> & {
   /** The desktop nav rail. Shown only at `size="desktop"`. */
@@ -55,15 +110,22 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * `bg.canvas`, so a translucent bar (`surface.chrome`) is opaque over the
  * page and shows the colour it has on the backdrop. The slots bring their
  * own surfaces. It is as tall as its
- * parent. The scrolling pane is focusable, so the keyboard can scroll it
+ * parent, which should fill the screen from its top. When an on-screen
+ * keyboard covers the bottom of the page and the browser does not resize
+ * the layout for it (iOS Safari, which only shrinks `window.visualViewport`),
+ * the shell shrinks to the visible area and moves with it, so a composer at
+ * its foot stays above the keyboard; where the browser resizes the layout
+ * (Chrome on Android with `interactive-widget=resizes-content`), or with no
+ * `visualViewport`, it keeps its height. The scrolling pane is focusable, so the keyboard can scroll it
  * when it holds only text.
  */
 export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false }: AppShellProps) {
+  const fit = useVisualViewportFit()
   const desktop = size === undefined || size === 'desktop'
   if (desktop) {
     return (
       <Backdrop size="desktop">
-        <Root size="desktop" listWidth={listWidth} sideWidth={sideWidth}>
+        <Root ref={fit} size="desktop" listWidth={listWidth} sideWidth={sideWidth}>
           {shown(rail) ? <Rail>{rail}</Rail> : null}
           {shown(list) ? <List>{list}</List> : null}
           <Detail tabIndex={0}>{detail}</Detail>
@@ -76,7 +138,7 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
   const hasTabBar = shown(tabBar)
   return (
     <Backdrop size={size}>
-      <Root size={size} listWidth={listWidth} sideWidth={sideWidth} tabBarOverlay={tabBarOverlay && hasTabBar}>
+      <Root ref={fit} size={size} listWidth={listWidth} sideWidth={sideWidth} tabBarOverlay={tabBarOverlay && hasTabBar}>
         {/* Keyed, so the list's state never carries over into the detail. */}
         <Detail key={showDetail ? 'detail' : 'list'} tabIndex={0}>
           {showDetail ? detail : list}

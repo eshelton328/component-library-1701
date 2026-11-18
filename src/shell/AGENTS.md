@@ -28,3 +28,6 @@ Layout, Navigation or Overlays (d-065, d-066).
   The overlaid tab bar slot is filled with `bg.canvas`, so the bar's
   `surface.chrome` lies over the canvas and the page does not show
   through it.
+- With no tab bar (inside a chat), a tablet or phone `AppShell` keeps
+  `shell.safeAreaBottom` clear under the pane for the home indicator.
+  Pages set no padding for it.

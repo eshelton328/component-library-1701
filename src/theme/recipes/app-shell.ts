@@ -9,9 +9,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   sizes.shell.sidePane, or subagents 420, sizes.shell.widePane). The
 //   panes abut, with no gap, and fill the height.
 // - tablet and phone (Inbox T1 346:5353, M1 346:8982): one pane at a
-//   time, the list or the detail, full width, above the tab bar. On the
-//   phone with no tab bar (inside a chat), the home-indicator area stays
-//   clear (sizes.shell.safeAreaBottom).
+//   time, the list or the detail, full width, above the tab bar. With no
+//   tab bar (inside a chat), the home-indicator area stays clear
+//   (sizes.shell.safeAreaBottom, 34) on the phone and on the tablet: the
+//   tablet chat's composer ends over the iPad's home indicator (Workbench
+//   T2b 402:5783, 37 there; 34 is the token, d-100).
 // - tabBarOverlay (phone Toolkit M02, M20, M22): the tab bar lies over the
 //   bottom of the detail, which runs to the bottom of the shell, as Figma
 //   draws the page under the bar. The detail's own scroll ends with

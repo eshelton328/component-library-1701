@@ -18,7 +18,16 @@ Layout, Navigation or Overlays (d-065, d-066).
   sits on the `Backdrop` and places the rail, list, detail, side and tab
   bar slots. The library has no breakpoint tokens, so the shell and
   `Container` take a `size` prop (`desktop`, `tablet`, `phone`) that the
-  app picks; they never measure the window.
+  app picks; they never measure the window to pick a layout.
+- The one thing `AppShell` reads from the window is `visualViewport`, in
+  an effect: when an on-screen keyboard covers the layout and the browser
+  does not resize it (iOS Safari), it sets `--app-shell-visible-height`
+  and `--app-shell-visible-top` on its root with `style.setProperty`, the
+  measured runtime values, and the recipe caps and moves the root with
+  them. Where the browser resizes the layout, at a pinch zoom, or with no
+  `visualViewport`, nothing is set. Pages set nothing for the keyboard;
+  the app's page needs `interactive-widget=resizes-content` in its
+  viewport meta for Chrome on Android.
 - On a tablet or phone the tab bar sits below the pane, or over its
   bottom with `tabBarOverlay`, as Figma draws the phone pages. The
   detail then ends its scroll with the bar's height and sets

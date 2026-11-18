@@ -28,8 +28,9 @@ const StyledButton = styled('button', button)
  *
  * `pressedBorder` sets the border while `pressed` is true. `active` (the
  * default) draws `border.active` (cyan), as Sort and Filter do. `discuss`
- * draws `border.discuss` (violet), for the Discuss toggle while its
- * discussion is open. It keeps the pressed fill and label.
+ * draws `accent.discuss` (solid violet, at least 3:1 on the page surfaces),
+ * for the Discuss toggle while its discussion is open. It keeps the pressed
+ * fill and label.
  */
 export type ButtonProps = ComponentProps<'button'> &
   Scalar<ButtonVariantProps> & {

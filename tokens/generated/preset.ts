@@ -237,7 +237,7 @@ export default definePreset({
                 "base": "#5b4bd6",
                 "_dark": "#9e8fff"
               },
-              "description": "The Discuss action, update proposals, the composer caret and the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes)."
+              "description": "The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341)."
             },
             "faint": {
               "value": {
@@ -343,7 +343,7 @@ export default definePreset({
                 "base": "rgba(91, 75, 214, 0.5)",
                 "_dark": "rgba(158, 143, 255, 0.5)"
               },
-              "description": "The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943), and of a pressed Button with pressedBorder discuss: the Discuss toggle while its discussion is open (Inbox 403:943, Artifacts 452:2341). Not for text."
+              "description": "The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943). Not for text, and not for the border of a pressed Discuss button, which needs 3:1 and uses accent.discuss."
             },
             "focus": {
               "value": {

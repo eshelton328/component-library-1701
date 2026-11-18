@@ -599,6 +599,13 @@ export const ExpandedBorderLight: StoryObj<typeof meta> = { render: () => <Expan
 
 // The Discuss toggle with its discussion open beside Sort with a sort applied, a
 // closed Discuss and a pressed primary Discuss, all with textSize sm as the-bridge draws them.
+// Below them a pressed Discuss on each surface the-bridge draws it on.
+const discussSurfaces = {
+  'bg.canvas': css({ bg: 'bg.canvas', p: '12' }),
+  'surface.pane': css({ bg: 'surface.pane', p: '12' }),
+  'surface.raised': css({ bg: 'surface.raised', p: '12' }),
+}
+
 function DiscussButtons() {
   return (
     <main className={page}>
@@ -616,9 +623,18 @@ function DiscussButtons() {
           Discuss primary
         </Button>
       </div>
+      <div className={row}>
+        {Object.entries(discussSurfaces).map(([name, className]) => (
+          <div key={name} className={className} data-surface={name}>
+            <Button textSize="sm" pressed pressedBorder="discuss">
+              {`Discuss on ${name}`}
+            </Button>
+          </div>
+        ))}
+      </div>
       <div hidden>
         <span data-swatch="active" className={css({ color: 'border.active' })} />
-        <span data-swatch="discuss" className={css({ color: 'border.discuss' })} />
+        <span data-swatch="discuss" className={css({ color: 'accent.discuss' })} />
         <span data-swatch="default" className={css({ color: 'border.default' })} />
         <span data-swatch="selected" className={css({ color: 'surface.selected' })} />
       </div>
@@ -626,7 +642,47 @@ function DiscussButtons() {
   )
 }
 
-// Inbox Discuss 403:943 and Artifacts Discuss 452:2341: a pressed Discuss draws border.discuss;
+type Rgba = readonly [number, number, number, number]
+
+/** Reads a computed `rgb()` or `rgba()` colour. */
+function parseRgba(value: string): Rgba {
+  const parts = /^rgba?\(([^)]+)\)$/.exec(value)?.[1]?.split(',').map(Number)
+  if (parts === undefined || parts.length < 3 || parts.some(Number.isNaN)) throw new Error(`not an rgb colour: ${value}`)
+  const [r = 0, g = 0, b = 0, a = 1] = parts
+  return [r, g, b, a]
+}
+
+/** Lays `top` over `under` (source-over), as the browser paints it. */
+function over(top: Rgba, under: Rgba): Rgba {
+  const a = top[3] + under[3] * (1 - top[3])
+  if (a === 0) return [0, 0, 0, 0]
+  const mix = (t: number, u: number) => (t * top[3] + u * under[3] * (1 - top[3])) / a
+  return [mix(top[0], under[0]), mix(top[1], under[1]), mix(top[2], under[2]), a]
+}
+
+/** The colour an element's background shows: its own and its ancestors' fills, laid over each other. */
+function paintedBackground(el: Element | null): Rgba {
+  let colour: Rgba = [0, 0, 0, 0]
+  for (let node = el; node !== null && colour[3] < 1; node = node.parentElement) {
+    colour = over(colour, parseRgba(getComputedStyle(node).backgroundColor))
+  }
+  return colour
+}
+
+/** WCAG 2 contrast ratio of two opaque colours. */
+function contrast(a: Rgba, b: Rgba) {
+  const luminance = (c: Rgba) => {
+    const [r, g, bl] = [c[0], c[1], c[2]].map((v) => {
+      const s = v / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (bl ?? 0)
+  }
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05)
+}
+
+// Inbox Discuss 403:943 and Artifacts Discuss 452:2341: a pressed Discuss draws accent.discuss;
 // a pressed button with the default pressedBorder still draws border.active.
 const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const canvas = within(canvasElement)
@@ -636,6 +692,14 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
     return getComputedStyle(el).color
   }
   const style = (name: string) => getComputedStyle(canvas.getByRole('button', { name }))
+  // WCAG 1.4.11: the pressed border, laid over the button's own fill as the browser paints
+  // it, reaches 3:1 against each surface around the button.
+  for (const name of Object.keys(discussSurfaces)) {
+    const button = canvas.getByRole('button', { name: `Discuss on ${name}` })
+    const surface = paintedBackground(button.parentElement)
+    const border = over(parseRgba(getComputedStyle(button).borderTopColor), paintedBackground(button))
+    await expect(contrast(border, surface), `pressed Discuss border on ${name}`).toBeGreaterThanOrEqual(3)
+  }
   await expect(swatch('discuss')).not.toBe(swatch('active'))
   await expect(style('Sort').borderTopColor).toBe(swatch('active'))
   await expect(style('Discuss').borderTopColor).toBe(swatch('discuss'))
@@ -646,6 +710,6 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
   await expect(style('Discuss primary').borderTopColor).toBe(swatch('discuss'))
 }
 
-/** `pressedBorder="discuss"`: a pressed Discuss toggle draws border.discuss; Sort keeps border.active. */
+/** `pressedBorder="discuss"`: a pressed Discuss toggle draws accent.discuss, 3:1 on each surface; Sort keeps border.active. */
 export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedBorderPlay }
 export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }

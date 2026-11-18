@@ -77,13 +77,15 @@ function crossings(shape: Shape, boxes: readonly Box[]): number {
 
 /**
  * A line from the side of `a` that faces `b` to the side of `b` that faces
- * `a`, curved with level ends. Two nodes in one column join on the right,
- * bowed out by BOW.
+ * `a`, curved with level ends. Two nodes whose boxes overlap in x, such as
+ * two nodes in one column or nodes of different widths in two rows, join
+ * on the right, bowed out by BOW past both boxes.
  */
 export function linkRoute(a: Box, b: Box): Route {
   const ay = a.y + a.height / 2
   const by = b.y + b.height / 2
-  const apart = Math.abs(a.x - b.x) >= Math.min(a.width, b.width)
+  // Each box's own edges, so a wide node does not hide a line to a narrow one.
+  const apart = a.x + a.width <= b.x || b.x + b.width <= a.x
   if (!apart) {
     const sx = a.x + a.width
     const ex = b.x + b.width

@@ -530,6 +530,34 @@ const uprightDetourPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ c
 export const UprightDetourDark: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'dark' } }
 export const UprightDetourLight: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'light' } }
 
+/**
+ * Per-node sizes: `a` (180 × 32) and `b` (150 × 40) overlap in x but sit in
+ * different rows. In both orientations the lines, one each way, go round
+ * the real boxes and pass behind neither node.
+ */
+function Overlap() {
+  const nodes: MapGraphNode[] = [
+    { id: 'a', label: 'a', kind: 'rule', x: 0, y: 0, size: { width: 180, height: 32 } },
+    { id: 'b', label: 'b', kind: 'skill', x: 160, y: 80, size: { width: 150, height: 40 } },
+  ]
+  const links: MapGraphEdge[] = [
+    { from: 'a', to: 'b' },
+    { from: 'b', to: 'a' },
+  ]
+  return (
+    <main className={phoneItem}>
+      <MapGraph label="Overlap map" width={400} height={140} nodes={nodes} edges={links} />
+      <MapGraph label="Upright overlap map" orientation="vertical" width={400} height={140} nodes={nodes} edges={links} />
+    </main>
+  )
+}
+const overlapPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Overlap map' }), 2)
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Upright overlap map' }), 2)
+}
+export const OverlapDark: StoryObj<typeof meta> = { render: () => <Overlap />, play: overlapPlay, globals: { mode: 'dark' } }
+export const OverlapLight: StoryObj<typeof meta> = { render: () => <Overlap />, play: overlapPlay, globals: { mode: 'light' } }
+
 // The Links tab of Toolkit D19 (`links graph` 493:6, 948 × 320, 946 × 318 inside its border): the four items that link
 // to writer on the left (493:84 to 493:102), the open item `node · writer (focus)` (493:78, 150 × 40) in the middle and
 // the seven it links to on the right (493:108 to 493:142), each 180 × 32; then the nodes of the Links panels' rows

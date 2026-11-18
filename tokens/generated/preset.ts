@@ -41,6 +41,10 @@ export default definePreset({
             }
           },
           "icon": {
+            "8": {
+              "value": "8px",
+              "description": "Only the icon of a Badge size xs, the 16 px New pill of the phone's artifact rows (Artifacts M1 406:145, Figma's 9 px star on the 4 px grid, d-100); the Badge sets it on the icon it is given. Not for an icon that stands alone or in a control, which takes icon.12 or more."
+            },
             "12": {
               "value": "12px",
               "description": "A 12px icon."

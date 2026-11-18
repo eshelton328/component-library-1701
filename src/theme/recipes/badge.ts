@@ -15,8 +15,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   sides and 0 above and below, with a 3 px gap after its 9 px star. It
 //   takes padding 6 / 0 and gap 4 (3 is a tie between 2 and 4, d-072),
 //   so the 16 px pill line is the whole height, on the 4 px grid (d-100).
-//   The star is `SparkFilledIcon` at 12 px. The other variants have one
-//   size.
+//   The star 406:145 is 9 px; the pill draws its icon at icon.8, Figma's 9
+//   on the 4 px grid (d-100), whatever size the caller gives it, so the
+//   pill is about 48 x 16. The `md` and `sm` pills keep the caller's size.
+//   The other variants have one size.
 // - `tag`: a status tint in a radius.sm box, mono text. Loop 460:59; Figma
 //   tints it at 0.12, which the inventory merges into the 0.14 status tint,
 //   and draws radius 5, which it merges into radius.sm. Padding 6 / 2, gap 4.
@@ -41,7 +43,8 @@ export const badge = defineSlotRecipe({
       borderColor: 'transparent',
     },
     // The icon recipe's size variant wins over a slot rule, so the caller
-    // sizes the icon: 12 (Figma 9-11, and 13 in `quiet`).
+    // sizes the icon: 12 (Figma 9-11, and 13 in `quiet`). Only the `xs`
+    // pill sets it, with `!`, to icon.8.
     icon: { display: 'inline-flex', flexShrink: '0' },
   },
   variants: {
@@ -67,7 +70,11 @@ export const badge = defineSlotRecipe({
   },
   compoundVariants: [
     { variant: 'pill', size: 'sm', css: { root: { py: '2' } } },
-    { variant: 'pill', size: 'xs', css: { root: { gap: '4', px: '6', py: '0' } } },
+    {
+      variant: 'pill',
+      size: 'xs',
+      css: { root: { gap: '4', px: '6', py: '0' }, icon: { '& svg': { w: 'icon.8!', h: 'icon.8!' } } },
+    },
     { variant: ['outline', 'quiet'], css: { root: { bg: 'surface.overlay' } } },
     { variant: 'quiet', css: { root: { color: 'fg.muted' } } },
   ],

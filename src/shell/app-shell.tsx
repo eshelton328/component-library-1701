@@ -95,7 +95,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
         show(layout - top - visible)
       } else {
-        show(0)
+        // No keyboard: nothing docks, even where the detail's foot lies below the layout's (a parent taller than the
+        // screen).
+        root.style.removeProperty(keyboardInset)
       }
     }
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.

@@ -26,7 +26,12 @@ under their purpose group, never under "Controls" (d-065).
   its footer: a `Composer` caps its own long draft at 30% of the nearest
   size container (or of the window), and at rest keeps its full height.
   Give the frame's parent `containerType: 'size'` to cap the draft at
-  30% of that parent; a page caps no reply box itself. As the direct
+  30% of that parent; a page caps no reply box itself. A footer taller
+  than the room the header leaves shrinks and scrolls inside; with
+  `footerShrink={false}` it keeps its own height and only the body
+  shrinks, for a footer that caps itself (a `Composer` with
+  `layout="inline"`). A page never targets the frame's class names, such
+  as `.scroll-frame__footer`; it asks for a prop. As the direct
   child of an `AppShell` detail with `tabBarOverlay`, it reaches under
   the tab bar and lifts its footer and its body's end above it; anywhere
   else the two custom properties are unset and it draws as before. A

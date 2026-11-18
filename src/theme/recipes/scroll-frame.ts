@@ -102,6 +102,14 @@ export const scrollFrame = defineSlotRecipe({
       '16': { root: { gap: '16' } },
       '24': { root: { gap: '24' } },
     },
+    // Whether the footer gives up height when the frame is too short for it. true (the default): it shrinks to the
+    // room the header leaves and scrolls inside, so it never reaches past the frame. false: it keeps its own height
+    // and the body takes all the loss; for a footer that caps its own height, such as Composer layout="inline" in
+    // the Workbench D5 side chat (the-bridge #58), which the shrink cut to 8 px in a pane resized short.
+    footerShrink: {
+      true: {},
+      false: { footer: { flexShrink: '0' } },
+    },
   },
-  defaultVariants: { gap: '0' },
+  defaultVariants: { gap: '0', footerShrink: true },
 })

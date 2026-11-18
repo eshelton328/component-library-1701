@@ -101,6 +101,10 @@ export default definePreset({
               "value": "360px",
               "description": "Width of the skill picker."
             },
+            "popoverPhone": {
+              "value": "220px",
+              "description": "Width of the phone's New menu, the short menu that + at the top of the Workspaces list opens (M15 208:515), so it leaves the end of the row title under it clear. Use it through Menu width phone. Not for a desktop or tablet menu, which is at least popoverSm (240), or a submenu, which takes submenu (200)."
+            },
             "popoverPicker": {
               "value": "380px",
               "description": "Width of the Run in picker (Inbox D3 346:1234). Not for the Workbench side chat, which takes sidePane."

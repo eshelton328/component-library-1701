@@ -49,55 +49,29 @@ const brackets = (t: string) => (t.match(/[[(]/g)?.length ?? 0) - (t.match(/[\])
 const splitKinds = new Set(['interface', 'class'])
 /** `type Name = A & B<C> & {` with no type parameters; group 1 is the text before the brace. */
 const objectAliasOpen = /^(?:export\s+)?(?:declare\s+)?type\s+[A-Za-z_$][\w$]*\s*=\s*(.*?)\{$/
-const identifier = /^[A-Za-z_$][\w$]*$/
-/** The characters a type argument of a head part may hold: names, string literals, unions and nested arguments. */
-const typeArgChars = /^[\w$\s,'"<>|]*$/
+/**
+ * A plain name, or a generic reference such as `Scalar<DialogVariantProps>`:
+ * a plain name with type arguments that hold only names, string literals,
+ * `|` and one more level of arguments.
+ */
+const typeReference = /^[A-Za-z_$][\w$]*(?:<[\w$\s,'"|]*(?:<[\w$\s,'"|]*>[\w$\s,'"|]*)*>)?$/
+const isTypeReference = (part: string): boolean => typeReference.test(part)
 
 /**
  * Splits a list of types joined by `&` into its parts, or returns
- * `undefined` when a part is not a plain name or a generic reference
- * such as `Scalar<DialogVariantProps>`: a plain name with type arguments
- * that hold only names, string literals, `|` and nested arguments. An `&`
- * inside `<` and `>` does not split.
+ * `undefined` when a part is not one `typeReference` allows. A type
+ * argument cannot hold `&`, so every `&` splits.
  */
 function typeParts(text: string): string[] | undefined {
-  const parts: string[] = []
-  let depth = 0
-  let part = ''
-  for (const c of text) {
-    if (c === '<') depth++
-    else if (c === '>') depth--
-    if (depth < 0) return undefined
-    if (c === '&' && depth === 0) {
-      parts.push(part.trim())
-      part = ''
-    } else part += c
-  }
-  if (depth !== 0) return undefined
-  parts.push(part.trim())
+  const parts = text.split('&').map((p) => p.trim())
   return parts.every(isTypeReference) ? parts : undefined
-}
-
-/** A plain name, or a plain name with type arguments that `typeParts` allows. */
-function isTypeReference(part: string): boolean {
-  const open = part.indexOf('<')
-  if (open === -1) return identifier.test(part)
-  if (!identifier.test(part.slice(0, open)) || !part.endsWith('>')) return false
-  const args = part.slice(open + 1, -1)
-  if (!typeArgChars.test(args)) return false
-  let depth = 0
-  for (const c of args) {
-    if (c === '<') depth++
-    else if (c === '>' && --depth < 0) return false
-  }
-  return depth === 0
 }
 
 /**
  * The head of a type alias that opens an object literal, such as
  * `Scalar<DialogVariantProps>` in `type DialogProps = Scalar<DialogVariantProps> & {`:
  * the parts before the brace, `[]` with none, or `undefined` when the
- * line does not open such an alias or a part is not one `typeParts` allows.
+ * line does not open such an alias or a part is not one `typeReference` allows.
  */
 function aliasHead(t: string): string[] | undefined {
   const m = objectAliasOpen.exec(t)

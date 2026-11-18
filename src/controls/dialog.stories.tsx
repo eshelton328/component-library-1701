@@ -238,3 +238,44 @@ export const Behaviour: StoryObj<typeof meta> = {
     await waitFor(() => expect(canvas.getByRole('button', { name: 'New chat' })).toHaveFocus())
   },
 }
+
+// The Inbox remove confirm (D20 403:3914): the task's place under the title, 4 apart in one frame (403:3915), in Mono
+// 11 (403:3917).
+function ConfirmWithMeta() {
+  return (
+    <main className={page}>
+      <Dialog
+        role="alertdialog"
+        open
+        title="Remove this task?"
+        meta="ncc-1701 · f-005 · NCC-28 · Next step"
+        description="The task leaves Inbox, and its chat stays in Workbench."
+        actions={
+          <>
+            <DialogClose>
+              <Button>Keep it</Button>
+            </DialogClose>
+            <Button variant="danger">Remove task</Button>
+          </>
+        }
+      />
+    </main>
+  )
+}
+
+const metaPlay: StoryObj<typeof meta>['play'] = async () => {
+  const box = await within(document.body).findByRole('alertdialog', { name: 'Remove this task?' })
+  const title = within(box).getByText('Remove this task?').getBoundingClientRect()
+  const line = within(box).getByText('ncc-1701 · f-005 · NCC-28 · Next step')
+  await expect(Math.round(line.getBoundingClientRect().top - title.bottom)).toBe(4)
+  const s = getComputedStyle(line)
+  await expect([s.fontSize, Math.round(Number.parseFloat(s.lineHeight))]).toEqual(['11px', 16])
+  await expect(s.fontFamily).toMatch(/Mono/)
+  // The description keeps the box's 12 px gap under the meta line.
+  const description = within(box).getByText('The task leaves Inbox, and its chat stays in Workbench.')
+  await expect(Math.round(description.getBoundingClientRect().top - line.getBoundingClientRect().bottom)).toBe(12)
+}
+
+/** The confirm dialog with a meta line under its title (Inbox D20). */
+export const MetaDark: StoryObj<typeof meta> = { render: () => <ConfirmWithMeta />, play: metaPlay, globals: { mode: 'dark' } }
+export const MetaLight: StoryObj<typeof meta> = { render: () => <ConfirmWithMeta />, play: metaPlay, globals: { mode: 'light' } }

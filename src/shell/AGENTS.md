@@ -25,3 +25,6 @@ Layout, Navigation or Overlays (d-065, d-066).
   `--app-shell-tab-bar-inset` and `--app-shell-tab-bar-spacer` for its
   direct child only; a `ScrollFrame` there reads them, so its footer and
   the end of its body sit above the bar. Pages set no padding for the bar.
+  The overlaid tab bar slot is filled with `bg.canvas`, so the bar's
+  `surface.chrome` lies over the canvas and the page does not show
+  through it.

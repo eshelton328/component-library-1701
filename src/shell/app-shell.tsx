@@ -48,7 +48,10 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * M22). The pane's scroll ends with the bar's height (`shell.tabBar`) of
  * space, so its last item scrolls clear of the bar, and a `ScrollFrame`
  * that is the pane's own child lifts its footer and the end of its body
- * above the bar. The slots bring their own surfaces. It is as tall as its
+ * above the bar. Under the overlay the tab bar slot is filled with
+ * `bg.canvas`, so a translucent bar (`surface.chrome`) is opaque over the
+ * page and shows the colour it has on the backdrop. The slots bring their
+ * own surfaces. It is as tall as its
  * parent. The scrolling pane is focusable, so the keyboard can scroll it
  * when it holds only text.
  */

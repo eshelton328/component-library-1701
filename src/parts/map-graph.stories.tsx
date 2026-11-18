@@ -933,3 +933,25 @@ const releaseOutsidePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ 
 
 export const ZoomReleaseOutsideDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'dark' } }
 export const ZoomReleaseOutsideLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'light' } }
+
+// When the window grows, the drawing is clamped again, so its right edge stays at the window's right edge.
+const resizePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { map, scroller, drawing, pointer } = zoomParts(canvasElement)
+  const frame = map.parentElement
+  if (frame === null) throw new Error('no frame')
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, -5000, 100)
+  pointer('pointerup', 1, -5000, 100)
+  await expect(drawing().left).toBeCloseTo(318 - 1384, 1)
+  // The test widens the frame from 320 to 600 px, so the window is 598 wide.
+  frame.style.width = '600px'
+  await waitFor(() => expect(scroller.clientWidth).toBe(598))
+  await waitFor(() => expect(drawing().left).toBeCloseTo(598 - 1384, 1))
+  // Narrower again, the drawing still covers the window, so it stays where it is.
+  frame.style.removeProperty('width')
+  await waitFor(() => expect(scroller.clientWidth).toBe(318))
+  await expect(drawing().left).toBeCloseTo(598 - 1384, 1)
+}
+
+export const ZoomResizeDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'dark' } }
+export const ZoomResizeLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'light' } }

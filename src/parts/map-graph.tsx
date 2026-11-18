@@ -313,8 +313,9 @@ export type MapGraphProps = {
    * drawing about their midpoint within the range, and one pointer drags
    * it, so far that the drawing never leaves the window. A press that moves
    * less than 4 px is a tap, so a node still selects; the pointer click
-   * that ends a drag selects nothing, and a key press always does. A node that takes the keyboard focus is moved
-   * into the window.
+   * that ends a drag selects nothing, and a key press always does. A node
+   * that takes the keyboard focus is moved into the window, and a window
+   * that changes size keeps the drawing inside it.
    */
   zoom?: boolean | MapGraphZoom | undefined
 }
@@ -361,6 +362,11 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       scroller.style.setProperty('--map-graph-y', `${String(view.current.y)}px`)
     }
     show(view.current)
+    // A window that changes size clamps the drawing again, so it never shows space past its edge.
+    const resize = new ResizeObserver(() => {
+      show(view.current)
+    })
+    resize.observe(scroller)
     // The pointers down, at most two, and where the gesture started.
     const pointers = new Map<number, Point>()
     let start: { view: View; points: Point[] } = { view: view.current, points: [] }
@@ -449,6 +455,7 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
       clearTimeout(clearSkip)
+      resize.disconnect()
       scroller.style.removeProperty('--map-graph-scale')
       scroller.style.removeProperty('--map-graph-x')
       scroller.style.removeProperty('--map-graph-y')

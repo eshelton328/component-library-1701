@@ -3,6 +3,8 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Inline, Stack } from '../controls/layout'
+import { SparkFilledIcon } from '../foundations/icons'
+import { Badge } from './badge'
 import { ContextMeter } from './context-meter'
 import { KindMark } from './kind-mark'
 import { ListRow } from './list-row'
@@ -483,3 +485,113 @@ const sidebarMetaPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `variant="sidebar" density="compact"`: the Workbench sidebar chat, whose model and context meter fit beside its pill. */
 export const SidebarMetaDark: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'dark' }, play: sidebarMetaPlay }
 export const SidebarMetaLight: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'light' }, play: sidebarMetaPlay }
+
+const artifactList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
+const libraryList = css({ bg: 'bg.canvas', w: 'shell.listPane', display: 'grid', gap: '6' })
+const phoneList = css({ bg: 'bg.canvas', w: 'shell.listPane', px: '12', display: 'grid', gap: '6' })
+// A stand-in for the row's preview, shorter than the title and meta.
+const preview = css({ display: 'block', w: 'control.xl', h: 'control.sm', borderRadius: 'sm', bg: 'surface.raised' })
+const artifactSwatches = {
+  working: css({ color: 'status.working.fg' }),
+  pane: css({ color: 'surface.pane' }),
+  border: css({ color: 'border.default' }),
+}
+
+/**
+ * The Artifacts rows: the list beside an open artifact (D2 403:219), the
+ * library's list view (D4 403:8216) and the phone's library (M1 406:121).
+ */
+function ArtifactRows() {
+  return (
+    <main className={page}>
+      <div className={artifactList}>
+        <Stack gap="2">
+          <ListRow padding="sm" trailingAlign="center" dot="working" dotLabel="New" dotPosition="end" title="Skill eval pass rates" meta="skill-evals" leading={<span className={preview} />} trailing="12m" onSelect={() => undefined} />
+          <ListRow padding="sm" trailingAlign="center" title="Inbox task lifecycle" meta="ncc-1701" leading={<span className={preview} />} trailing="2h" selected onSelect={() => undefined} />
+          <ListRow title="A default row" meta="ncc-1701" leading={<span className={preview} />} trailing="3h" />
+        </Stack>
+      </div>
+      <div className={libraryList}>
+        <ListRow surface="card" padding="lg" trailingAlign="center" dot="working" dotLabel="New" title="Hono server spike" leading={<span className={preview} />} trailing={<Inline gap="16" align="center">40m<Button size="sm">Open</Button></Inline>}>
+          <span>A spike of the Hono server</span>
+          <span>Codex · ncc-1701</span>
+        </ListRow>
+        <ListRow surface="card" padding="lg" title="Selected in a card" meta="ncc-1701" leading={<span className={preview} />} trailing="1d" selected />
+      </div>
+      <div className={phoneList}>
+        <ListRow padding="phone" title="Logo options" meta="ncc-1701" leading={<span className={preview} />} trailing={<Stack gap="4" align="end">5m<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" /></Stack>} onSelect={() => undefined} />
+      </div>
+      <div hidden>
+        {Object.entries(artifactSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const artifactRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const colour = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  const rowOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const part = (row: HTMLElement, slot: string) => {
+    const el = row.querySelector(`.list-row__${slot}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${slot}`)
+    return el
+  }
+  const box = (el: HTMLElement) => el.getBoundingClientRect()
+  const pad = (row: HTMLElement) => {
+    const style = getComputedStyle(row)
+    return [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft]
+  }
+  // D2: 8 inside the 1 px border, so the title and meta row is 58, Figma's height (403:219).
+  const d2 = rowOf('Skill eval pass rates')
+  await expect(pad(d2)).toEqual(['8px', '8px', '8px', '8px'])
+  await expect(box(d2).height).toBe(58)
+  await expect(pad(rowOf('Inbox task lifecycle'))).toEqual(['8px', '8px', '8px', '8px'])
+  // The age is centred down the row (403:218).
+  const age = box(part(d2, 'trailing'))
+  await expect(age.top + age.height / 2).toBe(box(d2).top + box(d2).height / 2)
+  // The New dot: 6 px in status.working.fg, named for screen readers, at the end of the title line, 12 before the age (403:213).
+  const dot = canvas.getAllByRole('img', { name: 'New' })[0]
+  if (!(dot instanceof HTMLElement)) throw new Error('no dot')
+  await expect(d2.contains(dot)).toBe(true)
+  await expect([box(dot).width, box(dot).height, getComputedStyle(dot).backgroundColor]).toEqual([6, 6, colour('working')])
+  await expect(age.left - box(dot).right).toBe(12)
+  const d2Title = part(d2, 'title')
+  await expect(box(dot).top + 3).toBe(box(d2Title).top + box(d2Title).height / 2)
+  // D4: the row is a box on surface.pane in a border.default border, 12 inside it (403:8216), with the age and Open
+  // centred down the row and the New dot 8 after the title (403:8233).
+  const d4 = rowOf('Hono server spike')
+  await expect(pad(d4)).toEqual(['12px', '12px', '12px', '12px'])
+  await expect([getComputedStyle(d4).backgroundColor, getComputedStyle(d4).borderTopColor, getComputedStyle(d4).borderTopWidth]).toEqual([colour('pane'), colour('border'), '1px'])
+  const d4Dot = within(d4).getByRole('img', { name: 'New' })
+  await expect(box(d4Dot).left - box(part(d4, 'title')).right).toBe(8)
+  const d4End = box(part(d4, 'trailing'))
+  await expect(d4End.top + d4End.height / 2).toBe(box(d4).top + box(d4).height / 2)
+  // A selected card row takes the selected colours.
+  const selectedCard = rowOf('Selected in a card')
+  await expect(getComputedStyle(selectedCard).backgroundColor).not.toBe(colour('pane'))
+  await expect(getComputedStyle(selectedCard).borderTopColor).not.toBe(colour('border'))
+  // M1: 4 at the sides, 8 above and below (406:121); the age stays on the title line, with the 16 px New badge under it.
+  const phone = rowOf('Logo options')
+  await expect(pad(phone)).toEqual(['8px', '4px', '8px', '4px'])
+  await expect(box(part(phone, 'trailing')).top).toBe(box(part(phone, 'title')).top)
+  await expect(box(phone).height).toBe(58)
+  // A default row keeps its 10 px padding, clear border, no fill, no dot, and its age on the title line.
+  const plain = rowOf('A default row')
+  await expect(pad(plain)).toEqual(['10px', '10px', '10px', '10px'])
+  await expect(getComputedStyle(plain).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+  await expect(getComputedStyle(plain).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  await expect(plain.querySelector('.list-row__dot')).toBeNull()
+  await expect(box(part(plain, 'trailing')).top).toBe(box(part(plain, 'title')).top)
+  await expect(box(plain).height).toBe(62)
+}
+
+/** `padding`, `surface="card"`, `trailingAlign` and `dot`: the Artifacts rows (D2, D4, M1). */
+export const ArtifactRowsDark: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'dark' }, play: artifactRowsPlay }
+export const ArtifactRowsLight: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'light' }, play: artifactRowsPlay }

@@ -1,4 +1,5 @@
 import { defineRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The button of every page. The design inventory found 8 variants drawn
 // with 8 padding sets and three label sizes; this recipe merges them into
@@ -27,7 +28,7 @@ export const button = defineRecipe({
     borderStyle: 'solid',
     borderColor: 'transparent',
     outline: 'none',
-    _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+    [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     // The button of an open menu, popover or sheet (aria-expanded). A variant
     // with its own border sets this again, because the variant's border wins
     // over base. `expandedBorder: 'default'` keeps the variant's own border.

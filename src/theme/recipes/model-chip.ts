@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The model chip of Workbench: in the composer (D2 105:905) and the chat
 // header (D2 105:801, M3 105:2770). surface.raised with a border.default
@@ -35,7 +36,7 @@ export const modelChip = defineSlotRecipe({
       outline: 'none',
       userSelect: 'none',
       '&:is(button)': { cursor: 'pointer' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
       // The chip of an open menu.
       _expanded: { borderColor: 'border.active' },
       _disabled: { opacity: 'disabled', cursor: 'not-allowed' },

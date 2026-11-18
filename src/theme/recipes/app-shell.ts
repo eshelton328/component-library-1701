@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The frame that pages sit in, on the backdrop. It only places the slots;
 // each slot brings its own surface (the nav rail, a Panel, the tab bar).
@@ -80,7 +81,7 @@ export const appShell = defineSlotRecipe({
       containerType: 'inline-size',
       // It takes focus so the keyboard can scroll it; the ring sits inside, as the pane abuts its neighbours.
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
     side: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
     tabBar: { display: 'flex', flexDirection: 'column', flexShrink: '0' },

@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The "Explain" view of a script in Toolkit D10 (explain pane 440:1423):
 // padding 18 (20 here, d-072) and 16 between sections. The overview card
@@ -85,7 +86,8 @@ export const scriptExplanation = defineSlotRecipe({
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       _hover: { bg: 'accent.faint' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     // The note starts with a 13 px spark (14 here), 6 before the text.
     note: { display: 'flex', alignItems: 'center', gap: '6', textStyle: 'small', color: 'fg.muted', m: '0' },

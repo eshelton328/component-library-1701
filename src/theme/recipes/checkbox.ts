@@ -1,5 +1,6 @@
 import { checkboxAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The filter checks of Inbox (D4, T14) and Artifacts (D3): a checkbox with
 // a label, checked or not, in groups. The box border is `border.control`, the
@@ -71,7 +72,8 @@ export const checkbox = defineSlotRecipe({
       '& svg': { w: 'icon.12', h: 'icon.12' },
       _checked: { bg: 'accent.default', borderColor: 'accent.default' },
       _indeterminate: { bg: 'accent.default', borderColor: 'accent.default' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     indicator: { display: 'inline-flex' },
     text: { display: 'flex', flexDirection: 'column', gap: '2', minW: '0' },

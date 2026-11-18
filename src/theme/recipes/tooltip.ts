@@ -1,5 +1,6 @@
 import { tooltipAnatomy } from '@ark-ui/react/anatomy'
 import { defineRecipe, defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The tooltip. The Figma library file has no tooltip (a search of
 // PZoW9BBu43qRgon1KhJcwU for "tooltip" finds none), so it uses the tokens of
@@ -45,7 +46,8 @@ export const truncatedText = defineRecipe({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
-    _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+    outline: 'none',
+    [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     // Cut text with its own tab stop sits above a hit area that covers it, such as the one of a card's or a
     // row's title button, so the pointer reaches it and opens its tooltip.
     '&[tabindex]': { position: 'relative' },

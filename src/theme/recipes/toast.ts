@@ -1,5 +1,6 @@
 import { toastAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The toast. Figma PZoW9BBu43qRgon1KhJcwU draws two by hand, read with
 // get_design_context:
@@ -67,7 +68,7 @@ export const toast = defineSlotRecipe({
       borderRadius: 'xs',
       outline: 'none',
       _hover: { textDecoration: 'underline' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     closeTrigger: {
       display: 'inline-flex',
@@ -84,7 +85,7 @@ export const toast = defineSlotRecipe({
       cursor: 'pointer',
       outline: 'none',
       _hover: { color: 'fg.default' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
   },
   variants: {

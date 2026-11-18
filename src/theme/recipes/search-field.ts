@@ -1,5 +1,6 @@
 import { fieldAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The search field of Inbox, Artifacts and Toolkit. The pages drew three
 // backgrounds; the inventory merges them into surface.inset (inconsistency
@@ -65,7 +66,7 @@ export const searchField = defineSlotRecipe({
       color: 'fg.subtle',
       cursor: 'pointer',
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
   },
   variants: {

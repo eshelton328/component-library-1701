@@ -1,5 +1,6 @@
 import { treeViewAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The tree of folders and files in the Toolkit file browser (Toolkit D6,
 // tree 432:2142). Every row has a 1 px border, transparent until the row is
@@ -24,7 +25,7 @@ export const treeView = defineSlotRecipe({
       display: 'flex',
       flexDirection: 'column',
       gap: '2',
-      _focusVisible: { outline: 'none' },
+      outline: 'none',
     },
     branch: { display: 'flex', flexDirection: 'column', gap: '2' },
     branchContent: {
@@ -49,7 +50,8 @@ export const treeView = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       _selected: { bg: 'surface.selected', borderColor: 'border.selected', color: 'fg.accent' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     branchIndicator: {
@@ -78,7 +80,8 @@ export const treeView = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       _selected: { bg: 'surface.selected', borderColor: 'border.selected', color: 'fg.accent' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     // The label and the caption under it, in one column.

@@ -1,5 +1,6 @@
 import { tabsAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The tabs of a Toolkit item (Selected and idle). The selected border was
 // drawn solid on some frames and cyan 0.5 on others; it is `border.selected`.
@@ -66,14 +67,16 @@ export const itemTabs = defineSlotRecipe({
       cursor: 'pointer',
       '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0' },
       _selected: { bg: 'surface.selected', color: 'fg.default', borderWidth: 'default', borderColor: 'border.selected' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     content: {
       minW: '0',
       // Ark can mark a panel closed before it sets `hidden`; a closed panel never shows.
       _closed: { display: 'none' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
   },
   variants: {
@@ -84,7 +87,7 @@ export const itemTabs = defineSlotRecipe({
     },
     density: {
       default: {},
-      compact: { list: { p: '0' }, trigger: { px: '10', _focusVisible: { outlineOffset: '-2' } } },
+      compact: { list: { p: '0' }, trigger: { px: '10', [focusRing]: { outlineOffset: '-2' } } },
     },
     tone: {
       default: {},

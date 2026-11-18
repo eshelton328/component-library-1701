@@ -6,6 +6,7 @@ import { menu } from '../../styled-system/recipes'
 import { ChevronRightIcon } from '../foundations/icons'
 import { dataAttributesOf } from './data-attributes'
 import type { PopoverDataAttributes } from './popover'
+import { useInputModality } from './input-modality'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(menu)
 const Root = withRootProvider(ArkMenu.Root)
@@ -131,6 +132,7 @@ const fromArk = (v: string) => (v.startsWith('menu:') ? v.slice(5) : undefined)
  * `submenu` opens a list of more actions to its right.
  */
 export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, iconTone, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
+  useInputModality()
   const baseId = useId()
   const select = (details: { value: string }) => {
     const value = fromArk(details.value)
@@ -373,6 +375,7 @@ export type RadioMenuProps = {
  * have a description line, and the list a heading, as Inbox D9 Sort does.
  */
 export function RadioMenu({ trigger, label, options, value, defaultValue, onValueChange, open, onOpenChange, placement = 'bottom-start', heading, note, width, size, density, className, ...rest }: RadioMenuProps) {
+  useInputModality()
   const [picked, setPicked] = useState(defaultValue)
   const baseId = useId()
   const selected = value ?? picked

@@ -32,8 +32,15 @@ export type CardProps = {
   media?: ReactNode
   /** An element before the title, such as a kind tile. */
   leading?: ReactNode
-  /** An element after the title, such as a `StatusPill` that says New. */
+  /** An element after the title, such as a `StatusPill` that says New. `badgePosition` sets where it sits. */
   badge?: ReactNode
+  /**
+   * Where `badge` sits in the title row. `title`, the default, puts it 8
+   * after the title. `end` puts it at the right end of the title row, as
+   * the Artifacts card's New (D1 402:15454): the title takes the free
+   * width, and a long one is cut with its tooltip, 8 before the badge.
+   */
+  badgePosition?: 'title' | 'end' | undefined
   /** A line under the title, such as a path; a long one ends with an ellipsis and shows in full in a tooltip. */
   subtitle?: string | undefined
   /** One line of description; a long one ends with an ellipsis and shows in full in a tooltip. */
@@ -76,7 +83,7 @@ export type CardProps = {
  * `onSelect`, the title is a button and a click anywhere on the card
  * presses it.
  */
-export function Card({ title, media, leading, badge, subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
+export function Card({ title, media, leading, badge, badgePosition = 'title', subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
   // The card handles the click, so a click on any part of it selects it, even on a positioned child that paints
   // over the title button's hit area. Enter or Space on the title button fires a click that bubbles here too. A
@@ -90,7 +97,7 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
     onSelect()
   }
   return (
-    <Root media={hasMedia} padding={padding} metaSpacer={metaSpacer} onClick={onSelect === undefined ? undefined : select}>
+    <Root media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined ? undefined : select}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>

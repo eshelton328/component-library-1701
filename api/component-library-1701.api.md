@@ -784,6 +784,17 @@ export function LinkIcon(props: IconProps): JSX.Element;
 export function ListIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ListPaneToggle(input: ListPaneToggleProps): JSX.Element;
+
+// @public (undocumented)
+export type ListPaneToggleProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    label: string;
+    controls?: string | undefined;
+} & PopoverDataAttributes;
+
+// @public
 export function ListRow(input: ListRowProps): JSX.Element;
 
 // @public (undocumented)

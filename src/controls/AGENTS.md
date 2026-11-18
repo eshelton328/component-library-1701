@@ -46,6 +46,9 @@ under their purpose group, never under "Controls" (d-065).
   a button that shows or hides a section in place (Hide transcript on a
   subagent card), sets `expandedBorder="default"` and keeps its variant's
   border; a page never overrides `_expanded` itself.
+- A pressed `Button` draws `border.active`. The Discuss toggle sets
+  `pressedBorder="discuss"` and draws `accent.discuss` while its
+  discussion is open; a page never overrides `_pressed` itself.
 - A `PopoverSection` label is in capitals (`eyebrow`). Text the user
   typed, such as the "/wri" of a skill list's "SKILLS MATCHING /wri",
   goes in its `query` prop, which keeps its case in `monoSm`; never put

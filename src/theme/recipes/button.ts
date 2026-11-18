@@ -3,8 +3,9 @@ import { defineRecipe } from '@pandacss/dev'
 // The button of every page. The design inventory found 8 variants drawn
 // with 8 padding sets and three label sizes; this recipe merges them into
 // the `label` style (with `textSize` for the 12 and 13 px labels of Inbox), the
-// five control heights and the variants below. The
-// discuss toggle and the text link with a chevron come later.
+// five control heights and the variants below. The discuss toggle is a
+// pressed button with `pressedBorder: 'discuss'`; the text link with a
+// chevron comes later.
 export const button = defineRecipe({
   className: 'button',
   jsx: ['Button'],
@@ -144,6 +145,25 @@ export const button = defineRecipe({
       active: {},
       default: {},
     },
+    // The border of a pressed button (aria-pressed). `active` draws
+    // border.active (cyan), as Sort and Filter do while a sort or filter
+    // applies. `discuss` draws accent.discuss (#9e8fff dark, #5b4bd6 light),
+    // for the Discuss toggle while its discussion is open: Inbox Discuss
+    // (403:943, D14-D20, T16, T19, M17, M20) and Artifacts Discuss (452:2341
+    // in D7, 452:2951 in D8). It is the solid violet, not border.discuss
+    // (the same violet at 50%): over the pressed fill that one reaches only
+    // 2.3:1 on light bg.canvas, and the pressed state needs 3:1 against
+    // bg.canvas, surface.pane and surface.raised (WCAG 1.4.11). The solid
+    // one reaches 5.6:1 or more on all three in both themes. Figma also
+    // tints that button violet; the library has no discuss fill token, so
+    // the pressed fill and label stay. A compound variant below sets it,
+    // because base `_pressed` and the secondary variant's own `_pressed`
+    // would win over a variant here. `_expanded` is not changed;
+    // `expandedBorder` sets that.
+    pressedBorder: {
+      active: {},
+      discuss: {},
+    },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
     // y 2 in a 35 wide button, so 4 from the end and 2 from the top.
@@ -170,6 +190,7 @@ export const button = defineRecipe({
       expandedBorder: 'default',
       css: { _expanded: { borderColor: 'transparent' } },
     },
+    { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', iconOnly: false },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false },
 })

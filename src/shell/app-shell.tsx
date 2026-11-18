@@ -30,8 +30,10 @@ const visibleTop = '--app-shell-visible-top'
  * visual viewport stays as tall as the layout (`documentElement.clientHeight`) and nothing is set. iOS Safari
  * only shrinks `visualViewport` and may pan it down (`offsetTop`); then the root gets the visible height and top
  * as two custom properties, the measured runtime values, which the recipe turns into `max-height` and
- * `margin-top`. A pinch zoom (`scale` not 1) also shrinks the visual viewport, but the page must not shrink with
- * it, so it is left alone. Without `visualViewport` (an old browser, or no window when rendered on the server)
+ * `margin-top`. A zoom (`scale` above 1) shrinks the visual viewport's CSS height by the scale too, so the
+ * keyboard-free part of the screen is `height * scale` CSS px: a pinch zoom with no keyboard gives the layout's
+ * height and sets nothing, and Safari's focus zoom on a field under 16 px (the Composer's 14) keeps the fit while
+ * the keyboard is open. Without `visualViewport` (an old browser, or no window when rendered on the server)
  * nothing changes: the hook reads the window only in its effect.
  */
 function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
@@ -40,12 +42,21 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const viewport = window.visualViewport
     const root = ref.current
     if (!viewport || !root) return
+    // The shell's top in the layout, kept between measures. At scale 1 it is `offsetTop`, where Safari panned the
+    // visible area. Under a zoom `offsetTop` also holds the zoom's own pan inside that area, so following it would
+    // push the shell's foot (the composer) below the screen. The zoom pans over a page that stays put, so the top
+    // stays where the last scale-1 measure put it, moved only as far as needed for the shell to cover the visible
+    // area (`offsetTop` to `offsetTop + height`), so no page shows above or below it.
+    let top = 0
     const fit = () => {
       const layout = document.documentElement.clientHeight
-      // More than a pixel of rounding smaller, at no zoom: a keyboard (or other browser chrome) covers the layout.
-      if (viewport.scale === 1 && layout - viewport.height > 1) {
-        root.style.setProperty(visibleHeight, `${String(viewport.height)}px`)
-        root.style.setProperty(visibleTop, `${String(viewport.offsetTop)}px`)
+      const visible = viewport.height * viewport.scale
+      if (viewport.scale === 1) top = viewport.offsetTop
+      // More than a pixel of rounding smaller: a keyboard (or other browser chrome) covers the layout.
+      if (layout - visible > 1) {
+        top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
+        root.style.setProperty(visibleHeight, `${String(visible)}px`)
+        root.style.setProperty(visibleTop, `${String(top)}px`)
       } else {
         root.style.removeProperty(visibleHeight)
         root.style.removeProperty(visibleTop)

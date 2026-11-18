@@ -24,8 +24,12 @@ Layout, Navigation or Overlays (d-065, d-066).
   does not resize it (iOS Safari), it sets `--app-shell-visible-height`
   and `--app-shell-visible-top` on its root with `style.setProperty`, the
   measured runtime values, and the recipe caps and moves the root with
-  them. Where the browser resizes the layout, at a pinch zoom, or with no
-  `visualViewport`, nothing is set. Pages set nothing for the keyboard;
+  them. The keyboard-free height is `visualViewport.height * scale`, so
+  Safari's focus zoom on a field under 16 px keeps the fit, and under a
+  zoom the top stays at the last scale-1 `offsetTop`, moved only as far as
+  the shell must to cover the visible area. Where the browser resizes the
+  layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
+  nothing is set. Pages set nothing for the keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
 - On a tablet or phone the tab bar sits below the pane, or over its

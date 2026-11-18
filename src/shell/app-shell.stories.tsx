@@ -590,6 +590,8 @@ export const OverlayOpaqueLight: StoryObj<typeof meta> = { ...overlayOpaque, glo
 // may pan down.
 const phoneScreen = { m390: { name: 'Phone (390 x 844)', styles: { width: '390px', height: '844px' } } }
 const composerBox = css({ bg: 'surface.chrome', borderTopWidth: 'default', borderColor: 'border.default', textStyle: 'body', color: 'fg.default', p: '12' })
+// The message field, in the Composer's 14 px body text: under 16 px, so iOS Safari zooms in when it takes focus.
+const messageField = css({ display: 'block', textStyle: 'body', color: 'fg.default', bg: 'transparent' })
 
 class FakeViewport extends EventTarget {
   height = document.documentElement.clientHeight
@@ -638,7 +640,7 @@ function PhoneChat() {
               Chat
             </section>
             <div role="group" aria-label="Composer" className={composerBox}>
-              Composer
+              <textarea aria-label="Message" rows={1} className={messageField} />
             </div>
           </>
         }
@@ -697,6 +699,54 @@ const keyboard: StoryObj<typeof meta> = {
 /** Phone chat on iOS Safari: when the keyboard covers the bottom of the screen, the shell shrinks to the visible area, so the composer stays above the keyboard. */
 export const KeyboardDark: StoryObj<typeof meta> = { ...keyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardLight: StoryObj<typeof meta> = { ...keyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const focusZoom: StoryObj<typeof meta> = {
+  render: () => <PhoneChat />,
+  parameters: { viewport: { options: phoneScreen } },
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const shown = (el: DOMRect) => {
+      const top = fakeViewport.offsetTop
+      return { top: Math.round(el.top) >= Math.round(top), bottom: Math.round(el.bottom) <= Math.round(top + fakeViewport.height) }
+    }
+    // The field's text is 14 px, under Safari's 16, so focusing it zooms the page in by 16 / 14.
+    await userEvent.click(field)
+    await expect(field).toHaveFocus()
+    await expect(getComputedStyle(field).fontSize).toBe('14px')
+    // The keyboard opens over 300 px and Safari zooms in at once: the visual viewport is 544 / 1.14 CSS px tall and
+    // panned down to the field at the screen's foot. The keyboard-free screen is still 544 CSS px at scale 1, so the
+    // shell is 544 tall, keeps its top at the screen's, and the composer ends inside the visible area.
+    const scale = 16 / 14
+    const height = 544 / scale
+    fakeViewport.move({ height, offsetTop: 544 - height, scale })
+    await expect(Math.abs(rect(root).height - 544)).toBeLessThanOrEqual(1)
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(shown(composer())).toEqual({ top: true, bottom: true })
+    await expect(shown(rect(field))).toEqual({ top: true, bottom: true })
+    // The zoom pans back up (a scroll event): the zoom moves over the shell, which stays put.
+    fakeViewport.move({ offsetTop: 0 }, 'scroll')
+    await expect(Math.round(rect(root).top)).toBe(0)
+    await expect(Math.abs(rect(root).height - 544)).toBeLessThanOrEqual(1)
+    // The keyboard closes under a pinch zoom (scale 2, 422 CSS px tall): the screen is the layout's 844, nothing is set.
+    field.blur()
+    fakeViewport.move({ height: 422, offsetTop: 0, scale: 2 })
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
+  },
+}
+
+/** Phone chat on iOS Safari with the keyboard open and the focus zoom of the 14 px message field: the shell keeps the keyboard-free height, so the composer stays above the keyboard. */
+export const FocusZoomDark: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FocusZoomLight: StoryObj<typeof meta> = { ...focusZoom, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const noVisualViewport: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,

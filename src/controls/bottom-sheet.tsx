@@ -1,6 +1,6 @@
-import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
+import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
 import { Portal } from '@ark-ui/react/portal'
-import { useId, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
@@ -55,8 +55,15 @@ type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
 /**
  * A sheet at the bottom of the window on a scrim, with a grabber at the top: the snooze,
  * sort and chat actions sheets of the phone. It keeps the focus inside while
- * it is open; Escape, a click on the scrim and `BottomSheetClose` close it,
- * and the focus goes back to the trigger.
+ * it is open; Escape, a click on the scrim, `BottomSheetClose` and a swipe
+ * down close it, and the focus goes back to the trigger.
+ *
+ * Swipe to close: a downward drag from the grabber or the title row, or from
+ * the content when it is scrolled to the top, moves the sheet with the finger
+ * (or the mouse). A release past 30% of the sheet's height, or a fast flick
+ * down, closes it through `onOpenChange(false)`, as the scrim does; a shorter
+ * slow drag puts it back. A drag inside content that is scrolled down scrolls
+ * the content and leaves the sheet in place.
  */
 export function BottomSheet(input: BottomSheetProps) {
   return <SizedBottomSheet {...input} />
@@ -100,10 +107,10 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
         <Backdrop />
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
-          <Content aria-label={title ?? label}>
-            <Grabber aria-hidden="true" />
+          <DraggableContent aria-label={title ?? label}>
+            <Grabber aria-hidden="true" data-drag-handle="" />
             {title === undefined ? null : (
-              <Header data-leading={hasLeading ? '' : undefined}>
+              <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="">
                 {hasLeading ? <HeaderLeading>{leading}</HeaderLeading> : null}
                 <Title>{title}</Title>
                 {present(actions) ? <HeaderActions>{actions}</HeaderActions> : null}
@@ -115,7 +122,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
               </Header>
             )}
             {children}
-          </Content>
+          </DraggableContent>
         </Positioner>
       </Portal>
     </Root>
@@ -134,5 +141,132 @@ export function BottomSheetClose({ children }: { children: ReactElement }) {
     <ArkDialog.CloseTrigger asChild id={id}>
       {children}
     </ArkDialog.CloseTrigger>
+  )
+}
+
+// Swipe to close (screen review R13).
+/** Pixels a press moves down before it becomes a drag, so a tap on a row or a button still clicks. */
+const dragStart = 8
+/** The share of the sheet's height past which a release closes it. */
+const closeShare = 0.3
+/** Pixels per millisecond: a release faster than this closes the sheet, however short the drag. */
+const flickSpeed = 0.5
+/** Milliseconds of the last moves that set the release speed. */
+const flickWindow = 100
+/** The offset of a dragged sheet; the recipe moves the content by it while `data-dragging` is set. */
+const dragOffset = '--bottom-sheet-drag'
+
+type Sample = { y: number; t: number }
+type Drag = { pointerId: number; startY: number; handle: boolean; active: boolean; samples: Sample[]; stop: () => void }
+
+// True when the press is inside content that is scrolled down, so a drag there scrolls it.
+function scrolledDown(target: Element, sheet: HTMLElement) {
+  for (let el: Element | null = target; el !== null; el = el.parentElement) {
+    if (el.scrollTop > 0) return true
+    if (el === sheet) return false
+  }
+  return false
+}
+
+function releaseSpeed(samples: Sample[], now: number) {
+  const recent = samples.filter((s) => now - s.t <= flickWindow)
+  const first = recent[0]
+  const last = recent[recent.length - 1]
+  if (first === undefined || last === undefined || first === last) return 0
+  return (last.y - first.y) / Math.max(1, last.t - first.t)
+}
+
+// The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
+function DraggableContent({ children, ...props }: ComponentProps<typeof Content>) {
+  const dialog = useDialogContext()
+  const ref = useRef<HTMLDivElement>(null)
+  const drag = useRef<Drag | null>(null)
+
+  useEffect(() => {
+    const sheet = ref.current
+    if (sheet === null) return undefined
+    // A touch drag of the content would scroll the page or start a pull to refresh; a sheet drag takes it.
+    const hold = (event: TouchEvent) => {
+      if (drag.current?.active === true) event.preventDefault()
+    }
+    sheet.addEventListener('touchmove', hold, { passive: false })
+    return () => {
+      sheet.removeEventListener('touchmove', hold)
+      drag.current?.stop()
+    }
+  }, [])
+
+  const reset = (sheet: HTMLElement) => {
+    sheet.removeAttribute('data-dragging')
+    sheet.style.removeProperty(dragOffset)
+  }
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    props.onPointerDown?.(event)
+    if (!event.isPrimary || event.button !== 0 || drag.current !== null) return
+    const sheet = event.currentTarget
+    const target = event.target
+    if (!(target instanceof Element)) return
+    const handle = target.closest('[data-drag-handle]') !== null
+    if (!handle && scrolledDown(target, sheet)) return
+    const win = sheet.ownerDocument.defaultView ?? window
+    const move = (e: PointerEvent) => {
+      const d = drag.current
+      if (d === null || e.pointerId !== d.pointerId) return
+      const dy = e.clientY - d.startY
+      if (!d.active) {
+        // An upward move in the content is a scroll, not a drag.
+        if (dy < -dragStart && !d.handle) d.stop()
+        if (dy <= dragStart) return
+        d.active = true
+        sheet.setAttribute('data-dragging', '')
+      }
+      e.preventDefault()
+      d.samples.push({ y: e.clientY, t: performance.now() })
+      sheet.style.setProperty(dragOffset, `${String(Math.max(0, dy))}px`)
+    }
+    const up = (e: PointerEvent) => {
+      const d = drag.current
+      if (d === null || e.pointerId !== d.pointerId) return
+      d.stop()
+      if (!d.active) return
+      // The press ended a drag, so it is not a click on the row or button under it.
+      const swallow = (c: MouseEvent) => {
+        c.stopPropagation()
+        c.preventDefault()
+      }
+      win.addEventListener('click', swallow, { capture: true, once: true })
+      win.setTimeout(() => {
+        win.removeEventListener('click', swallow, { capture: true })
+      }, 0)
+      const offset = Math.max(0, e.clientY - d.startY)
+      const far = offset > sheet.getBoundingClientRect().height * closeShare
+      const fast = releaseSpeed(d.samples, performance.now()) > flickSpeed
+      // Back in place; a closing sheet unmounts before the next frame, an open one springs back.
+      reset(sheet)
+      if (far || fast) dialog.setOpen(false)
+    }
+    const cancel = (e: PointerEvent) => {
+      const d = drag.current
+      if (d === null || e.pointerId !== d.pointerId) return
+      d.stop()
+      reset(sheet)
+    }
+    const stop = () => {
+      win.removeEventListener('pointermove', move)
+      win.removeEventListener('pointerup', up)
+      win.removeEventListener('pointercancel', cancel)
+      drag.current = null
+    }
+    drag.current = { pointerId: event.pointerId, startY: event.clientY, handle, active: false, samples: [{ y: event.clientY, t: performance.now() }], stop }
+    win.addEventListener('pointermove', move)
+    win.addEventListener('pointerup', up)
+    win.addEventListener('pointercancel', cancel)
+  }
+
+  return (
+    <Content {...props} ref={ref} onPointerDown={onPointerDown}>
+      {children}
+    </Content>
   )
 }

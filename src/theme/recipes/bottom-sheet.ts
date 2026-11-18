@@ -38,12 +38,18 @@ export const bottomSheet = defineSlotRecipe({
       boxShadow: 'overlay',
       backdropFilter: 'blur(token(blurs.glass))',
       outline: 'none',
+      // Swipe to close (screen review R13): the content's own scroll stops at its ends and does not
+      // scroll the page behind the scrim, and a dragged sheet follows the finger by the offset the
+      // component sets. No translate at rest, so the box makes no containing block.
+      overscrollBehavior: 'contain',
+      '&[data-dragging]': { translate: '0 var(--bottom-sheet-drag, 0px)' },
     },
     // The grabber (Inbox M6 346:10209, Artifacts M4 407:816, More drawer 415:317): 36x5 (d-074 merges
     // Workbench's 40x5 into it), centred at the top. Figma's radius 3 on a 5 px bar draws a full pill, as
     // `radius.full` does. Figma fills it #24314f, or #8a97b8 at 0.5 or 0.6; d-074 sets `border.default`.
-    grabber: { flexShrink: '0', alignSelf: 'center', w: 'grabber.width', h: 'grabber.height', borderRadius: 'full', bg: 'border.default' },
-    header: { display: 'flex', alignItems: 'center', gap: '8', px: '4' },
+    // The grabber and the title row take a touch drag themselves (`touchAction: 'none'`), so it moves the sheet.
+    grabber: { flexShrink: '0', touchAction: 'none', alignSelf: 'center', w: 'grabber.width', h: 'grabber.height', borderRadius: 'full', bg: 'border.default' },
+    header: { display: 'flex', alignItems: 'center', gap: '8', px: '4', touchAction: 'none' },
     title: { flex: '1', color: 'fg.default', '[data-leading] > &': { textAlign: 'center' } },
     headerLeading: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },
     headerActions: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0' },

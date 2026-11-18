@@ -396,3 +396,136 @@ export const HeaderActionsBehaviour: StoryObj<typeof meta> = {
     await body.findByRole('dialog', { name: 'Add a link' })
   },
 }
+
+// Swipe to close (screen review R13): a sheet with more rows than the window holds, so its content scrolls.
+const snoozeRows = Array.from({ length: 30 }, (_, i) => `In ${String(i + 1)} hours`)
+const onSwipe = fn<(open: boolean) => void>()
+
+function SwipeSheet() {
+  const [open, setOpen] = useState(false)
+  const change = (next: boolean) => {
+    setOpen(next)
+    onSwipe(next)
+  }
+  return (
+    <main className={page}>
+      <BottomSheet title="Snooze" trigger={<Button>Snooze</Button>} open={open} onOpenChange={change}>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <BottomSheetClose key={row}>
+              <Button size="xl">{row}</Button>
+            </BottomSheetClose>
+          ))}
+        </Stack>
+      </BottomSheet>
+    </main>
+  )
+}
+
+// A synthetic touch pointer, as a finger on a phone sends it. Returns false when a handler prevented its default.
+function touch(type: 'pointerdown' | 'pointermove' | 'pointerup', target: Element, y: number) {
+  const box = target.getBoundingClientRect()
+  return target.dispatchEvent(
+    new PointerEvent(type, { bubbles: true, cancelable: true, composed: true, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: box.left + box.width / 2, clientY: y }),
+  )
+}
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// A slow drag: steps of 20 px, 40 ms apart, then a rest, so the release is not a flick.
+async function slowDrag(target: Element, from: number, by: number, sheet: HTMLElement, top: number) {
+  touch('pointerdown', target, from)
+  for (let dy = 20; dy <= by; dy += 20) {
+    touch('pointermove', target, from + dy)
+    await pause(40)
+  }
+  touch('pointermove', target, from + by)
+  // The sheet follows the finger.
+  await expect(Math.round(sheet.getBoundingClientRect().top - top)).toBe(by)
+  await pause(flickRest)
+  touch('pointerup', target, from + by)
+}
+// Longer than the window that sets the release speed (100 ms).
+const flickRest = 160
+
+function middleY(el: Element) {
+  const box = el.getBoundingClientRect()
+  return box.top + box.height / 2
+}
+
+const swipePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onSwipe.mockClear()
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Snooze' })
+  const open = async () => {
+    await userEvent.click(trigger)
+    const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+    return { sheet, top: sheet.getBoundingClientRect().top }
+  }
+  const closed = () => waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+
+  let { sheet, top } = await open()
+  const grabber = grabberOf(sheet)
+  const header = sheet.querySelector('.bottom-sheet__header')
+  if (header === null) throw new Error('no title row')
+  // The grabber and the title row take the touch drag; the content keeps its scroll to itself.
+  await expect(getComputedStyle(grabber).touchAction).toBe('none')
+  await expect(getComputedStyle(header).touchAction).toBe('none')
+  await expect(getComputedStyle(sheet).overscrollBehaviorY).toBe('contain')
+  // At rest the sheet has no translate.
+  await expect(getComputedStyle(sheet).translate).toBe('none')
+
+  // A short slow drag of the grabber springs back: 60 px is less than 30% of the sheet.
+  await expect(60).toBeLessThan(sheet.getBoundingClientRect().height * 0.3)
+  await slowDrag(grabber, middleY(grabber), 60, sheet, top)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(onSwipe).not.toHaveBeenCalledWith(false)
+
+  // A long slow drag of the title row, past 30% of the sheet, closes it through onOpenChange.
+  const far = Math.ceil(sheet.getBoundingClientRect().height * 0.3 / 20) * 20 + 20
+  await slowDrag(header, middleY(header), far, sheet, top)
+  await closed()
+  await expect(onSwipe).toHaveBeenLastCalledWith(false)
+
+  // A fast flick of 60 px closes it too.
+  sheet = (await open()).sheet
+  const flickFrom = middleY(grabberOf(sheet))
+  touch('pointerdown', grabberOf(sheet), flickFrom)
+  touch('pointermove', grabberOf(sheet), flickFrom + 20)
+  touch('pointermove', grabberOf(sheet), flickFrom + 60)
+  touch('pointerup', grabberOf(sheet), flickFrom + 60)
+  await closed()
+  await expect(onSwipe).toHaveBeenLastCalledWith(false)
+
+  // In content that is scrolled down, a drag scrolls the content: the sheet stays and the moves keep their default.
+  ;({ sheet, top } = await open())
+  await expect(sheet.scrollHeight).toBeGreaterThan(sheet.clientHeight)
+  sheet.scrollTop = 120
+  await waitFor(() => expect(sheet.scrollTop).toBe(120))
+  const row = within(sheet).getByRole('button', { name: 'In 8 hours' })
+  const rowY = middleY(row)
+  touch('pointerdown', row, rowY)
+  for (let dy = 20; dy <= 100; dy += 20) {
+    await expect(touch('pointermove', row, rowY + dy)).toBe(true)
+  }
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  touch('pointerup', row, rowY + 100)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+
+  // Scrolled back to the top, the same drag on a row moves the sheet, and the release does not pick the row.
+  sheet.scrollTop = 0
+  await waitFor(() => expect(sheet.scrollTop).toBe(0))
+  const first = within(sheet).getByRole('button', { name: 'In 1 hours' })
+  await slowDrag(first, middleY(first), 60, sheet, top)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await userEvent.keyboard('{Escape}')
+  await closed()
+}
+
+/** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
+export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }
+export const SwipeLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'light' } }

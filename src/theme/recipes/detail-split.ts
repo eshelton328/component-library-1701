@@ -4,7 +4,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // task and its discussion (D14), an artifact and its discussion (Artifacts
 // D7). The item keeps its own width (its Container, 828 in the Figma
 // frames) and the side takes the rest, so at 1512 px the pane is 628 wide
-// as Figma draws it. The side stops at shell.discussionPane (1108); on a
+// as Figma draws it. The side stops at shell.discussionPane (800); on a
 // wider screen the item takes what is left, and its detail Container
 // centres itself there (the layout recipe). Both fill the height and no
 // more, so each one's ScrollFrame scrolls on its own (d-107).

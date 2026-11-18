@@ -64,7 +64,7 @@ export function Container(props: ContainerProps) {
 
 /**
  * A chat's column: its messages, its empty state or its reply box. It
- * fills its parent up to 1076 px (`shell.thread`) and sits in the middle
+ * fills its parent up to 768 px (`shell.thread`) and sits in the middle
  * of a wider parent, so a reply box in its own `ChatColumn` lines up with
  * the messages above it. Its children stack, `gap` apart (0 by default).
  */

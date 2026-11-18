@@ -20,7 +20,7 @@ export type DetailSplitProps = {
  * detail: the Inbox task and its discussion (D14), an artifact and its
  * discussion. The item keeps its content's width (a detail `Container` with
  * long text fills its 748 or 1024 px column) and the side takes the rest of
- * the row, up to 1108 px (`shell.discussionPane`, a 1076 px chat column and
+ * the row, up to 800 px (`shell.discussionPane`, a 768 px chat column and
  * the panel's padding). On a wider screen the item takes what is left and
  * its detail `Container` centres itself in it. Both fill the height, so
  * each one's `ScrollFrame` scrolls on its own. With no `side` (or one that

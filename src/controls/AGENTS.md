@@ -23,7 +23,7 @@ under their purpose group, never under "Controls" (d-065).
   (`shell.detailWide`) in the middle when its query container (the
   `AppShell` detail) is at least 1600 wide (`shell.detailWideFrom`).
 - `ChatColumn` (`layout.tsx`) is a chat's column: messages, empty state
-  or reply box. It fills its parent up to 1076 (`shell.thread`) and sits
+  or reply box. It fills its parent up to 768 (`shell.thread`) and sits
   in the middle of a wider one. Put the entries and the reply box each in
   their own `ChatColumn`, so they line up; a page sets no chat width.
 - `ScrollFrame` (`scroll-frame.tsx`) is the frame of a page or pane whose

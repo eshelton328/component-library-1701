@@ -36,6 +36,8 @@ export { MapGraph, MapLegend, MapNode, MapSelectionCard } from './parts/map-grap
 export type { MapGraphColumn, MapGraphEdge, MapGraphNode, MapGraphProps, MapLegendProps, MapNodeProps, MapNodeState, MapSelectionCardProps } from './parts/map-graph'
 export { ChatPath, FlowDiagram } from './parts/flow-diagram'
 export type { ChatPathProps, ChatPathStep, FlowDiagramProps, FlowStep, FlowUse, FlowUseKind } from './parts/flow-diagram'
+export { FlowBranch, FlowLine, FlowLoop } from './parts/flow-connector'
+export type { FlowBranchGap, FlowBranchProps, FlowLineDirection, FlowLineProps, FlowLineTone, FlowLoopProps } from './parts/flow-connector'
 export { DailyBarChart, GroupedBarChart, HorizontalBarChart } from './parts/bar-chart'
 export type { BarGroup, BarRow, BarSeries, BarTone, DailyAxisLabels, DailyBar, DailyBarChartProps, GroupedBarChartProps, HorizontalBarChartProps } from './parts/bar-chart'
 export { ContextMeter } from './parts/context-meter'

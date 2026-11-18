@@ -220,7 +220,7 @@ export default definePreset({
           },
           "strong": {
             "value": "1.5px",
-            "description": "Checkbox outlines and the focus ring."
+            "description": "Checkbox outlines, the focus ring, and the lines and arrow heads of the flow connectors FlowLine, FlowBranch and FlowLoop (Toolkit D13 447:74, T08 502:3, M09 464:559). Not for a box border, which takes default."
           }
         },
         "colors": {

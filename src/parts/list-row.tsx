@@ -69,7 +69,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * The Artifacts rows add, on the `inbox` variant:
  * - `padding`: `default` pads 10 inside the 1 px border; `sm` pads 8, so a
  *   title and meta row is 58 tall (Artifacts D2); `lg` pads 12 (the list
- *   view, D4); `phone` pads 4 at the sides and 8 above and below (M1).
+ *   view, D4); `phone` pads 4 at the sides and 10 above and below (M1).
  * - `surface="card"` draws the row on `surface.pane` in a `border.default`
  *   border, as a Card; `default` has no fill and a clear border.
  * - `trailingAlign="center"` centres the trailing items down the row (D2's

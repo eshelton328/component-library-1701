@@ -10,6 +10,7 @@ import { KindMark } from './kind-mark'
 import { ListRow } from './list-row'
 import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
+import { Thumbnail } from './thumbnail'
 import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
@@ -519,7 +520,7 @@ function ArtifactRows() {
         <ListRow surface="card" padding="lg" title="Selected in a card" meta="ncc-1701" leading={<span className={preview} />} trailing="1d" selected />
       </div>
       <div className={phoneList}>
-        <ListRow padding="phone" title="Logo options" meta="ncc-1701" leading={<span className={preview} />} trailing={<Stack gap="4" align="end">5m<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" /></Stack>} onSelect={() => undefined} />
+        <ListRow padding="phone" title="Logo options" meta="ncc-1701" leading={<Thumbnail kind="doc" size="md" />} trailing={<Stack gap="4" align="end">5m<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" /></Stack>} onSelect={() => undefined} />
       </div>
       <div hidden>
         {Object.entries(artifactSwatches).map(([name, className]) => (
@@ -577,11 +578,15 @@ const artifactRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
   const selectedCard = rowOf('Selected in a card')
   await expect(getComputedStyle(selectedCard).backgroundColor).not.toBe(colour('pane'))
   await expect(getComputedStyle(selectedCard).borderTopColor).not.toBe(colour('border'))
-  // M1: 4 at the sides, 8 above and below (406:121); the age stays on the title line, with the 16 px New badge under it.
+  // M1 (406:121): the 48 px preview sits 9 down in Figma's 66 px row; 9 ties 8 and 10, so 10 (d-072), and 4 at the
+  // sides. The age stays on the title line, with the 16 px New badge under it.
   const phone = rowOf('Logo options')
-  await expect(pad(phone)).toEqual(['8px', '4px', '8px', '4px'])
+  await expect(pad(phone)).toEqual(['10px', '4px', '10px', '4px'])
+  const phonePreview = part(phone, 'leading')
+  await expect(box(phonePreview).height).toBe(48)
+  await expect(box(phonePreview).top - box(phone).top).toBe(11)
   await expect(box(part(phone, 'trailing')).top).toBe(box(part(phone, 'title')).top)
-  await expect(box(phone).height).toBe(58)
+  await expect(box(phone).height).toBe(70)
   // A default row keeps its 10 px padding, clear border, no fill, no dot, and its age on the title line.
   const plain = rowOf('A default row')
   await expect(pad(plain)).toEqual(['10px', '10px', '10px', '10px'])

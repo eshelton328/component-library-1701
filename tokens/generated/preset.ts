@@ -343,7 +343,7 @@ export default definePreset({
                 "base": "rgba(91, 75, 214, 0.5)",
                 "_dark": "rgba(158, 143, 255, 0.5)"
               },
-              "description": "The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943). Not for text."
+              "description": "The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943), and of a pressed Button with pressedBorder discuss: the Discuss toggle while its discussion is open (Inbox 403:943, Artifacts 452:2341). Not for text."
             },
             "focus": {
               "value": {

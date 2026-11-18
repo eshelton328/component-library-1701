@@ -596,3 +596,56 @@ const expandedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement
 /** `expandedBorder="default"`: an open disclosure toggle keeps its own border; an open menu trigger draws border.active. */
 export const ExpandedBorderDark: StoryObj<typeof meta> = { render: () => <ExpandedButtons />, globals: { mode: 'dark' }, play: expandedBorderPlay }
 export const ExpandedBorderLight: StoryObj<typeof meta> = { render: () => <ExpandedButtons />, globals: { mode: 'light' }, play: expandedBorderPlay }
+
+// The Discuss toggle with its discussion open beside Sort with a sort applied, a
+// closed Discuss and a pressed primary Discuss, all with textSize sm as the-bridge draws them.
+function DiscussButtons() {
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button textSize="sm" pressed>
+          Sort
+        </Button>
+        <Button textSize="sm" pressed pressedBorder="discuss">
+          Discuss
+        </Button>
+        <Button textSize="sm" pressed={false} pressedBorder="discuss">
+          Discuss closed
+        </Button>
+        <Button variant="primary" textSize="sm" pressed pressedBorder="discuss">
+          Discuss primary
+        </Button>
+      </div>
+      <div hidden>
+        <span data-swatch="active" className={css({ color: 'border.active' })} />
+        <span data-swatch="discuss" className={css({ color: 'border.discuss' })} />
+        <span data-swatch="default" className={css({ color: 'border.default' })} />
+        <span data-swatch="selected" className={css({ color: 'surface.selected' })} />
+      </div>
+    </main>
+  )
+}
+
+// Inbox Discuss 403:943 and Artifacts Discuss 452:2341: a pressed Discuss draws border.discuss;
+// a pressed button with the default pressedBorder still draws border.active.
+const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const style = (name: string) => getComputedStyle(canvas.getByRole('button', { name }))
+  await expect(swatch('discuss')).not.toBe(swatch('active'))
+  await expect(style('Sort').borderTopColor).toBe(swatch('active'))
+  await expect(style('Discuss').borderTopColor).toBe(swatch('discuss'))
+  await expect(style('Discuss').borderBottomColor).toBe(swatch('discuss'))
+  // The pressed fill stays, and a closed Discuss keeps the secondary border.
+  await expect(style('Discuss').backgroundColor).toBe(swatch('selected'))
+  await expect(style('Discuss closed').borderTopColor).toBe(swatch('default'))
+  await expect(style('Discuss primary').borderTopColor).toBe(swatch('discuss'))
+}
+
+/** `pressedBorder="discuss"`: a pressed Discuss toggle draws border.discuss; Sort keeps border.active. */
+export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedBorderPlay }
+export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }

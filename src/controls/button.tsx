@@ -7,7 +7,8 @@ const StyledButton = styled('button', button)
 
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
- * `textSize`, `pressedTone`, `expandedBorder` and `iconOnly`, `pressed` and `indicator`. `size` sets the
+ * `textSize`, `pressedTone`, `pressedBorder`, `expandedBorder` and
+ * `iconOnly`, `pressed` and `indicator`. `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
  * default) draws `label` (Medium 14/20), or `labelLg` on a `text` button;
@@ -24,6 +25,11 @@ const StyledButton = styled('button', button)
  * disclosure toggle that shows or hides a section in place, such as Hide
  * transcript on a subagent card. A disclosure toggle sets `aria-expanded`,
  * not `pressed`.
+ *
+ * `pressedBorder` sets the border while `pressed` is true. `active` (the
+ * default) draws `border.active` (cyan), as Sort and Filter do. `discuss`
+ * draws `border.discuss` (violet), for the Discuss toggle while its
+ * discussion is open. It keeps the pressed fill and label.
  */
 export type ButtonProps = ComponentProps<'button'> &
   Scalar<ButtonVariantProps> & {

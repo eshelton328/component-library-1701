@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, spyOn, userEvent, within } from 'storybook/test'
+import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
@@ -824,18 +824,23 @@ const fieldBlurred: StoryObj<typeof meta> = {
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
     await expect(Math.round(rect(root).height)).toBe(544)
-    // The focus moves to an element that opens no keyboard (the detail pane): the same rule, the fit stays until
-    // the keyboard closes.
+    // The focus moves to an element that opens no keyboard (the detail pane) with a press: the fit stays through
+    // the press, so its click lands where it started, and ends one frame after the release, with no viewport event
+    // (iOS standalone may report the keyboard's close late or never).
+    const atClick: string[] = []
+    canvas.getByRole('main').addEventListener('click', () => atClick.push(root.style.getPropertyValue('--app-shell-visible-height')), { once: true })
     await userEvent.click(canvas.getByRole('main'))
     await expect(canvas.getByRole('main')).toHaveFocus()
-    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    await expect(atClick).toEqual(['544px'])
+    await waitFor(() => expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe(''))
+    await expect(Math.round(rect(root).height)).toBe(844)
     fakeViewport.move({ height: 844 })
     await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
     await expect(Math.round(rect(root).height)).toBe(844)
   },
 }
 
-/** Phone chat: when the focus leaves the message field, the shell keeps the fit until the keyboard closes, then returns to its parent's height. */
+/** Phone chat: when the focus leaves the message field, the shell keeps the fit until the keyboard closes, or until a press that took the focus ends, then returns to its parent's height. */
 export const FieldBlurredDark: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FieldBlurredLight: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'light', viewport: { value: 'm390' } } }
 

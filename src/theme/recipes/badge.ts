@@ -9,7 +9,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   the larger of each pair of tokens (d-072), so the pill is 24 high.
 //   `size="sm"` pads it 8 / 2 for Figma's 20 px pills of the Inbox
 //   (Recommended T2 346:5764, T3 346:5976; Working T5 346:6381): the 16 px
-//   pill line and 2 above and below. The other variants have one size.
+//   pill line and 2 above and below. `size="xs"` is the 16 px New pill of
+//   the phone's artifact rows (M1 406:144, M3 407:99, M4 407:601, M5
+//   408:99, M6 408:513, M8 415:99): Figma's 48 x 16 pill pads 6 at the
+//   sides and 0 above and below, with a 3 px gap after its 9 px star. It
+//   takes padding 6 / 0 and gap 4 (3 is a tie between 2 and 4, d-072),
+//   so the 16 px pill line is the whole height, on the 4 px grid (d-100).
+//   The star is `SparkFilledIcon` at 12 px. The other variants have one
+//   size.
 // - `tag`: a status tint in a radius.sm box, mono text. Loop 460:59; Figma
 //   tints it at 0.12, which the inventory merges into the 0.14 status tint,
 //   and draws radius 5, which it merges into radius.sm. Padding 6 / 2, gap 4.
@@ -55,10 +62,12 @@ export const badge = defineSlotRecipe({
     size: {
       md: {},
       sm: {},
+      xs: {},
     },
   },
   compoundVariants: [
     { variant: 'pill', size: 'sm', css: { root: { py: '2' } } },
+    { variant: 'pill', size: 'xs', css: { root: { gap: '4', px: '6', py: '0' } } },
     { variant: ['outline', 'quiet'], css: { root: { bg: 'surface.overlay' } } },
     { variant: 'quiet', css: { root: { color: 'fg.muted' } } },
   ],

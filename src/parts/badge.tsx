@@ -24,8 +24,10 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
  * Read-only). `tone` picks the status colour: `working`, `running`,
  * `needsYou`, `idle` (the default), `done` or `danger`; `quiet` ignores it.
  * `size` sets a pill's height: `md` (the default) pads it 4 above and below,
- * 24 high; `sm` pads it 2, 20 high, as the Inbox draws its pills. The `tag`,
- * `outline` and `quiet` badges have one size and ignore it.
+ * 24 high; `sm` pads it 2, 20 high, as the Inbox draws its pills; `xs` pads
+ * it 0 above and below and 6 at the sides with a 4 px gap, 16 high, as the
+ * New pill of the phone's artifact rows (with `SparkFilledIcon` at 12 px).
+ * The `tag`, `outline` and `quiet` badges have one size and ignore it.
  */
 export function Badge({ label, icon, variant, tone, size }: BadgeProps) {
   return (

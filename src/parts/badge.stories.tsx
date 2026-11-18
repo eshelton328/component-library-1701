@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline } from '../controls/layout'
-import { CheckIcon, LockIcon, LoopIcon, SparkIcon } from '../foundations/icons'
+import { CheckIcon, LockIcon, LoopIcon, SparkFilledIcon, SparkIcon } from '../foundations/icons'
 import { Badge } from './badge'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '16', justifyItems: 'start' })
@@ -197,3 +197,70 @@ const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `size="sm"`: the 20 px pill of the Inbox. */
 export const SmallDark: StoryObj<typeof meta> = { render: () => <SmallPills />, play: smallPlay, globals: { mode: 'dark' } }
 export const SmallLight: StoryObj<typeof meta> = { render: () => <SmallPills />, play: smallPlay, globals: { mode: 'light' } }
+
+// The New pill of the phone's artifact rows (M1 406:144, M6 408:513): Figma's 48 x 16 teal
+// pill with a filled 9 px star, here 16 high with SparkFilledIcon at 12 px.
+function NewPills() {
+  return (
+    <main className={page}>
+      <Inline wrap gap="8">
+        <span data-testid="new-xs">
+          <Badge label="New" tone="working" size="xs" icon={<SparkFilledIcon size="12" />} />
+        </span>
+        <span data-testid="new-sm">
+          <Badge label="New" tone="working" size="sm" icon={<SparkIcon size="12" />} />
+        </span>
+        <span data-testid="new-md">
+          <Badge label="New" tone="working" icon={<SparkIcon size="12" />} />
+        </span>
+        <span data-testid="tag-xs">
+          <Badge label="loop" variant="tag" tone="needsYou" size="xs" />
+        </span>
+      </Inline>
+      <span hidden data-testid="swatch-working" className={swatch.working} />
+    </main>
+  )
+}
+
+const newPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const badgeIn = (id: string) => {
+    const el = canvas.getByTestId(id).firstElementChild
+    if (!(el instanceof HTMLElement)) throw new Error(`no badge in ${id}`)
+    return el
+  }
+  const height = (id: string) => badgeIn(id).getBoundingClientRect().height
+  const working = getComputedStyle(canvas.getByTestId('swatch-working'))
+  // size="xs": 6 / 0 padding, a 4 px gap, the 16 px pill line, 16 high, in the working tint.
+  const xs = getComputedStyle(badgeIn('new-xs'))
+  await expect([xs.paddingLeft, xs.paddingRight, xs.paddingTop, xs.paddingBottom, xs.columnGap]).toEqual(['6px', '6px', '0px', '0px', '4px'])
+  await expect([xs.fontSize, xs.fontWeight]).toEqual(['11px', '500'])
+  await expect(parseFloat(xs.lineHeight)).toBeCloseTo(16, 0)
+  await expect(height('new-xs')).toBeCloseTo(16, 0)
+  await expect(xs.color).toBe(working.color)
+  await expect(xs.backgroundColor).toBe(working.backgroundColor)
+  await expect(parseFloat(xs.borderTopLeftRadius)).toBeGreaterThanOrEqual(8)
+  // The filled spark: 12 px, filled in the badge's colour, no stroke.
+  const star = badgeIn('new-xs').querySelector('svg')
+  if (!(star instanceof SVGSVGElement)) throw new Error('no star')
+  await expect([star.getBoundingClientRect().width, star.getBoundingClientRect().height]).toEqual([12, 12])
+  const path = star.querySelector('path')
+  if (path === null) throw new Error('no star path')
+  await expect(getComputedStyle(path).fill).toBe(xs.color)
+  await expect(getComputedStyle(path).stroke).toBe('none')
+  await expect(badgeIn('new-xs').textContent).toBe('New')
+  // Figma's pill is 48 wide; the 12 px star and the 4 px gap keep it within 4 of that.
+  await expect(Math.abs(badgeIn('new-xs').getBoundingClientRect().width - 48)).toBeLessThanOrEqual(4)
+  // The other sizes stay as they were: sm 20 high, md 24, and a tag ignores the size.
+  await expect(height('new-sm')).toBeCloseTo(20, 0)
+  await expect(getComputedStyle(badgeIn('new-sm')).paddingLeft).toBe('8px')
+  await expect(height('new-md')).toBeCloseTo(24, 0)
+  await expect(getComputedStyle(badgeIn('new-md')).columnGap).toBe('6px')
+  await expect(getComputedStyle(badgeIn('tag-xs')).paddingTop).toBe('2px')
+  await expect(getComputedStyle(badgeIn('tag-xs')).paddingLeft).toBe('6px')
+  await expect(height('tag-xs')).toBeCloseTo(20, 0)
+}
+
+/** `size="xs"` with `SparkFilledIcon`: the 16 px New pill of the phone's artifact rows. */
+export const NewDark: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'dark' } }
+export const NewLight: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'light' } }

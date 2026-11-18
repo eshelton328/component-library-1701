@@ -22,7 +22,9 @@ under their purpose group, never under "Controls" (d-065).
 - `ScrollFrame` (`scroll-frame.tsx`) is the frame of a page or pane whose
   header (a Back bar) and footer (a chat box) stay in view while only the
   body between them scrolls (brain decision d-107). It fills a parent
-  that is a flex column with a bounded height.
+  that is a flex column with a bounded height. The footer takes at most
+  30% of the frame's height and scrolls inside past that, so a page caps
+  no reply box itself.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

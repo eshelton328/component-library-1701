@@ -743,3 +743,140 @@ const linksPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
 
 export const LinksGraphDark: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'dark' } }
 export const LinksGraphLight: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'light' } }
+
+// The phone's map window (Toolkit M11 461:866) over a drawing wider than it: a 320 px frame round the 1384 × 460 map.
+const zoomFrame = css({ w: 'shell.popover', display: 'flex', flexDirection: 'column', gap: '24' })
+
+function ZoomMap({ onSelect }: { onSelect: (id: string | null) => void }) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const select = (id: string | null) => {
+    setSelected(id)
+    onSelect(id)
+  }
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Zoom map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} selectedId={selected} onSelect={select} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Plain map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} />
+      </div>
+    </main>
+  )
+}
+
+const zoomPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
+  const map = within(canvasElement).getByRole('group', { name: 'Zoom map' })
+  const scroller = map.querySelector<HTMLElement>('.map-graph__scroller')
+  const svg = map.querySelector('svg')
+  if (scroller === null || svg === null) throw new Error('no drawing')
+  // The window takes its own gestures, clips the drawing and moves it from its top left corner.
+  await expect(scroller).toHaveAttribute('data-allow-pinch', '')
+  const sc = getComputedStyle(scroller)
+  await expect([sc.touchAction, sc.overflowX, sc.overflowY]).toEqual(['none', 'clip', 'clip'])
+  await expect(getComputedStyle(svg).transformOrigin).toBe('0px 0px')
+  const windowWidth = scroller.clientWidth
+  await expect(windowWidth).toBe(318)
+  await expect(scroller.clientHeight).toBe(460)
+  // Where the drawing is in the window, and how large: its left and top edges, width and height in px.
+  const drawing = () => {
+    const w = scroller.getBoundingClientRect()
+    const d = svg.getBoundingClientRect()
+    return { left: d.left - w.left, top: d.top - w.top, width: d.width, height: d.height }
+  }
+  const expectDrawing = async (expected: { left: number; top: number; width: number; height: number }) => {
+    const d = drawing()
+    for (const key of ['left', 'top', 'width', 'height'] as const) await expect(d[key], key).toBeCloseTo(expected[key], 1)
+  }
+  // A touch pointer event at x and y in the window.
+  const pointer = (type: string, id: number, x: number, y: number, target: Element = scroller) => {
+    const w = scroller.getBoundingClientRect()
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: w.left + x, clientY: w.top + y, bubbles: true, cancelable: true }))
+  }
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+
+  // One pointer drags the drawing.
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, 150, 100)
+  await expectDrawing({ left: -50, top: 0, width: 1384, height: 460 })
+  // At scale 1 the drawing is as high as the window, so it does not move up or down.
+  pointer('pointermove', 1, 150, 300)
+  await expectDrawing({ left: -50, top: 0, width: 1384, height: 460 })
+  // It stops where its left edge meets the window's left edge, and its right edge the window's right edge.
+  pointer('pointermove', 1, 5000, 100)
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+  pointer('pointermove', 1, -5000, 100)
+  await expectDrawing({ left: windowWidth - 1384, top: 0, width: 1384, height: 460 })
+  pointer('pointermove', 1, 5000, 100)
+  pointer('pointerup', 1, 5000, 100)
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+
+  // Two pointers that move apart scale the drawing up about their midpoint: from 40 to 80 px apart is scale 2, and
+  // the drawing point under the first midpoint (120, 100) goes under the new one (140, 100).
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointerdown', 2, 140, 100)
+  pointer('pointermove', 2, 180, 100)
+  await expectDrawing({ left: 140 - 240, top: 100 - 200, width: 2768, height: 920 })
+  // Further apart, the scale stops at max (2).
+  pointer('pointermove', 2, 300, 100)
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  // At scale 2 one pointer drags it down and up too, until its top edge meets the window's top edge.
+  pointer('pointerup', 2, 300, 100)
+  pointer('pointermove', 1, 100, 160)
+  await expect(drawing().top).toBeCloseTo(-40, 1)
+  pointer('pointermove', 1, 100, 5000)
+  await expect(drawing().top).toBeCloseTo(0, 1)
+  pointer('pointerup', 1, 100, 5000)
+
+  // Two pointers that move together scale it down, and the scale stops at min (0.5).
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointerdown', 2, 300, 100)
+  pointer('pointermove', 1, 150, 100)
+  pointer('pointermove', 2, 250, 100)
+  await expect(drawing().width).toBeCloseTo(1384, 1)
+  pointer('pointermove', 1, 195, 100)
+  pointer('pointermove', 2, 205, 100)
+  await expect([drawing().width, drawing().height]).toEqual([692, 230])
+  pointer('pointerup', 1, 195, 100)
+  pointer('pointerup', 2, 205, 100)
+  // At scale 0.5 the drawing is lower than the window, so it stays inside it: its foot stops at the window's foot.
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointermove', 1, 100, 5000)
+  await expect(drawing().top).toBeCloseTo(460 - 230, 1)
+  pointer('pointerup', 1, 100, 5000)
+
+  // A tap on a node still selects it.
+  const node = (name: string) => within(map).getByRole('button', { name })
+  await userEvent.click(node('writer'))
+  await expect(args.onSelect).toHaveBeenLastCalledWith('writer')
+  // A press that moves less than 4 px is a tap too.
+  const ambitious = node('ambitious')
+  pointer('pointerdown', 1, 50, 50, ambitious)
+  pointer('pointermove', 1, 52, 51, ambitious)
+  pointer('pointerup', 1, 52, 51, ambitious)
+  ambitious.click()
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  // A drag that starts and ends on a node moves the drawing and selects nothing.
+  const ste100 = node('ste100')
+  const before = drawing().left
+  pointer('pointerdown', 1, 150, 50, ste100)
+  pointer('pointermove', 1, 120, 50, ste100)
+  pointer('pointerup', 1, 120, 50, ste100)
+  ste100.click()
+  await expect(drawing().left).toBeCloseTo(before - 30, 1)
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  await expect(args.onSelect).not.toHaveBeenCalledWith('ste100')
+
+  // Without `zoom` the map is as before: no pinch attribute, no variant class, no view properties, and it scrolls.
+  const plain = within(canvasElement).getByRole('group', { name: 'Plain map' })
+  const plainScroller = plain.querySelector<HTMLElement>('.map-graph__scroller')
+  const plainSvg = plain.querySelector('svg')
+  if (plainScroller === null || plainSvg === null) throw new Error('no plain drawing')
+  await expect(plainScroller).not.toHaveAttribute('data-allow-pinch')
+  await expect(plainScroller).not.toHaveAttribute('style')
+  await expect([plain.className, plainScroller.className]).toEqual(['map-graph__root', 'map-graph__scroller'])
+  const ps = getComputedStyle(plainScroller)
+  await expect([ps.touchAction, ps.overflowX, getComputedStyle(plainSvg).transform]).toEqual(['auto', 'auto', 'none'])
+  await expect(plainScroller.scrollWidth).toBe(1384)
+}
+
+export const ZoomDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'dark' } }
+export const ZoomLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'light' } }

@@ -189,6 +189,7 @@ export type CardProps = {
     media?: ReactNode;
     leading?: ReactNode;
     badge?: ReactNode;
+    badgePosition?: 'title' | 'end' | undefined;
     subtitle?: string | undefined;
     description?: string | undefined;
     meta?: ReactNode;

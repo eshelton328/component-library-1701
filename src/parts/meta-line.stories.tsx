@@ -153,11 +153,11 @@ const meta = {
     await expect(inboxStyle.fontFamily).toContain('Geist Mono')
     await expect(inbox.textContent).toBe('omni-brain·drift check')
     await expect(inbox.querySelectorAll('.meta-line__separator')).toHaveLength(1)
-    // The card line: a 12 px mark, and the age at the right edge.
+    // The card line (`icon="md"`): a 16 px mark (Figma 14, 402:15461), and the age at the right edge.
     const card = first('line-card')
     const mark = card.querySelector('.meta-line__leading svg')
     if (mark === null) throw new Error('no mark')
-    await expect(box(mark).width).toBe(12)
+    await expect(box(mark).width).toBe(16)
     const age = card.querySelector('.meta-line__trailing')
     if (age === null) throw new Error('no age')
     await expect(box(age).right).toBe(box(card).right)
@@ -340,7 +340,7 @@ export const Sizing: StoryObj<typeof meta> = {
       return [r.width, r.height]
     }
     await expect(size('icon-line-row')).toEqual([12, 12])
-    await expect(size('icon-line-card')).toEqual([12, 12])
+    await expect(size('icon-line-card')).toEqual([16, 16])
     await expect(size('icon-chip')).toEqual([12, 12])
     await expect(size('icon-kind')).toEqual([12, 12])
     await expect(size('icon-tags')).toEqual([12, 12])

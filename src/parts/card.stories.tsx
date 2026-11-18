@@ -2,8 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Grid, Inline, Stack } from '../controls/layout'
+import { SparkIcon } from '../foundations/icons'
+import { Badge } from './badge'
 import { Card } from './card'
+import { KindMark } from './kind-mark'
 import { KindTile } from './kind-tile'
+import { MetaLine } from './meta-line'
 import { StatusPill } from './status-pill'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -15,6 +19,7 @@ const tile = css({ w: 'kindTile.sm', h: 'kindTile.sm', borderRadius: 'md', bg: '
 const strong = css({ color: 'fg.default' })
 const positioned = css({ position: 'relative' })
 const link = css({ position: 'relative', color: 'fg.accent' })
+const metaWide = css({ flex: '1', overflow: 'hidden' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
 const swatches = {
   pane: css({ bg: 'surface.pane' }),
@@ -396,3 +401,81 @@ const spacedCardsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `metaSpacer`: the Toolkit card's spacer above its counts (D1 425:86). */
 export const MetaSpacerDark: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'dark' }, play: spacedCardsPlay }
 export const MetaSpacerLight: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'light' }, play: spacedCardsPlay }
+
+/**
+ * The Artifacts card (D1 402:15449): `badgePosition="end"` puts New
+ * (402:15454) at the right end of the title row (402:15452), and the title
+ * takes the free width; a long title is cut 8 before the badge. The body
+ * (402:15451) pads 12 above and 16 at the sides and below (Figma 14, a tie
+ * that takes 16), and the meta line's `icon="md"` draws the kind mark
+ * (402:15461, Figma 14) at 16. A card without `badgePosition` keeps the
+ * badge 8 after the title.
+ */
+function ArtifactCards() {
+  const card = (title: string, end: boolean) => (
+    <Card
+      title={title}
+      media={<div className={thumbnail} />}
+      badge={<Badge label="New" icon={<SparkIcon size="12" />} tone="working" size="sm" />}
+      badgePosition={end ? 'end' : undefined}
+      description="A small Hono server that serves the bridge API to the prototype"
+      meta={
+        <div className={metaWide}>
+          <MetaLine icon="md" leading={<KindMark kind="claude" size="16" />} items={['Claude', 'the-bridge']} trailing="40m" />
+        </div>
+      }
+    />
+  )
+  return (
+    <main className={page}>
+      <Inline gap="24" align="start">
+        <div className={column} data-testid="end">
+          {card('Hono server spike', true)}
+        </div>
+        <div className={column} data-testid="end-long">
+          {card('A very long artifact title that does not fit on one line of the card', true)}
+        </div>
+        <div className={column} data-testid="title">
+          {card('Hono server spike', false)}
+        </div>
+      </Inline>
+    </main>
+  )
+}
+
+const artifactCardsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const rect = (testId: string, slot: string) => find(canvasElement, `[data-testid="${testId}"] .card__${slot}`).getBoundingClientRect()
+  // With `end`, New ends the title row (402:15454 ends at x 415, the row's end), level with the title.
+  const row = rect('end', 'titleRow')
+  const badge = rect('end', 'badge')
+  await expect(badge.right).toBe(row.right)
+  await expect(badge.top + badge.height / 2).toBe(row.top + row.height / 2)
+  await expect(rect('end', 'title').right).toBeLessThanOrEqual(badge.left - 8)
+  await expect(Math.round(row.height)).toBe(20)
+  // A long title takes the free width and is cut 8 before the badge, which still ends the row.
+  const longText = find(canvasElement, '[data-testid="end-long"] .card__title .truncated-text')
+  await expect(longText.scrollWidth).toBeGreaterThan(longText.clientWidth)
+  await expect(rect('end-long', 'badge').right).toBe(rect('end-long', 'titleRow').right)
+  await expect(rect('end-long', 'title').right).toBe(rect('end-long', 'badge').left - 8)
+  // The default keeps the badge 8 after the title, short of the row's end.
+  await expect(rect('title', 'badge').left).toBe(rect('title', 'title').right + 8)
+  await expect(rect('title', 'badge').right).toBeLessThan(rect('title', 'titleRow').right)
+  // The body pads 12 above (Figma 12) and 16 at the sides and below (Figma 14), and the title row starts 12 under it.
+  for (const testId of ['end', 'title']) {
+    const body = find(canvasElement, `[data-testid="${testId}"] .card__body`)
+    const s = getComputedStyle(body)
+    await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['12px', '16px', '16px', '16px'])
+    await expect(rect(testId, 'titleRow').top - body.getBoundingClientRect().top).toBe(12)
+    // The description and meta lines stay 16 (Figma 17), on the 4 px grid.
+    await expect(Math.round(Number.parseFloat(getComputedStyle(find(body, '.card__description')).lineHeight))).toBe(16)
+    // `MetaLine icon="md"` draws the kind mark at 16 × 16 (Figma 14, 402:15461).
+    const svg = body.querySelector('.meta-line__leading svg')
+    if (svg === null) throw new Error('no kind mark')
+    const mark = svg.getBoundingClientRect()
+    await expect([mark.width, mark.height]).toEqual([16, 16])
+  }
+}
+
+/** `badgePosition="end"` and the `md` meta mark: the Artifacts card (D1 402:15449). */
+export const ArtifactCardDark: StoryObj<typeof meta> = { render: () => <ArtifactCards />, globals: { mode: 'dark' }, play: artifactCardsPlay }
+export const ArtifactCardLight: StoryObj<typeof meta> = { render: () => <ArtifactCards />, globals: { mode: 'light' }, play: artifactCardsPlay }

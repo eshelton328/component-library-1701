@@ -25,6 +25,17 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   under the description, Figma's 10 + 14 + 10, and the card is 148 high
 //   (Figma 150; its description and counts lines are 17, here 16). The meta
 //   row keeps `mt: auto`, so in a taller grid row it still ends the card.
+// - `badgePosition="end"` is the Artifacts card's title row (D1 402:15452,
+//   304 x 20 at x 111): the title (402:15453) is 244 wide and `badge · New`
+//   (402:15454) runs from x 363 to 415, the row's end. The title takes the
+//   free width, so the badge ends the row; a long title is still cut with
+//   its tooltip, 8 before the badge. T1's New (405:187) ends its row too.
+//   `title`, the default, keeps the badge 8 after the title.
+// - The media body pads 12 above (402:15458 sits 12 under the body
+//   402:15451's top at y 389, after the 20 px title row at y 401), and 16
+//   at the sides and below, where Figma pads 14: a tie between 12 and 16
+//   takes the larger token (d-072). The description and meta lines keep
+//   16 (Figma 17), on the 4 px grid.
 export const card = defineSlotRecipe({
   className: 'card',
   jsx: ['Card'],
@@ -94,7 +105,11 @@ export const card = defineSlotRecipe({
       true: { meta: { pt: '24' } },
       false: {},
     },
+    badgePosition: {
+      title: {},
+      end: { title: { flex: '1' } },
+    },
   },
   compoundVariants: [{ media: false, padding: 'compact', css: { body: { py: '10', px: '12' } } }],
-  defaultVariants: { media: false, padding: 'default', metaSpacer: false },
+  defaultVariants: { media: false, padding: 'default', metaSpacer: false, badgePosition: 'title' },
 })

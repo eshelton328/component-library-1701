@@ -87,6 +87,20 @@ Layout, Navigation or Overlays (d-065, d-066).
   `../theme/AGENTS.md`); the `Backdrop`, a `Pane` body and the nav rail
   do too. The app's document does not scroll. A wheel, a trackpad, a
   touch drag and the keys still scroll the focused detail.
+- A tap outside the focused field closes the keyboard (R19): while a
+  field that opens the keyboard has the focus, a touch or pen
+  `pointerdown` in the shell (capture phase) whose target is not inside a
+  field and not inside `[data-keyboard-keep]` blurs the field, and the
+  click of that gesture is swallowed once (capture-phase `preventDefault`
+  and `stopPropagation`), so the tap opens nothing; the swallow ends at
+  that click, 100 ms after the release, at a `pointercancel` (a drag that
+  scrolls) or 1 s after the press, so a later tap is never eaten. A tap
+  on another field moves the focus as always, and a mouse or a hardware
+  keyboard changes nothing. Put `data-keyboard-keep` on a control that
+  acts on the field and must keep the keyboard: the `Composer` puts it on
+  Send, Stop and Attach, and `SearchField` on Clear; a page puts it on a
+  search's sort or filter. The blur comes while the press is down, so the
+  dock waits for its release, as for Send.
 - The `AppShell` detail is an inline-size query container. A detail
   `Container` in it widens to `shell.detailWide` and centres itself
   when the detail is at least `shell.detailWideFrom` wide; an item or

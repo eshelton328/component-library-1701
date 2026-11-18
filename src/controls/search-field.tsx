@@ -87,6 +87,8 @@ export function SearchField({
           text === '' || field.disabled ? null : (
             <Clear
               type="button"
+              // A tap on Clear with the keyboard open keeps the keyboard (AppShell's tap outside a field).
+              data-keyboard-keep=""
               aria-label={clearLabel}
               onClick={() => {
                 change('')

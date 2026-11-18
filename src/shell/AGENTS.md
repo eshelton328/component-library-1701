@@ -35,8 +35,12 @@ Layout, Navigation or Overlays (d-065, d-066).
   a scroll also shrink the visual viewport, and the shell removes both
   properties and keeps its parent's height, so the page stays still. It
   listens to `focusin` and `focusout` on the document as well as the
-  viewport's `resize` and `scroll`; a `focusout` whose `relatedTarget` is
-  another field keeps the fit. Pages set nothing for the keyboard;
+  viewport's `resize` and `scroll`. A field taking the focus starts the
+  fit at once; a `focusout` whose `relatedTarget` is another field keeps
+  it. When the focus leaves the fields (to Send, or a blur), the fit stays
+  until the next viewport `resize` or `scroll`, the keyboard closing, so
+  the tap that took the focus lands on the button it pressed. Pages set
+  nothing for the keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
 - The `AppShell` detail is an inline-size query container. A detail

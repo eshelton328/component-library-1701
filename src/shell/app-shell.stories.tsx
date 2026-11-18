@@ -804,26 +804,128 @@ const fieldBlurred: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 544 })
     await expect(Math.round(rect(root).height)).toBe(544)
     await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
-    // The focus leaves the field while the visual viewport is still short (the keyboard closing, or the bars):
-    // both properties go and the shell is its parent's 844 again.
+    // The focus leaves the field (a blur, to no element): the fit stays while the viewport is still short, so the
+    // page does not move before the keyboard has gone.
     field.blur()
     await expect(field).not.toHaveFocus()
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    await expect(Math.round(rect(root).height)).toBe(544)
+    // The keyboard closes (a resize to 844): both properties go and the shell is its parent's 844 again.
+    fakeViewport.move({ height: 844 })
     await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
     await expect(root.style.getPropertyValue('--app-shell-visible-top')).toBe('')
     await expect(Math.round(rect(root).height)).toBe(844)
-    // The focus comes back to the field: the fit starts at once, with no viewport event.
+    // Later the browser's bottom bar shrinks the visual viewport, with no field focused: nothing is set.
+    fakeViewport.move({ height: 764 })
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(Math.round(rect(root).height)).toBe(844)
+    // The focus comes back to the field while the viewport is short: the fit starts at once, with no viewport event.
+    fakeViewport.move({ height: 844 })
     await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
     await expect(Math.round(rect(root).height)).toBe(544)
-    // The focus moves to a control that opens no keyboard (the detail pane): the fit ends.
+    // The focus moves to an element that opens no keyboard (the detail pane): the same rule, the fit stays until
+    // the keyboard closes.
     await userEvent.click(canvas.getByRole('main'))
+    await expect(canvas.getByRole('main')).toHaveFocus()
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    fakeViewport.move({ height: 844 })
     await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
     await expect(Math.round(rect(root).height)).toBe(844)
   },
 }
 
-/** Phone chat: when the focus leaves the message field, the shell stops following the visual viewport and returns to its parent's height. */
+/** Phone chat: when the focus leaves the message field, the shell keeps the fit until the keyboard closes, then returns to its parent's height. */
 export const FieldBlurredDark: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FieldBlurredLight: StoryObj<typeof meta> = { ...fieldBlurred, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+function SendChat() {
+  const [sent, setSent] = useState(0)
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <>
+            <section aria-label="Chat" className={pane}>
+              Sent {sent}
+            </section>
+            <div role="group" aria-label="Composer" className={composerBox}>
+              <textarea aria-label="Message" rows={1} className={messageField} />
+              <Button
+                onClick={() => {
+                  setSent((n) => n + 1)
+                }}
+              >
+                Send
+              </Button>
+            </div>
+          </>
+        }
+      />
+    </div>
+  )
+}
+
+// A finger's tap as the browser hit-tests it, which `userEvent.click` does not: the press goes to the element under
+// the point, and the click to the element under the point at the release, or to the nearest one that holds both.
+// `focus` is what the press does to the focus: `button` focuses the pressed button, as Chromium does; `none` blurs
+// the field to no element, as Safari, which does not focus a button on a press, does.
+const tap = (el: Element, focus: 'button' | 'none') => {
+  const box = rect(el)
+  const at = { bubbles: true, cancelable: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+  const down = document.elementFromPoint(at.clientX, at.clientY) ?? document.body
+  down.dispatchEvent(new PointerEvent('pointerdown', at))
+  down.dispatchEvent(new MouseEvent('mousedown', at))
+  const button = down.closest('button')
+  if (focus === 'button' && button) button.focus()
+  else if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+  const up = document.elementFromPoint(at.clientX, at.clientY) ?? document.body
+  up.dispatchEvent(new PointerEvent('pointerup', at))
+  up.dispatchEvent(new MouseEvent('mouseup', at))
+  let shared: Element | null = up
+  while (shared && !shared.contains(down)) shared = shared.parentElement
+  ;(shared ?? document.body).dispatchEvent(new MouseEvent('click', at))
+}
+
+const sendTap: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <SendChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = shellRoot(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const send = canvas.getByRole('button', { name: 'Send' })
+    // The shell's height at each click on Send.
+    const atClick: number[] = []
+    send.addEventListener('click', () => atClick.push(Math.round(rect(root).height)))
+    // The keyboard is open for the message: the shell is 544 and Send sits above the keyboard.
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await expect(Math.round(rect(root).height)).toBe(544)
+    // A tap on Send that focuses it (Chromium): the shell stays 544 from the press to the click, so the click lands
+    // on Send and sends once.
+    tap(send, 'button')
+    await expect(send).toHaveFocus()
+    await expect(atClick).toEqual([544])
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
+    // A tap that blurs the field to no element (Safari) lands the same way.
+    await userEvent.click(field)
+    tap(send, 'none')
+    await expect(atClick).toEqual([544, 544])
+    await expect(canvas.getByText('Sent 2')).toBeVisible()
+    // The keyboard closes: the fit ends and the shell is its parent's 844.
+    fakeViewport.move({ height: 844 })
+    await expect(Math.round(rect(root).height)).toBe(844)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+  },
+}
+
+/** Phone chat with the keyboard open: a tap on Send takes the focus from the field, and the shell keeps its fit until the keyboard closes, so the tap lands on Send. */
+export const SendTapDark: StoryObj<typeof meta> = { ...sendTap, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SendTapLight: StoryObj<typeof meta> = { ...sendTap, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const fieldToField: StoryObj<typeof meta> = {
   ...withFakeViewport,

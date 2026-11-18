@@ -42,8 +42,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   root then is at most that tall and starts at that top, so the slots at
 //   its foot (a composer, the tab bar, the safe area) end at the keyboard's
 //   top. AppShell sets them only while a field that opens the keyboard has
-//   the focus; the browser's bars that show and hide on a scroll shrink the
-//   visual viewport too, and the shell does not follow them. Unset, as with
+//   the focus, and after it leaves until the keyboard closes; the browser's
+//   bars that show and hide on a scroll shrink the visual viewport too, and
+//   the shell does not follow them. Unset, as with
 //   no focused field, no keyboard or where the browser resizes the layout,
 //   the fallbacks (none, 0px) keep the root as tall as its parent, which
 //   gives the stable height.

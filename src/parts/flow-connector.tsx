@@ -1,5 +1,5 @@
 import { createSlotRecipeContext } from '../../styled-system/jsx'
-import { flowBranch, flowLine, flowLoop } from '../../styled-system/recipes'
+import { flowBranch, flowElbow, flowLine, flowLoop } from '../../styled-system/recipes'
 
 // The connectors between the steps of a workflow flow. Each one fills the
 // box its caller gives it (a grid cell or a flex item), so the caller lays
@@ -106,14 +106,72 @@ export function FlowBranch({ kind, direction = 'down', gap = '8' }: FlowBranchPr
   )
 }
 
+const elbow = createSlotRecipeContext(flowElbow)
+const ElbowRoot = elbow.withProvider('span', 'root')
+const ElbowOut = elbow.withContext('span', 'out')
+const ElbowAcross = elbow.withContext('span', 'across')
+const ElbowIn = elbow.withContext('span', 'in')
+const ElbowHead = elbow.withContext('span', 'head')
+
+/** Where an elbow turns: `middle` halfway along its box, or a spacing token's length from the source step. */
+export type FlowElbowBend = 'middle' | '2' | '4' | '6' | '8' | '10' | '12' | '16' | '20' | '24' | '32' | '40'
+
+export type FlowElbowProps = {
+  /**
+   * The edge of the box the line leaves on. The flow runs right: the box
+   * spans from the source step's right edge to the target step's left edge,
+   * and from the height where the line leaves the source to the height where
+   * it enters the target, so the lines lie on its top and bottom edges.
+   * `top`: out along the top edge (the source is higher) and in along the
+   * bottom; `bottom`: out along the bottom (the source is lower) and in
+   * along the top. The head points right, its tip 2 px (spacing `2`) before
+   * the box's right side, off the target.
+   */
+  from: 'top' | 'bottom'
+  /**
+   * Where the line turns from one height to the other: `middle` halfway
+   * along the box, as Figma turns each elbow, or a spacing token's length
+   * from the source step. Defaults to `middle`.
+   */
+  bend?: FlowElbowBend | undefined
+}
+
+/**
+ * An elbow connector from a step at one height into a step at another, in
+ * the next lane: out from the source, across at the bend, and in to the
+ * target. For a fork into two steps, draw one elbow (or a `FlowLine`) into
+ * each; they share the way out.
+ */
+export function FlowElbow({ from, bend = 'middle' }: FlowElbowProps) {
+  return (
+    <ElbowRoot from={from} bend={bend} aria-hidden="true" data-from={from}>
+      <ElbowOut />
+      <ElbowAcross />
+      <ElbowIn />
+      <ElbowHead />
+    </ElbowRoot>
+  )
+}
+
 const loop = createSlotRecipeContext(flowLoop)
 const LoopRoot = loop.withProvider('span', 'root')
 const LoopDown = loop.withContext('span', 'down')
 const LoopBack = loop.withContext('span', 'back')
+const LoopUp = loop.withContext('span', 'up')
 const LoopHead = loop.withContext('span', 'head')
 const LoopLabel = loop.withContext('span', 'label')
 
+/** Where a loop's head points: `left` into the earlier point's side, `up` into its foot. */
+export type FlowLoopEnd = 'left' | 'up'
+
 export type FlowLoopProps = {
+  /**
+   * How the loop meets the earlier point. `left`: back along the bottom into
+   * the earlier point's right side, the head pointing left. `up`: back along
+   * the bottom to the box's left side and up it into the earlier point's
+   * foot, the head pointing up. Defaults to `left`.
+   */
+  end?: FlowLoopEnd | undefined
   /** A short label in `mono` under the line, in its middle, such as "new failure". It does not take space in the layout. */
   label?: string | undefined
 }
@@ -121,17 +179,22 @@ export type FlowLoopProps = {
 /**
  * A dashed connector in the needs-you colour from a later step back to an
  * earlier point. It runs down the right side of its box from the top right
- * corner and back along the bottom towards the bottom left corner, where its
- * head points left, its tip 4 px (spacing `4`) in from the corner, as in
- * Figma. Give it a box from the earlier point's right edge to the middle of
- * the later step, and from under the later step down to the height of the
- * earlier point's middle.
+ * corner and back along the bottom. With `end="left"` it ends towards the
+ * bottom left corner, where its head points left, its tip 4 px (spacing
+ * `4`) in from the corner, as in Figma D13; give it a box from the earlier
+ * point's right edge to the middle of the later step, and from under the
+ * later step down to the height of the earlier point's middle. With
+ * `end="up"` it goes up the left side, its head pointing up, its tip 4 px
+ * under the box's top, as in Figma D08; give it a box from the middle of the
+ * earlier point to the middle of the later step, and from under both down
+ * to where the way back runs.
  */
-export function FlowLoop({ label }: FlowLoopProps) {
+export function FlowLoop({ end = 'left', label }: FlowLoopProps) {
   return (
-    <LoopRoot>
+    <LoopRoot end={end} data-end={end}>
       <LoopDown aria-hidden="true" />
       <LoopBack aria-hidden="true" />
+      {end === 'up' ? <LoopUp aria-hidden="true" /> : null}
       <LoopHead aria-hidden="true" />
       {present(label) ? <LoopLabel>{label}</LoopLabel> : null}
     </LoopRoot>

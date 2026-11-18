@@ -1,8 +1,8 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 
 // The connectors of a workflow flow (the-bridge's Toolkit, gap "Workflow
-// page flow"): a straight line, a fork or join elbow, and a dashed loop
-// back. Each fills the box its caller gives it and draws in CSS, so the
+// page flow" and "Workflow flow by phase"): a straight line, a fork or
+// join, an elbow between two rows, and a dashed loop back. Each fills the box its caller gives it and draws in CSS, so the
 // line takes any length and the arrow head stays the same.
 //
 // Figma draws them as vectors with a 1.5 px stroke (borderWidths.strong)
@@ -224,12 +224,78 @@ export const flowBranch = defineSlotRecipe({
   defaultVariants: { kind: 'fork', direction: 'down', gap: '8' },
 })
 
+// An elbow from a step at one row into a step in the next lane at another
+// row (D08 `flow · by phase` 458:2: `arrow` 466:6, 38 × 196, out of
+// Blinding 458:39 at its middle, y 582, into Primary grades 458:46 at 386
+// and Second grades 458:53 at 484, and 466:7, 38 × 98, out of Second
+// grades into Aggregate 458:60 at 386; T18 487:853 and 487:854 on a
+// tablet). FlowBranch puts its stem in the middle of the two branches, so
+// it cannot draw a line that leaves at one row and enters at another.
+// The lines sit on the box's edges, as FlowLoop's do: the box runs from the
+// source step's right edge to the target's left edge, and from one line's
+// height to the other's. The line runs out along one edge (`from`) to the
+// bend, across the box at the bend, and in along the other edge, its head's
+// tip 2 px (tipGap) before the box's right side, off the target. Figma
+// turns each elbow halfway (466:6 and 466:7 at 19 of 38), the default; a
+// spacing token puts the bend that far from the source. A fork into two
+// steps is two elbows (or an elbow and a FlowLine) that share the way out.
+const bend = 'var(--flow-elbow-bend)'
+const elbowBend = {
+  middle: { root: { '--flow-elbow-bend': '50%' } },
+  '2': { root: { '--flow-elbow-bend': 'token(spacing.2)' } },
+  '4': { root: { '--flow-elbow-bend': 'token(spacing.4)' } },
+  '6': { root: { '--flow-elbow-bend': 'token(spacing.6)' } },
+  '8': { root: { '--flow-elbow-bend': 'token(spacing.8)' } },
+  '10': { root: { '--flow-elbow-bend': 'token(spacing.10)' } },
+  '12': { root: { '--flow-elbow-bend': 'token(spacing.12)' } },
+  '16': { root: { '--flow-elbow-bend': 'token(spacing.16)' } },
+  '20': { root: { '--flow-elbow-bend': 'token(spacing.20)' } },
+  '24': { root: { '--flow-elbow-bend': 'token(spacing.24)' } },
+  '32': { root: { '--flow-elbow-bend': 'token(spacing.32)' } },
+  '40': { root: { '--flow-elbow-bend': 'token(spacing.40)' } },
+} as const
+// A stroke centred on the box's top or bottom edge.
+const onTop = { top: `calc(-1 * ${half})`, borderTopWidth: 'strong' } as const
+const onBottom = { bottom: `calc(-1 * ${half})`, borderTopWidth: 'strong' } as const
+
+export const flowElbow = defineSlotRecipe({
+  className: 'flow-elbow',
+  jsx: ['FlowElbow'],
+  staticCss: ['*'],
+  slots: ['root', 'out', 'across', 'in', 'head'],
+  base: {
+    root: { position: 'relative', display: 'block', flexShrink: '0', w: '100%', h: '100%', minW: 'icon.12', color: 'fg.muted' },
+    // Out from the source's edge to the bend, to the outer side of the way across.
+    out: { ...lineBase, left: '0', right: `calc(100% - ${bend} - ${half})` },
+    // Across the box at the bend, from one line to the other, centred on both.
+    across: { ...lineBase, left: `calc(${bend} - ${half})`, top: `calc(-1 * ${half})`, bottom: `calc(-1 * ${half})`, borderLeftWidth: 'strong' },
+    // In from the bend to the head's tip.
+    in: { ...lineBase, left: `calc(${bend} - ${half})`, right: tipGap },
+    head: { ...headBase, ...heads.right, right: tipGap },
+  },
+  variants: {
+    from: {
+      top: { out: onTop, in: onBottom, head: { top: '100%' } },
+      bottom: { out: onBottom, in: onTop, head: { top: '0' } },
+    },
+    bend: elbowBend,
+  },
+  defaultVariants: { from: 'top', bend: 'middle' },
+})
+
 // A dashed loop from a later step back to an earlier point (D13 `arrow`
 // 447:84, 1094 × 107.5 from y 559): from its box's top right corner, right
 // under the later step (`Owner decides` 447:61 ends at 559), down the right
 // side and back along the bottom towards the earlier point, with the head
 // pointing at it 4 px (loopTipGap) in from the bottom left corner (Figma
-// ends the loop at 296, the stop 447:68 at 292). The lines sit on the box's
+// ends the loop at 296, the stop 447:68 at 292). With `end: up` the loop
+// comes back under the earlier point and goes up the left side into its
+// foot, the head pointing up 4 px (loopTipGap) under the box's top (D08
+// `arrow` 466:10, 708 × 36 from y 623, the feet of the stop 458:18 and of
+// Owner decides 458:74, to 659; it leaves Owner decides at its middle,
+// x 1352, and ends under the stop's middle, x 644; T18 487:857). Give that
+// loop a box from the earlier point's middle to the later step's middle
+// across, and from under both down to the way back. The lines sit on the box's
 // edges, so the box runs from the later step's middle to the earlier
 // point's edge across, and from under the later step to the height the
 // line meets the earlier point. The way down and the way back are two
@@ -248,7 +314,7 @@ export const flowLoop = defineSlotRecipe({
   className: 'flow-loop',
   jsx: ['FlowLoop'],
   staticCss: ['*'],
-  slots: ['root', 'down', 'back', 'head', 'label'],
+  slots: ['root', 'down', 'back', 'up', 'head', 'label'],
   base: {
     root: {
       position: 'relative',
@@ -262,10 +328,10 @@ export const flowLoop = defineSlotRecipe({
     // Down the right side, centred on the box's right edge, to the outer
     // edge of the way back.
     down: { ...loopStroke, top: '0', bottom: `calc(-1 * ${half})`, right: `calc(-1 * ${half})`, borderRightWidth: 'strong' },
-    // Back along the bottom, centred on the box's bottom edge, from the
-    // head's tip to the way down.
-    back: { ...loopStroke, left: loopTipGap, right: `calc(-1 * ${half})`, bottom: `calc(-1 * ${half})`, borderBottomWidth: 'strong' },
-    head: { ...headBase, ...heads.left, left: loopTipGap, bottom: '0' },
+    // Back along the bottom, centred on the box's bottom edge, to the way
+    // down; where it starts is the end's.
+    back: { ...loopStroke, right: `calc(-1 * ${half})`, bottom: `calc(-1 * ${half})`, borderBottomWidth: 'strong' },
+    head: headBase,
     label: {
       position: 'absolute',
       top: `calc(100% + ${half} + token(spacing.4))`,
@@ -277,4 +343,18 @@ export const flowLoop = defineSlotRecipe({
       whiteSpace: 'nowrap',
     },
   },
+  variants: {
+    end: {
+      // Back from the head's tip, 4 in from the bottom left corner, pointing left.
+      left: { back: { left: loopTipGap }, head: { ...heads.left, left: loopTipGap, bottom: '0' } },
+      // Back from the outer edge of the way up, which runs up the left side,
+      // centred on the box's left edge, to the head's tip 4 under the top.
+      up: {
+        back: { left: `calc(-1 * ${half})` },
+        up: { ...loopStroke, left: `calc(-1 * ${half})`, top: loopTipGap, bottom: `calc(-1 * ${half})`, borderLeftWidth: 'strong' },
+        head: { ...heads.up, left: '0', top: loopTipGap },
+      },
+    },
+  },
+  defaultVariants: { end: 'left' },
 })

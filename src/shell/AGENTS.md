@@ -41,8 +41,7 @@ Layout, Navigation or Overlays (d-065, d-066).
   nothing is set. The fit applies only while a field that opens the
   keyboard has the focus (`editable` in `../controls/editable.ts`, shared
   with `ScrollFrame`): with none, the browser's bars that show and hide on
-  a scroll also shrink the visual viewport, and the shell removes the
-  property, so the page stays still. It
+  a scroll also shrink the visual viewport, and the shell removes the property, so the page stays still. It
   listens to `focusin` and `focusout` on the document as well as the
   viewport's `resize` and `scroll`. A field taking the focus starts the
   fit at once; a `focusout` whose `relatedTarget` is another field keeps
@@ -101,8 +100,7 @@ Layout, Navigation or Overlays (d-065, d-066).
   recipe's height and the overlay's `--app-shell-tab-bar-inset` (the
   detail's end padding and scroll padding, and the `ScrollFrame` inset)
   both use it, so the shell keeps the bar's full height. The shell is
-  always as tall as its parent, so a gap under the bar is the parent
-  being shorter than the screen.
+  always as tall as its parent, so a gap under the bar is the parent being shorter than the screen.
 - With no tab bar (inside a chat), a tablet or phone `AppShell` keeps
   `shell.safeAreaBottom` clear under the pane for the home indicator.
   Pages set no padding for it.

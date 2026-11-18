@@ -57,9 +57,8 @@ const blurEndDelay = 300
  * not only the flag the focus events keep: WebKit fires no `focusout` when the focused field is removed from the
  * page (a route change, or a closed dialog), so the flag alone would keep the dock following the visual viewport,
  * and a later shrink with no field focused would lift the page's foot for nothing. A route change is not
- * visible to the library; the removed field counts as not focused at the next event, which drops the fit.
- * Without `visualViewport` (an old browser, or no window when rendered on the server) nothing changes: the hook
- * reads the window only in its effect.
+ * visible to the library; the removed field counts as not focused at the next event, which drops the fit. Without `visualViewport` (an old browser, or no window when rendered on the server)
+ * nothing changes: the hook reads the window only in its effect.
  */
 function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null)

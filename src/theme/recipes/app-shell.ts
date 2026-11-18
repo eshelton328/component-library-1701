@@ -12,6 +12,17 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   time, the list or the detail, full width, above the tab bar. On the
 //   phone with no tab bar (inside a chat), the home-indicator area stays
 //   clear (sizes.shell.safeAreaBottom).
+// - tabBarOverlay (phone Toolkit M02, M20, M22): the tab bar lies over the
+//   bottom of the detail, which runs to the bottom of the shell, as Figma
+//   draws the page under the bar. The detail's own scroll ends with
+//   sizes.shell.tabBar of padding, so its last item scrolls clear of the
+//   bar. The detail also sets two custom properties for itself and its
+//   direct child, and back to their defaults deeper down:
+//   --app-shell-tab-bar-inset (that height; 0px deeper) and
+//   --app-shell-tab-bar-spacer (block; none deeper). A ScrollFrame that is
+//   the detail's child reads them to reach under the bar and lift its
+//   footer and the end of its body above it (the scroll-frame recipe); a
+//   ScrollFrame deeper in the page, or outside AppShell, keeps 0.
 export const appShell = defineSlotRecipe({
   className: 'app-shell',
   jsx: ['AppShell'],
@@ -50,6 +61,19 @@ export const appShell = defineSlotRecipe({
       side: { side: { w: 'shell.sidePane' } },
       wide: { side: { w: 'shell.widePane' } },
     },
+    tabBarOverlay: {
+      false: {},
+      true: {
+        root: { position: 'relative' },
+        detail: {
+          '--app-shell-tab-bar-inset': 'token(sizes.shell.tabBar)',
+          '--app-shell-tab-bar-spacer': 'block',
+          pb: 'var(--app-shell-tab-bar-inset)',
+          '& > * *': { '--app-shell-tab-bar-inset': '0px', '--app-shell-tab-bar-spacer': 'none' },
+        },
+        tabBar: { position: 'absolute', insetInline: '0', bottom: '0' },
+      },
+    },
   },
-  defaultVariants: { size: 'desktop', listWidth: 'list', sideWidth: 'side' },
+  defaultVariants: { size: 'desktop', listWidth: 'list', sideWidth: 'side', tabBarOverlay: false },
 })

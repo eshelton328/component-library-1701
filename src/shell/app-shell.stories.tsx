@@ -4,6 +4,7 @@ import { expect, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
+import { ScrollFrame } from '../controls/scroll-frame'
 import { AppShell } from './app-shell'
 
 // Stand-ins for the nav rail, panels and tab bar, which are Parts or not merged yet.
@@ -43,6 +44,12 @@ const rect = (el: Element) => el.getBoundingClientRect()
 const slot = (root: HTMLElement, name: string) => {
   const el = root.querySelector(`.app-shell__${name}`)
   if (!(el instanceof HTMLElement)) throw new Error(`no ${name}`)
+  return el
+}
+
+const slotOf = (root: HTMLElement, className: string) => {
+  const el = root.querySelector(`.${className}`)
+  if (!(el instanceof HTMLElement)) throw new Error(`no ${className}`)
   return el
 }
 
@@ -244,3 +251,142 @@ export const EmptySlots: StoryObj<typeof meta> = {
     await expect(canvasElement.querySelector('.app-shell__tabBar')).toBeNull()
   },
 }
+
+// A phone screen. No token is 390 x 844, so it takes the narrow width and the 748 detail height.
+const phoneFrame = css({ display: 'flex', flexDirection: 'column', h: 'shell.detail', w: 'shell.popoverLg' })
+const startBar = css({ px: '16' })
+const frameBody = css({ px: '16', gap: '8' })
+const listLines = Array.from({ length: 40 }, (_, i) => `Task ${String(i + 1)}`)
+
+function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | 'body'; tabBarOverlay?: boolean }) {
+  const detail =
+    content === 'list' ? (
+      <Container>
+        {listLines.map((l) => (
+          <p key={l} className={text}>
+            {l}
+          </p>
+        ))}
+      </Container>
+    ) : (
+      <ScrollFrame
+        bodyClassName={frameBody}
+        footer={
+          content === 'frame' ? (
+            <div className={startBar}>
+              <Button variant="primary">Start</Button>
+            </div>
+          ) : undefined
+        }
+      >
+        {lines.map((l) => (
+          <p key={l} className={text}>
+            {l}
+          </p>
+        ))}
+      </ScrollFrame>
+    )
+  return (
+    <div className={phoneFrame} data-testid="phone">
+      <AppShell size="phone" view="detail" tabBarOverlay={tabBarOverlay} detail={detail} tabBar={<nav aria-label="Tabs" className={tabs}>Tab bar</nav>} />
+    </div>
+  )
+}
+
+const phoneParts = (root: HTMLElement) => {
+  const canvas = within(root)
+  return { canvas, phone: rect(canvas.getByTestId('phone')), detail: canvas.getByRole('main'), bar: rect(canvas.getByRole('navigation', { name: 'Tabs' })) }
+}
+
+const scrollToEnd = (el: HTMLElement) => {
+  el.scrollTop = el.scrollHeight
+  el.dispatchEvent(new Event('scroll'))
+}
+
+const overlayList: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="list" tabBarOverlay />,
+  play: async ({ canvasElement }) => {
+    const { canvas, phone, detail, bar } = phoneParts(canvasElement)
+    // The 77 px bar lies over the bottom of the detail, which runs to the bottom of the shell.
+    await expect(Math.round(bar.height)).toBe(77)
+    await expect(Math.round(bar.bottom)).toBe(Math.round(phone.bottom))
+    await expect(Math.round(rect(detail).bottom)).toBe(Math.round(phone.bottom))
+    await expect(Math.round(rect(detail).top)).toBe(Math.round(phone.top))
+    // The detail scrolls; at its end the last task sits above the bar, not under it.
+    await expect(detail.scrollHeight).toBeGreaterThan(detail.clientHeight)
+    scrollToEnd(detail)
+    await expect(detail.scrollTop).toBeGreaterThan(0)
+    await expect(rect(canvas.getByText('Task 40')).bottom).toBeLessThanOrEqual(bar.top)
+    // Only the detail's own child gets the inset: a ScrollFrame deeper in the page (here a task line's place) keeps 0.
+    await expect(getComputedStyle(canvas.getByText('Task 1')).getPropertyValue('--app-shell-tab-bar-inset')).toBe('0px')
+    await expect(getComputedStyle(canvas.getByText('Task 1')).getPropertyValue('--app-shell-tab-bar-spacer')).toBe('none')
+  },
+}
+
+/** Phone with `tabBarOverlay`: the tab bar lies over the page, and the page's last item scrolls above it (Toolkit M02). */
+export const OverlayListDark: StoryObj<typeof meta> = { ...overlayList, globals: { mode: 'dark' } }
+export const OverlayListLight: StoryObj<typeof meta> = { ...overlayList, globals: { mode: 'light' } }
+
+const overlayFrame: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="frame" tabBarOverlay />,
+  play: async ({ canvasElement }) => {
+    const { canvas, phone, detail, bar } = phoneParts(canvasElement)
+    const frame = slotOf(canvasElement, 'scroll-frame__root')
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const start = rect(canvas.getByRole('button', { name: 'Start' }))
+    // The frame reaches under the bar to the bottom of the shell; the detail itself does not scroll.
+    await expect(Math.round(rect(frame).bottom)).toBe(Math.round(phone.bottom))
+    await expect(detail.scrollHeight).toBe(detail.clientHeight)
+    // The sticky Start button sits just above the bar.
+    await expect(start.bottom).toBeLessThanOrEqual(bar.top)
+    await expect(Math.round(start.bottom)).toBe(Math.round(bar.top))
+    // At the body's end, its last line is above the Start button.
+    await expect(body.scrollHeight).toBeGreaterThan(body.clientHeight)
+    scrollToEnd(body)
+    await expect(body.scrollTop).toBeGreaterThan(0)
+    const last = rect(canvas.getByText('Line 60 of the task'))
+    await expect(last.bottom).toBeLessThanOrEqual(start.top)
+    await expect(last.top).toBeGreaterThanOrEqual(rect(body).top)
+  },
+}
+
+/** Phone with `tabBarOverlay` and a `ScrollFrame` page: its sticky Start button sits just above the tab bar (Toolkit M20, M22). */
+export const OverlayFrameDark: StoryObj<typeof meta> = { ...overlayFrame, globals: { mode: 'dark' } }
+export const OverlayFrameLight: StoryObj<typeof meta> = { ...overlayFrame, globals: { mode: 'light' } }
+
+const overlayBody: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="body" tabBarOverlay />,
+  play: async ({ canvasElement }) => {
+    const { canvas, phone, bar } = phoneParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    // With no footer, the body runs under the bar, and its last line scrolls above it.
+    await expect(Math.round(rect(body).bottom)).toBe(Math.round(phone.bottom))
+    scrollToEnd(body)
+    await expect(body.scrollTop).toBeGreaterThan(0)
+    await expect(rect(canvas.getByText('Line 60 of the task')).bottom).toBeLessThanOrEqual(bar.top)
+  },
+}
+
+/** Phone with `tabBarOverlay` and a `ScrollFrame` page with no footer: the body's last line scrolls above the tab bar. */
+export const OverlayBodyDark: StoryObj<typeof meta> = { ...overlayBody, globals: { mode: 'dark' } }
+export const OverlayBodyLight: StoryObj<typeof meta> = { ...overlayBody, globals: { mode: 'light' } }
+
+const tabBarBelow: StoryObj<typeof meta> = {
+  render: () => <PhoneScreen content="frame" />,
+  play: async ({ canvasElement }) => {
+    const { canvas, phone, detail, bar } = phoneParts(canvasElement)
+    // Not set, the bar sits below the detail, which ends at its top and has no end padding.
+    await expect(Math.round(bar.bottom)).toBe(Math.round(phone.bottom))
+    await expect(Math.round(rect(detail).bottom)).toBe(Math.round(bar.top))
+    await expect(getComputedStyle(detail).paddingBottom).toBe('0px')
+    await expect(getComputedStyle(slotOf(canvasElement, 'app-shell__tabBar')).position).toBe('static')
+    // The frame fills the detail, with its footer at the detail's bottom, as before.
+    const frame = slotOf(canvasElement, 'scroll-frame__root')
+    await expect(Math.round(rect(frame).bottom)).toBe(Math.round(rect(detail).bottom))
+    await expect(Math.round(rect(canvas.getByRole('button', { name: 'Start' })).bottom)).toBe(Math.round(rect(detail).bottom))
+  },
+}
+
+/** Phone with no `tabBarOverlay`: the tab bar sits below the page, as it always has. */
+export const TabBarBelowDark: StoryObj<typeof meta> = { ...tabBarBelow, globals: { mode: 'dark' } }
+export const TabBarBelowLight: StoryObj<typeof meta> = { ...tabBarBelow, globals: { mode: 'light' } }

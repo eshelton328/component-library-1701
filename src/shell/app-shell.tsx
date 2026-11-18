@@ -41,11 +41,18 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * places the rail, the list pane, the detail pane and the side panel side
  * by side; `tablet` and `phone` show one pane at a time above the tab bar.
  * `listWidth` is `list` (420, the default) or `sidebar` (330, Workbench);
- * `sideWidth` is `side` (380, the default) or `wide` (420). The slots bring
- * their own surfaces. It is as tall as its parent. The scrolling pane is
- * focusable, so the keyboard can scroll it when it holds only text.
+ * `sideWidth` is `side` (380, the default) or `wide` (420).
+ * `tabBarOverlay` (a tablet or phone with a tab bar; `false` by default)
+ * lays the tab bar over the bottom of the pane, which then runs to the
+ * bottom of the shell, as Figma draws the phone pages (Toolkit M02, M20,
+ * M22). The pane's scroll ends with the bar's height (`shell.tabBar`) of
+ * space, so its last item scrolls clear of the bar, and a `ScrollFrame`
+ * that is the pane's own child lifts its footer and the end of its body
+ * above the bar. The slots bring their own surfaces. It is as tall as its
+ * parent. The scrolling pane is focusable, so the keyboard can scroll it
+ * when it holds only text.
  */
-export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list' }: AppShellProps) {
+export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false }: AppShellProps) {
   const desktop = size === undefined || size === 'desktop'
   if (desktop) {
     return (
@@ -63,7 +70,7 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
   const hasTabBar = shown(tabBar)
   return (
     <Backdrop size={size}>
-      <Root size={size} listWidth={listWidth} sideWidth={sideWidth}>
+      <Root size={size} listWidth={listWidth} sideWidth={sideWidth} tabBarOverlay={tabBarOverlay && hasTabBar}>
         {/* Keyed, so the list's state never carries over into the detail. */}
         <Detail key={showDetail ? 'detail' : 'list'} tabIndex={0}>
           {showDetail ? detail : list}

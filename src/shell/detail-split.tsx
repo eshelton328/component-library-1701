@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { detailSplit } from '../../styled-system/recipes'
+import { shown } from './shown'
 
 const { withProvider, withContext } = createSlotRecipeContext(detailSplit)
 const Root = withProvider('div', 'root')
@@ -22,14 +23,15 @@ export type DetailSplitProps = {
  * the row, up to 1108 px (`shell.discussionPane`, a 1076 px chat column and
  * the panel's padding). On a wider screen the item takes what is left and
  * its detail `Container` centres itself in it. Both fill the height, so
- * each one's `ScrollFrame` scrolls on its own. With no `side`, the item
- * fills the row.
+ * each one's `ScrollFrame` scrolls on its own. With no `side` (or one that
+ * renders nothing, such as `null` or `false`), the item fills the row and
+ * shrinks with it, so a narrow pane does not scroll sideways.
  */
 export function DetailSplit({ children, side }: DetailSplitProps) {
   return (
     <Root>
       <Item>{children}</Item>
-      {side === undefined ? null : <Side>{side}</Side>}
+      {shown(side) ? <Side>{side}</Side> : null}
     </Root>
   )
 }

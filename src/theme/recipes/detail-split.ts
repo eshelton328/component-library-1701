@@ -15,7 +15,16 @@ export const detailSplit = defineSlotRecipe({
   slots: ['root', 'item', 'side'],
   base: {
     root: { display: 'flex', flexDirection: 'row', flex: '1', minW: '0', minH: '0' },
-    item: { display: 'flex', flexDirection: 'column', flexGrow: '1', flexShrink: '0', flexBasis: 'auto', minH: '0' },
+    item: {
+      display: 'flex',
+      flexDirection: 'column',
+      flexGrow: '1',
+      flexShrink: '0',
+      flexBasis: 'auto',
+      minH: '0',
+      // With no side the item fills the row and shrinks with it, so a narrow pane does not scroll sideways.
+      '&:only-child': { flexShrink: '1', minW: '0' },
+    },
     side: { display: 'flex', flexDirection: 'column', flexGrow: '0', flexShrink: '1', flexBasis: 'shell.discussionPane', minW: '0', minH: '0' },
   },
 })

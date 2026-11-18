@@ -13,15 +13,19 @@ const vp1440 = { w1440: { name: 'Desktop (1440)', styles: { width: '1440px', hei
 const vp1920 = { w1920: { name: 'Wide (1920)', styles: { width: '1920px', height: '1080px' } } }
 const vp3540 = { w3540: { name: 'Ultra-wide (3540)', styles: { width: '3540px', height: '1440px' } } }
 
-function Split() {
+const vp768 = { w768: { name: 'Narrow pane (768)', styles: { width: '768px', height: '900px' } } }
+
+function Split({ open = true }: { open?: boolean }) {
   return (
     <AppShell
       detail={
         <DetailSplit
           side={
-            <section className={side} data-testid="side" aria-label="Discussion">
-              <p className={text}>The side pane, such as the task's discussion.</p>
-            </section>
+            open && (
+              <section className={side} data-testid="side" aria-label="Discussion">
+                <p className={text}>The side pane, such as the task's discussion.</p>
+              </section>
+            )
           }
         >
           <Container size="detail" data-testid="item">
@@ -87,3 +91,24 @@ export const At3540Dark: Story = {
   play: splitAt({ column: 1104, item: 2432, side: 1108 }),
 }
 export const At3540Light: Story = { ...At3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }
+
+// With the side closed (`side={false}`) there is no side element, and the item fills a narrow pane without a sideways scroll.
+const closedAt768: NonNullable<Story['play']> = async ({ canvasElement }) => {
+  const column = box(canvasElement, 'item')
+  const item = column.parentElement
+  if (item === null) throw new Error('no item slot')
+  await expect(item.parentElement?.children.length).toBe(1)
+  await expect(item.getBoundingClientRect().width).toBe(768)
+  await expect(column.getBoundingClientRect().width).toBe(768)
+  const detail = item.parentElement?.parentElement
+  await expect(detail === null || detail === undefined ? -1 : detail.scrollWidth - detail.clientWidth).toBe(0)
+}
+
+/** A closed side in a 768 px window: the item and its column are 768 wide, and nothing scrolls sideways. */
+export const ClosedAt768Dark: Story = {
+  render: () => <Split open={false} />,
+  parameters: { viewport: { options: vp768 } },
+  globals: { mode: 'dark', viewport: { value: 'w768' } },
+  play: closedAt768,
+}
+export const ClosedAt768Light: Story = { ...ClosedAt768Dark, globals: { mode: 'light', viewport: { value: 'w768' } } }

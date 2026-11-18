@@ -72,9 +72,13 @@ groups and the bans that the lint reads. Read it before you add a file.
 ## Public API
 
 `index.ts` exports the icons, Controls, Parts and Shell; their props and
-recipe variants are the contract. A removed or renamed prop or variant is a
-breaking change (d-063): deprecate it in a minor version first, then
-remove it with a `!` commit and a migration footer.
+recipe variants are the contract. It also re-exports `focusRing` from
+`theme/recipes/focus.ts`, so a page draws its own ring under the same
+condition. `focus-ring.stories.tsx` sits beside `index.ts`, outside the
+tiers, because it tests that public export with a Button. A removed or
+renamed prop or variant is a breaking change (d-063): deprecate it in a
+minor version first, then remove it with a `!` commit and a migration
+footer.
 
 ## Folders
 

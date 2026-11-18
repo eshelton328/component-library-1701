@@ -633,6 +633,9 @@ export type FlowUse = {
 export type FlowUseKind = 'file' | 'code' | ToolkitKind;
 
 // @public
+export const focusRing = "&:is(:focus-visible, [data-focus-visible]):not([data-focus-quiet])";
+
+// @public
 export function FolderIcon(props: IconProps): JSX.Element;
 
 // @public

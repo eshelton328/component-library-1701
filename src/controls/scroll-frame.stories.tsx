@@ -12,12 +12,12 @@ const box = css({ display: 'flex', flexDirection: 'column', h: 'shell.listPane',
 const line = css({ textStyle: 'body', color: 'fg.default', m: '0', py: '8', overflow: 'hidden' })
 const lines = Array.from({ length: 30 }, (_, i) => `Message ${String(i + 1)}`)
 
-function Frame() {
+function Frame({ gap = '12' }: { gap?: '0' | '12' }) {
   return (
     <main className={page}>
       <div className={box} data-testid="box">
         <ScrollFrame
-          gap="12"
+          gap={gap}
           header={<Button size="sm">Back to the inbox</Button>}
           footer={<Button variant="primary">Send a reply</Button>}
         >
@@ -77,6 +77,26 @@ const meta = {
 export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
+
+/**
+ * With gap 0, as the Workbench chat pane has, the footer starts where the body ends: it does not lie over the
+ * body, so the last line of the body is not under the reply box. The footer still keeps 4 px around the reply
+ * button for its focus ring.
+ */
+export const GapZeroDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <Frame gap="0" />,
+  play: async (context) => {
+    await meta.play(context)
+    const canvas = within(context.canvasElement)
+    const reply = canvas.getByRole('button', { name: 'Send a reply' })
+    const footer = reply.parentElement
+    const body = canvas.getByText('Message 1').parentElement
+    if (footer === null || body === null) throw new Error('no frame')
+    await expect(footer.getBoundingClientRect().top).toBeCloseTo(body.getBoundingClientRect().bottom, 1)
+  },
+}
+export const GapZeroLight: StoryObj<typeof meta> = { ...GapZeroDark, globals: { mode: 'light' } }
 
 // The footer clips, as a Card does: it keeps its height, so nothing in it is cut.
 const clip = css({ overflow: 'hidden' })

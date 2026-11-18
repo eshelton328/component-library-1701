@@ -47,10 +47,14 @@ export const scrollFrame = defineSlotRecipe({
       minH: '0',
       overflowY: 'auto',
       overscrollBehavior: 'contain',
-      // A footer taller than the frame scrolls, so it clips what reaches past its box. Its 4 px of padding, taken back by the margin, keep a
-      // child's focus ring (2 px, 2 out) inside it, and the content stays where it was.
+      // A footer taller than the frame scrolls, so it clips what reaches past its box. Its 4 px of padding keep a
+      // child's focus ring (2 px, 2 out) inside it. On the sides and at the bottom the margin takes the padding
+      // back, so the content stays where it was and the box reaches 4 px past the frame, where nothing else is.
+      // At the top the padding stays: a margin there would lay the footer over the body (with gap 0 by 4 px), so
+      // the body ends 4 px above the footer's content.
       p: '4',
-      m: '-4',
+      mx: '-4',
+      mb: '-4',
       // As in the body: a child that clips (a Card) keeps its height.
       '& > *': { flexShrink: '0' },
     },

@@ -861,6 +861,33 @@ const noFieldFocused: StoryObj<typeof meta> = {
 export const NoFieldFocusedDark: StoryObj<typeof meta> = { ...noFieldFocused, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const NoFieldFocusedLight: StoryObj<typeof meta> = { ...noFieldFocused, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// The shell in a parent taller than the screen (1000 in an 844 layout), with no field focused: the detail's foot lies
+// below the layout's, but no keyboard covers it, so nothing docks (Codex review of #184).
+const tallParent: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <PhoneChat />,
+  play: async ({ canvasElement }) => {
+    const root = shellRoot(canvasElement)
+    const phone = within(canvasElement).getByTestId('phone')
+    const composer = () => rect(within(canvasElement).getByRole('group', { name: 'Composer' }))
+    phone.style.height = '1000px'
+    // A window resize makes the shell measure again, with the visual viewport still the layout's 844.
+    window.dispatchEvent(new Event('resize'))
+    await expect(Math.round(rect(root).height)).toBe(1000)
+    await expect(keyboardInset(root)).toBe('')
+    await expect(Math.round(composer().bottom)).toBe(1000 - 34)
+    // The browser's bottom bar shrinks the visual viewport: still no field, still nothing docks.
+    fakeViewport.move({ height: 764 })
+    await expect(keyboardInset(root)).toBe('')
+    await expect(Math.round(composer().bottom)).toBe(1000 - 34)
+    phone.style.removeProperty('height')
+  },
+}
+
+/** Phone chat in a parent taller than the screen, with no field focused: the composer stays at the shell's foot and nothing docks. */
+export const TallParentDark: StoryObj<typeof meta> = { ...tallParent, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TallParentLight: StoryObj<typeof meta> = { ...tallParent, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const fieldBlurred: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat />,

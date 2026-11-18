@@ -61,6 +61,8 @@ export const scrollFrame = defineSlotRecipe({
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
       // With no footer, the body is the last slot: it ends with the inset, below its own padding.
+      // With no footer, a control that takes the focus under the bar scrolls out from under it (0 elsewhere).
+      '&:last-child': { scrollPaddingBottom: 'var(--scroll-frame-inset)' },
       '&:last-child::after': {
         content: '""',
         display: 'var(--scroll-frame-spacer)',

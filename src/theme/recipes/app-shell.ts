@@ -16,8 +16,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   bottom of the detail, which runs to the bottom of the shell, as Figma
 //   draws the page under the bar. The detail's own scroll ends with
 //   sizes.shell.tabBar of padding, so its last item scrolls clear of the
-//   bar. The detail also sets two custom properties for itself and its
-//   direct child, and back to their defaults deeper down:
+//   bar, and the same scroll padding, so a control that takes the focus
+//   under the bar scrolls out from under it. The detail also sets two
+//   custom properties for itself and its direct child, and back to their
+//   defaults deeper down:
 //   --app-shell-tab-bar-inset (that height; 0px deeper) and
 //   --app-shell-tab-bar-spacer (block; none deeper). A ScrollFrame that is
 //   the detail's child reads them to reach under the bar and lift its
@@ -69,6 +71,9 @@ export const appShell = defineSlotRecipe({
           '--app-shell-tab-bar-inset': 'token(sizes.shell.tabBar)',
           '--app-shell-tab-bar-spacer': 'block',
           pb: 'var(--app-shell-tab-bar-inset)',
+          // The end padding lets the last item scroll clear; the scroll padding makes focus (Tab) scroll a control out
+          // from under the bar, too, as the browser scrolls only a control outside the padded view.
+          scrollPaddingBottom: 'var(--app-shell-tab-bar-inset)',
           '& > * *': { '--app-shell-tab-bar-inset': '0px', '--app-shell-tab-bar-spacer': 'none' },
         },
         tabBar: { position: 'absolute', insetInline: '0', bottom: '0' },

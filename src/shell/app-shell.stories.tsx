@@ -269,6 +269,7 @@ function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | '
             {l}
           </p>
         ))}
+        <Button>Open the last task</Button>
       </Container>
     ) : (
       <ScrollFrame
@@ -286,6 +287,7 @@ function PhoneScreen({ content, tabBarOverlay }: { content: 'list' | 'frame' | '
             {l}
           </p>
         ))}
+        {content === 'body' ? <Button>Open the last line</Button> : null}
         {content === 'sticky' ? (
           <div className={stickyStart}>
             <Button variant="primary">Start</Button>
@@ -305,6 +307,18 @@ const phoneParts = (root: HTMLElement) => {
   return { canvas, phone: rect(canvas.getByTestId('phone')), detail: canvas.getByRole('main'), bar: rect(canvas.getByRole('navigation', { name: 'Tabs' })) }
 }
 
+// Focus the page's last control while it sits in the scroller's view but under the bar, as Tab reaches it: the
+// browser scrolls only a control that is out of view, so without the scroller's scroll padding it stays hidden.
+const focusClearOfBar = async (scroller: HTMLElement, control: HTMLElement, barTop: number) => {
+  scroller.scrollTop = 0
+  scroller.scrollTop = rect(control).bottom - rect(scroller).bottom + 8
+  await expect(rect(control).top).toBeGreaterThanOrEqual(barTop)
+  await expect(rect(control).bottom).toBeLessThanOrEqual(rect(scroller).bottom)
+  control.focus()
+  await expect(control).toHaveFocus()
+  await expect(rect(control).bottom).toBeLessThanOrEqual(barTop)
+}
+
 const scrollToEnd = (el: HTMLElement) => {
   el.scrollTop = el.scrollHeight
   el.dispatchEvent(new Event('scroll'))
@@ -321,6 +335,8 @@ const overlayList: StoryObj<typeof meta> = {
     await expect(Math.round(rect(detail).top)).toBe(Math.round(phone.top))
     // The detail scrolls; at its end the last task sits above the bar, not under it.
     await expect(detail.scrollHeight).toBeGreaterThan(detail.clientHeight)
+    // Focus on the last control, hidden under the bar, brings it into view above the bar.
+    await focusClearOfBar(detail, canvas.getByRole('button', { name: 'Open the last task' }), bar.top)
     scrollToEnd(detail)
     await expect(detail.scrollTop).toBeGreaterThan(0)
     await expect(rect(canvas.getByText('Task 40')).bottom).toBeLessThanOrEqual(bar.top)
@@ -368,6 +384,8 @@ const overlayBody: StoryObj<typeof meta> = {
     const body = slotOf(canvasElement, 'scroll-frame__body')
     // With no footer, the body runs under the bar, and its last line scrolls above it.
     await expect(Math.round(rect(body).bottom)).toBe(Math.round(phone.bottom))
+    // Focus on the last control, hidden under the bar, brings it into view above the bar.
+    await focusClearOfBar(body, canvas.getByRole('button', { name: 'Open the last line' }), bar.top)
     scrollToEnd(body)
     await expect(body.scrollTop).toBeGreaterThan(0)
     await expect(rect(canvas.getByText('Line 60 of the task')).bottom).toBeLessThanOrEqual(bar.top)

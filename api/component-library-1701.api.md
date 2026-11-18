@@ -552,6 +552,18 @@ export type FlowDiagramProps = {
 };
 
 // @public
+export function FlowElbow(input: FlowElbowProps): JSX.Element;
+
+// @public
+export type FlowElbowBend = 'middle' | '2' | '4' | '6' | '8' | '10' | '12' | '16' | '20' | '24' | '32' | '40';
+
+// @public (undocumented)
+export type FlowElbowProps = {
+    from: 'top' | 'bottom';
+    bend?: FlowElbowBend | undefined;
+};
+
+// @public
 export function FlowLine(input: FlowLineProps): JSX.Element;
 
 // @public
@@ -570,8 +582,12 @@ export type FlowLineTone = 'default' | 'needsYou';
 // @public
 export function FlowLoop(input: FlowLoopProps): JSX.Element;
 
+// @public
+export type FlowLoopEnd = 'left' | 'up';
+
 // @public (undocumented)
 export type FlowLoopProps = {
+    end?: FlowLoopEnd | undefined;
     label?: string | undefined;
 };
 

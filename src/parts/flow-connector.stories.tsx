@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css, cx } from '../../styled-system/css'
-import { FlowBranch, FlowLine, FlowLoop } from './flow-connector'
+import { FlowBranch, FlowElbow, FlowLine, FlowLoop } from './flow-connector'
 
 // Stand-in step cards; the connectors are what these stories check.
 const card = css({
@@ -191,6 +191,92 @@ function Column() {
   )
 }
 
+// D08 `flow · by phase` (458:2): four lanes of steps in three rows, the
+// lanes 40 px apart here (Figma 38, `arrow` 466:2; spacing.40 is the
+// nearest token). Each card row is two equal grid rows, so a connector can
+// start or end at a card's middle, and each lane two equal columns, so the
+// loop can run from one lane's middle to another's. Blinding (row 3) forks
+// into Primary grades (row 1) and Second grades (row 2) by two elbows that
+// bend halfway (466:6); Second grades joins Aggregate (row 1) by an elbow
+// that bends 8 from it, beside Primary grades' straight line (466:7); the
+// gate's elbow into Facts (row 2) leaves from the top. The dashed loop runs
+// under the lanes from Owner decides back up into the stop's foot (466:10).
+const phaseGrid = css({
+  display: 'grid',
+  gridTemplateColumns:
+    'repeat(3, minmax(0, 0.5fr) minmax(0, 0.5fr) token(spacing.40)) minmax(0, 0.5fr) minmax(0, 0.5fr)',
+  gridTemplateRows:
+    'minmax(0, 1fr) minmax(0, 1fr) token(spacing.16) minmax(0, 1fr) minmax(0, 1fr) token(spacing.16) minmax(0, 1fr) minmax(0, 1fr) token(spacing.32)',
+  pb: '40',
+})
+const lanes: Readonly<Record<string, string>> = {
+  gate: css({ gridColumn: '1 / 3', gridRow: '1 / 3' }),
+  stop: css({ gridColumn: '1 / 3', gridRow: '7 / 9' }),
+  runs: css({ gridColumn: '4 / 6', gridRow: '1 / 3' }),
+  facts: css({ gridColumn: '4 / 6', gridRow: '4 / 6' }),
+  blinding: css({ gridColumn: '4 / 6', gridRow: '7 / 9' }),
+  primary: css({ gridColumn: '7 / 9', gridRow: '1 / 3' }),
+  second: css({ gridColumn: '7 / 9', gridRow: '4 / 6' }),
+  aggregate: css({ gridColumn: '10 / 12', gridRow: '1 / 3' }),
+  read: css({ gridColumn: '10 / 12', gridRow: '4 / 6' }),
+  owner: css({ gridColumn: '10 / 12', gridRow: '7 / 9' }),
+}
+const phaseAt = {
+  'p-line-runs': css({ gridColumn: '3', gridRow: '1 / 3', alignSelf: 'center' }),
+  'e-facts': css({ gridColumn: '3', gridRow: '2 / 5' }),
+  'e-primary': css({ gridColumn: '6', gridRow: '2 / 8' }),
+  'e-second': css({ gridColumn: '6', gridRow: '5 / 8' }),
+  'p-line-aggregate': css({ gridColumn: '9', gridRow: '1 / 3', alignSelf: 'center' }),
+  'e-aggregate': css({ gridColumn: '9', gridRow: '2 / 5' }),
+  loop: css({ gridColumn: '2 / 11', gridRow: '9' }),
+}
+const phaseSteps: Stage[] = [
+  { id: 'gate', title: 'Pre-registered?', note: 'The ledger names method 0.7.', gate: true },
+  { id: 'stop', title: 'Stop', note: 'Run skill-eval-cases first.', gate: true },
+  { id: 'runs', title: 'Runs', note: 'Each case, model and repeat.' },
+  { id: 'facts', title: 'Facts', note: 'Jev, 4 at a time.' },
+  { id: 'blinding', title: 'Blinding', note: 'Hides which runs had the skill.' },
+  { id: 'primary', title: 'Primary grades', note: 'The other model family.' },
+  { id: 'second', title: 'Second grades', note: 'Own family, 20 runs or more.' },
+  { id: 'aggregate', title: 'Aggregate', note: 'Then the paired difference.' },
+  { id: 'read', title: 'Read', note: 'Findings go in the ledger.' },
+  { id: 'owner', title: 'Owner decides', note: 'Done, iterate or redesign.', gate: true },
+]
+
+function ByPhase() {
+  return (
+    <main className={desktopPage}>
+      <div className={phaseGrid} data-testid="phase">
+        {phaseSteps.map((step) => (
+          <Card key={step.id} step={step} className={cx(lanes[step.id])} />
+        ))}
+        <div className={phaseAt['p-line-runs']} data-testid="p-line-runs">
+          <FlowLine />
+        </div>
+        <div className={phaseAt['e-facts']} data-testid="e-facts">
+          <FlowElbow from="top" />
+        </div>
+        <div className={phaseAt['e-primary']} data-testid="e-primary">
+          <FlowElbow from="bottom" />
+        </div>
+        <div className={phaseAt['e-second']} data-testid="e-second">
+          <FlowElbow from="bottom" />
+        </div>
+        <div className={phaseAt['p-line-aggregate']} data-testid="p-line-aggregate">
+          <FlowLine />
+        </div>
+        <div className={phaseAt['e-aggregate']} data-testid="e-aggregate">
+          <FlowElbow from="bottom" bend="8" />
+        </div>
+        <div className={phaseAt.loop} data-testid="loop">
+          <FlowLoop end="up" label="new failure" />
+        </div>
+      </div>
+      <Swatches />
+    </main>
+  )
+}
+
 type Side = 'left' | 'right' | 'top' | 'bottom'
 type Direction = 'right' | 'down' | 'left' | 'up'
 
@@ -279,6 +365,16 @@ const desktopLinks: Link[] = [
   { id: 'loop', from: ['owner'], to: ['stop'] },
 ]
 const desktopCards = ['gate', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 'owner', 'stop']
+const phaseLinks: Link[] = [
+  { id: 'p-line-runs', from: ['gate'], to: ['runs'] },
+  { id: 'e-facts', from: ['gate'], to: ['facts'] },
+  { id: 'e-primary', from: ['blinding'], to: ['primary'] },
+  { id: 'e-second', from: ['blinding'], to: ['second'] },
+  { id: 'p-line-aggregate', from: ['primary'], to: ['aggregate'] },
+  { id: 'e-aggregate', from: ['second'], to: ['aggregate'] },
+  { id: 'loop', from: ['owner'], to: ['stop'] },
+]
+const phaseCards = phaseSteps.map((step) => step.id)
 const columnLinks: Link[] = [
   { id: 'c-line-1', from: ['c-gate'], to: ['c-s3'] },
   { id: 'c-fork', from: ['c-s3'], to: ['c-s4', 'c-s5'] },
@@ -541,14 +637,98 @@ const column: Meta<typeof Column>['play'] = async ({ canvasElement }) => {
   await expectApart(canvasElement, columnLinks, columnCards)
 }
 
+// D08's flow by phase. Each elbow's box runs from its source's right edge to
+// its target's left edge and from one card's middle to the other's; the way
+// out leaves the source at its middle, the way across sits at the bend, and
+// the way in ends at the head, whose tip stops 2 before the target at its
+// middle. The loop comes back under the lanes and up into the stop's foot,
+// its head pointing up 4 under it.
+const byPhase: Meta<typeof ByPhase>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const muted = swatch(canvasElement, 'muted')
+  const amber = swatch(canvasElement, 'amber')
+  const el = (id: string) => canvas.getByTestId(id)
+  const strong = Number.parseFloat(getComputedStyle(swatchEl(canvasElement, 'stroke')).borderTopWidth)
+
+  // [test id, source, target, the edge it leaves on, the bend from the source (undefined: halfway)]
+  const elbows: [string, string, string, 'top' | 'bottom', number | undefined][] = [
+    ['e-facts', 'gate', 'facts', 'top', undefined],
+    ['e-primary', 'blinding', 'primary', 'bottom', undefined],
+    ['e-second', 'blinding', 'second', 'bottom', undefined],
+    ['e-aggregate', 'second', 'aggregate', 'bottom', 8],
+  ]
+  for (const [id, from, to, edge, bendAt] of elbows) {
+    const root = part(el(id), '.flow-elbow__root')
+    const r = box(root)
+    const a = box(el(from))
+    const b = box(el(to))
+    const outY = midY(a)
+    const inY = midY(b)
+    await near(r.left, a.right, `${id} starts at ${from}`)
+    await near(r.right, b.left, `${id} ends at ${to}`)
+    await near(edge === 'top' ? r.top : r.bottom, outY, `${id} leaves ${from} at its middle`)
+    await near(edge === 'top' ? r.bottom : r.top, inY, `${id} enters ${to} at its middle`)
+    await expect(root).toHaveAttribute('aria-hidden', 'true')
+    await expect(getComputedStyle(root).color).toBe(muted)
+    const out = part(root, '.flow-elbow__out')
+    const across = part(root, '.flow-elbow__across')
+    const into = part(root, '.flow-elbow__in')
+    await expectStroke(out, 'top', muted, 'solid', `${id} out`)
+    await expectStroke(across, 'left', muted, 'solid', `${id} across`)
+    await expectStroke(into, 'top', muted, 'solid', `${id} in`)
+    // The bend: halfway, or the given spacing from the source.
+    const bendX = bendAt === undefined ? midX(r) : a.right + bendAt
+    await near(midX(box(across)), bendX, `${id} bends at ${bendAt === undefined ? 'the middle' : String(bendAt)}`)
+    await near(midY(box(out)), outY, `${id} out at ${from}'s middle`)
+    await near(box(out).left, a.right, `${id} out leaves ${from}`)
+    await near(box(out).right, bendX + strong / 2, `${id} out runs to the bend`)
+    await near(box(across).top, Math.min(outY, inY) - strong / 2, `${id} across from the upper line`)
+    await near(box(across).bottom, Math.max(outY, inY) + strong / 2, `${id} across to the lower line`)
+    await near(midY(box(into)), inY, `${id} in at ${to}'s middle`)
+    await near(box(into).left, bendX - strong / 2, `${id} in starts at the bend`)
+    await near(box(into).right, b.left - tipGap, `${id} in ends at the tip, 2 before ${to}`)
+    const heads = parts(root, '.flow-elbow__head')
+    await expect(heads).toHaveLength(1)
+    await expectHead(heads[0] ?? root, 'right', b, inY, tipGap, `${id} into ${to}`)
+  }
+
+  // The loop: down from under Owner decides, back under the lanes, and up into the stop's foot.
+  const loop = part(el('loop'), '.flow-loop__root')
+  const l = box(loop)
+  const stopBox = box(el('stop'))
+  const owner = box(el('owner'))
+  await near(l.left, midX(stopBox), 'loop ends under the middle of the stop')
+  await near(l.right, midX(owner), 'loop leaves under the middle of Owner decides')
+  await near(l.top, stopBox.bottom, 'loop box starts at the stop foot')
+  await near(l.top, owner.bottom, 'loop box starts at Owner decides foot')
+  const down = part(loop, '.flow-loop__down')
+  const back = part(loop, '.flow-loop__back')
+  const up = part(loop, '.flow-loop__up')
+  await expectStroke(down, 'right', amber, 'dashed', 'loop down')
+  await expectStroke(back, 'bottom', amber, 'dashed', 'loop back')
+  await expectStroke(up, 'left', amber, 'dashed', 'loop up')
+  await near(box(down).top, owner.bottom, 'loop down starts under Owner decides')
+  await near(box(back).left, l.left - strong / 2, 'loop back runs to the way up')
+  await near(midX(box(up)), l.left, 'loop up on the left edge')
+  await near(box(up).bottom, l.bottom + strong / 2, 'loop up starts at the way back')
+  await near(box(up).top, stopBox.bottom + loopTipGap, 'loop up ends 4 under the stop')
+  const head = part(loop, '.flow-loop__head')
+  await expectHead(head, 'up', stopBox, midX(stopBox), loopTipGap, 'loop up into the stop')
+  await expect(getComputedStyle(head).borderTopColor).toBe(amber)
+  const label = within(el('loop')).getByText('new failure')
+  await expect(box(label).top).toBeGreaterThan(l.bottom)
+
+  await expectApart(canvasElement, phaseLinks, phaseCards)
+}
+
 // D13's flow squeezed to the widths the Design System gate checks (390 and
 // 1200 px): no connector part touches or overlaps a step card, and each tip
 // keeps its gap.
 const apartAt =
-  (width: number): NonNullable<Meta<typeof Desktop>['play']> =>
+  (width: number, links: Link[] = desktopLinks, cards: string[] = desktopCards): NonNullable<Meta<typeof Desktop>['play']> =>
   async ({ canvasElement }) => {
     await expect(window.innerWidth).toBe(width)
-    await expectApart(canvasElement, desktopLinks, desktopCards)
+    await expectApart(canvasElement, links, cards)
   }
 
 const meta = {
@@ -560,6 +740,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const desktop = { d13: { name: 'Desktop (D13)', styles: { width: '1512px', height: '982px' } } }
+const d08 = { d08: { name: 'Desktop (D08)', styles: { width: '1512px', height: '982px' } } }
 const phone = { m09: { name: 'Phone (M09)', styles: { width: '390px', height: '844px' } } }
 const narrow = { narrow: { name: 'Narrow (390)', styles: { width: '390px', height: '844px' } } }
 const medium = { medium: { name: 'Medium (1200)', styles: { width: '1200px', height: '900px' } } }
@@ -589,3 +770,25 @@ export const HorizontalMediumDark: Story = {
   play: apartAt(1200),
 }
 export const HorizontalMediumLight: Story = { ...HorizontalMediumDark, globals: { mode: 'light', viewport: { value: 'medium' } }, play: apartAt(1200) }
+
+/** D08's flow by phase: elbows from a step at one row into steps at others, halfway or 8 from the source, and the dashed loop back up into the stop's foot. */
+export const ByPhaseDark: Story = { render: () => <ByPhase />, parameters: { viewport: { options: d08 } }, globals: { mode: 'dark', viewport: { value: 'd08' } }, play: byPhase }
+export const ByPhaseLight: Story = { ...ByPhaseDark, globals: { mode: 'light', viewport: { value: 'd08' } }, play: byPhase }
+
+/** D08's flow by phase at 390 px, as the Design System gate draws it: no elbow or loop touches a step card. */
+export const ByPhaseNarrowDark: Story = {
+  render: () => <ByPhase />,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'dark', viewport: { value: 'narrow' } },
+  play: apartAt(390, phaseLinks, phaseCards),
+}
+export const ByPhaseNarrowLight: Story = { ...ByPhaseNarrowDark, globals: { mode: 'light', viewport: { value: 'narrow' } }, play: apartAt(390, phaseLinks, phaseCards) }
+
+/** D08's flow by phase at 1200 px, as the Design System gate draws it: no elbow or loop touches a step card. */
+export const ByPhaseMediumDark: Story = {
+  render: () => <ByPhase />,
+  parameters: { viewport: { options: medium } },
+  globals: { mode: 'dark', viewport: { value: 'medium' } },
+  play: apartAt(1200, phaseLinks, phaseCards),
+}
+export const ByPhaseMediumLight: Story = { ...ByPhaseMediumDark, globals: { mode: 'light', viewport: { value: 'medium' } }, play: apartAt(1200, phaseLinks, phaseCards) }

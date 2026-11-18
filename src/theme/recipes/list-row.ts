@@ -21,11 +21,34 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // go to the meta, where the model and the 83 px context meter beside a
 // Needs you pill (105:710, 155 wide in a 158 column) were cut 2 px. A
 // nested row keeps 24, so its ↳ stays 25 in (Figma 27, 199:68).
+// The Artifacts rows (all on the `inbox` variant; the defaults keep the
+// Inbox look):
+// - `padding="sm"` is the list beside an open artifact (D2 403:219): 8
+//   inside the 1 px border, so a title and meta row is 1 + 8 + 40 + 8 + 1 =
+//   58, Figma's height. `padding="phone"` is the phone's library (M1
+//   406:121): 4 at the sides (the preview 4 in) and 10 above and below
+//   (Figma 9 + 48 + 9 = 66; 9 ties 8 and 10, so the larger, d-072), so a
+//   row with the 48 px preview is 1 + 10 + 48 + 10 + 1 = 70.
+//   `padding="lg"` is the library's list
+//   view (D4 403:8216): 12 inside the border, so the preview sits 13 in.
+// - `surface="card"` draws the D4 row's box: a 1 px border.default border
+//   on surface.pane, as the Card has, in the row's own lg radius. A
+//   selected or running row keeps the selected colours.
+// - `trailingAlign="center"` centres the trailing column down the row, as
+//   D2 draws the age (403:218 at y 185.5 of a 58 px row at 164) and D4 the
+//   match place, age and Open (403:8241, 403:8243, 403:8244). The default
+//   `start` keeps it on the title line, as Inbox and the phone (406:138).
+// - `dot` ends the title row with a 6 px dot in the status colour, as the
+//   New dot in status.working.fg (D2 403:213, D4 403:8233). With
+//   `dotPosition="title"` (the default) it sits 8 after the title (D4
+//   403:8233, the gap of the Card's title row); with `end` the title fills
+//   the line and the dot ends it, 12 before the trailing column (D2 403:213
+//   at x 420, the age at 438): the 10 px row gap and 2 more.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
   staticCss: ['*'],
-  slots: ['root', 'nest', 'leading', 'body', 'title', 'meta', 'lines', 'actions', 'trailing'],
+  slots: ['root', 'nest', 'leading', 'body', 'titleRow', 'title', 'dot', 'meta', 'lines', 'actions', 'trailing'],
   base: {
     root: {
       position: 'relative',
@@ -56,6 +79,9 @@ export const listRow = defineSlotRecipe({
     nest: { flexShrink: '0', textStyle: 'body', color: 'fg.muted', '[data-level="2"] > &': { ms: '24' } },
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
+    // The title and the dot. Without a dot the title row draws no box, so the title lays out as the body's own child.
+    titleRow: { display: 'contents', '&:has(> .list-row__dot)': { display: 'flex', alignItems: 'center', gap: '8', minW: '0' } },
+    dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
     title: {
       textStyle: 'label',
       color: 'fg.default',
@@ -93,7 +119,41 @@ export const listRow = defineSlotRecipe({
       default: {},
       compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
+    // The padding of an `inbox` row; the compound variants below set it, so it wins over the variant's 10.
+    padding: { default: {}, sm: {}, lg: {}, phone: {} },
+    surface: {
+      default: {},
+      // The base's selected colours lose to a variant, so the card sets them again.
+      card: {
+        root: {
+          bg: 'surface.pane',
+          borderColor: 'border.default',
+          '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
+        },
+      },
+    },
+    trailingAlign: {
+      start: {},
+      center: { trailing: { alignSelf: 'center' } },
+    },
+    dot: {
+      working: { dot: { bg: 'status.working.fg' } },
+      running: { dot: { bg: 'status.running.fg' } },
+      needsYou: { dot: { bg: 'status.needsYou.fg' } },
+      idle: { dot: { bg: 'status.idle.fg' } },
+      done: { dot: { bg: 'status.done.fg' } },
+      danger: { dot: { bg: 'status.danger.fg' } },
+    },
+    dotPosition: {
+      title: {},
+      end: { titleRow: { '&:has(> .list-row__dot) > .list-row__title': { flex: '1' } }, dot: { me: '2' } },
+    },
   },
-  compoundVariants: [{ variant: 'sidebar', density: 'compact', css: { root: { ps: '20', '&[data-level]': { ps: '24' } } } }],
-  defaultVariants: { variant: 'inbox', density: 'default' },
+  compoundVariants: [
+    { variant: 'sidebar', density: 'compact', css: { root: { ps: '20', '&[data-level]': { ps: '24' } } } },
+    { variant: 'inbox', padding: 'sm', css: { root: { p: '8' } } },
+    { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
+    { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '10' } } },
+  ],
+  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', dotPosition: 'title' },
 })

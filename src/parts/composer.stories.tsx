@@ -234,3 +234,84 @@ export const LongAttachment: StoryObj<typeof meta> = {
     await expectCutText(name, longFile)
   },
 }
+
+// The side chat's composer is 300 wide in Figma (D5 158:545): shell.popoverFilter.
+const sideChat = css({ w: 'shell.popoverFilter' })
+const onSideSubmit = fn<(text: string) => void>()
+
+// The side chat in a pane (Workspaces D5 158:545): one row, with a stacked composer under it to show the default is unchanged.
+function InlineComposers() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <div className={sideChat}>
+          <Composer layout="inline" label="Side question" placeholder="Ask a side question" onSubmit={onSideSubmit} />
+        </div>
+        <div className={sideChat}>
+          <Composer layout="inline" label="Side running" placeholder="Ask a side question" running defaultValue={'A question long enough to wrap onto a second line of the side chat'} />
+        </div>
+        <div className={sideChat}>
+          <Composer label="Stacked" placeholder="Ask a side question" />
+        </div>
+      </Stack>
+      {swatchRow}
+    </main>
+  )
+}
+
+const rect = (el: Element) => el.getBoundingClientRect()
+
+const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onSideSubmit.mockClear()
+  await document.fonts.ready
+  const canvas = within(canvasElement)
+  const area = canvas.getByRole('textbox', { name: 'Side question' })
+  const box = area.closest<HTMLElement>('.composer__root')
+  if (box === null) throw new Error('no inline composer')
+  const style = getComputedStyle(box)
+  // One row, 42 high with one line (Figma 40 with a 22 px button; ours is control.xs, 24).
+  await expect(rect(box).height).toBe(42)
+  await expect([style.paddingTop, style.paddingBottom, style.paddingLeft, style.paddingRight]).toEqual(['8px', '8px', '10px', '8px'])
+  await expect(style.backgroundColor).toBe(swatch(canvasElement, 'raised'))
+  await expect(style.borderTopColor).toBe(swatch(canvasElement, 'border'))
+  // A 24 px accent send button at the row's end, on the same row as the text, and no attach button.
+  const send = within(box).getByRole('button', { name: 'Send' })
+  await expect([rect(send).width, rect(send).height]).toEqual([24, 24])
+  await expect(getComputedStyle(send).backgroundColor).toBe(swatch(canvasElement, 'accent'))
+  await expect(rect(box).right - rect(send).right).toBe(9)
+  await expect(rect(area).top).toBe(rect(send).top)
+  await expect(rect(area).height).toBe(24)
+  await expect(rect(area).right).toBeLessThanOrEqual(rect(send).left - 8)
+  await expect(within(box).queryByRole('button', { name: 'Attach a file' })).toBeNull()
+  // The text keeps the composer's body style, its placeholder fg.muted.
+  const text = getComputedStyle(area)
+  await expect([text.fontSize, Math.round(parseFloat(text.lineHeight))]).toEqual(['14px', 20])
+  await expect(getComputedStyle(area, '::placeholder').color).toBe(swatch(canvasElement, 'muted'))
+  // Enter and the send button submit.
+  await userEvent.type(area, 'Why this path?{Enter}')
+  await expect(onSideSubmit).toHaveBeenLastCalledWith('Why this path?')
+  // Wrapped text grows the box; Stop and send stay 24 high at its bottom.
+  const running = canvas.getByRole('textbox', { name: 'Side running' })
+  const runningBox = running.closest<HTMLElement>('.composer__root')
+  if (runningBox === null) throw new Error('no running composer')
+  await waitFor(() => expect(rect(running).height).toBeGreaterThan(40))
+  await expect(rect(runningBox).height).toBeGreaterThan(42)
+  const stop = within(runningBox).getByRole('button', { name: 'Stop' })
+  const runningSend = within(runningBox).getByRole('button', { name: 'Send' })
+  await expect([rect(stop).height, rect(runningSend).height]).toEqual([24, 24])
+  await expect(rect(stop).bottom).toBe(rect(running).bottom)
+  await expect(rect(runningSend).bottom).toBe(rect(running).bottom)
+  // The default layout is unchanged: the text over the button row, 78 high, 28 px send.
+  const stacked = canvas.getByRole('textbox', { name: 'Stacked' })
+  const stackedBox = stacked.closest<HTMLElement>('.composer__root')
+  if (stackedBox === null) throw new Error('no stacked composer')
+  await expect(rect(stackedBox).height).toBe(78)
+  await expect(getComputedStyle(stackedBox).paddingTop).toBe('10px')
+  const stackedSend = within(stackedBox).getByRole('button', { name: 'Send' })
+  await expect(rect(stackedSend).height).toBe(28)
+  await expect(rect(stackedSend).top).toBeGreaterThan(rect(stacked).bottom)
+}
+
+/** `layout="inline"`: the side chat's one-row composer (Workspaces D5 158:545). */
+export const InlineDark: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'dark' }, play: inlinePlay }
+export const InlineLight: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'light' }, play: inlinePlay }

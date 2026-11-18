@@ -77,7 +77,9 @@ export type OptionListProps = {
   size?: 'md' | 'sm' | undefined
   /**
    * `text` (the default) draws the label in the sans style of `size`; `mono` draws it in `mono` (12/16), as the
-   * Workbench skill picker draws each skill's /name (D1 105:413).
+   * Workbench skill picker draws each skill's /name (D1 105:413). A mono label is a name with no spaces to wrap
+   * at, so its row keeps the label and the description on one line each: a long one ends with an ellipsis and shows
+   * whole in a tooltip (`TruncatedText`), as a long skill name does in the skill list after "/".
    */
   labelStyle?: 'text' | 'mono' | undefined
   /**
@@ -136,6 +138,8 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
     onItemSelect?.(target.value)
   }
 
+  // A mono label (a skill's /name) and a compact row keep each line to one line, cut with a tooltip.
+  const oneLine = density === 'compact' || labelStyle === 'mono'
   return (
     <Root
       aria-label={label}
@@ -167,6 +171,7 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
         const trailingId = `${baseId}-${String(index)}-trailing`
         const hasBadge = shown(item.badge)
         const hasTrailing = shown(item.trailing)
+        const itemLabel = labelStyle === 'mono' ? <TruncatedText>{item.label}</TruncatedText> : item.label
         const describedBy = [hasBadge ? badgeId : null, item.description === undefined ? null : descriptionId, hasTrailing ? trailingId : null]
           .filter((id) => id !== null)
           .join(' ')
@@ -178,14 +183,14 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
             <ItemBody>
               {hasBadge ? (
                 <ItemHeading>
-                  <ItemText>{item.label}</ItemText>
+                  <ItemText>{itemLabel}</ItemText>
                   <ItemBadge id={badgeId}>{item.badge}</ItemBadge>
                 </ItemHeading>
               ) : (
-                <ItemText>{item.label}</ItemText>
+                <ItemText>{itemLabel}</ItemText>
               )}
               {item.description === undefined ? null : (
-                <ItemDescription id={descriptionId}>{density === 'compact' ? <TruncatedText>{item.description}</TruncatedText> : item.description}</ItemDescription>
+                <ItemDescription id={descriptionId}>{oneLine ? <TruncatedText>{item.description}</TruncatedText> : item.description}</ItemDescription>
               )}
             </ItemBody>
             {hasTrailing ? <ItemTrailing id={trailingId}>{item.trailing}</ItemTrailing> : null}

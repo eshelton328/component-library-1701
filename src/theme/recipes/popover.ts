@@ -8,6 +8,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 105:406), sm 240 (a small menu), filter 300 (the Inbox
 // Filter menu, D4 346:1737), md 320 (the default), lg 360 (the skill picker)
 // and picker 380 (the Run in picker, D3 346:1234).
+// `composer` is the skill list after "/" over a composer, which is the
+// popover's trigger (screen review R8: 160 was narrow on a 3540 px
+// screen). It grows with the composer: 40% of the trigger's width, which
+// Ark's positioner sets as --reference-width, at least shell.pickerMin
+// (240) and at most shell.pickerMax (400). So a 1512 px window's composer
+// gets 400, a pane's narrow one 240 and a tablet's in between. The
+// library has no breakpoint tokens, so the caller picks the phone's
+// width: `trigger` is the trigger's whole width, as the phone's list is
+// as wide as its composer (M3 105:2805, 358 at 390).
 // `surface` picks the fill. `overlay` (the default) keeps surface.overlay,
 // #0f1626 at 0.98, so the list under the box shows faintly. Figma fills the
 // Inbox popovers opaque #17213a (the Filter menu, D4 346:1737): `raised`
@@ -80,6 +89,8 @@ export const popover = defineSlotRecipe({
       md: { content: { w: 'shell.popover' } },
       lg: { content: { w: 'shell.popoverLg' } },
       picker: { content: { w: 'shell.popoverPicker' } },
+      composer: { content: { w: 'clamp(token(sizes.shell.pickerMin), calc(var(--reference-width) * 0.4), token(sizes.shell.pickerMax))' } },
+      trigger: { content: { w: 'var(--reference-width)' } },
     },
     surface: {
       overlay: {},

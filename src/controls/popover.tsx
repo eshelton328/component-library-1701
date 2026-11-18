@@ -34,9 +34,12 @@ export type PopoverProps = {
   /**
    * The box width: `xs` 160 (the Workbench skill picker after "/", D1 105:406), `sm` 240 (a small menu), `filter`
    * 300 (the Inbox Filter menu), `md` 320 (a filter or snooze popover; the default), `lg` 360 (a wide skill list) or
-   * `picker` 380 (the Run in picker). It never grows past the space beside the trigger.
+   * `picker` 380 (the Run in picker). `composer` grows with the trigger, for the skill list over a composer that
+   * opens it: 40% of the trigger's width, at least 240 (`shell.pickerMin`) and at most 400 (`shell.pickerMax`).
+   * `trigger` is the trigger's whole width, as the phone's skill list is as wide as its composer. It never grows past
+   * the space beside the trigger.
    */
-  width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | undefined
+  width?: 'xs' | 'sm' | 'filter' | 'md' | 'lg' | 'picker' | 'composer' | 'trigger' | undefined
   /**
    * Whether the popover may move to the other side of the trigger when `placement` has too little room; `true` when
    * not set. With `false` it keeps `placement`, and a long popover scrolls in the room it has.

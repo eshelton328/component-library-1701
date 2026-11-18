@@ -238,6 +238,16 @@
         "$value": { "value": 380, "unit": "px" },
         "$description": "Width of the Run in picker (Inbox D3 346:1234). Not for the Workbench side chat, which takes sidePane."
       },
+      "pickerMin": {
+        "$type": "dimension",
+        "$value": { "value": 240, "unit": "px" },
+        "$description": "Least width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least this and at most pickerMax (screen review R8). Not for a popover of a fixed width, such as a menu (popoverSm) or the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."
+      },
+      "pickerMax": {
+        "$type": "dimension",
+        "$value": { "value": 400, "unit": "px" },
+        "$description": "Most width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least pickerMin and at most this, so it stays a list and not a pane on a wide screen (screen review R8). Not for a popover of a fixed width, such as the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."
+      },
       "dialog": {
         "$type": "dimension",
         "$value": { "value": 440, "unit": "px" },

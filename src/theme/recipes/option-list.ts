@@ -38,6 +38,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // filled (`selectedFill`) and no check. The row note says the name is 13;
 // the layer widths (7.2 px a character, "/pr-description" 108 wide, 16
 // tall) are Geist Mono 12, so `labelStyle="mono"` takes `mono` (12/16).
+// A mono label is a name with no spaces to wrap at (a skill's /name), so
+// `labelStyle="mono"` keeps the label and the description on one line each,
+// cut with `TruncatedText`, as a long skill name is in the 240 px skill list
+// after "/" (Popover width composer, screen review R8).
 // `check={false}` hides the check and its space on every row.
 // `density="compact"` is the picker's row (105:412, 105:415, 105:418):
 // 146 wide and 44 tall, padded 6 by 8, the name (16) over the description
@@ -140,7 +144,8 @@ export const optionList = defineSlotRecipe({
     },
     labelStyle: {
       text: {},
-      mono: { itemText: { textStyle: 'mono' } },
+      // minW 0 lets the cut name shrink beside a badge.
+      mono: { itemText: { textStyle: 'mono', minW: '0' } },
     },
     density: {
       default: {},

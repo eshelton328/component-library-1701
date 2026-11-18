@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Grid, Inline } from '../controls/layout'
+import { Grid, Inline, Stack } from '../controls/layout'
 import { Card } from './card'
+import { KindTile } from './kind-tile'
 import { StatusPill } from './status-pill'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -271,3 +272,127 @@ export const LongText: StoryObj<typeof meta> = {
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }
+
+/**
+ * The Toolkit tablet row (T1 428:59): `padding="compact"` pads 10 above and
+ * below and 12 at the sides, so the tile starts 13 in and the row is 60
+ * high (Figma 59), and `trailing` ends the header row with the counts
+ * (428:67), centred down it. A card without them keeps the 16 inset and no
+ * trailing slot.
+ */
+function TabletRows() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <div className={column} data-testid="compact">
+          <Card
+            title="agents-md"
+            leading={<KindTile kind="skill" size="sm" />}
+            subtitle="toolkit/skills/agents-md"
+            trailing={
+              <>
+                <span>→0</span>
+                <span>←1</span>
+              </>
+            }
+            padding="compact"
+            onSelect={() => undefined}
+          />
+        </div>
+        <div className={column} data-testid="plain">
+          <Card title="agents-md" leading={<KindTile kind="skill" size="sm" />} subtitle="toolkit/skills/agents-md" />
+        </div>
+      </Stack>
+      <div hidden>
+        <span data-swatch="muted" className={swatches.muted} />
+      </div>
+    </main>
+  )
+}
+
+const tabletRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const muted = getComputedStyle(find(canvasElement, '[data-swatch="muted"]')).backgroundColor
+  const row = find(canvasElement, '[data-testid="compact"] article')
+  const box = row.getBoundingClientRect()
+  const body = getComputedStyle(find(row, '.card__body'))
+  await expect([body.paddingTop, body.paddingRight, body.paddingBottom, body.paddingLeft]).toEqual(['10px', '12px', '10px', '12px'])
+  // 1 + 10 + 38 (the 20 px name, 2, the 16 px path) + 10 + 1: Figma's row is 59.
+  await expect(box.height).toBe(60)
+  // The 28 px tile starts 13 in, as Figma's 30 px tile (428:60), and is centred down the row.
+  const tile = find(row, '.card__leading').getBoundingClientRect()
+  await expect(tile.left - box.left).toBe(13)
+  await expect(tile.top + tile.height / 2).toBe(box.top + box.height / 2)
+  // The counts end the row 13 from its right edge, centred down it, in mono fg.muted.
+  const trailingEl = find(row, '.card__trailing')
+  const trailing = trailingEl.getBoundingClientRect()
+  await expect(box.right - trailing.right).toBe(13)
+  await expect(trailing.top + trailing.height / 2).toBe(box.top + box.height / 2)
+  await expect(trailing.left).toBeGreaterThan(find(row, '.card__subtitle').getBoundingClientRect().right)
+  const counts = getComputedStyle(trailingEl)
+  await expect([counts.fontSize, counts.color]).toEqual(['12px', muted])
+  await expect(counts.fontFamily).toContain('Mono')
+  await expect(within(trailingEl).getByText('←1')).toBeVisible()
+  // Without them: the 16 inset, a 72 px card, and no trailing slot.
+  const plain = find(canvasElement, '[data-testid="plain"] article')
+  await expect(getComputedStyle(find(plain, '.card__body')).paddingTop).toBe('16px')
+  await expect(plain.getBoundingClientRect().height).toBe(72)
+  await expect(plain.querySelector('.card__trailing')).toBeNull()
+}
+
+/** `padding="compact"` and `trailing`: the Toolkit tablet row (T1 428:59). */
+export const TabletRowDark: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'dark' }, play: tabletRowsPlay }
+export const TabletRowLight: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'light' }, play: tabletRowsPlay }
+
+/**
+ * The Toolkit card (D1 425:77): `metaSpacer` puts Figma's 14 px spacer
+ * (425:86) and the 10 px gap after it above the counts, so they sit 34
+ * under the description and the card with the 36 px tile is 148 high
+ * (Figma 150, its text lines are 17). A card without it keeps the counts
+ * 10 under the description, 124 high.
+ */
+function SpacedCards() {
+  const card = (spaced: boolean) => (
+    <Card
+      title="agents-md"
+      leading={<KindTile kind="skill" size="lg" />}
+      subtitle="toolkit/skills/agents-md"
+      description="Writes and audits the AGENTS.md context files of a repo"
+      meta={
+        <>
+          <span className={strong}>3 links in</span>
+          <span>5 files</span>
+        </>
+      }
+      metaSpacer={spaced}
+    />
+  )
+  return (
+    <main className={page}>
+      <Inline gap="24" align="start">
+        <div className={column} data-testid="spaced">
+          {card(true)}
+        </div>
+        <div className={column} data-testid="plain">
+          {card(false)}
+        </div>
+      </Inline>
+    </main>
+  )
+}
+
+const spacedCardsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const gap = (testId: string) => {
+    const c = find(canvasElement, `[data-testid="${testId}"] article`)
+    return { card: c.getBoundingClientRect().height, gap: find(c, '.card__meta > span').getBoundingClientRect().top - find(c, '.card__description').getBoundingClientRect().bottom }
+  }
+  // 10 + Figma's 14 px spacer + 10: the counts' text sits 34 under the description, and the card is 148 high.
+  await expect(gap('spaced')).toEqual({ card: 148, gap: 34 })
+  // The default keeps the 10 px gap and the 124 px card.
+  await expect(gap('plain')).toEqual({ card: 124, gap: 10 })
+  const metaRow = getComputedStyle(find(canvasElement, '[data-testid="spaced"] .card__meta'))
+  await expect([metaRow.fontSize, metaRow.columnGap]).toEqual(['12px', '12px'])
+}
+
+/** `metaSpacer`: the Toolkit card's spacer above its counts (D1 425:86). */
+export const MetaSpacerDark: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'dark' }, play: spacedCardsPlay }
+export const MetaSpacerLight: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'light' }, play: spacedCardsPlay }

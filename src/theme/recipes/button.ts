@@ -171,6 +171,16 @@ export const button = defineRecipe({
       discuss: {},
       selected: {},
     },
+    // The sides of a `lg` button. `default` keeps the size's padding.
+    // `compact` pads a `lg` button 12 at the sides, as Toolkit's Sort
+    // (D1 `button · Sort` 425:62, 105 x 36) draws 13 (nearest token 12,
+    // d-072), so its sort icon starts 13 in with the border. A compound
+    // variant below sets it; other sizes and an icon-only button keep their
+    // own padding.
+    padding: {
+      default: {},
+      compact: {},
+    },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
     // y 2 in a 35 wide button, so 4 from the end and 2 from the top.
@@ -185,6 +195,7 @@ export const button = defineRecipe({
     { iconOnly: true, size: 'md', css: { w: 'control.md' } },
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
+    { size: 'lg', padding: 'compact', iconOnly: false, css: { px: '12' } },
     { variant: 'secondary', pressedTone: 'accent', css: { _pressed: { color: 'fg.accent' } } },
     {
       variant: ['secondary', 'secondaryDanger'],
@@ -200,5 +211,5 @@ export const button = defineRecipe({
     { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
     { pressedBorder: 'selected', css: { _pressed: { borderColor: 'border.selected' } } },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, padding: 'default' },
 })

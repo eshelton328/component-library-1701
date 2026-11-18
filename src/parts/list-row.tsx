@@ -93,7 +93,8 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   `dotPosition="title"` (the default) puts it 8 after the title (D4);
  *   `end` puts it at the end of the title line, 12 before the trailing
  *   items (D2).
- * - `leadingGap="16"` puts the body 16 after the leading (D4); without it
+ * - `leadingGap="16"` puts the body 16 after the leading (D4), and
+ *   `leadingGap="12"` 12 after it (the Toolkit phone row, M1); without it
  *   the gap is 10.
  * - `bodyAlign="center"` centres the body down the row (D4's text beside
  *   its 72 px preview); `start`, the default, puts it at the row's top.

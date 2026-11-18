@@ -17,6 +17,7 @@ const Badge = withContext('div', 'badge')
 const Subtitle = withContext('p', 'subtitle')
 const Description = withContext('p', 'description')
 const Meta = withContext('div', 'meta')
+const Trailing = withContext('div', 'trailing')
 
 // A slot given as `false`, `null` or an empty string (`hasThumbnail && <img />`) is left out, as React leaves it out.
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
@@ -40,6 +41,29 @@ export type CardProps = {
   /** The meta row at the end, such as a kind, an age or counts. */
   meta?: ReactNode
   /**
+   * A part at the end of the header row, centred down it, such as the
+   * counts `→0 ←1` of a Toolkit tablet row (T1 428:67). The title and
+   * subtitle take the free width, so the part ends the row; it draws in
+   * `mono` and `fg.muted`, as the meta row. Without it the header ends
+   * with the title.
+   */
+  trailing?: ReactNode
+  /**
+   * The inset of a card without media. `default` pads 16 inside the
+   * border. `compact` pads 10 above and below and 12 at the sides, so a
+   * card with a kind tile, a title and a subtitle is a 60 px row with the
+   * tile 13 in, as the Toolkit tablet row (T1 428:59). A card with
+   * `media` keeps its own body.
+   */
+  padding?: 'default' | 'compact' | undefined
+  /**
+   * Puts 24 more above the meta row, so it sits 34 under the description,
+   * as the Toolkit card's spacer does (D1 425:86): with a kind tile, a
+   * title, a subtitle, a description and the meta the card is 148 high.
+   * Off by default, which keeps the meta 10 under the description.
+   */
+  metaSpacer?: boolean | undefined
+  /**
    * Called when the card is clicked, or its title button is pressed. A click on a control inside the card, such as a
    * link in `meta`, is left to that control. Without `onSelect` the card is not interactive.
    */
@@ -52,7 +76,7 @@ export type CardProps = {
  * `onSelect`, the title is a button and a click anywhere on the card
  * presses it.
  */
-export function Card({ title, media, leading, badge, subtitle, description, meta, onSelect }: CardProps) {
+export function Card({ title, media, leading, badge, subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
   // The card handles the click, so a click on any part of it selects it, even on a positioned child that paints
   // over the title button's hit area. Enter or Space on the title button fires a click that bubbles here too. A
@@ -66,7 +90,7 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
     onSelect()
   }
   return (
-    <Root media={hasMedia} onClick={onSelect === undefined ? undefined : select}>
+    <Root media={hasMedia} padding={padding} metaSpacer={metaSpacer} onClick={onSelect === undefined ? undefined : select}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>
@@ -90,6 +114,7 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
               </Subtitle>
             )}
           </Heading>
+          {shown(trailing) ? <Trailing>{trailing}</Trailing> : null}
         </Header>
         {description === undefined || description === '' ? null : (
           <Description>

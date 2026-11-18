@@ -192,6 +192,9 @@ export type CardProps = {
     subtitle?: string | undefined;
     description?: string | undefined;
     meta?: ReactNode;
+    trailing?: ReactNode;
+    padding?: 'default' | 'compact' | undefined;
+    metaSpacer?: boolean | undefined;
     onSelect?: (() => void) | undefined;
 };
 

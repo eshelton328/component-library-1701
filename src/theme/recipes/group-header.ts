@@ -19,6 +19,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // With the 16 px `monoSm` line it pads 6 above and 2 below, so it stays 24
 // on the 4 px grid (d-100 rule 3) and the name's centre sits 14 down, 1 above
 // Figma's 15 (D11 346:4606, M15).
+// `toolkit` is the Toolkit list's kind header on the desktop (D1 `group ·
+// SKILLS` 425:71): 31 high, the chevron and the label 10 under its top and
+// 4 over its end, round a 17 px line. With the 16 px `eyebrow` line it pads
+// 10 above and 6 below, so it is 32 on the 4 px grid (d-100 rule 3), the
+// label starts 10 down as Figma's, and the rows start 1 px lower.
+// `toolkitCompact` is the same header on a tablet (T1 428:53, 428:140,
+// 428:216): 27 high with the label 8 under the top; it pads 8 and 4, so it
+// is 28 on the grid and the label starts 8 down.
 export const groupHeader = defineSlotRecipe({
   className: 'group-header',
   jsx: ['GroupHeader'],
@@ -73,11 +81,14 @@ export const groupHeader = defineSlotRecipe({
     },
   },
   variants: {
-    // `list` is the Inbox list header; `sidebar` the Workbench sidebar one; `project` a project heading in a group.
+    // `list` is the Inbox list header; `sidebar` the Workbench sidebar one; `project` a project heading in a group;
+    // `toolkit` and `toolkitCompact` the Toolkit list's kind headers on the desktop and on a tablet.
     variant: {
       list: { root: { pt: '12', pr: '4', pb: '8' } },
       sidebar: { root: { pt: '8', pr: '6', borderRadius: 'md' } },
       project: { root: { pt: '6', pb: '2', pl: '10', textStyle: 'monoSm' }, label: { textTransform: 'none' } },
+      toolkit: { root: { pt: '10', pr: '4', pb: '6' } },
+      toolkitCompact: { root: { pt: '8', pr: '4', pb: '4' } },
     },
     // The dot takes a status colour: amber on Inbox "Needs you" (346:194) and
     // Workbench (105:635), cyan on Inbox "Next steps" (346:265).

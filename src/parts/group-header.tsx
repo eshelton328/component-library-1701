@@ -47,6 +47,9 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
  * (d-069). `variant` is `list` (Inbox, the default), `sidebar`
  * (Workbench) or `project`: a project heading inside a group, with the
  * name as written in mono and a `FolderIcon` in `leading` (Inbox D11).
+ * `toolkit` is the Toolkit list's kind header on the desktop (D1): 32
+ * high, with the label 10 under its top. `toolkitCompact` is the same
+ * header on a tablet (T1): 28 high, with the label 8 under its top.
  */
 export function GroupHeader({ label, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
   const collapsible = onOpenChange !== undefined

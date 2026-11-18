@@ -26,9 +26,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - `padding="sm"` is the list beside an open artifact (D2 403:219): 8
 //   inside the 1 px border, so a title and meta row is 1 + 8 + 40 + 8 + 1 =
 //   58, Figma's height. `padding="phone"` is the phone's library (M1
-//   406:121): 4 at the sides (the preview 4 in) and 10 above and below
-//   (Figma 9 + 48 + 9 = 66; 9 ties 8 and 10, so the larger, d-072), so a
-//   row with the 48 px preview is 1 + 10 + 48 + 10 + 1 = 70.
+//   406:121, 66 high at y 229; the 48 px preview 406:122 at y 238): 4 at
+//   the sides (the preview 4 in) and 8 above and below. Figma's 9 is
+//   measured from the row's edge, so it holds the 1 px border and 8
+//   inside it, as D2's 9 is `sm`'s 8: a row with the 48 px preview is
+//   1 + 8 + 48 + 8 + 1 = 66, Figma's height.
 //   `padding="lg"` is the library's list
 //   view (D4 403:8216): 12 inside the border, so the preview sits 13 in.
 // - `surface="card"` draws the D4 row's box: a 1 px border.default border
@@ -153,7 +155,7 @@ export const listRow = defineSlotRecipe({
     { variant: 'sidebar', density: 'compact', css: { root: { ps: '20', '&[data-level]': { ps: '24' } } } },
     { variant: 'inbox', padding: 'sm', css: { root: { p: '8' } } },
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
-    { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '10' } } },
+    { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
   ],
   defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', dotPosition: 'title' },
 })

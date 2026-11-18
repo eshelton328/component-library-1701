@@ -579,15 +579,15 @@ const artifactRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
   const selectedCard = rowOf('Selected in a card')
   await expect(getComputedStyle(selectedCard).backgroundColor).not.toBe(colour('pane'))
   await expect(getComputedStyle(selectedCard).borderTopColor).not.toBe(colour('border'))
-  // M1 (406:121): the 48 px preview sits 9 down in Figma's 66 px row; 9 ties 8 and 10, so 10 (d-072), and 4 at the
+  // M1 (406:121): the 48 px preview sits 9 down in Figma's 66 px row: the 1 px border and 8 inside it, and 4 at the
   // sides. The age stays on the title line, with the 16 px New badge under it.
   const phone = rowOf('Logo options')
-  await expect(pad(phone)).toEqual(['10px', '4px', '10px', '4px'])
+  await expect(pad(phone)).toEqual(['8px', '4px', '8px', '4px'])
   const phonePreview = part(phone, 'leading')
   await expect(box(phonePreview).height).toBe(48)
-  await expect(box(phonePreview).top - box(phone).top).toBe(11)
+  await expect(box(phonePreview).top - box(phone).top).toBe(9)
   await expect(box(part(phone, 'trailing')).top).toBe(box(part(phone, 'title')).top)
-  await expect(box(phone).height).toBe(70)
+  await expect(box(phone).height).toBe(66)
   // A default row keeps its 10 px padding, clear border, no fill, no dot, and its age on the title line.
   const plain = rowOf('A default row')
   await expect(pad(plain)).toEqual(['10px', '10px', '10px', '10px'])
@@ -601,6 +601,49 @@ const artifactRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 /** `padding`, `surface="card"`, `trailingAlign` and `dot`: the Artifacts rows (D2, D4, M1). */
 export const ArtifactRowsDark: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'dark' }, play: artifactRowsPlay }
 export const ArtifactRowsLight: StoryObj<typeof meta> = { render: () => <ArtifactRows />, globals: { mode: 'light' }, play: artifactRowsPlay }
+
+const rowParts = (canvasElement: HTMLElement, name: string) => {
+  const row = within(canvasElement).getByText(name).closest('.list-row__root')
+  if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+  const slot = (part: string) => {
+    const el = row.querySelector(`.list-row__${part}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${part}`)
+    return el.getBoundingClientRect()
+  }
+  return { row: row.getBoundingClientRect(), slot }
+}
+
+/**
+ * The phone library's rows (M1 406:121, 406:148): 66 high around the 48 px
+ * preview (406:122), which sits 9 below the row's top, the 1 px border and
+ * 8 inside it.
+ */
+function PhoneRows() {
+  return (
+    <main className={page}>
+      <div className={phoneList}>
+        <ListRow padding="phone" title="Skill eval pass rates" meta="skill-evals" leading={<Thumbnail kind="chart" size="md" />} trailing="5m" onSelect={() => undefined} />
+        <ListRow padding="phone" title="Hono server spike" meta="ncc-1701" leading={<Thumbnail kind="doc" size="md" />} trailing="40m" selected onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const phoneRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  for (const name of ['Skill eval pass rates', 'Hono server spike']) {
+    const phone = rowParts(canvasElement, name)
+    const preview = phone.slot('leading')
+    await expect([preview.width, preview.height]).toEqual([76, 48])
+    // 1 + 8 + 48 + 8 + 1: Figma's 66 px row, with the preview 9 below its top and 4 inside the border at the side.
+    await expect(phone.row.height).toBe(66)
+    await expect(preview.top - phone.row.top).toBe(9)
+    await expect(preview.left - phone.row.left).toBe(5)
+  }
+}
+
+/** `padding="phone"`: the phone library's 66 px rows (M1). */
+export const PhoneRowDark: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'dark' }, play: phoneRowsPlay }
+export const PhoneRowLight: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'light' }, play: phoneRowsPlay }
 
 /** A row whose Enter marks it read and unread: the select clears the New dot, and selecting again brings it back. */
 function DotToggle() {

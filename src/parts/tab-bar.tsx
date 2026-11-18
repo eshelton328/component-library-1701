@@ -12,7 +12,7 @@ const Label = withContext('span', 'label')
 const Hint = withContext('span', 'hint')
 
 export type TabBarProps = {
-  /** The tabs, in order: at most five on the phone, with More last (d-045, d-047). */
+  /** The tabs, in order: at most five on the phone and six on the tablet, with More last (d-045, d-047). */
   items: readonly NavItem[]
   /** The value of the current page. Its tab has the selected colour and `aria-current="page"`. */
   selected?: string | undefined
@@ -20,6 +20,13 @@ export type TabBarProps = {
   onSelect?: ((value: string) => void) | undefined
   /** The accessible name of the navigation landmark; "Main" when not set. */
   label?: string | undefined
+  /**
+   * The layout of the tabs. `phone` (the default) spreads the tabs over the
+   * whole width. `tablet` draws them as one centred group, 456 px wide, each
+   * tab an equal share (76 with six tabs, 91.2 with five), as on the 756 px
+   * tablet frame.
+   */
+  size?: 'phone' | 'tablet' | undefined
 }
 
 /**
@@ -29,9 +36,9 @@ export type TabBarProps = {
  * it at the bottom of the screen. Picking a tab calls `onSelect`; the bar
  * does no routing (d-068).
  */
-export function TabBar({ items, selected, onSelect, label = 'Main' }: TabBarProps) {
+export function TabBar({ items, selected, onSelect, label = 'Main', size = 'phone' }: TabBarProps) {
   return (
-    <Root aria-label={label}>
+    <Root aria-label={label} size={size}>
       <List>
         {items.map((item) => {
           const count = badgeCount(item)
@@ -40,6 +47,7 @@ export function TabBar({ items, selected, onSelect, label = 'Main' }: TabBarProp
               <Item
                 type="button"
                 aria-current={item.value === selected ? 'page' : undefined}
+                data-figma={item.figma}
                 onClick={() => {
                   onSelect?.(item.value)
                 }}

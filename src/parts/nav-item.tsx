@@ -10,6 +10,13 @@ export type NavItem = {
   icon: ReactNode
   /** The number of things that need Erik on the page. A count of 1 or more shows the needs-you badge; a fraction is rounded down. */
   badge?: number | undefined
+  /**
+   * A name for the item's button, written as its `data-figma` attribute, such
+   * as `"tab · Inbox"`, so an app's check can find the element that matches a
+   * Figma node. It changes nothing on screen; not set, the button has no
+   * `data-figma`.
+   */
+  figma?: string | undefined
 }
 
 const Badge = styled('span', navBadge)

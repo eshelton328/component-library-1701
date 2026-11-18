@@ -3,6 +3,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The tablet and phone tab bar: tablet Inbox 346:5574 and phone Workbench
 // 252:2. Idle tab 346:5575 (label 346:5580), selected tab 346:5581 (label
 // 346:5589), icon 346:5577. The selected tab changes only its colour.
+// size phone (the default): the tabs share the whole width (252:3).
+// size tablet: the bar spans the 756 px frame (Toolkit T01 424:3863) and
+// the tabs form one centred group, shell.tabGroup (456) wide, x 150 to
+// 606: six tabs of 76 (Toolkit T01 424:3864, 424:3870, 424:3879, 424:3888,
+// 424:3894, 424:3899) or five of 91.2 (Inbox T1 346:5575 to 346:5605).
 export const tabBar = defineSlotRecipe({
   className: 'tab-bar',
   jsx: ['TabBar'],
@@ -51,4 +56,12 @@ export const tabBar = defineSlotRecipe({
     // The badge count for screen readers; the badge itself is hidden from them.
     hint: { srOnly: true },
   },
+  variants: {
+    size: {
+      phone: {},
+      // The bar keeps its 8 px sides, so the group is centred in the frame.
+      tablet: { list: { w: '100%', maxW: 'shell.tabGroup', mx: 'auto' } },
+    },
+  },
+  defaultVariants: { size: 'phone' },
 })

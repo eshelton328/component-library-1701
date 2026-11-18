@@ -52,6 +52,7 @@ export function NavRail({ items, selected, onSelect, logo, label = 'Main' }: Nav
               <Item
                 type="button"
                 aria-current={item.value === selected ? 'page' : undefined}
+                data-figma={item.figma}
                 onClick={() => {
                   onSelect?.(item.value)
                 }}

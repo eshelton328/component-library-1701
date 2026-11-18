@@ -260,7 +260,7 @@ const touchScreen = () => {
   }
 }
 
-function Chat() {
+function Chat({ editInBody = false }: { editInBody?: boolean }) {
   return (
     <main className={page}>
       <div className={box}>
@@ -270,6 +270,7 @@ function Chat() {
               {text}
             </p>
           ))}
+          {editInBody ? <TextArea label="Edit message" labelHidden rows={3} /> : null}
           <Button size="sm" onClick={onCopy}>
             Copy the message
           </Button>
@@ -435,5 +436,31 @@ export const TapOnButtonKeepsKeyboard: StoryObj<typeof meta> = {
     blank.down()
     blank.up()
     await expect(reply).not.toHaveFocus()
+  },
+}
+
+/** A drag that starts in a text field in the body (a long draft being edited) scrolls the field and keeps its keyboard. */
+export const DragInFieldKeepsKeyboard: StoryObj<typeof meta> = {
+  render: () => <Chat editInBody />,
+  beforeEach: touchScreen,
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const edit = canvas.getByRole('textbox', { name: 'Edit message' })
+    await userEvent.click(edit)
+    await userEvent.keyboard('A long draft')
+    await expect(edit).toHaveFocus()
+    const drag = finger(edit)
+    drag.down()
+    drag.move(40)
+    drag.up(40)
+    await expect(edit).toHaveFocus()
+    await expect(edit).toHaveValue('A long draft')
+    // A drag of the transcript beside it still closes the keyboard.
+    const list = finger(canvas.getByText('Message 5'))
+    list.down()
+    list.move(40)
+    await expect(edit).not.toHaveFocus()
+    list.up(40)
   },
 }

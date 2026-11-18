@@ -25,11 +25,11 @@ const closeKeyboard = () => {
   if (editable(focused)) focused.blur()
 }
 
-type Press = { x: number; y: number; dragged: boolean; onControl: boolean }
+type Press = { x: number; y: number; dragged: boolean; onControl: boolean; inField: boolean }
 
 /**
  * On a touch screen (`pointer: coarse`), a user's drag of the body by more than `dragSlop` px, or a tap on it
- * that is not on a control, closes the keyboard of a focused text field, as a native chat does, so the user can
+ * that is not on a control, closes the keyboard of a focused text field (a drag that starts in a text field does not), as a native chat does, so the user can
  * scroll up and read. It reads touch events, never the scroll event, so a scroll from code (an auto-scroll to a
  * new message) never closes it. With a mouse nothing changes.
  */
@@ -41,13 +41,20 @@ function useKeyboardClose() {
       const coarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches
       press.current =
         event.touches.length === 1 && touch !== undefined && coarse
-          ? { x: touch.clientX, y: touch.clientY, dragged: false, onControl: event.target instanceof Element && event.target.closest(control) !== null }
+          ? {
+              x: touch.clientX,
+              y: touch.clientY,
+              dragged: false,
+              onControl: event.target instanceof Element && event.target.closest(control) !== null,
+              // A drag that starts in a text field scrolls or selects its text, so it keeps the keyboard.
+              inField: event.target instanceof Element && editable(event.target.closest('input, textarea, [contenteditable]')),
+            }
           : null
     },
     onTouchMove: (event: TouchEvent<HTMLDivElement>) => {
       const start = press.current
       const touch = event.touches[0]
-      if (start === null || touch === undefined || start.dragged) return
+      if (start === null || touch === undefined || start.dragged || start.inField) return
       if (Math.hypot(touch.clientX - start.x, touch.clientY - start.y) > dragSlop) {
         start.dragged = true
         closeKeyboard()

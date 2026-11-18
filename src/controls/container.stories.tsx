@@ -135,3 +135,135 @@ export const DetailAt3540Dark: StoryObj<typeof meta> = {
   play: detailAt(true),
 }
 export const DetailAt3540Light: StoryObj<typeof meta> = { ...DetailAt3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }
+
+// Toolkit items and full pages (screen review R9). vp1512 is the width of the Figma desktop frames.
+const vp1512 = { w1512: { name: 'Figma desktop (1512)', styles: { width: '1512px', height: '982px' } } }
+// Query containers as wide as the Figma frames' detail spaces: 1028 beside a list pane (D03 427:250), 1448 for a full page (D02 426:53).
+const itemSpace = css({ containerType: 'inline-size', bg: 'bg.canvas', w: 'shell.itemWide' })
+const pageSpace = css({ containerType: 'inline-size', bg: 'bg.canvas', w: 'shell.pageWide' })
+
+function ToolkitSpaces({ wide }: { wide: boolean }) {
+  const parts = (key: string) => [
+    <Container key={`${key}-item`} size="item" data-testid={`${key}-item`}>
+      <p className={text}>An open Toolkit item: 948 of content, 40 sides.</p>
+    </Container>,
+    <Container key={`${key}-page`} size="page" data-testid={`${key}-page`}>
+      <p className={text}>A Toolkit full page: 1384 of content, 32 sides.</p>
+    </Container>,
+    <Container key={`${key}-desktop`} data-testid={`${key}-desktop`}>
+      <p className={text}>Desktop: no max width.</p>
+    </Container>,
+    <Container key={`${key}-detail`} size="detail" data-testid={`${key}-detail`}>
+      <p className={text}>Detail: 748, or 1024 in the middle from 1600.</p>
+    </Container>,
+  ]
+  if (wide)
+    return (
+      <main className={space} data-testid="wide-space">
+        {parts('wide')}
+      </main>
+    )
+  return (
+    <main>
+      <div className={itemSpace} data-testid="item-space">
+        {parts('item-space')}
+      </div>
+      <div className={pageSpace} data-testid="page-space">
+        {parts('page-space')}
+      </div>
+    </main>
+  )
+}
+
+const box = (root: HTMLElement, id: string) => {
+  const el = root.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+  if (el === null) throw new Error(`no ${id}`)
+  const s = getComputedStyle(el)
+  const rect = el.getBoundingClientRect()
+  const content = el.firstElementChild?.getBoundingClientRect().width
+  return { rect, content, pad: pad(s) }
+}
+const parentRect = (root: HTMLElement, id: string) => {
+  const el = root.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+  if (el === null) throw new Error(`no ${id}`)
+  return el.getBoundingClientRect()
+}
+const itemPad = ['24px', '40px', '32px', '40px']
+const pagePad = ['24px', '32px', '32px', '32px']
+
+// Below shell.detailWideFrom (1600): item and page fill their space, with no max width; desktop and detail stay as they were.
+const toolkitNarrow: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  for (const [spaceId, width] of [
+    ['item-space', 1028],
+    ['page-space', 1448],
+  ] as const) {
+    const parent = parentRect(canvasElement, spaceId)
+    await expect(parent.width).toBe(width)
+    const item = box(canvasElement, `${spaceId}-item`)
+    await expect(item.pad).toEqual(itemPad)
+    await expect(item.rect.width).toBe(width)
+    await expect(item.content).toBe(width - 80)
+    await expect(item.rect.left).toBe(parent.left)
+    const page = box(canvasElement, `${spaceId}-page`)
+    await expect(page.pad).toEqual(pagePad)
+    await expect(page.rect.width).toBe(width)
+    await expect(page.content).toBe(width - 64)
+    await expect(page.rect.left).toBe(parent.left)
+    const desktop = box(canvasElement, `${spaceId}-desktop`)
+    await expect(desktop.pad).toEqual(itemPad)
+    await expect(desktop.rect.width).toBe(width)
+    const detail = box(canvasElement, `${spaceId}-detail`)
+    await expect(detail.rect.width).toBe(828)
+    await expect(detail.rect.left).toBe(parent.left)
+  }
+  // The Figma frames: the item 1028 with 948 of content (D03 427:250), the page 1448 with 1384 (D02 426:53).
+  await expect(box(canvasElement, 'item-space-item').content).toBe(948)
+  await expect(box(canvasElement, 'page-space-page').content).toBe(1384)
+}
+
+// From shell.detailWideFrom: item 1028 and page 1448 wide, padding included, in the middle; desktop fills, detail is 1104 in the middle.
+const toolkitWide: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const parent = parentRect(canvasElement, 'wide-space')
+  const centred = async (rect: DOMRect) => expect(rect.left - parent.left).toBe(parent.right - rect.right)
+  const item = box(canvasElement, 'wide-item')
+  await expect(item.pad).toEqual(itemPad)
+  await expect(item.rect.width).toBe(1028)
+  await expect(item.content).toBe(948)
+  await centred(item.rect)
+  const page = box(canvasElement, 'wide-page')
+  await expect(page.pad).toEqual(pagePad)
+  await expect(page.rect.width).toBe(1448)
+  await expect(page.content).toBe(1384)
+  await centred(page.rect)
+  const desktop = box(canvasElement, 'wide-desktop')
+  await expect(desktop.pad).toEqual(itemPad)
+  await expect(desktop.rect.width).toBe(parent.width)
+  const detail = box(canvasElement, 'wide-detail')
+  await expect(detail.rect.width).toBe(1104)
+  await centred(detail.rect)
+}
+
+/** At the 1512 px of the Figma frames, an item fills a 1028 space and a page a 1448 space. */
+export const ToolkitAt1512Dark: StoryObj<typeof meta> = {
+  render: () => <ToolkitSpaces wide={false} />,
+  parameters: { viewport: { options: vp1512 } },
+  globals: { mode: 'dark', viewport: { value: 'w1512' } },
+  play: toolkitNarrow,
+}
+export const ToolkitAt1512Light: StoryObj<typeof meta> = { ...ToolkitAt1512Dark, globals: { mode: 'light', viewport: { value: 'w1512' } } }
+/** At 1920 px the item is 1028 wide and the page 1448, each in the middle. */
+export const ToolkitAt1920Dark: StoryObj<typeof meta> = {
+  render: () => <ToolkitSpaces wide />,
+  parameters: { viewport: { options: vp1920 } },
+  globals: { mode: 'dark', viewport: { value: 'w1920' } },
+  play: toolkitWide,
+}
+export const ToolkitAt1920Light: StoryObj<typeof meta> = { ...ToolkitAt1920Dark, globals: { mode: 'light', viewport: { value: 'w1920' } } }
+/** At 3540 px, Erik's screen, they stay 1028 and 1448, in the middle. */
+export const ToolkitAt3540Dark: StoryObj<typeof meta> = {
+  render: () => <ToolkitSpaces wide />,
+  parameters: { viewport: { options: vp3540 } },
+  globals: { mode: 'dark', viewport: { value: 'w3540' } },
+  play: toolkitWide,
+}
+export const ToolkitAt3540Light: StoryObj<typeof meta> = { ...ToolkitAt3540Dark, globals: { mode: 'light', viewport: { value: 'w3540' } } }

@@ -80,7 +80,17 @@ export const layoutGrid = defineRecipe({
  *   `shell.detailWideFrom` (1600) wide, the content is at most
  *   `shell.detailWide` (1024) and the column sits in the middle. Every
  *   Figma desktop frame is narrower, so none of them changes.
- * The other sizes have no max width.
+ * - item: an open Toolkit item, 1028 wide with 948 of content in the
+ *   1512 px frames (D03 427:250, D17 474:393, D19 482:349): the desktop
+ *   padding (24 top, 32 bottom, 40 sides). Below `shell.detailWideFrom`
+ *   it fills its parent, as `desktop` does. From it, the box (padding
+ *   included) is at most `shell.itemWide` (1028) and sits in the middle.
+ * - page: a Toolkit full page, 1448 wide with 1384 of content (map D02
+ *   426:53, Activity D11 444:153, workflow D13 446:153): 24 top, 32
+ *   bottom and 32 sides. Below `shell.detailWideFrom` it fills its
+ *   parent; from it, the box is at most `shell.pageWide` (1448), in the
+ *   middle.
+ * desktop, tablet and phone have no max width.
  */
 export const layoutContainer = defineRecipe({
   className: 'container',
@@ -101,6 +111,19 @@ export const layoutContainer = defineRecipe({
         maxW: 'shell.detail',
         // The AppShell detail is an inline-size container. A wide one gives the column more room, in its middle.
         '@container (min-width: token(sizes.shell.detailWideFrom))': { maxW: 'shell.detailWide', mx: 'auto' },
+      },
+      // The box is border-box, so the max width holds the padding: 1028 = 948 + 2 × 40, 1448 = 1384 + 2 × 32.
+      item: {
+        pt: '24',
+        pb: '32',
+        px: '40',
+        '@container (min-width: token(sizes.shell.detailWideFrom))': { maxW: 'shell.itemWide', mx: 'auto' },
+      },
+      page: {
+        pt: '24',
+        pb: '32',
+        px: '32',
+        '@container (min-width: token(sizes.shell.detailWideFrom))': { maxW: 'shell.pageWide', mx: 'auto' },
       },
     },
     gap,

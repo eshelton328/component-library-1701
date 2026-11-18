@@ -22,7 +22,8 @@
  * })
  * ```
  *
- * The mark is set once a library control that installs the tracker (Button,
- * BottomSheet, Dialog, Menu or Popover) is on the page.
+ * `AppShell` starts the tracker that sets the mark, and so do Button,
+ * BottomSheet, Dialog, Menu and Popover, so a page in an AppShell gets the
+ * mark with no other library control on it.
  */
 export const focusRing = '&:is(:focus-visible, [data-focus-visible]):not([data-focus-quiet])'

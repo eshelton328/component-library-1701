@@ -40,7 +40,9 @@ pnpm verify
 A page writes the focus ring of its own block under the exported
 `focusRing` condition and sets `outline: 'none'` on the same element, never
 `_focusVisible`. The ring then shows after the keyboard and hides after a
-mouse, pen or touch press, as on the library's controls:
+mouse, pen or touch press, as on the library's controls. `AppShell` starts
+the tracker that marks a focus after a press with `data-focus-quiet`, so a
+page in an `AppShell` needs no other library control for this:
 
 ```tsx
 import { focusRing } from '@eshelton328/component-library-1701'

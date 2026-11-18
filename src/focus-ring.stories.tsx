@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../styled-system/css'
 import { Button } from './controls/button'
 import { Stack } from './controls/layout'
-import { focusRing } from './index'
+import { AppShell, focusRing } from './index'
 import { focusRing as recipeFocusRing } from './theme/recipes/focus'
 
 // The package's `focusRing` export on a page's own block (screen review R16).
@@ -42,6 +42,22 @@ function PageBlock() {
         <span hidden data-swatch="focus" className={focusSwatch} />
       </Stack>
     </main>
+  )
+}
+
+// A page with only its own block in an AppShell, and no Button or overlay.
+function ShellBlock() {
+  return (
+    <AppShell
+      detail={
+        <div className={page}>
+          <button type="button" className={block}>
+            Shell block
+          </button>
+          <span hidden data-swatch="focus" className={focusSwatch} />
+        </div>
+      }
+    />
   )
 }
 
@@ -101,6 +117,27 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   pageBlock.removeAttribute('data-focus-quiet')
   await expectRing(pageBlock, true)
 }
+
+const shellPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const shellBlock = within(canvasElement).getByRole('button', { name: 'Shell block' })
+
+  // AppShell starts the tracker, so a click marks the block quiet and it shows no ring.
+  await userEvent.click(shellBlock)
+  await expect(shellBlock).toHaveAttribute('data-focus-quiet')
+  await expectRing(shellBlock, false)
+
+  // After Tab away and back the block shows its ring.
+  await userEvent.tab({ shift: true })
+  await userEvent.tab()
+  await expect(shellBlock).not.toHaveAttribute('data-focus-quiet')
+  await expectRing(shellBlock, true)
+}
+
+// These come first: the tracker stays on for the page once a control starts
+// it, so a story with a Button before them would hide a missing start.
+/** In an AppShell with no Button or overlay, the block's ring hides after a click and shows after Tab. */
+export const ShellBlockDark: StoryObj<typeof meta> = { render: () => <ShellBlock />, play: shellPlay, globals: { mode: 'dark' } }
+export const ShellBlockLight: StoryObj<typeof meta> = { render: () => <ShellBlock />, play: shellPlay, globals: { mode: 'light' } }
 
 /** A page's own block with its ring under `[focusRing]`: the ring after the keyboard, none after a pointer press. */
 export const PageBlockDark: StoryObj<typeof meta> = { play, globals: { mode: 'dark' } }

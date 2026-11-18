@@ -342,3 +342,57 @@ const tabletRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** `padding="compact"` and `trailing`: the Toolkit tablet row (T1 428:59). */
 export const TabletRowDark: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'dark' }, play: tabletRowsPlay }
 export const TabletRowLight: StoryObj<typeof meta> = { render: () => <TabletRows />, globals: { mode: 'light' }, play: tabletRowsPlay }
+
+/**
+ * The Toolkit card (D1 425:77): `metaSpacer` puts Figma's 14 px spacer
+ * (425:86) and the 10 px gap after it above the counts, so they sit 34
+ * under the description and the card with the 36 px tile is 148 high
+ * (Figma 150, its text lines are 17). A card without it keeps the counts
+ * 10 under the description, 124 high.
+ */
+function SpacedCards() {
+  const card = (spaced: boolean) => (
+    <Card
+      title="agents-md"
+      leading={<KindTile kind="skill" size="lg" />}
+      subtitle="toolkit/skills/agents-md"
+      description="Writes and audits the AGENTS.md context files of a repo"
+      meta={
+        <>
+          <span className={strong}>3 links in</span>
+          <span>5 files</span>
+        </>
+      }
+      metaSpacer={spaced}
+    />
+  )
+  return (
+    <main className={page}>
+      <Inline gap="24" align="start">
+        <div className={column} data-testid="spaced">
+          {card(true)}
+        </div>
+        <div className={column} data-testid="plain">
+          {card(false)}
+        </div>
+      </Inline>
+    </main>
+  )
+}
+
+const spacedCardsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const gap = (testId: string) => {
+    const c = find(canvasElement, `[data-testid="${testId}"] article`)
+    return { card: c.getBoundingClientRect().height, gap: find(c, '.card__meta > span').getBoundingClientRect().top - find(c, '.card__description').getBoundingClientRect().bottom }
+  }
+  // 10 + Figma's 14 px spacer + 10: the counts' text sits 34 under the description, and the card is 148 high.
+  await expect(gap('spaced')).toEqual({ card: 148, gap: 34 })
+  // The default keeps the 10 px gap and the 124 px card.
+  await expect(gap('plain')).toEqual({ card: 124, gap: 10 })
+  const metaRow = getComputedStyle(find(canvasElement, '[data-testid="spaced"] .card__meta'))
+  await expect([metaRow.fontSize, metaRow.columnGap]).toEqual(['12px', '12px'])
+}
+
+/** `metaSpacer`: the Toolkit card's spacer above its counts (D1 425:86). */
+export const MetaSpacerDark: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'dark' }, play: spacedCardsPlay }
+export const MetaSpacerLight: StoryObj<typeof meta> = { render: () => <SpacedCards />, globals: { mode: 'light' }, play: spacedCardsPlay }

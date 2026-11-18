@@ -194,6 +194,7 @@ export type CardProps = {
     meta?: ReactNode;
     trailing?: ReactNode;
     padding?: 'default' | 'compact' | undefined;
+    metaSpacer?: boolean | undefined;
     onSelect?: (() => void) | undefined;
 };
 

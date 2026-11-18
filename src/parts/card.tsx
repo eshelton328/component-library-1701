@@ -57,6 +57,13 @@ export type CardProps = {
    */
   padding?: 'default' | 'compact' | undefined
   /**
+   * Puts 24 more above the meta row, so it sits 34 under the description,
+   * as the Toolkit card's spacer does (D1 425:86): with a kind tile, a
+   * title, a subtitle, a description and the meta the card is 148 high.
+   * Off by default, which keeps the meta 10 under the description.
+   */
+  metaSpacer?: boolean | undefined
+  /**
    * Called when the card is clicked, or its title button is pressed. A click on a control inside the card, such as a
    * link in `meta`, is left to that control. Without `onSelect` the card is not interactive.
    */
@@ -69,7 +76,7 @@ export type CardProps = {
  * `onSelect`, the title is a button and a click anywhere on the card
  * presses it.
  */
-export function Card({ title, media, leading, badge, subtitle, description, meta, trailing, padding = 'default', onSelect }: CardProps) {
+export function Card({ title, media, leading, badge, subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
   // The card handles the click, so a click on any part of it selects it, even on a positioned child that paints
   // over the title button's hit area. Enter or Space on the title button fires a click that bubbles here too. A
@@ -83,7 +90,7 @@ export function Card({ title, media, leading, badge, subtitle, description, meta
     onSelect()
   }
   return (
-    <Root media={hasMedia} padding={padding} onClick={onSelect === undefined ? undefined : select}>
+    <Root media={hasMedia} padding={padding} metaSpacer={metaSpacer} onClick={onSelect === undefined ? undefined : select}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>

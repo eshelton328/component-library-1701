@@ -20,6 +20,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   (428:66): the heading takes the free width, so the part sits at the
 //   row's end, in `mono` fg.muted as the meta row. Without it there is no
 //   `trailing` slot.
+// - `metaSpacer` adds Figma's 14 px spacer (D1 425:86) and the 10 px gap
+//   after it above the meta row, as `pt` 24: the counts sit 10 + 24 = 34
+//   under the description, Figma's 10 + 14 + 10, and the card is 148 high
+//   (Figma 150; its description and counts lines are 17, here 16). The meta
+//   row keeps `mt: auto`, so in a taller grid row it still ends the card.
 export const card = defineSlotRecipe({
   className: 'card',
   jsx: ['Card'],
@@ -85,7 +90,11 @@ export const card = defineSlotRecipe({
     },
     // The inset of a card without media; the compound variant below sets it, so it wins over `media`'s 16.
     padding: { default: {}, compact: {} },
+    metaSpacer: {
+      true: { meta: { pt: '24' } },
+      false: {},
+    },
   },
   compoundVariants: [{ media: false, padding: 'compact', css: { body: { py: '10', px: '12' } } }],
-  defaultVariants: { media: false, padding: 'default' },
+  defaultVariants: { media: false, padding: 'default', metaSpacer: false },
 })

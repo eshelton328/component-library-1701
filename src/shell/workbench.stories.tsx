@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
-import { PanelIcon } from '../foundations/icons'
+import { PanelIcon, ResetIcon } from '../foundations/icons'
 import { Workbench } from './workbench'
 import { expectCutText } from '../controls/tooltip.testing'
 
@@ -298,5 +298,81 @@ export const NoLeading: StoryObj<typeof meta> = {
     await expect(canvasElement.querySelector('.workspace-tabs__leading')).toBeNull()
     const bar = find(canvasElement, '.workspace-tabs__bar')
     await expect(Math.round(rect(within(canvasElement).getByRole('tablist')).left - rect(bar).left)).toBe(16)
+  },
+}
+
+const manyWorkspaces = Array.from({ length: 12 }, (_, n) => ({ value: `ws-${String(n)}`, label: `workspace-${String(n)}`, count: n, content: <div className={panes}>The workspace-{n} panes</div> }))
+
+/** A wide bar with the four workspaces and a narrow one with twelve, each with the reset button at the end. */
+function WithTrailing() {
+  return (
+    <div className={twoFrames}>
+      {[
+        { key: 'wide', className: frame, items: workspaces },
+        { key: 'narrow', className: narrowFrame, items: manyWorkspaces },
+      ].map(({ key, className, items }) => (
+        <div key={key} className={className} data-size={key}>
+          <Workbench
+            label={`Workspaces ${key}`}
+            size="compact"
+            workspaces={items}
+            actions={<Button size="sm">New chat</Button>}
+            trailing={
+              <Button size="sm" iconOnly aria-label="Reset pane sizes">
+                <ResetIcon size="16" />
+              </Button>
+            }
+          />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * `trailing` (screen review R5): the Reset pane sizes button at the right
+ * end of the bar, 16 from its end, right of New chat. With many tabs in a
+ * narrow bar the tabs scroll and the button stays inside the bar.
+ */
+const trailingPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  for (const size of ['wide', 'narrow']) {
+    const root = sized(canvasElement, size)
+    const bar = find(root, '.workspace-tabs__bar')
+    const reset = within(root).getByRole('button', { name: 'Reset pane sizes' })
+    const newChat = within(root).getByRole('button', { name: 'New chat' })
+    await expect(reset.parentElement).toHaveClass('workspace-tabs__trailing')
+    await expect(Math.round(rect(bar).right - rect(reset).right)).toBe(16)
+    await expect(rect(reset).left).toBeGreaterThan(rect(newChat).right - 1)
+    await expect(rect(reset.querySelector('svg') ?? reset).width).toBe(16)
+    await expect(rect(reset).left).toBeGreaterThanOrEqual(rect(bar).left)
+    await expect(rect(reset).right).toBeLessThanOrEqual(rect(bar).right)
+  }
+  // The wide bar has room: New chat stays right after the tabs and the button is pushed to the end.
+  const wide = sized(canvasElement, 'wide')
+  const wideList = within(wide).getByRole('tablist', { name: 'Workspaces wide' })
+  await expect(Math.round(rect(within(wide).getByRole('button', { name: 'New chat' })).left - rect(wideList).right)).toBe(8)
+  await expect(rect(within(wide).getByRole('button', { name: 'Reset pane sizes' })).left - rect(within(wide).getByRole('button', { name: 'New chat' })).right).toBeGreaterThan(8)
+  // The narrow bar: the tabs scroll inside the list, which ends before the actions.
+  const narrow = sized(canvasElement, 'narrow')
+  const list = within(narrow).getByRole('tablist', { name: 'Workspaces narrow' })
+  await expect(list.scrollWidth).toBeGreaterThan(list.clientWidth)
+  await expect(rect(list).right).toBeLessThanOrEqual(rect(within(narrow).getByRole('button', { name: 'New chat' })).left)
+}
+
+export const TrailingDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <WithTrailing />, play: trailingPlay }
+export const TrailingLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <WithTrailing />, play: trailingPlay }
+
+/** With no `trailing`, the bar draws no trailing slot and New chat stays right after the tabs. */
+export const NoTrailing: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <div className={frame}>
+      <Workbench workspaces={workspaces} size="compact" actions={<Button size="sm">New chat</Button>} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement.querySelector('.workspace-tabs__trailing')).toBeNull()
+    const list = within(canvasElement).getByRole('tablist')
+    await expect(Math.round(rect(within(canvasElement).getByRole('button', { name: 'New chat' })).left - rect(list).right)).toBe(8)
   },
 }

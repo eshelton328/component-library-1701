@@ -26,6 +26,8 @@ export type WorkbenchProps = {
   leading?: ReactNode
   /** After the tabs, such as the button that starts a chat in the workspace. */
   actions?: ReactNode
+  /** At the right end of the bar, such as the button that resets the pane sizes. */
+  trailing?: ReactNode
   /**
    * The tab bar's size. `md` (the default) pads the bar 12 above and 10
    * below the tabs and the panes 10 on every side. `compact` is the 52 px
@@ -47,12 +49,12 @@ export type WorkbenchProps = {
  * (Workbench D9). It fills its parent, usually the detail pane of the
  * `AppShell`. The status bar is left out when it has nothing to show.
  */
-export function Workbench({ label = 'Workspaces', workspaces, value, defaultValue, onValueChange, leading, actions, size, summary, hints = [], alert }: WorkbenchProps) {
+export function Workbench({ label = 'Workspaces', workspaces, value, defaultValue, onValueChange, leading, actions, trailing, size, summary, hints = [], alert }: WorkbenchProps) {
   const hasSummary = summary !== undefined && summary !== ''
   const hasAlert = alert !== undefined && alert !== ''
   return (
     <Root>
-      <WorkspaceTabs label={label} items={workspaces} value={value} defaultValue={defaultValue} onValueChange={onValueChange} leading={leading} actions={actions} size={size} />
+      <WorkspaceTabs label={label} items={workspaces} value={value} defaultValue={defaultValue} onValueChange={onValueChange} leading={leading} actions={actions} trailing={trailing} size={size} />
       {hasSummary || hints.length > 0 || hasAlert ? (
         <Status>
           {hasSummary ? <Summary>{summary}</Summary> : null}

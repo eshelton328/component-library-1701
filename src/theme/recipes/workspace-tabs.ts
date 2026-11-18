@@ -22,6 +22,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   16) sits at the start of the bar, 16 in, and the tab group (105:108)
 //   starts 8 after it (the bar gap). The caller passes the button; the
 //   slot only places it.
+// - Trailing (screen review R5): a button at the right end of the bar, such
+//   as Reset pane sizes, 16 from the end (the bar's end padding). `ml: auto`
+//   pushes it past the tabs and the actions; it never shrinks, so with many
+//   tabs the list scrolls and the trailing slot stays in view. With no
+//   `trailing` there is no slot and the bar is unchanged. The caller passes
+//   the button; the slot only places it.
 // - `size="compact"`, Workbench D1 105:105 and the panes 105:174: the bar is
 //   52 high with the tabs at y 12 and the panes start at y 52 with no top
 //   padding (10 at the sides and bottom, 105:177). The tabs stay 32 high
@@ -32,7 +38,7 @@ export const workspaceTabs = defineSlotRecipe({
   className: 'workspace-tabs',
   jsx: ['WorkspaceTabs'],
   staticCss: ['*'],
-  slots: [...tabsAnatomy.keys(), 'bar', 'grip', 'count', 'dot', 'hint', 'leading', 'actions'],
+  slots: [...tabsAnatomy.keys(), 'bar', 'grip', 'count', 'dot', 'hint', 'leading', 'actions', 'trailing'],
   base: {
     root: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0', minH: '0' },
     bar: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', minW: '0', pt: '12', pb: '10', px: '16' },
@@ -77,6 +83,7 @@ export const workspaceTabs = defineSlotRecipe({
     hint: { srOnly: true },
     leading: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0' },
     actions: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0' },
+    trailing: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0', ml: 'auto' },
     content: {
       display: 'flex',
       flexDirection: 'column',

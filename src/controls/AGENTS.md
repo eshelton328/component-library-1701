@@ -64,3 +64,9 @@ under their purpose group, never under "Controls" (d-065).
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).
+- `WorkspaceTabs` (and the `Workbench` that wraps it) places buttons in
+  three bar slots: `leading` at the start, `actions` right after the last
+  tab, and `trailing` at the right end, 16 from the bar's end (such as
+  Reset pane sizes). The caller passes the buttons; the slots only place
+  them, and an absent slot draws no element. With many tabs the list
+  scrolls and the slots stay in view.

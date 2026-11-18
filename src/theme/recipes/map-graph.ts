@@ -65,7 +65,9 @@ export const mapNode = defineSlotRecipe({
 // A lit link (426:446) is a 2 px cyan line with a 6 px dot at its end
 // (426:447); the others (426:402, 426:369) are muted, 1.25 px in Figma.
 // The legend sits 24 px from the bottom left and the selection card 24 px
-// from the bottom right, as in Figma.
+// from the bottom right, as in Figma. The phone's upright Links graph (M17
+// `links graph` 493:152, links 493:234 to 493:293) uses the same edge and
+// dot styles; `MapGraph`'s `orientation="vertical"` routes its lines.
 export const mapGraph = defineSlotRecipe({
   className: 'map-graph',
   jsx: ['MapGraph'],

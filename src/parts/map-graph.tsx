@@ -4,6 +4,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
 import { Button } from '../controls/button'
 import { TruncatedText } from '../controls/tooltip'
+import { type Box, linkRoute, uprightRoute } from './map-graph-route'
 import type { ToolkitKind } from './meta-line'
 
 const kindIcons: Record<ToolkitKind, (props: IconProps) => React.JSX.Element> = {
@@ -224,6 +225,18 @@ export type MapGraphProps = {
   columns?: readonly MapGraphColumn[] | undefined
   /** The width and height of every node, in px. Defaults to 220 × 34, as in Figma (426:464). */
   nodeSize?: { width: number; height: number } | undefined
+  /**
+   * How the lines run. `horizontal` (the default) joins each pair of nodes
+   * side to side, for columns of nodes. `vertical` is for nodes in rows over
+   * and under each other, as on the phone's Links graph (Toolkit M17,
+   * 493:152): each line runs down a lane at the centre of one of its two
+   * nodes that passes no other node, meets that node at its top or foot,
+   * and meets the other node at the side that faces the lane. When both
+   * lanes pass a node, the line goes round it, down a free lane beside the
+   * two nodes inside the graph. Two nodes in one row still join side to
+   * side.
+   */
+  orientation?: 'horizontal' | 'vertical' | undefined
   /** The selected node's id. Its links light up and the nodes it does not touch go dim. */
   selectedId?: string | null | undefined
   /** Called with a node's id when it is selected, and with `null` when Escape clears the selection. */
@@ -235,31 +248,8 @@ export type MapGraphProps = {
 }
 
 const NODE_SIZE = { width: 220, height: 34 }
-// How far a link between two nodes in one column bows out to the right.
-const BOW = 40
 // The radius of the dot at the end of a link (426:369 is 6 × 6).
 const DOT = 3
-
-type Box = { x: number; y: number; width: number; height: number }
-
-// A line from the side of `a` that faces `b` to the side of `b` that faces
-// `a`, curved with level ends. Two nodes in one column join on the right.
-function linkPath(a: Box, b: Box): { d: string; end: { x: number; y: number } } {
-  const ay = a.y + a.height / 2
-  const by = b.y + b.height / 2
-  const apart = Math.abs(a.x - b.x) >= Math.min(a.width, b.width)
-  if (!apart) {
-    const sx = a.x + a.width
-    const ex = b.x + b.width
-    const cx = Math.max(sx, ex) + BOW
-    return { d: `M ${String(sx)} ${String(ay)} C ${String(cx)} ${String(ay)} ${String(cx)} ${String(by)} ${String(ex)} ${String(by)}`, end: { x: ex, y: by } }
-  }
-  const forward = b.x > a.x
-  const sx = forward ? a.x + a.width : a.x
-  const ex = forward ? b.x : b.x + b.width
-  const mx = (sx + ex) / 2
-  return { d: `M ${String(sx)} ${String(ay)} C ${String(mx)} ${String(ay)} ${String(mx)} ${String(by)} ${String(ex)} ${String(by)}`, end: { x: ex, y: by } }
-}
 
 /**
  * The toolkit map: nodes placed at the x and y they are given, lines for
@@ -267,8 +257,10 @@ function linkPath(a: Box, b: Box): { d: string; end: { x: number; y: number } } 
  * its links light up and the nodes it does not link to go dim. Each node
  * is a button in the tab order; Enter or Space selects it, and Escape
  * clears the selection. The map does no layout: the caller places nodes.
+ * With `orientation="vertical"` the lines run between nodes in rows over
+ * and under each other, for the phone.
  */
-export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, selectedId = null, onSelect, legend, card }: MapGraphProps) {
+export function MapGraph({ label, width, height, nodes, edges = [], columns = [], nodeSize = NODE_SIZE, orientation = 'horizontal', selectedId = null, onSelect, legend, card }: MapGraphProps) {
   const idBase = useId()
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
@@ -288,12 +280,32 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
     }
   }
   const stateOf = (id: string): MapNodeState => (selected === null ? 'lit' : id === selected ? 'selected' : linked.has(id) ? 'lit' : 'dim')
+  // How many drawn lines each node has, so upright lines share a hub's lane.
+  const degrees = new Map<Box, number>()
+  for (const e of edges) {
+    const a = boxes.get(e.from)
+    const b = boxes.get(e.to)
+    if (a === undefined || b === undefined || e.from === e.to) continue
+    degrees.set(a, (degrees.get(a) ?? 0) + 1)
+    degrees.set(b, (degrees.get(b) ?? 0) + 1)
+  }
+  const degree = (box: Box) => degrees.get(box) ?? 0
   const drawn = edges.flatMap((e, i) => {
     const a = boxes.get(e.from)
     const b = boxes.get(e.to)
     if (a === undefined || b === undefined || e.from === e.to) return []
     const lit = selected !== null && (e.from === selected || e.to === selected)
-    return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...linkPath(a, b) }]
+    const path =
+      orientation === 'vertical'
+        ? uprightRoute(
+            a,
+            b,
+            [...boxes.values()].filter((o) => o !== a && o !== b),
+            degree,
+            { width, height },
+          )
+        : linkRoute(a, b)
+    return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...path }]
   })
   // Lit links go last, so they draw over the dim ones.
   const ordered = [...drawn.filter((e) => !e.lit), ...drawn.filter((e) => e.lit)]

@@ -852,6 +852,7 @@ export type MapGraphProps = {
         width: number;
         height: number;
     } | undefined;
+    orientation?: 'horizontal' | 'vertical' | undefined;
     selectedId?: string | null | undefined;
     onSelect?: ((id: string | null) => void) | undefined;
     legend?: ReactNode;

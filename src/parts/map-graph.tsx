@@ -315,7 +315,12 @@ export type MapGraphProps = {
    * less than 4 px is a tap, so a node still selects; the pointer click
    * that ends a drag selects nothing, and a key press always does. A node
    * that takes the keyboard focus is moved into the window, and a window
-   * that changes size keeps the drawing inside it.
+   * that changes size keeps the drawing inside it. With no pointers: +
+   * or = zooms one step (1.25 times) in and - one step out about the
+   * window's centre while the focus is in the map, 0 zooms out to `min`,
+   * and Control or Command with the wheel zooms about the pointer. The map
+   * describes these keys to assistive technology; a map with no nodes puts
+   * its window in the tab order, so the keys can reach it.
    */
   zoom?: boolean | MapGraphZoom | undefined
 }
@@ -324,6 +329,11 @@ const NODE_SIZE = { width: 220, height: 34 }
 // A press that moves less than this, in px, is a tap and not a drag.
 const TAP_SLOP = 4
 const ZOOM = { min: 1, max: 3 }
+// One zoom step of a key, or of a 100 px turn of the wheel: 1.25 times larger or smaller.
+const ZOOM_STEP = 1.25
+const WHEEL_STEP = 100
+// The px of one wheel line, for a wheel that counts lines (deltaMode 1).
+const WHEEL_LINE = 40
 
 type Point = { x: number; y: number }
 type View = { scale: number; x: number; y: number }
@@ -362,6 +372,12 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       scroller.style.setProperty('--map-graph-y', `${String(view.current.y)}px`)
     }
     show(view.current)
+    // Scales the view by `factor` about a point of the window, so the drawing point under it stays there.
+    const zoomAt = (point: Point, factor: number) => {
+      const now = view.current
+      const scale = Math.min(Math.max(now.scale * factor, min), max)
+      show({ scale, x: point.x - ((point.x - now.x) / now.scale) * scale, y: point.y - ((point.y - now.y) / now.scale) * scale })
+    }
     // A window that changes size clamps the drawing again, so it never shows space past its edge.
     const resize = new ResizeObserver(() => {
       show(view.current)
@@ -441,7 +457,28 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       const dy = shift(r.top, r.bottom, w.top, w.top + scroller.clientHeight)
       if (dx !== 0 || dy !== 0) show({ ...view.current, x: view.current.x + dx, y: view.current.y + dy })
     }
+    // Keys zoom about the window's centre when the focus is in the map: + or = one step in, - one step out, 0 to min.
+    // A key with Control, Command or Alt is left to the browser.
+    const key = (event: globalThis.KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return
+      const centre = { x: scroller.clientWidth / 2, y: scroller.clientHeight / 2 }
+      if (event.key === '+' || event.key === '=') zoomAt(centre, ZOOM_STEP)
+      else if (event.key === '-') zoomAt(centre, 1 / ZOOM_STEP)
+      else if (event.key === '0') zoomAt(centre, min / view.current.scale)
+      else return
+      event.preventDefault()
+    }
+    // Control or Command with the wheel (and a trackpad pinch, which the browser sends so) zooms about the pointer.
+    // A plain wheel is left alone, so the page still scrolls.
+    const wheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      const px = event.deltaMode === 1 ? event.deltaY * WHEEL_LINE : event.deltaMode === 2 ? event.deltaY * scroller.clientHeight : event.deltaY
+      zoomAt(at(event), ZOOM_STEP ** (-px / WHEEL_STEP))
+    }
     scroller.addEventListener('pointerdown', down)
+    scroller.addEventListener('keydown', key)
+    scroller.addEventListener('wheel', wheel, { passive: false })
     scroller.addEventListener('click', click, true)
     scroller.addEventListener('focusin', focus)
     window.addEventListener('pointermove', move)
@@ -449,6 +486,8 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
     window.addEventListener('pointercancel', up)
     return () => {
       scroller.removeEventListener('pointerdown', down)
+      scroller.removeEventListener('keydown', key)
+      scroller.removeEventListener('wheel', wheel)
       scroller.removeEventListener('click', click, true)
       scroller.removeEventListener('focusin', focus)
       window.removeEventListener('pointermove', move)
@@ -499,6 +538,7 @@ export function MapGraph({
   const scroller = useRef<HTMLDivElement>(null)
   const range = zoom === false ? null : zoom === true ? ZOOM : { min: zoom.min ?? ZOOM.min, max: zoom.max ?? ZOOM.max }
   useZoom(scroller, range, width, height)
+  const keysId = `${idBase}-zoom-keys`
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
   const linksOf = (id: string) => {
@@ -553,8 +593,14 @@ export function MapGraph({
     }
   }
   return (
-    <GraphRoot role="group" aria-label={label} zoomable={range === null ? undefined : true}>
-      <Scroller ref={scroller} data-allow-pinch={range === null ? undefined : ''}>
+    <GraphRoot role="group" aria-label={label} aria-describedby={range === null ? undefined : keysId} zoomable={range === null ? undefined : true}>
+      <Scroller
+        ref={scroller}
+        data-allow-pinch={range === null ? undefined : ''}
+        aria-keyshortcuts={range === null ? undefined : '+ = - 0'}
+        tabIndex={range !== null && nodes.length === 0 ? 0 : undefined}
+        aria-describedby={range !== null && nodes.length === 0 ? keysId : undefined}
+      >
         <Svg width={width} height={height} viewBox={`0 0 ${String(width)} ${String(height)}`}>
           <g aria-hidden="true">
             {columns.map((c) => (
@@ -591,6 +637,9 @@ export function MapGraph({
           })}
         </Svg>
       </Scroller>
+      {range === null ? null : (
+        <Links id={keysId}>Pinch, or press plus or minus, to zoom, and 0 to zoom out fully. Control or Command with the mouse wheel zooms too. Drag to move.</Links>
+      )}
       {legend === undefined || legend === null ? null : <Legend>{legend}</Legend>}
       {card === undefined || card === null ? null : <Card>{card}</Card>}
     </GraphRoot>

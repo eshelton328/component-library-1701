@@ -955,3 +955,112 @@ const resizePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEl
 
 export const ZoomResizeDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'dark' } }
 export const ZoomResizeLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'light' } }
+
+function KeysMap() {
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Zoom map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Empty zoom map" width={1384} height={460} nodes={[]} columns={columns} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Plain map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} />
+      </div>
+    </main>
+  )
+}
+
+// Zoom without two pointers: keys when the focus is in the map, about the window's centre, and Control or Command
+// with the wheel, about the pointer. Each step is 1.25 times.
+const keysPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { map, scroller, drawing, pointer, node } = zoomParts(canvasElement)
+  const keys = 'Pinch, or press plus or minus, to zoom, and 0 to zoom out fully. Control or Command with the mouse wheel zooms too. Drag to move.'
+  await expect(map).toHaveAccessibleDescription(keys)
+  await expect(scroller).toHaveAttribute('aria-keyshortcuts', '+ = - 0')
+  // The nodes already take the focus, so the window is not in the tab order.
+  await expect(scroller).not.toHaveAttribute('tabindex')
+  // The drawing point under the window's centre.
+  const centre = () => {
+    const d = drawing()
+    const scale = d.width / 1384
+    return { x: (scroller.clientWidth / 2 - d.left) / scale, y: (scroller.clientHeight / 2 - d.top) / scale }
+  }
+  const expectCentre = async (before: { x: number; y: number }) => {
+    const after = centre()
+    await expect(after.x).toBeCloseTo(before.x, 1)
+    await expect(after.y).toBeCloseTo(before.y, 1)
+  }
+  node('writer').focus()
+  await expect(drawing().width).toBeCloseTo(1384, 1)
+  let c = centre()
+  await userEvent.keyboard('+')
+  await expect(drawing().width).toBeCloseTo(1384 * 1.25, 1)
+  await expectCentre(c)
+  c = centre()
+  await userEvent.keyboard('=')
+  await expect(drawing().width).toBeCloseTo(1384 * 1.25 ** 2, 1)
+  await expectCentre(c)
+  // It stops at max (2).
+  await userEvent.keyboard('++')
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  await userEvent.keyboard('-')
+  await expect(drawing().width).toBeCloseTo(2768 / 1.25, 1)
+  // 0 zooms out to min (0.5); a key with Control is the browser's, not the map's.
+  await userEvent.keyboard('0')
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  await userEvent.keyboard('{Control>}+{/Control}')
+  await expect(drawing().width).toBeCloseTo(692, 1)
+
+  // Control or Command with the wheel zooms about the pointer and keeps the page from zooming; a plain wheel does not.
+  const wheel = (init: WheelEventInit) => {
+    const w = scroller.getBoundingClientRect()
+    const event = new WheelEvent('wheel', { clientX: w.left + 100, clientY: w.top + 100, bubbles: true, cancelable: true, ...init })
+    scroller.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+  await expect(wheel({ deltaY: -100, ctrlKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(692 * 1.25, 1)
+  await expect(wheel({ deltaY: 100, metaKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  await expect(wheel({ deltaY: -100 })).toBe(false)
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  // Seven steps in from 0.5 would be 2.38; it stops at max (2).
+  await expect(wheel({ deltaY: -700, ctrlKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  // About the pointer: the drawing point under it stays under it while the drawing still covers the window. A drag
+  // first moves the drawing's top left corner away from the window's, so the zoom out is not clamped.
+  pointer('pointerdown', 1, 200, 200)
+  pointer('pointermove', 1, 100, 100)
+  pointer('pointerup', 1, 100, 100)
+  await expect(drawing().top).toBeLessThan(-50)
+  const d0 = drawing()
+  const under = { x: (100 - d0.left) / 2, y: (100 - d0.top) / 2 }
+  wheel({ deltaY: 100, ctrlKey: true })
+  const d1 = drawing()
+  await expect((100 - d1.left) / 1.6).toBeCloseTo(under.x, 1)
+  await expect((100 - d1.top) / 1.6).toBeCloseTo(under.y, 1)
+
+  // A map with no nodes has no other way in, so its window takes the focus and the keys.
+  const empty = within(canvasElement).getByRole('group', { name: 'Empty zoom map' })
+  const emptyScroller = empty.querySelector<HTMLElement>('.map-graph__scroller')
+  const emptySvg = empty.querySelector('svg')
+  if (emptyScroller === null || emptySvg === null) throw new Error('no empty drawing')
+  await expect(emptyScroller).toHaveAttribute('tabindex', '0')
+  await expect(emptyScroller).toHaveAccessibleDescription(keys)
+  emptyScroller.focus()
+  await userEvent.keyboard('+')
+  await expect(emptySvg.getBoundingClientRect().width).toBeCloseTo(1384 * 1.25, 1)
+
+  // Without zoom the keys do nothing and the map has no description, tab stop or shortcuts.
+  const plain = within(canvasElement).getByRole('group', { name: 'Plain map' })
+  const plainScroller = plain.querySelector<HTMLElement>('.map-graph__scroller')
+  const plainSvg = plain.querySelector('svg')
+  if (plainScroller === null || plainSvg === null) throw new Error('no plain drawing')
+  await expect(plain).not.toHaveAttribute('aria-describedby')
+  await expect(plainScroller).not.toHaveAttribute('tabindex')
+  await expect(plainScroller).not.toHaveAttribute('aria-keyshortcuts')
+  within(plain).getByRole('button', { name: 'writer' }).focus()
+  await userEvent.keyboard('+')
+  await expect(plainSvg.getBoundingClientRect().width).toBe(1384)
+}
+
+export const ZoomKeysDark: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'dark' } }
+export const ZoomKeysLight: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'light' } }

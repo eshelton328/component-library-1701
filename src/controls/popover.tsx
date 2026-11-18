@@ -11,6 +11,7 @@ const Positioner = withContext(ArkPopover.Positioner, 'positioner')
 const Content = withContext(ArkPopover.Content, 'content')
 const Section = withContext('div', 'section')
 const SectionLabel = withContext('div', 'sectionLabel')
+const SectionQuery = withContext('span', 'sectionQuery')
 const Footer = withContext('div', 'footer')
 const Note = withContext('span', 'note')
 
@@ -106,7 +107,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
 }
 
 export type PopoverSectionProps = {
-  /** The label of the group, such as "Kind". It shows in capitals. */
+  /** The label of the group, such as "Kind". It shows in capitals; a `query` after it keeps its case. */
   label: string
   children: ReactNode
   /**
@@ -114,14 +115,27 @@ export type PopoverSectionProps = {
    * (D1 105:409). No rule when not set.
    */
   rule?: boolean | undefined
+  /**
+   * Text the user typed, drawn after the label in `monoSm` and kept in its own case, as the skill list after "/"
+   * labels its section "SKILLS MATCHING /wri" (Workbench M10 147:72): `label="Skills matching" query="/wri"`. The
+   * group's accessible name is the label and the query. When not set, only the label shows, as before.
+   */
+  query?: string | undefined
 }
 
 /** A labelled group of rows in a `Popover`. */
-export function PopoverSection({ label, children, rule = false }: PopoverSectionProps) {
+export function PopoverSection({ label, children, rule = false, query }: PopoverSectionProps) {
   return (
-    <Section role="group" aria-label={label}>
+    <Section role="group" aria-label={query === undefined ? label : `${label} ${query}`}>
       <SectionLabel aria-hidden="true" data-rule={rule ? '' : undefined}>
-        {label}
+        {query === undefined ? (
+          label
+        ) : (
+          // One flex item with a rule, so the label and the query keep a plain space between them.
+          <span>
+            {label} <SectionQuery>{query}</SectionQuery>
+          </span>
+        )}
       </SectionLabel>
       {children}
     </Section>

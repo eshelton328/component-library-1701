@@ -21,11 +21,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (2 + a 16 px eyebrow line + 2), with the label 8 in, as at the default.
 // A section with `rule` draws the 1 px line after its label (105:409): 6
 // after the text, to the label's end padding, in border.default.
+// A section with `query` draws the typed text after its label, as the
+// skill list after "/" labels its section "SKILLS MATCHING /wri" (Workbench
+// M10 147:72, the D01 skill list's pattern): `sectionQuery` takes monoSm,
+// the mono style at the eyebrow's 11/16, with no capitals, so "/wri" keeps
+// the case it was typed in. It keeps the label's fg.muted.
 export const popover = defineSlotRecipe({
   className: 'popover',
   jsx: ['Popover'],
   staticCss: ['*'],
-  slots: [...popoverAnatomy.keys(), 'section', 'sectionLabel', 'footer', 'note'],
+  slots: [...popoverAnatomy.keys(), 'section', 'sectionLabel', 'sectionQuery', 'footer', 'note'],
   base: {
     content: {
       display: 'flex',
@@ -63,6 +68,7 @@ export const popover = defineSlotRecipe({
         _after: { content: '""', flex: '1', borderTopWidth: 'default', borderTopStyle: 'solid', borderColor: 'border.default' },
       },
     },
+    sectionQuery: { textStyle: 'monoSm', textTransform: 'none' },
     footer: { display: 'flex', alignItems: 'center', gap: '8', px: '8', pt: '8', pb: '4' },
     note: { flex: '1', textStyle: 'small', color: 'fg.muted' },
   },

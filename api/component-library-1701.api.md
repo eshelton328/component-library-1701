@@ -1189,6 +1189,7 @@ export type PopoverSectionProps = {
     label: string;
     children: ReactNode;
     rule?: boolean | undefined;
+    query?: string | undefined;
 };
 
 // @public

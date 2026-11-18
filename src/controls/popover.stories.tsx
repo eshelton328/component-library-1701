@@ -419,3 +419,55 @@ const compactSkillsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
 /** `density="compact"`, `autoFocus={false}` and a section `rule`, with a compact OptionList: the Workbench skill picker. */
 export const CompactSkillsDark: StoryObj<typeof meta> = { render: () => <CompactSkills />, globals: { mode: 'dark' }, play: compactSkillsPlay }
 export const CompactSkillsLight: StoryObj<typeof meta> = { render: () => <CompactSkills />, globals: { mode: 'light' }, play: compactSkillsPlay }
+
+// The skill list after "/" with a typed query (Workbench M10 147:72, a 358 px phone box; 320 here): its section
+// reads "SKILLS MATCHING /wri", the label in capitals and the query as typed. A section without a query beside it keeps its label as before.
+function SkillQuery() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Popover trigger={<Button>/wri</Button>} label="Matching skills" placement="bottom-start" density="compact" autoFocus={false} open>
+          <PopoverSection label="Skills matching" query="/wri" rule>
+            <OptionList label="Matching skills" items={skills.slice(0, 1)} value="writer" labelStyle="mono" check={false} selectedFill density="compact" />
+          </PopoverSection>
+          <PopoverSection label="Skills">
+            <OptionList label="All skills" items={skills.slice(1)} labelStyle="mono" check={false} density="compact" />
+          </PopoverSection>
+        </Popover>
+      </Inline>
+    </main>
+  )
+}
+
+/** `query` on a PopoverSection: the label in capitals, the typed "/wri" in monoSm and in its own case. */
+const skillQueryPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  await document.fonts.ready
+  const box = await body.findByRole('dialog', { name: 'Matching skills' })
+  const section = within(box).getByRole('group', { name: 'Skills matching /wri' })
+  const label = section.querySelector('.popover__sectionLabel')
+  if (!(label instanceof HTMLElement)) throw new Error('no label')
+  // innerText applies text-transform: the label is in capitals, the query keeps its lower case.
+  await expect(label.innerText).toBe('SKILLS MATCHING /wri')
+  await expect(getComputedStyle(label).textTransform).toBe('uppercase')
+  const query = within(label).getByText('/wri')
+  await expect(query).toHaveClass('popover__sectionQuery')
+  const style = getComputedStyle(query)
+  await expect(style.textTransform).toBe('none')
+  // monoSm: Geist Mono Regular 11/16, in the label's colour.
+  await expect([style.fontSize, Math.round(parseFloat(style.lineHeight)), style.fontWeight, style.color]).toEqual(['11px', 16, '400', getComputedStyle(label).color])
+  await expect(style.fontFamily).toMatch(/Mono/)
+  // The label row keeps its compact 20 px height and its rule.
+  await expect(label.getBoundingClientRect().height).toBe(20)
+  await expect(getComputedStyle(label, '::after').borderTopWidth).toBe('1px')
+  // A section without a query keeps its label: the text alone, in capitals, with no query part.
+  const plain = within(box).getByRole('group', { name: 'Skills' })
+  const plainLabel = plain.querySelector('.popover__sectionLabel')
+  if (!(plainLabel instanceof HTMLElement)) throw new Error('no plain label')
+  await expect(plainLabel.innerText).toBe('SKILLS')
+  await expect(plainLabel.querySelector('.popover__sectionQuery')).toBeNull()
+  await expect([getComputedStyle(plainLabel).textTransform, getComputedStyle(plainLabel).fontSize]).toEqual(['uppercase', '11px'])
+}
+
+export const SkillQueryDark: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'dark' }, play: skillQueryPlay }
+export const SkillQueryLight: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'light' }, play: skillQueryPlay }

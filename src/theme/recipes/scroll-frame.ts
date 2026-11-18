@@ -15,13 +15,37 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // composer at rest in a 373 px pane. The frame is not a size container
 // itself: in a parent sized by its content (the Workspaces side chat) that
 // shrank the parent; give the frame's bounded parent containerType 'size'.
+// Under a tab bar (the AppShell detail with tabBarOverlay, Toolkit M02,
+// M20, M22): the detail sets --app-shell-tab-bar-inset to
+// sizes.shell.tabBar and --app-shell-tab-bar-spacer to block for its
+// direct child, and 0px and none deeper down. The frame takes them as
+// --scroll-frame-inset and --scroll-frame-spacer (0 and none when unset,
+// so a frame anywhere else draws as before), reaches that far down into
+// the detail's end padding, to the bottom of the shell, and lifts its
+// footer by the inset, so a sticky Start button sits just above the bar.
+// With no footer, the body ends with a spacer of that height (shown only
+// under the bar, so it adds no gap elsewhere), so its last line scrolls
+// above the bar. --scroll-frame-inset is public: a sticky element inside
+// the body (the-bridge DetailFrame's Start) sticks at
+// bottom: var(--scroll-frame-inset, 0px), and the spacer below it keeps
+// the body's last line above it at the end of the scroll.
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],
   staticCss: ['*'],
   slots: ['root', 'header', 'body', 'footer'],
   base: {
-    root: { display: 'flex', flexDirection: 'column', flex: '1', minW: '0', minH: '0' },
+    root: {
+      display: 'flex',
+      flexDirection: 'column',
+      flex: '1',
+      minW: '0',
+      minH: '0',
+      // Read here, on the detail's child; the detail resets both below it, so a frame nested in this one keeps 0.
+      '--scroll-frame-inset': 'var(--app-shell-tab-bar-inset, 0px)',
+      '--scroll-frame-spacer': 'var(--app-shell-tab-bar-spacer, none)',
+      mb: 'calc(var(--scroll-frame-inset) * -1)',
+    },
     header: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0' },
     body: {
       display: 'flex',
@@ -36,6 +60,15 @@ export const scrollFrame = defineSlotRecipe({
       '& > *': { flexShrink: '0' },
       outline: 'none',
       _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      // With no footer, the body is the last slot: it ends with the inset, below its own padding.
+      // With no footer, a control that takes the focus under the bar scrolls out from under it (0 elsewhere).
+      '&:last-child': { scrollPaddingBottom: 'var(--scroll-frame-inset)' },
+      '&:last-child::after': {
+        content: '""',
+        display: 'var(--scroll-frame-spacer)',
+        flexShrink: '0',
+        h: 'var(--scroll-frame-inset)',
+      },
     },
     footer: {
       display: 'flex',
@@ -51,10 +84,11 @@ export const scrollFrame = defineSlotRecipe({
       // child's focus ring (2 px, 2 out) inside it. On the sides and at the bottom the margin takes the padding
       // back, so the content stays where it was and the box reaches 4 px past the frame, where nothing else is.
       // At the top the padding stays: a margin there would lay the footer over the body (with gap 0 by 4 px), so
-      // the body ends 4 px above the footer's content.
+      // the body ends 4 px above the footer's content. Under a tab bar, the bottom margin also lifts the footer
+      // by the inset.
       p: '4',
       mx: '-4',
-      mb: '-4',
+      mb: 'calc(var(--scroll-frame-inset) - token(spacing.4))',
       // As in the body: a child that clips (a Card) keeps its height.
       '& > *': { flexShrink: '0' },
     },

@@ -1,6 +1,7 @@
 import { useRef, type ReactNode, type TouchEvent } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { scrollFrame, type ScrollFrameVariantProps } from '../../styled-system/recipes'
+import { editable } from './editable'
 import type { Scalar } from './scalar'
 
 const { withProvider, withContext } = createSlotRecipeContext(scrollFrame)
@@ -13,12 +14,6 @@ const Footer = withContext('div', 'footer')
 const dragSlop = 10
 // A press on one of these does its own action and leaves the keyboard alone.
 const control = 'a, button, input, textarea, select, [role=button], [contenteditable]'
-// The input types that open an on-screen keyboard.
-const typed = new Set(['text', 'search', 'email', 'url', 'tel', 'password', 'number'])
-
-const editable = (el: Element | null): el is HTMLElement =>
-  el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && typed.has(el.type)) || (el instanceof HTMLElement && el.isContentEditable)
-
 // Blurs the focused element only when it is a text field, so the on-screen keyboard closes; its text stays.
 const closeKeyboard = () => {
   const focused = document.activeElement

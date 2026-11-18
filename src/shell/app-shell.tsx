@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
+import { editable } from '../controls/editable'
 import type { Scalar } from '../controls/scalar'
 import { Backdrop } from './backdrop'
 import { shown } from './shown'
@@ -28,8 +29,17 @@ const visibleTop = '--app-shell-visible-top'
  * `margin-top`. A zoom (`scale` above 1) shrinks the visual viewport's CSS height by the scale too, so the
  * keyboard-free part of the screen is `height * scale` CSS px: a pinch zoom with no keyboard gives the layout's
  * height and sets nothing, and Safari's focus zoom on a field under 16 px (the Composer's 14) keeps the fit while
- * the keyboard is open. Without `visualViewport` (an old browser, or no window when rendered on the server)
- * nothing changes: the hook reads the window only in its effect.
+ * the keyboard is open. The fit applies only while an editable field (`editable`: a textarea, a text-like input or
+ * a contenteditable element) has the focus, the keyboard case: the browser's top and bottom bars also shrink the
+ * visual viewport as they show and hide on a scroll, and following them would move the page under the user's
+ * finger. With no focused field both properties are removed, and the shell keeps the stable height its parent
+ * gives it. A `focusin` on a field starts the fit at once. When the focus leaves the fields (to a button, or to
+ * nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the keyboard closing: a
+ * tap on the composer's Send takes the focus on its press, and if the shell grew then, the button would move
+ * from under the finger before the click and the tap would miss it. A `focusout` whose `relatedTarget` is
+ * another field keeps the fit too, so moving from one field to another never drops it. Without `visualViewport` (an
+ * old browser, or no window when rendered on the server) nothing changes: the hook reads the window only in its
+ * effect.
  */
 function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null)
@@ -43,12 +53,15 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // stays where the last scale-1 measure put it, moved only as far as needed for the shell to cover the visible
     // area (`offsetTop` to `offsetTop + height`), so no page shows above or below it.
     let top = 0
+    // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
+    let typing = editable(document.activeElement)
     const fit = () => {
       const layout = document.documentElement.clientHeight
       const visible = viewport.height * viewport.scale
       if (viewport.scale === 1) top = viewport.offsetTop
-      // More than a pixel of rounding smaller: a keyboard (or other browser chrome) covers the layout.
-      if (layout - visible > 1) {
+      // A field has the focus and the visible area is more than a pixel of rounding smaller: a keyboard covers the
+      // layout. With no focused field it is the browser's bars, which the shell does not follow.
+      if (typing && layout - visible > 1) {
         top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
         root.style.setProperty(visibleHeight, `${String(visible)}px`)
         root.style.setProperty(visibleTop, `${String(top)}px`)
@@ -57,12 +70,28 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         root.style.removeProperty(visibleTop)
       }
     }
+    // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
+    const focusIn = () => {
+      typing = editable(document.activeElement)
+      if (typing) fit()
+    }
+    // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
+    // Only `typing` changes, and nothing is fitted: the fit stays as it is, the leaving state, until the next
+    // viewport event (the keyboard closing) fits with `typing` false and removes it. So a press that takes the
+    // focus from the field (Send) lands where it started, and a move to another field never drops the fit.
+    const focusOut = (event: FocusEvent) => {
+      typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
+    }
     fit()
     viewport.addEventListener('resize', fit)
     viewport.addEventListener('scroll', fit)
+    document.addEventListener('focusin', focusIn)
+    document.addEventListener('focusout', focusOut)
     return () => {
       viewport.removeEventListener('resize', fit)
       viewport.removeEventListener('scroll', fit)
+      document.removeEventListener('focusin', focusIn)
+      document.removeEventListener('focusout', focusOut)
       root.style.removeProperty(visibleHeight)
       root.style.removeProperty(visibleTop)
     }
@@ -109,7 +138,10 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * keyboard covers the bottom of the page and the browser does not resize
  * the layout for it (iOS Safari, which only shrinks `window.visualViewport`),
  * the shell shrinks to the visible area and moves with it, so a composer at
- * its foot stays above the keyboard; where the browser resizes the layout
+ * its foot stays above the keyboard. It does so only while a text field has
+ * the focus, and after the focus leaves it until the keyboard closes (so a
+ * tap on Send lands): otherwise the browser's bars that show and hide on a
+ * scroll leave the shell at its parent's height; where the browser resizes the layout
  * (Chrome on Android with `interactive-widget=resizes-content`), or with no
  * `visualViewport`, it keeps its height. The scrolling pane is focusable, so the keyboard can scroll it
  * when it holds only text.

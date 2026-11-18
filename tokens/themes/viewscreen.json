@@ -166,7 +166,7 @@
             "alpha": 0.7,
             "hex": "#5ee1ff"
           },
-          "$description": "The border of an open menu trigger, a drop target or a lifted row."
+          "$description": "The border of an open menu trigger, a pressed Button, a drop target or a lifted row. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha."
         },
         "focus": {
           "$type": "color",
@@ -934,7 +934,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.0549, 0.4549, 0.5647],
-            "alpha": 0.7,
+            "alpha": 0.75,
             "hex": "#0e7490"
           }
         },

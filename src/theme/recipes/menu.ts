@@ -157,6 +157,9 @@ export const menu = defineSlotRecipe({
       },
       lg: {
         content: { pt: '6', px: '12', pb: '8' },
+        // Figma's line (D12 346:5334, 294 x 1) sits 2 under the row above it and 2 over the row below it: the box's
+        // gap, with no margin of its own.
+        separator: { my: '0' },
         item: {
           h: 'control.xl',
           px: '8',

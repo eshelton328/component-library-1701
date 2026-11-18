@@ -518,6 +518,12 @@ const largeSnoozePlay: StoryObj<typeof meta>['play'] = async () => {
   await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['15px', 24, '400'])
   await expect(label.fontFamily).not.toMatch(/Mono/)
   await expect(getComputedStyle(within(hour).getByText('11:40')).fontSize).toBe('12px')
+  // The line sits 2 under Pick a date and 2 over Mark done (346:5334), the box's gap.
+  const line = within(menu).getByRole('separator')
+  const pick = within(menu).getByRole('menuitem', { name: 'Pick a date and time…' }).getBoundingClientRect()
+  const done = within(menu).getByRole('menuitem', { name: 'Mark done' }).getBoundingClientRect()
+  await expect(Math.round(line.getBoundingClientRect().top - pick.bottom)).toBe(2)
+  await expect(Math.round(done.top - line.getBoundingClientRect().bottom)).toBe(2)
 }
 
 /** The snooze menu at the Inbox D12 size: `width="md"` and `size="lg"`, with a calendar on "Pick a date and time…". */

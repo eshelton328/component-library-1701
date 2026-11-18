@@ -764,6 +764,68 @@ const metaTrailingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 export const MetaTrailingDark: StoryObj<typeof meta> = { render: () => <MetaTrailingRows />, globals: { mode: 'dark' }, play: metaTrailingPlay }
 export const MetaTrailingLight: StoryObj<typeof meta> = { render: () => <MetaTrailingRows />, globals: { mode: 'light' }, play: metaTrailingPlay }
 
+/**
+ * The phone search match row (M5 408:76): the age (408:93) ends the title
+ * line (408:92) at the body's right edge, and the meta line (408:94) runs
+ * on under it, so New (408:99) ends under the age. A row with the default
+ * placement keeps the age in its own column after the body.
+ */
+function TrailingTitleRows() {
+  return (
+    <main className={page}>
+      <div className={phoneList}>
+        <ListRow padding="phone" trailingPlacement="title" title="Logo options" meta="ncc-1701" metaTrailing={<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" />} leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={onTrailingTitle} />
+        <ListRow padding="phone" title="Age in a column" meta="ncc-1701" metaTrailing={<Badge label="New" icon={<SparkFilledIcon size="12" />} tone="working" size="xs" />} leading={<Thumbnail kind="doc" size="md" />} trailing="5m" onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const onTrailingTitle = fn()
+
+const trailingTitlePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onTrailingTitle.mockClear()
+  const match = rowParts(canvasElement, 'Logo options')
+  const matchRow = within(canvasElement).getByText('Logo options').closest('.list-row__root')
+  if (!(matchRow instanceof HTMLElement)) throw new Error('no match row')
+  const age = within(matchRow).getByText('5m')
+  const badge = within(matchRow).getByText('New').closest('.badge__root')
+  if (!(badge instanceof HTMLElement)) throw new Error('no badge')
+  const ageBox = age.getBoundingClientRect()
+  const body = match.slot('body')
+  const title = match.slot('title')
+  // The age ends the title line at the body's right edge, centred on the title line (Figma 408:93 at y 218.5, 17 high).
+  await expect(age.closest('.list-row__body')).not.toBeNull()
+  await expect(ageBox.right).toBe(body.right)
+  await expect(ageBox.top + ageBox.height / 2).toBe(title.top + title.height / 2)
+  // New ends the meta line under the age (408:99 ends at x 374, as the meta line 408:94).
+  await expect(badge.getBoundingClientRect().right).toBe(ageBox.right)
+  // The row stays the 66 px phone row (M1).
+  await expect(match.row.height).toBe(66)
+  // The title button's cover lies over the age, so a click on the age selects the row.
+  const hit = document.elementFromPoint(ageBox.left + ageBox.width / 2, ageBox.top + ageBox.height / 2)
+  const titleButton = within(matchRow).getByRole('button', { name: 'Logo options' })
+  await expect(hit === titleButton).toBe(true)
+  // The title button is the row's tab stop, and Enter on it selects the row.
+  await userEvent.tab()
+  await expect(document.activeElement === titleButton).toBe(true)
+  await userEvent.keyboard('{Enter}')
+  await expect(onTrailingTitle).toHaveBeenCalledTimes(1)
+  // With the default placement the age is its own column after the body, and New ends before it.
+  const column = rowParts(canvasElement, 'Age in a column')
+  const columnRow = within(canvasElement).getByText('Age in a column').closest('.list-row__root')
+  if (!(columnRow instanceof HTMLElement)) throw new Error('no column row')
+  const trailing = columnRow.querySelector('.list-row__trailing')
+  await expect(trailing?.parentElement).toBe(columnRow)
+  await expect(column.slot('trailing').left).toBeGreaterThan(column.slot('body').right)
+  await expect(columnRow.querySelector('.list-row__titleRow .list-row__trailing')).toBeNull()
+  await expect(column.row.height).toBe(66)
+}
+
+/** `trailingPlacement="title"`: the age ends the title line and New ends the meta line under it (M5). */
+export const TrailingTitleDark: StoryObj<typeof meta> = { render: () => <TrailingTitleRows />, globals: { mode: 'dark' }, play: trailingTitlePlay }
+export const TrailingTitleLight: StoryObj<typeof meta> = { render: () => <TrailingTitleRows />, globals: { mode: 'light' }, play: trailingTitlePlay }
+
 /** A row whose Enter marks it read and unread: the select clears the New dot, and selecting again brings it back. */
 function DotToggle() {
   const [read, setRead] = useState(false)

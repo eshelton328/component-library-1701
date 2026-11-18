@@ -62,6 +62,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   on the meta line. The 8 between them only keeps a long meta off the
 //   part; Figma's spacer is the free width. Without the prop there is no
 //   `metaRow`, and the meta is the body's own child as before.
+// - `trailingPlacement="title"` is the phone search match row (M5 408:76,
+//   366 wide): the age (408:93, 22 x 17 at x 352, y 218.5) ends the
+//   title line (408:92, from x 104), and the meta line (408:94 at x 104,
+//   270 wide) runs on under the age to x 374, where New (408:99) ends it.
+//   So `trailing` moves into the title row, which becomes a flex row
+//   (as with a dot), and sits at the body's right edge, centred on the
+//   title line; the body runs the full width after the leading. The 8
+//   between the title and the age only keeps a long title off the age.
+//   The title button's ::after still covers the row, so a click on the
+//   age selects it. `column`, the default, keeps the trailing column.
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -173,6 +183,14 @@ export const listRow = defineSlotRecipe({
       start: {},
       center: { body: { alignSelf: 'center' } },
     },
+    trailingPlacement: {
+      column: {},
+      title: {
+        titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
+        title: { minW: '0' },
+        trailing: { ms: 'auto' },
+      },
+    },
     dotPosition: {
       title: {},
       end: { titleRow: { '&:has(> .list-row__dot) > .list-row__title': { flex: '1' } }, dot: { me: '2' } },
@@ -184,5 +202,5 @@ export const listRow = defineSlotRecipe({
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
     { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
   ],
-  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title' },
+  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title', trailingPlacement: 'column' },
 })

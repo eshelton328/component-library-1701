@@ -37,7 +37,11 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
   metaTrailing?: ReactNode
   /** The element before the text, such as a kind tile or a kind mark. */
   leading?: ReactNode
-  /** The elements at the end, such as the age and a status pill. */
+  /**
+   * The elements at the end, such as the age and a status pill. With
+   * `trailingPlacement="title"` they end the title line instead of
+   * standing in their own column.
+   */
   trailing?: ReactNode
   /** More lines under the meta line, such as "Snoozed until 9:00". */
   children?: ReactNode
@@ -96,8 +100,14 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * - `metaTrailing` ends the meta line with a part at the body's right
  *   edge, level with the meta text, such as the New badge of a phone
  *   search match row (M5).
+ * - `trailingPlacement="title"` puts `trailing` at the end of the title
+ *   line, after the title and the dot, at the body's right edge and
+ *   centred on the title line; the body then runs the full width after
+ *   `leading`, so a `metaTrailing` part ends under the age (M5).
+ *   `column`, the default, keeps `trailing` in its own column after the
+ *   body.
  */
-export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition }: ListRowProps) {
+export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -114,6 +124,8 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
   const selectFromText = (event: MouseEvent<HTMLElement>) => {
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
   }
+  const trailingNode = trailing === undefined ? null : <Trailing>{trailing}</Trailing>
+  const trailingInTitle = trailingPlacement === 'title'
   const titleNode =
     onSelect === undefined ? (
       <TitleText aria-current={selected ? 'true' : undefined}>{titleText}</TitleText>
@@ -123,7 +135,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
       </TitleButton>
     )
   return (
-    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>
@@ -131,6 +143,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
         <TitleRow>
           {titleNode}
           {dot === undefined ? null : dotLabel === undefined ? <Dot aria-hidden="true" /> : <Dot role="img" aria-label={dotLabel} />}
+          {trailingInTitle ? trailingNode : null}
         </TitleRow>
         {metaTrailing === undefined ? (
           meta === undefined ? null : <Meta>{metaText}</Meta>
@@ -143,7 +156,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
         {children === undefined ? null : <Lines>{children}</Lines>}
         {actions === undefined ? null : <Actions>{actions}</Actions>}
       </Body>
-      {trailing === undefined ? null : <Trailing>{trailing}</Trailing>}
+      {trailingInTitle ? null : trailingNode}
     </Root>
   )
 }

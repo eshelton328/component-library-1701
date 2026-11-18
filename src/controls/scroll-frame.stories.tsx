@@ -159,4 +159,75 @@ export const TallFooterDark: StoryObj<typeof meta> = {
   },
 }
 export const TallFooterLight: StoryObj<typeof meta> = { ...TallFooterDark, globals: { mode: 'light' } }
+// Two frames side by side, each in a box that the play test makes shorter than its header and footer.
+const pair = css({ display: 'flex', gap: '24', alignItems: 'flex-start' })
+const half = css({ display: 'flex', flexDirection: 'column', flex: '1', h: 'shell.listPane', bg: 'surface.pane', borderRadius: 'xl', p: '16' })
+
+function ShortFrame({ footerShrink, id }: { footerShrink?: boolean; id: string }) {
+  return (
+    <div className={half} data-testid={`${id}-box`}>
+      <ScrollFrame
+        gap="12"
+        footerShrink={footerShrink}
+        header={<Button size="sm">Back to the inbox</Button>}
+        footer={
+          <div data-testid={`${id}-draft`} className={clip}>
+            <TextArea label="Reply" labelHidden rows={3} defaultValue="Draft" />
+          </div>
+        }
+      >
+        {lines.map((text) => (
+          <p key={text} className={line}>
+            {text}
+          </p>
+        ))}
+      </ScrollFrame>
+    </div>
+  )
+}
+
+/**
+ * `footerShrink={false}`, for a footer that caps its own height, such as a `Composer` with `layout="inline"` in
+ * the Workbench D5 side chat: in a pane resized shorter than its header and footer, the footer keeps its full
+ * height and only the body shrinks. Beside it, a frame with the default footer shrinks it and scrolls inside.
+ */
+export const FooterKeptDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={`${page} ${pair}`}>
+      <ShortFrame id="kept" footerShrink={false} />
+      <ShortFrame id="shrunk" />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const parts = (id: string) => {
+      const draft = canvas.getByTestId(`${id}-draft`)
+      const footer = draft.parentElement
+      const body = footer?.previousElementSibling
+      if (footer === null || !(body instanceof HTMLElement)) throw new Error('no frame')
+      return { box: canvas.getByTestId(`${id}-box`), draft, footer, body }
+    }
+    const kept = parts('kept')
+    const shrunk = parts('shrunk')
+    // At the box's full height both footers have their own height, and the bodies have room.
+    const full = kept.footer.getBoundingClientRect().height
+    await expect(shrunk.footer.getBoundingClientRect().height).toBeCloseTo(full, 1)
+    const bodyBefore = kept.body.getBoundingClientRect().height
+    await expect(bodyBefore).toBeGreaterThan(0)
+    // A pane resized shorter than its header and footer.
+    kept.box.style.height = '120px'
+    shrunk.box.style.height = '120px'
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    // footerShrink false: the footer keeps its full height and does not scroll; the body took the loss.
+    await expect(kept.footer.getBoundingClientRect().height).toBeCloseTo(full, 1)
+    await expect(kept.footer.scrollHeight).toBe(kept.footer.clientHeight)
+    await expect(kept.draft.clientHeight).toBe(kept.draft.scrollHeight)
+    await expect(kept.body.getBoundingClientRect().height).toBeLessThan(bodyBefore)
+    // The default: the footer shrinks to the room the header leaves and scrolls inside.
+    await expect(shrunk.footer.getBoundingClientRect().height).toBeLessThan(full - 1)
+    await expect(shrunk.footer.scrollHeight).toBeGreaterThan(shrunk.footer.clientHeight)
+  },
+}
+export const FooterKeptLight: StoryObj<typeof meta> = { ...FooterKeptDark, globals: { mode: 'light' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }

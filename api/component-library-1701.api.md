@@ -414,6 +414,7 @@ export function DialogClose(input: {
 // @public (undocumented)
 export type DialogProps = Scalar<DialogVariantProps> & {
     title: string;
+    meta?: ReactNode;
     description?: ReactNode;
     children?: ReactNode;
     actions?: ReactNode;

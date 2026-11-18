@@ -8,11 +8,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 20/16/34 (34 takes 32, d-072), gap 4, the title SemiBold 17 (`subtitle`)
 // and Done at the end of the title row (346:3547) in a 10/0 padded row,
 // centred on the title (346:3544).
+// `meta` is the line under the confirm dialog's title (D20 403:3917): the
+// title and it share one frame (403:3915), 4 apart, so they sit in a
+// `heading` column with gap 4 in place of the box's gap. Figma sets it in
+// Mono 11 in #8a97b8: `monoSm` (11/16, d-090) and `fg.muted`.
 export const dialog = defineSlotRecipe({
   className: 'dialog',
   jsx: ['Dialog'],
   staticCss: ['*'],
-  slots: [...dialogAnatomy.keys(), 'header', 'headerAction', 'footer'],
+  slots: [...dialogAnatomy.keys(), 'header', 'headerAction', 'heading', 'meta', 'footer'],
   base: {
     backdrop: { position: 'fixed', inset: '0', bg: 'overlay.scrim' },
     positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '16' },
@@ -35,6 +39,8 @@ export const dialog = defineSlotRecipe({
     },
     header: { display: 'flex', alignItems: 'flex-start', gap: '8' },
     title: { flex: '1', color: 'fg.default' },
+    heading: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
+    meta: { textStyle: 'monoSm', color: 'fg.muted', m: '0' },
     description: { textStyle: 'body', color: 'fg.muted' },
     // The close button of the New chat dialog: a 16 px icon with no box (Figma draws 18).
     closeTrigger: {

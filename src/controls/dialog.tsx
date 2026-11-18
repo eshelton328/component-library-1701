@@ -19,10 +19,17 @@ const Description = withContext(ArkDialog.Description, 'description')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
 const Footer = withContext('div', 'footer')
 const HeaderAction = withContext('div', 'headerAction')
+const Heading = withContext('div', 'heading')
+const Meta = withContext('p', 'meta')
 
 export type DialogProps = Scalar<DialogVariantProps> & {
   /** The dialog title. It names the dialog for assistive technology. */
   title: string
+  /**
+   * A line 4 px under the title that names what the dialog acts on, such as a task's place and status (Inbox D20
+   * 403:3917), in mono.
+   */
+  meta?: ReactNode
   /** A sentence under the title that says what the dialog is for. */
   description?: ReactNode
   /** The content between the description and the buttons, such as a form. */
@@ -60,7 +67,7 @@ export type DialogProps = Scalar<DialogVariantProps> & {
  * Escape and a click on the scrim close it, and the focus goes back to the
  * trigger.
  */
-export function Dialog({ title, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, headerAction, className, ...rest }: DialogProps) {
+export function Dialog({ title, meta, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, headerAction, className, ...rest }: DialogProps) {
   return (
     <Root
       size={size}
@@ -80,7 +87,14 @@ export function Dialog({ title, description, children, actions, trigger, open, d
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
             <Header>
-              <Title>{title}</Title>
+              {meta === undefined || meta === null || typeof meta === 'boolean' ? (
+                <Title>{title}</Title>
+              ) : (
+                <Heading>
+                  <Title>{title}</Title>
+                  <Meta>{meta}</Meta>
+                </Heading>
+              )}
               {headerAction === undefined || headerAction === null || typeof headerAction === 'boolean' ? null : <HeaderAction>{headerAction}</HeaderAction>}
               {closeButton ? (
                 <CloseTrigger aria-label="Close">

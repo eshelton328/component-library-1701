@@ -949,6 +949,7 @@ export type MenuProps = {
     width?: 'sm' | 'sort' | 'md' | 'phone' | undefined;
     size?: 'md' | 'lg' | undefined;
     density?: 'default' | 'compact' | undefined;
+    iconTone?: 'muted' | 'default' | undefined;
     highlightedValue?: string | null | undefined;
     onHighlightChange?: ((value: string | null) => void) | undefined;
     className?: string | undefined;

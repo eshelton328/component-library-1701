@@ -667,6 +667,55 @@ const phoneNewMenuPlay: StoryObj<typeof meta>['play'] = async () => {
 export const PhoneNewMenuDark: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'dark' } }
 export const PhoneNewMenuLight: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'light' } }
 
+// The New menu's icons in their labels' colour (M15 208:521 plus, 208:529 grid: stroke #e6ecff, as the labels 208:519
+// and 208:527), beside the same menu with the default `fg.muted` icons. A danger row keeps its own colour.
+const defaultSwatch = css({ color: 'fg.default' })
+const dangerSwatch = css({ color: 'status.danger.fg' })
+const toneActions: readonly MenuEntry[] = [...newActions, { value: 'delete', label: 'Delete', icon: <CloseIcon />, tone: 'danger' }]
+
+function IconTone() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Menu open trigger={<Button>New</Button>} items={toneActions} width="phone" size="lg" iconTone="default" data-figma="label" />
+        <Menu open trigger={<Button>Muted</Button>} items={toneActions} width="phone" size="lg" data-figma="muted" />
+        <Menu open trigger={<Button>Small</Button>} items={toneActions} iconTone="default" data-figma="small" />
+      </Inline>
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+      <span hidden data-swatch="default" className={defaultSwatch} />
+      <span hidden data-swatch="danger" className={dangerSwatch} />
+    </main>
+  )
+}
+
+const iconTonePlay: StoryObj<typeof meta>['play'] = async () => {
+  const fgDefault = swatchColour('default', 'color')
+  const fgMuted = swatchColour('muted', 'color')
+  const danger = swatchColour('danger', 'color')
+  await expect(fgDefault).not.toBe(fgMuted)
+  for (const key of ['label', 'small']) {
+    const menu = await menuByKey(key)
+    for (const name of ['New chat', 'New workspace']) {
+      const row = within(menu).getByRole('menuitem', { name })
+      const label = getComputedStyle(within(row).getByText(name)).color
+      // iconTone="default": the icon is the label's colour, fg.default.
+      await expect(label).toBe(fgDefault)
+      await expect(getComputedStyle(iconOf(row)).color).toBe(label)
+    }
+    await expect(getComputedStyle(iconOf(within(menu).getByRole('menuitem', { name: 'Delete' }))).color).toBe(danger)
+  }
+  // With no iconTone the icons stay fg.muted.
+  const muted = await menuByKey('muted')
+  for (const name of ['New chat', 'New workspace']) {
+    await expect(getComputedStyle(iconOf(within(muted).getByRole('menuitem', { name }))).color).toBe(fgMuted)
+  }
+  await expect(getComputedStyle(iconOf(within(muted).getByRole('menuitem', { name: 'Delete' }))).color).toBe(danger)
+}
+
+/** `iconTone="default"`: the icons in their labels' colour, as the phone's New menu (M15), beside the default `muted`. */
+export const IconToneDark: StoryObj<typeof meta> = { render: () => <IconTone />, play: iconTonePlay, globals: { mode: 'dark' } }
+export const IconToneLight: StoryObj<typeof meta> = { render: () => <IconTone />, play: iconTonePlay, globals: { mode: 'light' } }
+
 const workspaces: readonly MenuEntry[] = [
   { value: 'the-bridge', label: 'the-bridge', icon: <GridIcon /> },
   { value: 'omni', label: 'omni', icon: <GridIcon /> },

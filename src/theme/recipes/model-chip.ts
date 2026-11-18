@@ -4,7 +4,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // header (D2 105:801, M3 105:2770). surface.raised with a border.default
 // border, radius.md, 4 × 8 padding, a 6 px gap, a 12 px chevron and
 // Medium 11 text (the `pill` style). The header chip has 3 px vertical
-// padding in Figma; under d-072 both chips use 4.
+// padding in Figma; under d-072 both chips use 4. The chevron takes the
+// label's colour, fg.default: every saved Figma picker draws it in the
+// label's tone, not a muted grey (Artifacts D7 454:313 in 454:312, T5
+// 454:389, M9 454:409; Inbox D14 454:3; Workbench D1 105:248, D2 105:802
+// and 105:906; Toolkit D5 438:57, M7 464:162).
 export const modelChip = defineSlotRecipe({
   className: 'model-chip',
   jsx: ['ModelChip'],
@@ -36,8 +40,8 @@ export const modelChip = defineSlotRecipe({
       _expanded: { borderColor: 'border.active' },
       _disabled: { opacity: 'disabled', cursor: 'not-allowed' },
     },
-    // The chevron is the icon set's ChevronDownIcon at 12 px.
-    chevron: { display: 'inline-flex', flexShrink: '0', color: 'fg.muted' },
+    // The chevron is the icon set's ChevronDownIcon at 12 px, in the root's (the label's) colour.
+    chevron: { display: 'inline-flex', flexShrink: '0', color: 'inherit' },
     // TruncatedText inside cuts a long model and effort and shows it whole in a tooltip.
     label: { minW: '0' },
   },

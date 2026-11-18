@@ -71,7 +71,10 @@ const meta = {
     const chevron = chip.querySelector('svg')
     if (chevron === null) throw new Error('no chevron')
     await expect([chevron.getBoundingClientRect().width, chevron.getBoundingClientRect().height]).toEqual([12, 12])
-    await expect(getComputedStyle(chevron).color).toBe(swatch('muted'))
+    // The chevron is drawn in the label's tone, fg.default, as Figma draws it (454:313), not fg.muted.
+    await expect(getComputedStyle(chevron).color).toBe(swatch('text'))
+    await expect(getComputedStyle(chevron).color).toBe(style.color)
+    await expect(getComputedStyle(chevron).color).not.toBe(swatch('muted'))
     await expect(chip).toHaveAttribute('aria-haspopup', 'menu')
     // The effort follows the model.
     await expect(canvas.getByRole('button', { name: 'Model: Sonnet 5.5 · high effort' })).toHaveTextContent('Sonnet 5.5 · high effort')

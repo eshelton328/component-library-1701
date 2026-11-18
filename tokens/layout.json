@@ -123,6 +123,23 @@
         "$description": "A kind tile in a header."
       }
     },
+    "thumbnail": {
+      "sm": {
+        "$type": "dimension",
+        "$value": { "value": 64, "unit": "px" },
+        "$description": "Width of the framed preview at the start of a desktop artifact row, 64 × 40 (Artifacts D2 403:194). Use it through Thumbnail size sm; not for a card's preview, which fills the card, or for the nav rail, which takes shell.rail."
+      },
+      "md": {
+        "$type": "dimension",
+        "$value": { "value": 76, "unit": "px" },
+        "$description": "Width of the framed preview at the start of a phone artifact row, 76 × 48 (Artifacts M1 406:122). Use it through Thumbnail size md; not for a desktop row, which takes thumbnail.sm."
+      },
+      "lg": {
+        "$type": "dimension",
+        "$value": { "value": 128, "unit": "px" },
+        "$description": "Width of the preview of an artifact row in the desktop list view and search results, 128 × 72 at 16:9 (Artifacts D4 403:8217). Use it through Thumbnail size lg; not for a card or the open artifact's preview, which fill their column."
+      }
+    },
     "grabber": {
       "width": {
         "$type": "dimension",

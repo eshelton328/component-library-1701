@@ -12,6 +12,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (#8a97b8 at 0.35 to 0.6) status.idle.border. The 64 × 40 size (403:194)
 // draws a 1 px #24314f border with radius 6; the larger sizes sit in a card
 // that clips them.
+//
+// `size` fixes the width for an artifact row; `fill` (the default) takes the
+// container's. `sm` is the desktop row's 64 × 40 (D2 403:194), `md` the
+// phone row's 76 × 48 (M1 406:122) and `lg` the list view's 128 × 72 (D4
+// 403:8217, with shape wide). The component draws sm and md with each kind's
+// row layers (D2 403:194, 403:220, 403:246, 414:759, 403:274) and sets
+// their box itself, so the height follows from the drawing's ratio.
 export const thumbnail = defineSlotRecipe({
   className: 'thumbnail',
   jsx: ['Thumbnail'],
@@ -65,6 +72,12 @@ export const thumbnail = defineSlotRecipe({
       },
       false: {},
     },
+    size: {
+      fill: {},
+      sm: { root: { w: 'thumbnail.sm', flexShrink: '0' } },
+      md: { root: { w: 'thumbnail.md', flexShrink: '0' } },
+      lg: { root: { w: 'thumbnail.lg', flexShrink: '0' } },
+    },
   },
-  defaultVariants: { framed: true },
+  defaultVariants: { framed: true, size: 'fill' },
 })

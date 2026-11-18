@@ -15,6 +15,7 @@ const Dot = withContext('span', 'dot')
 const Hint = withContext('span', 'hint')
 const Leading = withContext('div', 'leading')
 const Actions = withContext('div', 'actions')
+const Trailing = withContext('div', 'trailing')
 const Content = withContext(Tabs.Content, 'content')
 
 /** One workspace: its tab and the panes it shows. */
@@ -49,6 +50,8 @@ export type WorkspaceTabsProps = {
   leading?: ReactNode
   /** After the tabs, such as the button that starts a chat in the workspace. */
   actions?: ReactNode
+  /** At the right end of the bar, such as the button that resets the pane sizes. */
+  trailing?: ReactNode
   /**
    * The height of the bar and the padding above the panes. `md` (the
    * default) pads the bar 12 above and 10 below the tabs and the panes 10 on
@@ -65,7 +68,7 @@ export type WorkspaceTabsProps = {
  * The arrow keys move between tabs and select them. Uncontrolled tabs keep
  * the selected workspace while others are added, moved or removed.
  */
-export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange, leading, actions, size }: WorkspaceTabsProps) {
+export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange, leading, actions, trailing, size }: WorkspaceTabsProps) {
   // Uncontrolled tabs store the workspace they show, so adding, moving or
   // restoring other workspaces never changes it. When it goes away, the
   // first workspace is selected and stored.
@@ -110,6 +113,7 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
           ))}
         </List>
         {isEmpty(actions) ? null : <Actions>{actions}</Actions>}
+        {isEmpty(trailing) ? null : <Trailing>{trailing}</Trailing>}
       </Bar>
       {items.map((item) => (
         <Content key={item.value} value={toArk(item.value)}>

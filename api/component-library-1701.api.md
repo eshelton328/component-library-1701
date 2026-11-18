@@ -1748,6 +1748,7 @@ export type WorkbenchProps = {
     onValueChange?: ((value: string) => void) | undefined;
     leading?: ReactNode;
     actions?: ReactNode;
+    trailing?: ReactNode;
     size?: 'md' | 'compact' | undefined;
     summary?: string | undefined;
     hints?: readonly string[] | undefined;
@@ -1782,6 +1783,7 @@ export type WorkspaceTabsProps = {
     onValueChange?: ((value: string) => void) | undefined;
     leading?: ReactNode;
     actions?: ReactNode;
+    trailing?: ReactNode;
     size?: 'md' | 'compact' | undefined;
 };
 

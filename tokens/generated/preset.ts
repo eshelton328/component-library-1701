@@ -198,7 +198,7 @@ export default definePreset({
           },
           "40": {
             "value": "40px",
-            "description": "40px of padding, gap or margin."
+            "description": "40px of padding, gap or margin. Also the least width of the key column in ScriptExplanation's facts (Toolkit D10 440:1428, M08 440:1635); not a width for other boxes."
           }
         }
       },

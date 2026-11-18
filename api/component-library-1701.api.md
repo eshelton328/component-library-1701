@@ -1315,6 +1315,7 @@ export type ScriptExplanationProps = {
     summaryLabel?: string | undefined;
     stepsLabel?: string | undefined;
     onLineSelect?: ((line: number) => void) | undefined;
+    layout?: 'wide' | 'narrow' | undefined;
 };
 
 // @public

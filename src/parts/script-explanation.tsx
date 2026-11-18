@@ -43,18 +43,40 @@ export type ScriptExplanationProps = {
   stepsLabel?: string | undefined
   /** Called with a step's line when the user presses its line link. Without it, the line is text. */
   onLineSelect?: ((line: number) => void) | undefined
+  /**
+   * `wide` (the default) draws the Explain view of a desktop or tablet
+   * viewer (Toolkit D10, T06): 20 px padding, the parts 16 apart, the
+   * steps 12 apart and each line link at the end of its step's row.
+   * `narrow` draws it on the phone (Toolkit M08): no padding, so the
+   * summary card starts at the edge of the box it sits in, the parts 12
+   * apart, the steps 10 apart and each line link 4 px under its step's
+   * text, at the text's start. Both keep the facts' keys in a column at
+   * least 40 px wide.
+   */
+  layout?: 'wide' | 'narrow' | undefined
 }
 
 /**
  * The plain-language explanation of a script, as in the Toolkit file
  * viewer's Explain view: a summary card with optional facts, then
- * numbered steps, each with a link to the line it explains.
+ * numbered steps, each with a link to the line it explains. On a phone,
+ * `layout="narrow"` drops the padding and puts each line link under its
+ * step's text.
  */
-export function ScriptExplanation({ summary, facts, steps, note, summaryLabel = 'Overview', stepsLabel = 'Walkthrough', onLineSelect }: ScriptExplanationProps) {
+export function ScriptExplanation({
+  summary,
+  facts,
+  steps,
+  note,
+  summaryLabel = 'Overview',
+  stepsLabel = 'Walkthrough',
+  onLineSelect,
+  layout = 'wide',
+}: ScriptExplanationProps) {
   const summaryId = useId()
   const stepsId = useId()
   return (
-    <Root>
+    <Root layout={layout}>
       <Card aria-labelledby={summaryId}>
         <Label id={summaryId}>{summaryLabel}</Label>
         <Summary>{summary}</Summary>

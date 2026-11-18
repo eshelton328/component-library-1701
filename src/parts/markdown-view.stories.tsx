@@ -550,3 +550,121 @@ const flushPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
 
 export const FlushDark: StoryObj<typeof meta> = { render: () => <Flush />, play: flushPlay, globals: { mode: 'dark' } }
 export const FlushLight: StoryObj<typeof meta> = { render: () => <Flush />, play: flushPlay, globals: { mode: 'light' } }
+
+// The phone's Toolkit item (M08 `content` 440:1630): 12 px in from each side of the 390 px screen.
+const phoneItem = css({ bg: 'bg.canvas', px: '12', py: '12', display: 'flex', flexDirection: 'column', gap: '24' })
+const phone = { m08: { name: 'Phone (M08)', styles: { width: '390px', height: '844px' } } }
+// The overview's In, Out and Exit (440:1634 to 440:1642).
+const m08Facts = [
+  { key: 'In', value: 'one or more files, --form, --ste' },
+  { key: 'Out', value: 'one JSON line for each file' },
+  { key: 'Exit', value: '0 pass · 1 a rule fails · 2 bad input' },
+]
+
+/** `layout="narrow"`: the phone's Explain view (Toolkit M08) on a 390 px screen, then the default `wide` layout. */
+function Narrow() {
+  return (
+    <main className={phoneItem}>
+      <div data-testid="narrow">
+        <ScriptExplanation
+          layout="narrow"
+          summary="Checks a draft against the writing rules and prints one JSON line for each file."
+          facts={m08Facts}
+          steps={steps}
+          note="Claude wrote this explanation from the script."
+          onLineSelect={() => undefined}
+        />
+      </div>
+      <div data-testid="wide">
+        <ScriptExplanation summary="The default layout." summaryLabel="Default" stepsLabel="Default steps" facts={m08Facts} steps={steps.slice(0, 2)} />
+      </div>
+      <Swatches />
+    </main>
+  )
+}
+
+const factCells = (root: HTMLElement) => {
+  const keys = all(root, '.script-explanation__factKey')
+  const values = all(root, '.script-explanation__factValue')
+  return keys.map((key, i) => {
+    const value = values[i]
+    if (value === undefined) throw new Error(`no value for ${key.textContent}`)
+    return { key, value }
+  })
+}
+
+const narrowPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await expect(window.innerWidth).toBe(390)
+  const holder = canvas.getByTestId('narrow')
+  const root = pick(holder, '.script-explanation__root')
+  // No padding: the card (440:1631) starts at the item's edge, 12 in from the screen.
+  const s = getComputedStyle(root)
+  await expect([s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft]).toEqual(['0px', '0px', '0px', '0px'])
+  const card = within(root).getByRole('region', { name: 'Overview' })
+  await expect(box(card).left).toBe(box(holder).left)
+  await expect(box(card).left).toBe(12)
+  await expect(box(card).width).toBe(366)
+  // The card, WALKTHROUGH and the steps are 12 apart; the steps 10 apart.
+  const walkthrough = within(root).getByRole('list', { name: 'Walkthrough' })
+  const labels = all(root, ':scope > .script-explanation__label')
+  const stepsLabel = labels[0]
+  if (stepsLabel === undefined) throw new Error('no Walkthrough label')
+  await expect(box(stepsLabel).top - box(card).bottom).toBe(12)
+  await expect(box(walkthrough).top - box(stepsLabel).bottom).toBe(12)
+  const rows = all(walkthrough, 'li')
+  await expect(rows.length).toBe(steps.length)
+  for (const [i, row] of rows.entries()) {
+    const next = rows[i + 1]
+    if (next !== undefined) await expect(box(next).top - box(row).bottom).toBe(10)
+    // Each line link sits 4 under its step's text, at the text's start, and ends the row.
+    const text = pick(row, '.script-explanation__stepText')
+    const link = pick(row, '.script-explanation__lineLink')
+    const badge = pick(row, '.script-explanation__stepNumber')
+    await expect(box(text).left - box(badge).right).toBe(10)
+    await expect(box(link).top - box(text).bottom).toBe(4)
+    await expect(box(link).left).toBe(box(text).left)
+    await expect(box(link).bottom).toBe(box(row).bottom)
+    await expect(box(link).width).toBeLessThan(box(text).width)
+  }
+  // The keys sit in a 40 px column: every value starts at one x, 50 after its key's start (440:1635, 440:1636).
+  const facts = factCells(root)
+  await expect(facts.map((f) => f.key.textContent)).toEqual(['In', 'Out', 'Exit'])
+  for (const { key, value } of facts) {
+    await expect(box(key).width).toBe(40)
+    await expect(box(value).left - box(key).left).toBe(50)
+  }
+  await expect(new Set(facts.map((f) => box(f.value).left)).size).toBe(1)
+
+  // The default layout keeps its 20 px padding, its parts 16 apart and each line link at the end of its row.
+  const wide = pick(canvas.getByTestId('wide'), '.script-explanation__root')
+  const w = getComputedStyle(wide)
+  await expect([w.paddingTop, w.paddingRight, w.paddingBottom, w.paddingLeft]).toEqual(['20px', '20px', '20px', '20px'])
+  await expect(w.rowGap).toBe('16px')
+  const wideRows = all(wide, 'li')
+  const [wideRow1, wideRow2] = wideRows
+  if (wideRow1 === undefined || wideRow2 === undefined) throw new Error('no wide steps')
+  await expect(box(wideRow2).top - box(wideRow1).bottom).toBe(12)
+  const wideLink = pick(wideRow1, '.script-explanation__lineLink')
+  const wideText = pick(wideRow1, '.script-explanation__stepText')
+  await expect(box(wideLink).top).toBe(box(wideText).top)
+  await expect(box(wideLink).left).toBeGreaterThan(box(wideText).right)
+  await expect(box(wideLink).right).toBe(box(wideRow1).right)
+  // D10 and T06 put the keys in the same 40 px column (440:1428, 440:1930).
+  for (const { key, value } of factCells(wide)) {
+    await expect(box(value).left - box(key).left).toBe(50)
+  }
+}
+
+export const NarrowDark: StoryObj<typeof meta> = {
+  render: () => <Narrow />,
+  play: narrowPlay,
+  parameters: { viewport: { options: phone } },
+  globals: { mode: 'dark', viewport: { value: 'm08' } },
+}
+export const NarrowLight: StoryObj<typeof meta> = {
+  render: () => <Narrow />,
+  play: narrowPlay,
+  parameters: { viewport: { options: phone } },
+  globals: { mode: 'light', viewport: { value: 'm08' } },
+}

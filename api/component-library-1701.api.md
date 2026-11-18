@@ -787,6 +787,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
     title: string;
     highlight?: string | readonly string[] | undefined;
     meta?: ReactNode;
+    metaTrailing?: ReactNode;
     leading?: ReactNode;
     trailing?: ReactNode;
     children?: ReactNode;

@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // A page or pane whose top bar and bottom bar stay in view while only the
 // content between them scrolls (brain decision d-107: a Back bar sticks to
@@ -59,7 +60,7 @@ export const scrollFrame = defineSlotRecipe({
       // content instead of making the body scroll. The children keep their height.
       '& > *': { flexShrink: '0' },
       outline: 'none',
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
       // With no footer, the body is the last slot: it ends with the inset, below its own padding.
       // With no footer, a control that takes the focus under the bar scrolls out from under it (0 elsewhere).
       '&:last-child': { scrollPaddingBottom: 'var(--scroll-frame-inset)' },

@@ -1,5 +1,6 @@
 import { segmentGroupAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The segmented view switch of Artifacts, Toolkit and Workbench (Grid or
 // List; List, Map or Activity; Explain or Code). The pages drew it with and
@@ -62,7 +63,8 @@ export const viewSwitch = defineSlotRecipe({
       // Each size sets the icon size: an important size here would beat the variant's.
       '& svg': { flexShrink: '0' },
       _checked: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.selected' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     itemText: { textStyle: 'label', whiteSpace: 'nowrap' },

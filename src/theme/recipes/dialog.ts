@@ -1,5 +1,6 @@
 import { dialogAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The dialogs of Inbox (D20 confirm, 403:3914) and Workbench (D3 New chat,
 // 105:1379): a box on a scrim, with a title, a description, content and a
@@ -57,7 +58,7 @@ export const dialog = defineSlotRecipe({
       outline: 'none',
       '& svg': { w: 'icon.16', h: 'icon.16' },
       _hover: { color: 'fg.default' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
     },
     headerAction: { display: 'flex', alignItems: 'center', flexShrink: '0', ms: 'auto' },
     footer: { display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '8' },

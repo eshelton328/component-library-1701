@@ -1,5 +1,6 @@
 import { radioGroupAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The option rows of the Artifacts M4 sort sheet (407:814, rows 407:790,
 // 407:797, 407:802, 407:807): no fill and no border, padding 8/12, radius 8,
@@ -80,7 +81,8 @@ export const optionList = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       _hover: { bg: 'accent.faint' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled', _hover: { bg: 'transparent' } },
       '&:has(> .option-list__itemTrailing) > .option-list__itemControl:not([data-state=checked])': { display: 'none' },
     },

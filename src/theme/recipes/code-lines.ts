@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // Code with line numbers, as the Toolkit D6 viewer draws a script
 // (432:2304): Geist Mono 12/17 (`mono`), padding 14 (no token: 16, d-072),
@@ -30,7 +31,8 @@ export const codeLines = defineSlotRecipe({
       color: 'fg.default',
       overflowX: 'auto',
       // The box is a tab stop when it can scroll sideways (not with wrap), so the keyboard can scroll it.
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
     number: {
       textAlign: 'end',

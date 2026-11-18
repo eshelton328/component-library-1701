@@ -1,5 +1,6 @@
 import { tabsAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The workspace tabs above the Workbench panes (D9 402:1565), with the
 // selected workspace's panes below them.
@@ -74,7 +75,8 @@ export const workspaceTabs = defineSlotRecipe({
       bg: 'transparent',
       cursor: 'pointer',
       _selected: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.active' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
     },
     grip: { display: 'inline-flex', flexShrink: '0', color: 'fg.subtle', '[data-selected] > &': { color: 'fg.muted' } },
     count: { textStyle: 'mono', color: 'fg.subtle', '[data-selected] > &': { color: 'fg.muted' } },
@@ -93,7 +95,8 @@ export const workspaceTabs = defineSlotRecipe({
       p: '10',
       // Ark can mark a panel closed before it sets `hidden`; a closed panel never shows.
       _closed: { display: 'none' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
   },
   variants: {

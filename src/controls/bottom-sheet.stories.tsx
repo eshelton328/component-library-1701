@@ -4,6 +4,9 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet, BottomSheetClose } from './bottom-sheet'
 import { Button } from './button'
+import { Dialog } from './dialog'
+import { Menu } from './menu'
+import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
 
@@ -12,6 +15,7 @@ const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.d
 const scrimSwatch = css({ bg: 'overlay.scrim' })
 const surfaceSwatch = css({ bg: 'surface.overlay' })
 const borderSwatch = css({ bg: 'border.default' })
+const focusSwatch = css({ bg: 'border.focus' })
 
 const sorts = [
   { value: 'newest', label: 'Newest first', description: 'Most recently found at the top' },
@@ -396,3 +400,323 @@ export const HeaderActionsBehaviour: StoryObj<typeof meta> = {
     await body.findByRole('dialog', { name: 'Add a link' })
   },
 }
+
+// Swipe to close (screen review R13): a sheet with more rows than the window holds, so its content scrolls.
+const snoozeRows = Array.from({ length: 30 }, (_, i) => `In ${String(i + 1)} hours`)
+const onSwipe = fn<(open: boolean) => void>()
+
+function SwipeSheet() {
+  const [open, setOpen] = useState(false)
+  const change = (next: boolean) => {
+    setOpen(next)
+    onSwipe(next)
+  }
+  return (
+    <main className={page}>
+      <BottomSheet title="Snooze" trigger={<Button>Snooze</Button>} open={open} onOpenChange={change}>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <BottomSheetClose key={row}>
+              <Button size="xl">{row}</Button>
+            </BottomSheetClose>
+          ))}
+        </Stack>
+      </BottomSheet>
+      <span hidden data-swatch="focus" className={focusSwatch} />
+    </main>
+  )
+}
+
+// A synthetic touch pointer, as a finger on a phone sends it. Returns false when a handler prevented its default.
+function touch(type: 'pointerdown' | 'pointermove' | 'pointerup', target: Element, y: number) {
+  const box = target.getBoundingClientRect()
+  return target.dispatchEvent(
+    new PointerEvent(type, { bubbles: true, cancelable: true, composed: true, pointerId: 7, pointerType: 'touch', isPrimary: true, button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: box.left + box.width / 2, clientY: y }),
+  )
+}
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// A slow drag: steps of 20 px, 40 ms apart, then a rest, so the release is not a flick.
+async function slowDrag(target: Element, from: number, by: number, sheet: HTMLElement, top: number) {
+  touch('pointerdown', target, from)
+  for (let dy = 20; dy <= by; dy += 20) {
+    touch('pointermove', target, from + dy)
+    await pause(40)
+  }
+  touch('pointermove', target, from + by)
+  // The sheet follows the finger.
+  await expect(Math.round(sheet.getBoundingClientRect().top - top)).toBe(by)
+  await pause(flickRest)
+  touch('pointerup', target, from + by)
+}
+// Longer than the window that sets the release speed (100 ms).
+const flickRest = 160
+
+function middleY(el: Element) {
+  const box = el.getBoundingClientRect()
+  return box.top + box.height / 2
+}
+
+const swipePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onSwipe.mockClear()
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Snooze' })
+  const open = async () => {
+    await userEvent.click(trigger)
+    const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+    return { sheet, top: sheet.getBoundingClientRect().top }
+  }
+  const closed = () => waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+
+  let { sheet, top } = await open()
+  const grabber = grabberOf(sheet)
+  const header = sheet.querySelector('.bottom-sheet__header')
+  if (header === null) throw new Error('no title row')
+  // The grabber and the title row take the touch drag; the content keeps its scroll to itself.
+  await expect(getComputedStyle(grabber).touchAction).toBe('none')
+  await expect(getComputedStyle(header).touchAction).toBe('none')
+  await expect(getComputedStyle(sheet).overscrollBehaviorY).toBe('contain')
+  // At rest the sheet has no translate.
+  await expect(getComputedStyle(sheet).translate).toBe('none')
+
+  // A short slow drag of the grabber springs back: 60 px is less than 30% of the sheet.
+  await expect(60).toBeLessThan(sheet.getBoundingClientRect().height * 0.3)
+  await slowDrag(grabber, middleY(grabber), 60, sheet, top)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(onSwipe).not.toHaveBeenCalledWith(false)
+
+  // A long slow drag of the title row, past 30% of the sheet, closes it through onOpenChange.
+  const far = Math.ceil(sheet.getBoundingClientRect().height * 0.3 / 20) * 20 + 20
+  await slowDrag(header, middleY(header), far, sheet, top)
+  await closed()
+  await expect(onSwipe).toHaveBeenLastCalledWith(false)
+
+  // A fast flick of 60 px closes it too.
+  sheet = (await open()).sheet
+  const flickFrom = middleY(grabberOf(sheet))
+  touch('pointerdown', grabberOf(sheet), flickFrom)
+  touch('pointermove', grabberOf(sheet), flickFrom + 20)
+  touch('pointermove', grabberOf(sheet), flickFrom + 60)
+  touch('pointerup', grabberOf(sheet), flickFrom + 60)
+  await closed()
+  await expect(onSwipe).toHaveBeenLastCalledWith(false)
+
+  // In content that is scrolled down, a drag scrolls the content: the sheet stays and the moves keep their default.
+  ;({ sheet, top } = await open())
+  await expect(sheet.scrollHeight).toBeGreaterThan(sheet.clientHeight)
+  sheet.scrollTop = 120
+  await waitFor(() => expect(sheet.scrollTop).toBe(120))
+  const row = within(sheet).getByRole('button', { name: 'In 8 hours' })
+  const rowY = middleY(row)
+  touch('pointerdown', row, rowY)
+  for (let dy = 20; dy <= 100; dy += 20) {
+    await expect(touch('pointermove', row, rowY + dy)).toBe(true)
+  }
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  touch('pointerup', row, rowY + 100)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+
+  // Scrolled back to the top, the same drag on a row moves the sheet, and the release does not pick the row.
+  sheet.scrollTop = 0
+  await waitFor(() => expect(sheet.scrollTop).toBe(0))
+  const first = within(sheet).getByRole('button', { name: 'In 1 hours' })
+  await slowDrag(first, middleY(first), 60, sheet, top)
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await userEvent.keyboard('{Escape}')
+  await closed()
+}
+
+// A sheet with a text field: a downward drag in the field selects text and leaves the sheet in place.
+function NoteSheet() {
+  const [open, setOpen] = useState(false)
+  return (
+    <main className={page}>
+      <BottomSheet title="Note" trigger={<Button>Note</Button>} open={open} onOpenChange={setOpen}>
+        <textarea aria-label="Note" rows={4} defaultValue={'One\nTwo\nThree\nFour'} />
+      </BottomSheet>
+    </main>
+  )
+}
+
+const noteDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Note' }))
+  const sheet = await body.findByRole('dialog', { name: 'Note' })
+  const top = sheet.getBoundingClientRect().top
+  const field = within(sheet).getByRole('textbox', { name: 'Note' })
+  const from = field.getBoundingClientRect().top + 4
+  touch('pointerdown', field, from)
+  for (let dy = 20; dy <= 200; dy += 20) touch('pointermove', field, from + dy)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  touch('pointerup', field, from + 200)
+  await pause(50)
+  await expect(body.getByRole('dialog', { name: 'Note' })).toBe(sheet)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+}
+
+/** A drag in a text field of the sheet selects text; the sheet stays open and in place. */
+export const SwipeInTextField: StoryObj<typeof meta> = { render: () => <NoteSheet />, play: noteDragPlay }
+
+/** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
+export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }
+export const SwipeLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'light' } }
+
+// The trigger's focus ring: none after a pointer, the library's ring (border.focus, strong) after the keyboard.
+async function expectRing(trigger: HTMLElement, shown: boolean) {
+  await waitFor(() => expect(trigger).toHaveFocus())
+  const style = getComputedStyle(trigger)
+  if (shown) {
+    await expect(trigger).not.toHaveAttribute('data-focus-quiet')
+    await expect(style.outlineStyle).toBe('solid')
+    await expect(style.outlineWidth).not.toBe('0px')
+    await expect(style.outlineColor).toBe(swatch('focus'))
+  } else {
+    await expect(trigger).toHaveAttribute('data-focus-quiet')
+    // Panda writes `outline: 'none'` as a transparent outline, so forced colours still show one.
+    await expect(style.outlineColor).toBe('rgba(0, 0, 0, 0)')
+  }
+}
+
+const focusReturnPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Snooze' })
+  const closed = () => waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  // Ark listens for a click outside and Escape only once the focus is inside the sheet.
+  const opened = async () => {
+    const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+    await waitFor(() => expect(sheet.contains(document.activeElement)).toBe(true))
+    return sheet
+  }
+
+  // Opened by a click and closed by a click on the scrim: the trigger has the focus and no ring.
+  await userEvent.click(trigger)
+  await opened()
+  const above = document.elementFromPoint(20, 10)
+  if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
+  await userEvent.click(above)
+  await closed()
+  await expectRing(trigger, false)
+
+  // Closed by a row (BottomSheetClose) under a tap: no ring.
+  await userEvent.click(trigger)
+  await userEvent.click(within(await opened()).getByRole('button', { name: 'In 1 hours' }))
+  await closed()
+  await expectRing(trigger, false)
+
+  // Closed by a swipe: no ring.
+  await userEvent.click(trigger)
+  const sheet = await opened()
+  const grabber = grabberOf(sheet)
+  const from = middleY(grabber)
+  touch('pointerdown', grabber, from)
+  touch('pointermove', grabber, from + 20)
+  touch('pointermove', grabber, from + 80)
+  touch('pointerup', grabber, from + 80)
+  await closed()
+  await expectRing(trigger, false)
+
+  // By the keyboard: Tab away and back, Enter opens, Escape closes, and the trigger shows the ring.
+  await userEvent.tab()
+  await userEvent.tab({ shift: true })
+  await expectRing(trigger, true)
+  await userEvent.keyboard('{Enter}')
+  await opened()
+  await userEvent.keyboard('{Escape}')
+  await closed()
+  await expectRing(trigger, true)
+
+  // Opened by the keyboard and closed by a tap on a row: the tap wins, no ring.
+  await userEvent.keyboard('{Enter}')
+  await userEvent.click(within(await opened()).getByRole('button', { name: 'In 2 hours' }))
+  await closed()
+  await expectRing(trigger, false)
+
+  // A key on the trigger that keeps the focus there shows the ring again.
+  await userEvent.keyboard('{ArrowDown}')
+  await expectRing(trigger, true)
+}
+
+/** The focus goes back to the trigger with no ring after a click, a tap or a swipe closes the sheet, and with the ring after the keyboard does. */
+export const FocusReturnDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: focusReturnPlay, globals: { mode: 'dark' } }
+export const FocusReturnLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: focusReturnPlay, globals: { mode: 'light' } }
+
+// The focus return of the other overlays: the same tracker marks the trigger quiet after a pointer close.
+function Overlays() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <Dialog title="Rename chat" trigger={<Button>Rename</Button>}>
+          <p>drift check</p>
+        </Dialog>
+        <Menu trigger={<Button>Chat actions</Button>} items={[{ value: 'pin', label: 'Pin to sidebar' }]} />
+        <Popover trigger={<Button>Filters</Button>} label="Filters">
+          <p>No filters</p>
+        </Popover>
+      </Stack>
+      <span hidden data-swatch="focus" className={focusSwatch} />
+    </main>
+  )
+}
+
+const overlayFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const body = within(document.body)
+  const inside = async (role: 'dialog' | 'menu', name: string) => {
+    const box = await body.findByRole(role, { name })
+    await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))
+    return box
+  }
+  const gone = (role: 'dialog' | 'menu', name: string) => waitFor(() => expect(body.queryByRole(role, { name })).toBeNull())
+
+  // Dialog: a click on the scrim, then Escape after the keyboard opened it.
+  const rename = canvas.getByRole('button', { name: 'Rename' })
+  await userEvent.click(rename)
+  await inside('dialog', 'Rename chat')
+  const corner = document.elementFromPoint(2, 2)
+  if (!(corner instanceof HTMLElement)) throw new Error('no scrim')
+  await userEvent.click(corner)
+  await gone('dialog', 'Rename chat')
+  await expectRing(rename, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('dialog', 'Rename chat')
+  await userEvent.keyboard('{Escape}')
+  await gone('dialog', 'Rename chat')
+  await expectRing(rename, true)
+
+  // Menu: a click on an action, then Escape after the keyboard opened it.
+  const actions = canvas.getByRole('button', { name: 'Chat actions' })
+  await userEvent.click(actions)
+  const menu = await inside('menu', 'Chat actions')
+  await userEvent.click(within(menu).getByRole('menuitem', { name: 'Pin to sidebar' }))
+  await gone('menu', 'Chat actions')
+  await expectRing(actions, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('menu', 'Chat actions')
+  await userEvent.keyboard('{Escape}')
+  await gone('menu', 'Chat actions')
+  await expectRing(actions, true)
+
+  // Popover: a click on its trigger closes it, then Escape after the keyboard opened it.
+  const filters = canvas.getByRole('button', { name: 'Filters' })
+  await userEvent.click(filters)
+  await inside('dialog', 'Filters')
+  await userEvent.click(filters)
+  await gone('dialog', 'Filters')
+  await expectRing(filters, false)
+  await userEvent.keyboard('{Enter}')
+  await inside('dialog', 'Filters')
+  await userEvent.keyboard('{Escape}')
+  await gone('dialog', 'Filters')
+  await expectRing(filters, true)
+}
+
+/** A dialog, a menu and a popover give the focus back to their trigger with no ring after a pointer, and with the ring after the keyboard. */
+export const OverlayFocusReturnDark: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'dark' } }
+export const OverlayFocusReturnLight: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'light' } }

@@ -1,5 +1,6 @@
 import { toggleGroupAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
@@ -84,7 +85,8 @@ export const filterChips = defineSlotRecipe({
       cursor: 'pointer',
       // Ark marks a selected chip with data-state="on".
       '&[data-state=on]': { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.selected' },
-      _focusVisible: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
     },
     dot: {
@@ -103,7 +105,7 @@ export const filterChips = defineSlotRecipe({
     },
     padding: {
       default: {},
-      none: { root: { p: '0' }, item: { _focusVisible: { outlineOffset: '-2' } } },
+      none: { root: { p: '0' }, item: { [focusRing]: { outlineOffset: '-2' } } },
     },
   },
   defaultVariants: { size: 'md', padding: 'default' },

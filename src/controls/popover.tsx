@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { popover } from '../../styled-system/recipes'
 import { dataAttributesOf } from './data-attributes'
+import { useInputModality } from './input-modality'
 
 const { withRootProvider, withContext } = createSlotRecipeContext(popover)
 const Root = withRootProvider(ArkPopover.Root)
@@ -79,6 +80,7 @@ export type PopoverDataAttributes = { [key: `data-${string}`]: string | number |
  * the trigger.
  */
 export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, autoFocus = true, className, ...rest }: PopoverProps) {
+  useInputModality()
   return (
     <Root
       width={width}

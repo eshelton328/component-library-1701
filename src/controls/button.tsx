@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react'
 import { styled } from '../../styled-system/jsx'
 import { button, type ButtonVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from './scalar'
+import { useInputModality } from './input-modality'
 
 const StyledButton = styled('button', button)
 
@@ -65,6 +66,7 @@ export type ButtonProps = ComponentProps<'button'> &
  * the whole button (`opacity.disabled`).
  */
 export function Button({ type = 'button', pressed, indicator = false, children, ...props }: ButtonProps) {
+  useInputModality()
   return (
     <StyledButton type={type} aria-pressed={pressed} {...props}>
       {indicator ? (

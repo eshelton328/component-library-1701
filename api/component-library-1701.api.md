@@ -530,12 +530,49 @@ export type FilterChipsProps = {
 export function FilterIcon(props: IconProps): JSX.Element;
 
 // @public
+export function FlowBranch(input: FlowBranchProps): JSX.Element;
+
+// @public
+export type FlowBranchGap = '0' | '2' | '4' | '6' | '8' | '10' | '12' | '16' | '20' | '24' | '32' | '40';
+
+// @public (undocumented)
+export type FlowBranchProps = {
+    kind: 'fork' | 'join';
+    direction?: 'right' | 'down' | undefined;
+    gap?: FlowBranchGap | undefined;
+};
+
+// @public
 export function FlowDiagram(input: FlowDiagramProps): JSX.Element;
 
 // @public (undocumented)
 export type FlowDiagramProps = {
     label: string;
     steps: readonly FlowStep[];
+};
+
+// @public
+export function FlowLine(input: FlowLineProps): JSX.Element;
+
+// @public
+export type FlowLineDirection = 'right' | 'down' | 'left' | 'up';
+
+// @public (undocumented)
+export type FlowLineProps = {
+    direction?: FlowLineDirection | undefined;
+    tone?: FlowLineTone | undefined;
+    label?: string | undefined;
+};
+
+// @public
+export type FlowLineTone = 'default' | 'needsYou';
+
+// @public
+export function FlowLoop(input: FlowLoopProps): JSX.Element;
+
+// @public (undocumented)
+export type FlowLoopProps = {
+    label?: string | undefined;
 };
 
 // @public (undocumented)

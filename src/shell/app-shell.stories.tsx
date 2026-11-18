@@ -588,6 +588,48 @@ const overlayOpaque: StoryObj<typeof meta> = {
 export const OverlayOpaqueDark: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'dark' } }
 export const OverlayOpaqueLight: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'light' } }
 
+// The keyboard dock with --app-shell-keyboard set by hand, as AppShell sets it while a keyboard covers the detail's
+// 300 px foot: the ScrollFrame's footer rises by the part above the space under it (the tab bar's 77 under the
+// overlay, 0 below it), its body's view ends at the raised footer, and nothing in the layout moves.
+const dockByHand = (overlay: boolean): StoryObj<typeof meta> => ({
+  render: () => <PhoneScreen content="frame" tabBarOverlay={overlay} />,
+  play: async ({ canvasElement }) => {
+    const { canvas, detail } = phoneParts(canvasElement)
+    const root = slot(canvasElement, 'root')
+    const frame = slotOf(canvasElement, 'scroll-frame__root')
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const footer = slotOf(canvasElement, 'scroll-frame__footer')
+    const boxes = () => [frame, body, footer, canvas.getByRole('navigation', { name: 'Tabs' })].map((el) => Math.round(el.offsetTop + el.offsetHeight))
+    const before = { boxes: boxes(), start: rect(canvas.getByRole('button', { name: 'Start' })), view: body.clientHeight }
+    const rise = overlay ? 300 - 77 : 300
+    // Unset, nothing is moved and nothing is reserved.
+    await expect(getComputedStyle(footer).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
+    await expect(getComputedStyle(body).borderBottomWidth).toBe('0px')
+    root.style.setProperty('--app-shell-keyboard', '300px')
+    await expect(getComputedStyle(footer).transform).toBe(`matrix(1, 0, 0, 1, 0, ${String(-rise)})`)
+    await expect(Math.round(rect(canvas.getByRole('button', { name: 'Start' })).bottom)).toBe(Math.round(before.start.bottom) - rise)
+    await expect(getComputedStyle(body).borderBottomWidth).toBe(`${String(rise)}px`)
+    await expect(body.clientHeight).toBe(before.view - rise)
+    // The detail ends its own scroll at the keyboard's top, and the frame reaches through that padding, so the
+    // layout boxes keep their places and the detail does not scroll.
+    await expect(getComputedStyle(detail).paddingBottom).toBe('300px')
+    await expect(boxes()).toEqual(before.boxes)
+    await expect(detail.scrollHeight).toBe(detail.clientHeight)
+    // Deeper in the page the value is reset, so a nested frame does not dock.
+    await expect(getComputedStyle(canvas.getByText('Line 1 of the task')).getPropertyValue('--app-shell-keyboard')).toBe('0px')
+    root.style.removeProperty('--app-shell-keyboard')
+    await expect(getComputedStyle(footer).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
+    await expect(boxes()).toEqual(before.boxes)
+  },
+})
+
+/** The ScrollFrame dock under the overlaid tab bar with `--app-shell-keyboard` set by hand: the footer rises onto the keyboard and the layout does not move. */
+export const DockByHandDark: StoryObj<typeof meta> = { ...dockByHand(true), globals: { mode: 'dark' } }
+export const DockByHandLight: StoryObj<typeof meta> = { ...dockByHand(true), globals: { mode: 'light' } }
+/** The same with the tab bar below the page: the footer rises by the keyboard's whole reach over the detail. */
+export const DockByHandBelowDark: StoryObj<typeof meta> = { ...dockByHand(false), globals: { mode: 'dark' } }
+export const DockByHandBelowLight: StoryObj<typeof meta> = { ...dockByHand(false), globals: { mode: 'light' } }
+
 // The iPhone screen of the phone pages (390 x 844), and a stand-in for window.visualViewport that a play test moves
 // as iOS Safari does when its keyboard opens: the layout keeps its height, and only the visual viewport shrinks and
 // may pan down.

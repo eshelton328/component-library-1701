@@ -31,6 +31,16 @@ import { focusRing } from './focus'
 // the body (the-bridge DetailFrame's Start) sticks at
 // bottom: var(--scroll-frame-inset, 0px), and the spacer below it keeps
 // the body's last line above it at the end of the scroll.
+// On the keyboard (AppShell's --app-shell-keyboard, how far an on-screen
+// keyboard covers the detail's bottom, 0 when unset): the frame reaches
+// through the detail's end padding (--app-shell-detail-end) to the
+// detail's bottom, so its layout does not change. --scroll-frame-dock is
+// the part of the keyboard's reach above the space under the footer (the
+// inset): the footer moves up that far with translateY, onto the
+// keyboard's top, and the body gets a clear bottom border as tall, so its
+// view ends at the raised footer's top (with no footer, its end spacer
+// ends above the keyboard). The border lies under the footer and the
+// keyboard, so no band of blank page shows.
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],
@@ -46,7 +56,8 @@ export const scrollFrame = defineSlotRecipe({
       // Read here, on the detail's child; the detail resets both below it, so a frame nested in this one keeps 0.
       '--scroll-frame-inset': 'var(--app-shell-tab-bar-inset, 0px)',
       '--scroll-frame-spacer': 'var(--app-shell-tab-bar-spacer, none)',
-      mb: 'calc(var(--scroll-frame-inset) * -1)',
+      '--scroll-frame-dock': 'max(0px, var(--app-shell-keyboard, 0px) - var(--scroll-frame-inset))',
+      mb: 'calc(var(--app-shell-detail-end, 0px) * -1)',
     },
     header: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0' },
     body: {
@@ -62,6 +73,10 @@ export const scrollFrame = defineSlotRecipe({
       '& > *': { flexShrink: '0' },
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+      // On the keyboard, the view ends at the raised footer's top: the border lies under the footer and the keyboard.
+      borderBottomWidth: 'var(--scroll-frame-dock)',
+      borderBottomStyle: 'solid',
+      borderBottomColor: 'transparent',
       // With no footer, the body is the last slot: it ends with the inset, below its own padding.
       // With no footer, a control that takes the focus under the bar scrolls out from under it (0 elsewhere).
       '&:last-child': { scrollPaddingBottom: 'var(--scroll-frame-inset)' },
@@ -88,6 +103,8 @@ export const scrollFrame = defineSlotRecipe({
       // px, 2 out) inside its own padding: a Composer has 10 px around its buttons. Under a tab bar, the bottom
       // margin lifts the footer by the inset.
       mb: 'var(--scroll-frame-inset)',
+      // On the keyboard, the footer rides up onto its top; its place in the layout stays.
+      transform: 'translateY(calc(var(--scroll-frame-dock) * -1))',
       // A direct child sits at the footer's edge, so its ring would be cut: it draws the ring inside its own box
       // instead (Codex review of #134). The ring colour, border.focus, is also the primary button's fill, so a
       // 2 px line in bg.canvas inside the ring keeps it visible on a primary button as on any other.

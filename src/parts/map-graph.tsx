@@ -231,8 +231,10 @@ export type MapGraphProps = {
    * and under each other, as on the phone's Links graph (Toolkit M17,
    * 493:152): each line runs down a lane at the centre of one of its two
    * nodes that passes no other node, meets that node at its top or foot,
-   * and meets the other node at the side that faces the lane. Two nodes in
-   * one row still join side to side.
+   * and meets the other node at the side that faces the lane. When both
+   * lanes pass a node, the line goes round it, down a free lane beside the
+   * two nodes inside the graph. Two nodes in one row still join side to
+   * side.
    */
   orientation?: 'horizontal' | 'vertical' | undefined
   /** The selected node's id. Its links light up and the nodes it does not touch go dim. */
@@ -300,6 +302,7 @@ export function MapGraph({ label, width, height, nodes, edges = [], columns = []
             b,
             [...boxes.values()].filter((o) => o !== a && o !== b),
             degree,
+            { width, height },
           )
         : linkRoute(a, b)
     return [{ key: `${String(i)}:${e.from}>${e.to}`, lit, ...path }]

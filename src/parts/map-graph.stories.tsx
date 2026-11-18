@@ -499,3 +499,33 @@ const uprightTurnPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ can
 }
 export const UprightTurnDark: StoryObj<typeof meta> = { render: () => <UprightTurn />, play: uprightTurnPlay, globals: { mode: 'dark' } }
 export const UprightTurnLight: StoryObj<typeof meta> = { render: () => <UprightTurn />, play: uprightTurnPlay, globals: { mode: 'light' } }
+
+/**
+ * `orientation="vertical"`: three nodes in one column, linked from the top
+ * one to the bottom one. Both lanes run through `middle`, so the line goes
+ * round it, down a lane in the free space beside the column.
+ */
+function UprightDetour() {
+  return (
+    <main className={page}>
+      <MapGraph
+        label="Detour map"
+        orientation="vertical"
+        width={200}
+        height={160}
+        nodeSize={{ width: 100, height: 32 }}
+        nodes={[
+          { id: 'top', label: 'top', kind: 'rule', x: 0, y: 0 },
+          { id: 'middle', label: 'middle', kind: 'hook', x: 0, y: 60 },
+          { id: 'bottom', label: 'bottom', kind: 'skill', x: 0, y: 120 },
+        ]}
+        edges={[{ from: 'top', to: 'bottom' }]}
+      />
+    </main>
+  )
+}
+const uprightDetourPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expectClearLines(within(canvasElement).getByRole('group', { name: 'Detour map' }), 1)
+}
+export const UprightDetourDark: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'dark' } }
+export const UprightDetourLight: StoryObj<typeof meta> = { render: () => <UprightDetour />, play: uprightDetourPlay, globals: { mode: 'light' } }

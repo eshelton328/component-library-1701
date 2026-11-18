@@ -302,3 +302,54 @@ const projectPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 /** `variant="project"`: a project heading inside a group (Inbox D11). */
 export const ProjectDark: StoryObj<typeof meta> = { render: () => <ProjectHeadings />, play: projectPlay, globals: { mode: 'dark' } }
 export const ProjectLight: StoryObj<typeof meta> = { render: () => <ProjectHeadings />, play: projectPlay, globals: { mode: 'light' } }
+
+// The Toolkit list's kind headers: the desktop's (D1 425:71) and a tablet's (T1 428:53), each above a row, beside
+// the Workbench `sidebar` header that the Toolkit list used before.
+function ToolkitHeadings() {
+  const [open, setOpen] = useState(true)
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <GroupHeader variant="toolkit" label="Skills" count={12} open={open} onOpenChange={setOpen} />
+        <div className={row}>agents-md</div>
+        <GroupHeader variant="toolkitCompact" label="Agents" count={4} open onOpenChange={() => undefined} />
+        <div className={row}>writer</div>
+        <GroupHeader variant="sidebar" label="Rules" count={3} open onOpenChange={() => undefined} />
+      </div>
+      <span hidden data-swatch="muted" className={mutedSwatch} />
+    </main>
+  )
+}
+
+const toolkitPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const measure = (name: string) => {
+    const label = canvas.getByText(name)
+    const header = label.closest('.group-header__root')
+    const chevron = header?.querySelector('.group-header__chevron svg')
+    if (!(header instanceof HTMLElement) || !(chevron instanceof SVGElement)) throw new Error(`no header ${name}`)
+    const box = header.getBoundingClientRect()
+    const s = getComputedStyle(header)
+    return {
+      height: box.height,
+      labelTop: label.getBoundingClientRect().top - box.top,
+      padding: [s.paddingTop, s.paddingRight, s.paddingBottom, s.paddingLeft],
+      chevron: chevron.getBoundingClientRect().width,
+    }
+  }
+  // The desktop: 10 + the 16 px eyebrow line + 6 = 32 (Figma 31, 10 + 17 + 4), the label 10 down as Figma's.
+  await expect(measure('Skills')).toEqual({ height: 32, labelTop: 10, padding: ['10px', '4px', '6px', '4px'], chevron: 12 })
+  // A tablet: 8 + 16 + 4 = 28 (Figma 27), the label 8 down as Figma's.
+  await expect(measure('Agents')).toEqual({ height: 28, labelTop: 8, padding: ['8px', '4px', '4px', '4px'], chevron: 12 })
+  // The sidebar header keeps 8 and 6, 30 high.
+  await expect(measure('Rules')).toEqual({ height: 30, labelTop: 8, padding: ['8px', '6px', '6px', '4px'], chevron: 12 })
+  const label = getComputedStyle(canvas.getByText('Skills'))
+  const swatch = canvasElement.querySelector('[data-swatch="muted"]')
+  if (swatch === null) throw new Error('no swatch')
+  await expect([label.fontSize, label.textTransform, label.color]).toEqual(['11px', 'uppercase', getComputedStyle(swatch).color])
+  await expect(label.fontFamily).toMatch(/Mono/)
+}
+
+/** `variant="toolkit"` and `toolkitCompact`: the Toolkit list's kind headers (D1, T1). */
+export const ToolkitDark: StoryObj<typeof meta> = { render: () => <ToolkitHeadings />, play: toolkitPlay, globals: { mode: 'dark' } }
+export const ToolkitLight: StoryObj<typeof meta> = { render: () => <ToolkitHeadings />, play: toolkitPlay, globals: { mode: 'light' } }

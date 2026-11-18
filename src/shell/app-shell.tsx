@@ -42,6 +42,9 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * by side; `tablet` and `phone` show one pane at a time above the tab bar.
  * `listWidth` is `list` (420, the default) or `sidebar` (330, Workbench);
  * `sideWidth` is `side` (380, the default) or `wide` (420).
+ * With no tab bar (inside a chat), a tablet or phone keeps the home
+ * indicator's area (`shell.safeAreaBottom`, 34) clear under the pane, so a
+ * composer at its foot does not end at the screen's edge.
  * `tabBarOverlay` (a tablet or phone with a tab bar; `false` by default)
  * lays the tab bar over the bottom of the pane, which then runs to the
  * bottom of the shell, as Figma draws the phone pages (Toolkit M02, M20,
@@ -79,7 +82,7 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
           {showDetail ? detail : list}
         </Detail>
         {hasTabBar ? <TabBar>{tabBar}</TabBar> : null}
-        {!hasTabBar && size === 'phone' ? <SafeArea aria-hidden="true" /> : null}
+        {hasTabBar ? null : <SafeArea aria-hidden="true" />}
       </Root>
     </Backdrop>
   )

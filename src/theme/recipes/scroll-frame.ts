@@ -17,8 +17,9 @@ import { focusRing } from './focus'
 // itself: in a parent sized by its content (the Workspaces side chat) that
 // shrank the parent; give the frame's bounded parent containerType 'size'.
 // Under a tab bar (the AppShell detail with tabBarOverlay, Toolkit M02,
-// M20, M22): the detail sets --app-shell-tab-bar-inset to
-// sizes.shell.tabBar and --app-shell-tab-bar-spacer to block for its
+// M20, M22): the detail sets --app-shell-tab-bar-inset to the bar's
+// height (tabBarHeight: sizes.shell.tabBar, more on a device whose
+// home-indicator inset is more than 34) and --app-shell-tab-bar-spacer to block for its
 // direct child, and 0px and none deeper down. The frame takes them as
 // --scroll-frame-inset and --scroll-frame-spacer (0 and none when unset,
 // so a frame anywhere else draws as before), reaches that far down into

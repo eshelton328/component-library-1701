@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { tabBarHeight } from './tab-bar-height'
 
 // The frame that pages sit in, on the backdrop. It only places the slots;
 // each slot brings its own surface (the nav rail, a Panel, the tab bar).
@@ -17,9 +18,11 @@ import { focusRing } from './focus'
 //   T2b 402:5783, 37 there; 34 is the token, d-100).
 // - tabBarOverlay (phone Toolkit M02, M20, M22): the tab bar lies over the
 //   bottom of the detail, which runs to the bottom of the shell, as Figma
-//   draws the page under the bar. The detail's own scroll ends with
-//   sizes.shell.tabBar of padding, so its last item scrolls clear of the
-//   bar, and the same scroll padding, so a control that takes the focus
+//   draws the page under the bar. The detail's own scroll ends with the
+//   bar's height of padding (tabBarHeight, the tab-bar recipe's own
+//   height: sizes.shell.tabBar, more where the home-indicator inset is
+//   more than sizes.shell.safeAreaBottom), so its last item scrolls clear
+//   of the bar, and the same scroll padding, so a control that takes the focus
 //   under the bar scrolls out from under it. The detail also sets two
 //   custom properties for itself and its direct child, and back to their
 //   defaults deeper down:
@@ -108,7 +111,7 @@ export const appShell = defineSlotRecipe({
       true: {
         root: { position: 'relative' },
         detail: {
-          '--app-shell-tab-bar-inset': 'token(sizes.shell.tabBar)',
+          '--app-shell-tab-bar-inset': tabBarHeight,
           '--app-shell-tab-bar-spacer': 'block',
           pb: 'var(--app-shell-tab-bar-inset)',
           // The end padding lets the last item scroll clear; the scroll padding makes focus (Tab) scroll a control out

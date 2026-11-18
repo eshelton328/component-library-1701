@@ -32,8 +32,10 @@ export type TabBarProps = {
 /**
  * The tablet and phone tab bar: the pages as equal tabs, each an icon over
  * a short label, with the needs-you badge on an icon when the page has a
- * count. It is 77 px high with the home-indicator area; the caller places
- * it at the bottom of the screen. Picking a tab calls `onSelect`; the bar
+ * count. It is 77 px high with the home-indicator area, and grows only
+ * where the device's `env(safe-area-inset-bottom)` is more than
+ * `shell.safeAreaBottom` (34), by the difference; the caller places it at
+ * the bottom of the screen (the `AppShell` tab bar slot). Picking a tab calls `onSelect`; the bar
  * does no routing (d-068).
  */
 export function TabBar({ items, selected, onSelect, label = 'Main', size = 'phone' }: TabBarProps) {

@@ -78,6 +78,17 @@ Layout, Navigation or Overlays (d-065, d-066).
   The overlaid tab bar slot is filled with `bg.canvas`, so the bar's
   `surface.chrome` lies over the canvas and the page does not show
   through it.
+- The tab bar is in the shell's flow, or at the shell's bottom with the
+  overlay, never `position: fixed`, so its bottom is the shell's bottom.
+  `TabBar` is `shell.tabBar` (77) high with the home-indicator area, and
+  grows only by the amount that `env(safe-area-inset-bottom)` is more
+  than `shell.safeAreaBottom` (34). That height is defined once, as
+  `tabBarHeight` in `../theme/recipes/tab-bar-height.ts`: the tab-bar
+  recipe's height and the overlay's `--app-shell-tab-bar-inset` (the
+  detail's end padding and scroll padding, and the `ScrollFrame` inset)
+  both use it, so the shell keeps the bar's full height. A gap under it is the shell being
+  shorter than its parent: a fit (`--app-shell-visible-height`) that
+  stayed set.
 - With no tab bar (inside a chat), a tablet or phone `AppShell` keeps
   `shell.safeAreaBottom` clear under the pane for the home indicator.
   Pages set no padding for it.

@@ -87,8 +87,91 @@ export const BelowLight: StoryObj<typeof meta> = { globals: { mode: 'light', vie
 export const OverlayDark: StoryObj<typeof meta> = { args: { tabBarOverlay: true }, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const OverlayLight: StoryObj<typeof meta> = { args: { tabBarOverlay: true }, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
-// The composer row's sides.
+// A detail page in a ScrollFrame with a sticky Start in its footer, under the overlaid tab bar, as the Toolkit pages.
 const startBar = css({ px: '16' })
+function PhoneTask() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        tabBarOverlay
+        detail={
+          <ScrollFrame
+            footer={
+              <div className={startBar}>
+                <Button variant="primary">Start</Button>
+              </div>
+            }
+          >
+            {tasks.map((t) => (
+              <p key={t} className={row}>
+                {t}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+        tabBar={<TabBar items={items} selected="inbox" />}
+      />
+    </div>
+  )
+}
+
+// A device home-indicator inset for the story test. Chromium's env(safe-area-inset-bottom) is 0, and CSS cannot set
+// it, so the test runner's DevTools session overrides the safe-area insets, as a phone with a 48 px inset reports
+// them; headless Chromium applies it with no viewport-fit=cover.
+const emulateInset = async (bottom: number | undefined) => {
+  const { cdp } = await import('vitest/browser')
+  await cdp().send('Emulation.setSafeAreaInsetsOverride', { insets: bottom === undefined ? {} : { bottom } })
+}
+
+const insetPlay = (inset: number) => async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+  await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+  const bar = within(canvasElement).getByRole('navigation', { name: 'Main' })
+  const detail = within(canvasElement).getByRole('main')
+  const start = within(canvasElement).getByRole('button', { name: 'Start' })
+  const footer = canvasElement.querySelector('.scroll-frame__footer')
+  if (!(footer instanceof HTMLElement)) throw new Error('no footer')
+  // The bar is 77 (sizes.shell.tabBar) and grows by the inset over 34 (sizes.shell.safeAreaBottom): 91 with 48.
+  const height = 77 + Math.max(0, inset - 34)
+  const box = bar.getBoundingClientRect()
+  await expect(Math.round(box.height)).toBe(height)
+  await expect(Math.round(box.bottom)).toBe(844)
+  // The shell reserves the same height: the detail's end padding and scroll padding, and the ScrollFrame's footer,
+  // with the Start button, ends at or above the bar's top.
+  const style = getComputedStyle(detail)
+  await expect([style.paddingBottom, style.scrollPaddingBottom]).toEqual([`${String(height)}px`, `${String(height)}px`])
+  await expect(Math.round(footer.getBoundingClientRect().bottom)).toBeLessThanOrEqual(Math.round(box.top))
+  await expect(Math.round(start.getBoundingClientRect().bottom)).toBeLessThanOrEqual(Math.round(box.top))
+}
+
+/** A phone task under the overlaid tab bar with no home-indicator inset (env() 0): the bar and the space the shell keeps for it are 77. */
+export const InsetNoneDark: StoryObj<typeof meta> = {
+  render: () => <PhoneTask />,
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+  play: insetPlay(0),
+}
+export const InsetNoneLight: StoryObj<typeof meta> = { ...InsetNoneDark, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+/**
+ * A phone task under the overlaid tab bar on a device with a 48 px home-indicator inset: the bar grows to 91, and the
+ * shell keeps 91 for it, so the ScrollFrame's footer ends above the bar.
+ */
+export const InsetDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the DevTools session that sets the inset, so the Storybook UI leaves this story
+  // out; the test runner still runs it.
+  tags: ['!dev'],
+  render: () => <PhoneTask />,
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+  beforeEach: async () => {
+    await emulateInset(48)
+    return async () => {
+      await emulateInset(undefined)
+    }
+  },
+  play: insetPlay(48),
+}
+export const InsetLight: StoryObj<typeof meta> = { ...InsetDark, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // A stand-in for window.visualViewport that the play test moves as iOS Safari does: the layout keeps its 844 and only
 // the visual viewport shrinks, for the keyboard or for the browser's bars (as in the AppShell stories).

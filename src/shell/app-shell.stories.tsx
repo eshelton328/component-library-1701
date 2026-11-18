@@ -486,7 +486,10 @@ const overlayStickyInBody: StoryObj<typeof meta> = {
     const start = () => rect(canvas.getByRole('button', { name: 'Start' }))
     // The body runs under the bar; the Start that sticks at --scroll-frame-inset sits at the bar's top, not under it.
     await expect(Math.round(rect(body).bottom)).toBe(Math.round(phone.bottom))
-    await expect(getComputedStyle(body).getPropertyValue('--scroll-frame-inset')).toBe('77px')
+    // --scroll-frame-inset is now the tab bar's calc() (tabBarHeight), so read it resolved, where the Start uses it.
+    const sticky = canvas.getByRole('button', { name: 'Start' }).parentElement
+    if (!(sticky instanceof HTMLElement)) throw new Error('no sticky Start')
+    await expect(getComputedStyle(sticky).bottom).toBe('77px')
     await expect(start().bottom).toBeLessThanOrEqual(bar.top)
     await expect(Math.round(start().bottom)).toBe(Math.round(bar.top))
     // At the body's end, its last line is above Start, and Start is still above the bar.

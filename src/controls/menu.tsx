@@ -85,10 +85,11 @@ export type MenuProps = {
    */
   heading?: string | undefined
   /**
-   * The box width: `sm` 240, `sort` 280 (a menu whose choices have a description, as Inbox D9 Sort) or `md` 320 (the
-   * Inbox D12 Snooze menu). When not set, the menu is as wide as its content and at least 240.
+   * The box width: `sm` 240, `sort` 280 (a menu whose choices have a description, as Inbox D9 Sort), `md` 320 (the
+   * Inbox D12 Snooze menu) or `phone` 220 (the New menu that + opens on the phone's Workspaces list, M15, with
+   * `size="lg"`). When not set, the menu is as wide as its content and at least 240.
    */
-  width?: 'sm' | 'sort' | 'md' | undefined
+  width?: 'sm' | 'sort' | 'md' | 'phone' | undefined
   /** The row size: `md` 32 (the default) with `label` text, or `lg` 44 with `bodyLg` (Regular 15/24) labels and 20 px icons, as the Inbox D12 Snooze menu. */
   size?: 'md' | 'lg' | undefined
   /**

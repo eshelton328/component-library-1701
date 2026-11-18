@@ -186,6 +186,11 @@
         "$value": { "value": 200, "unit": "px" },
         "$description": "Width of a menu's submenu, the list that opens beside a row such as Move to workspace (Workbench D1 105:473). Not for a menu a button opens, which is at least popoverSm (240)."
       },
+      "popoverPhone": {
+        "$type": "dimension",
+        "$value": { "value": 220, "unit": "px" },
+        "$description": "Width of the phone's New menu, the short menu that + at the top of the Workspaces list opens (M15 208:515), so it leaves the end of the row title under it clear. Use it through Menu width phone. Not for a desktop or tablet menu, which is at least popoverSm (240), or a submenu, which takes submenu (200)."
+      },
       "popoverSort": {
         "$type": "dimension",
         "$value": { "value": 280, "unit": "px" },

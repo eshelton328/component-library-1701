@@ -25,6 +25,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // style) in `fg.muted`.
 // `width` sets the box width: sm 240, sort 280 (D9 346:4000) or md 320 (D12
 // 346:5300); without it the box takes its content's width, at least 240.
+// `width="phone"` is the phone's New menu (Workspaces M15 208:515): 220 wide
+// (shell.popoverPhone), so it ends under + and leaves the end of the row title
+// under it clear. Its 42 px rows with 18 px icons (208:516, 208:521, 208:529)
+// are the D12 row, so it takes `size="lg"` (44 and 20 on the grid, d-100).
 // `size="lg"` is the D12 row (346:5303): 42 tall in Figma, control.xl (44)
 // here, padding 8, gap 12, radius 10 and 18 px icons, which take 20 on the
 // icon scale; the box has padding 6/12/8. Figma sets its label in Regular
@@ -132,6 +136,8 @@ export const menu = defineSlotRecipe({
       sm: { content: { w: 'shell.popoverSm' } },
       sort: { content: { w: 'shell.popoverSort' } },
       md: { content: { w: 'shell.popover' } },
+      // The phone's New menu (M15 208:515), under the 240 floor of `base`.
+      phone: { content: { w: 'shell.popoverPhone', minW: 'shell.popoverPhone' } },
       // A submenu's list (D1 105:473); the component sets it, not the caller.
       submenu: { content: { w: 'shell.submenu', minW: 'shell.submenu' } },
     },

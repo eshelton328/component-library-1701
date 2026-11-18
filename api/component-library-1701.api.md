@@ -946,7 +946,7 @@ export type MenuProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' | undefined;
     heading?: string | undefined;
-    width?: 'sm' | 'sort' | 'md' | undefined;
+    width?: 'sm' | 'sort' | 'md' | 'phone' | undefined;
     size?: 'md' | 'lg' | undefined;
     density?: 'default' | 'compact' | undefined;
     highlightedValue?: string | null | undefined;

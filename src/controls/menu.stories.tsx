@@ -622,6 +622,51 @@ const compactPlay: StoryObj<typeof meta>['play'] = async () => {
 export const CompactDark: StoryObj<typeof meta> = { render: () => <CompactMenus />, play: compactPlay, globals: { mode: 'dark' } }
 export const CompactLight: StoryObj<typeof meta> = { render: () => <CompactMenus />, play: compactPlay, globals: { mode: 'light' } }
 
+// The phone's New menu (Workspaces M15 208:515): 220 wide, so it leaves the end of the row title under it clear, with
+// the D12 rows: Figma's 42 px rows and 18 px icons (208:516, 208:521, 208:529) take 44 and 20 on the grid (d-100).
+const newActions: readonly MenuEntry[] = [
+  { value: 'newChat', label: 'New chat', icon: <PlusIcon /> },
+  { value: 'newWorkspace', label: 'New workspace', icon: <GridIcon /> },
+]
+
+function PhoneNewMenu() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Menu open trigger={<Button>New</Button>} items={newActions} width="phone" size="lg" placement="bottom-end" data-figma="phone" />
+        <Menu open trigger={<Button>Large</Button>} items={newActions} size="lg" data-figma="large" />
+      </Inline>
+    </main>
+  )
+}
+
+const phoneNewMenuPlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await menuByKey('phone')
+  // shell.popoverPhone: 220 wide (208:515), under the 240 floor of a menu with no width.
+  await expect(menu.getBoundingClientRect().width).toBe(220)
+  await expect(within(menu).getAllByRole('menuitem')).toHaveLength(2)
+  for (const name of ['New chat', 'New workspace']) {
+    const row = within(menu).getByRole('menuitem', { name })
+    // size lg: control.xl (44) rows with 20 px icons and bodyLg labels (Regular 15/24).
+    await expect(row.getBoundingClientRect().height).toBe(44)
+    const icon = iconOf(row)
+    await expect([icon.getBoundingClientRect().width, icon.getBoundingClientRect().height]).toEqual([20, 20])
+    const label = getComputedStyle(within(row).getByText(name))
+    await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['15px', 24, '400'])
+  }
+  // The New workspace label stays on one line inside the box.
+  const workspace = within(menu).getByText('New workspace')
+  await expect(workspace.getBoundingClientRect().right).toBeLessThanOrEqual(menu.getBoundingClientRect().right)
+  await expect(Math.round(workspace.getBoundingClientRect().height)).toBe(24)
+  // A large menu with no width keeps its content's width with the 240 floor.
+  const large = await menuByKey('large')
+  await expect(large.getBoundingClientRect().width).toBe(240)
+}
+
+/** The phone's New menu (Workspaces M15): `width="phone"` (220) and `size="lg"`, beside a large menu with no width. */
+export const PhoneNewMenuDark: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'dark' } }
+export const PhoneNewMenuLight: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'light' } }
+
 const workspaces: readonly MenuEntry[] = [
   { value: 'the-bridge', label: 'the-bridge', icon: <GridIcon /> },
   { value: 'omni', label: 'omni', icon: <GridIcon /> },

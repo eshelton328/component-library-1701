@@ -59,12 +59,14 @@ type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
  * it is open; Escape, a click on the scrim, `BottomSheetClose` and a swipe
  * down close it, and the focus goes back to the trigger.
  *
- * Swipe to close: a downward drag from the grabber or the title row, or from
- * the content when it is scrolled to the top, moves the sheet with the finger
- * (or the mouse). A release past 30% of the sheet's height, or a fast flick
- * down, closes it through `onOpenChange(false)`, as the scrim does; a shorter
- * slow drag puts it back. A drag inside content that is scrolled down scrolls
- * the content and leaves the sheet in place.
+ * Swipe to close: a downward touch or pen drag from the grabber or the title
+ * row, or from the content when it is scrolled to the top, moves the sheet
+ * with the finger. A mouse moves it only by the grabber; a mouse drag
+ * anywhere else selects text and leaves the sheet in place. A release past
+ * 30% of the sheet's height, or a fast flick down, closes it through
+ * `onOpenChange(false)`, as the scrim does; a shorter slow drag puts it back.
+ * A drag inside content that is scrolled down scrolls the content and leaves
+ * the sheet in place, and a drag in a text field never moves the sheet.
  */
 export function BottomSheet(input: BottomSheetProps) {
   return <SizedBottomSheet {...input} />
@@ -110,9 +112,9 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
           <DraggableContent aria-label={title ?? label}>
-            <Grabber aria-hidden="true" data-drag-handle="" />
+            <Grabber aria-hidden="true" data-drag-handle="grabber" />
             {title === undefined ? null : (
-              <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="">
+              <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="title">
                 {hasLeading ? <HeaderLeading>{leading}</HeaderLeading> : null}
                 <Title>{title}</Title>
                 {present(actions) ? <HeaderActions>{actions}</HeaderActions> : null}
@@ -213,6 +215,8 @@ function DraggableContent({ children, ...props }: ComponentProps<typeof Content>
     const target = event.target
     if (!(target instanceof Element)) return
     const handle = target.closest('[data-drag-handle]') !== null
+    // A mouse drag selects text, so with a mouse only the grabber, which has no text, moves the sheet.
+    if (event.pointerType === 'mouse' && target.closest('[data-drag-handle="grabber"]') === null) return
     // A press in a text field selects text or moves the caret; it never drags the sheet.
     if (!handle && target.closest(editableTarget) !== null) return
     if (!handle && scrolledDown(target, sheet)) return

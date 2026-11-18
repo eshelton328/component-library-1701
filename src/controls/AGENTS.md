@@ -96,12 +96,16 @@ under their purpose group, never under "Controls" (d-065).
   it, so the keyboard always shows the ring (WCAG 2.4.7). Ark returns the
   focus with `preventScroll`. A control that takes or returns the focus
   calls `useInputModality()` (Button, BottomSheet, Dialog, Menu, Popover).
-- `BottomSheet` closes on a swipe down from the grabber or the title row,
-  or from its content when that is scrolled to the top: a release past 30%
-  of the sheet's height or a flick faster than 0.5 px/ms calls
-  `onOpenChange(false)`, as the scrim does; a shorter drag springs back.
-  It reads pointer events on window during a drag, so a test drives it
-  with synthetic `PointerEvent`s. The sheet has no open or close motion:
+- `BottomSheet` closes on a touch or pen swipe down from the grabber or
+  the title row, or from its content when that is scrolled to the top: a
+  release past 30% of the sheet's height or a flick faster than 0.5 px/ms
+  calls `onOpenChange(false)`, as the scrim does; a shorter drag springs
+  back. A mouse moves the sheet only by the grabber, so a mouse drag of the
+  title or the content selects text; a drag in a text field never moves
+  it. It reads pointer events on window during a drag, so a test drives a
+  touch with synthetic `PointerEvent`s; a mouse story uses the test
+  runner's real mouse (`userEvent` from `vitest/browser`), as only a real
+  press selects text. The sheet has no open or close motion:
   the token build has no duration or easing type yet.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`

@@ -88,6 +88,14 @@ export const mapNode = defineSlotRecipe({
 // from the bottom right, as in Figma. The phone's upright Links graph (M17
 // `links graph` 493:152, links 493:234 to 493:293) uses the same edge and
 // dot styles; `MapGraph`'s `orientation="vertical"` routes its lines.
+// The phone's map is a window (M11 `map viewport` 461:866) over the drawing
+// (`map canvas` 461:867) that pinch zooms and drags both ways (M11 hint
+// 461:1257). `zoomable` is that window: the scroller clips the drawing and
+// takes every touch gesture (`touch-action: none`), and the drawing moves
+// and scales from its top left corner by --map-graph-x, --map-graph-y and
+// --map-graph-scale, the runtime values `MapGraph` sets with
+// `style.setProperty`. With no value set it draws as it does without the
+// variant. Without `zoomable` the map keeps no variant class at all.
 export const mapGraph = defineSlotRecipe({
   className: 'map-graph',
   jsx: ['MapGraph'],
@@ -119,6 +127,18 @@ export const mapGraph = defineSlotRecipe({
     legend: { position: 'absolute', left: '24', bottom: '24' },
     // Figma's card is 300 px wide; shell.popover (320) is the nearest size token.
     card: { position: 'absolute', right: '24', bottom: '24', w: 'shell.popover' },
+  },
+  variants: {
+    zoomable: {
+      true: {
+        // clip, not hidden: a node that takes the focus cannot scroll the window; MapGraph moves the drawing to it.
+        scroller: { overflow: 'clip', touchAction: 'none', userSelect: 'none' },
+        svg: {
+          transformOrigin: 'top left',
+          transform: 'translate(var(--map-graph-x, 0px), var(--map-graph-y, 0px)) scale(var(--map-graph-scale, 1))',
+        },
+      },
+    },
   },
 })
 

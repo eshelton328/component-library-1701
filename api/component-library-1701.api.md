@@ -899,6 +899,13 @@ export type MapGraphProps = {
     onSelect?: ((id: string | null) => void) | undefined;
     legend?: ReactNode;
     card?: ReactNode;
+    zoom?: boolean | MapGraphZoom | undefined;
+};
+
+// @public
+export type MapGraphZoom = {
+    min?: number | undefined;
+    max?: number | undefined;
 };
 
 // @public

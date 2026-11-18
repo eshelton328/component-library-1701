@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useId } from 'react'
+import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useRef } from 'react'
 import { AgentIcon, ChevronRightIcon, CloseIcon, HookIcon, type IconProps, RuleIcon, SkillIcon, WorkflowIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
@@ -249,6 +249,18 @@ export type MapGraphColumn = {
   y: number
 }
 
+/**
+ * The scale range of a zoomable map. `min` defaults to 1, the drawing at its
+ * own size, and `max` to 3. Below 1 the whole drawing can shrink to fit a
+ * small window.
+ */
+export type MapGraphZoom = {
+  /** The smallest scale, such as 0.5 for half size. Defaults to 1. */
+  min?: number | undefined
+  /** The largest scale. Defaults to 3. */
+  max?: number | undefined
+}
+
 export type MapGraphProps = {
   /** The accessible name of the map, such as "Toolkit map". */
   label: string
@@ -292,9 +304,146 @@ export type MapGraphProps = {
   legend?: ReactNode
   /** The selection card, shown at the bottom right; usually a `MapSelectionCard`. */
   card?: ReactNode
+  /**
+   * Pinch zoom and drag, for the phone's map window (Toolkit M11 461:866).
+   * Off by default: the map scrolls sideways as before, with the same DOM
+   * and styles. `true` scales from 1 to 3; `{ min, max }` sets the range.
+   * When on, the map's window (its scroller, `data-allow-pinch`) takes the
+   * touch gestures itself (`touch-action: none`): two pointers scale the
+   * drawing about their midpoint within the range, and one pointer drags
+   * it, so far that the drawing never leaves the window. A press that moves
+   * less than 4 px is a tap, so a node still selects; the click after a
+   * drag selects nothing. A node that takes the keyboard focus is moved
+   * into the window.
+   */
+  zoom?: boolean | MapGraphZoom | undefined
 }
 
 const NODE_SIZE = { width: 220, height: 34 }
+// A press that moves less than this, in px, is a tap and not a drag.
+const TAP_SLOP = 4
+const ZOOM = { min: 1, max: 3 }
+
+type Point = { x: number; y: number }
+type View = { scale: number; x: number; y: number }
+
+/**
+ * The pinch zoom and drag of a zoomable map. It keeps the view (scale and
+ * offset) in a ref and writes it to the scroller as --map-graph-scale,
+ * --map-graph-x and --map-graph-y, which the recipe's `zoomable` variant
+ * reads, so a gesture renders nothing in React. With `range` null it does
+ * nothing and removes the properties.
+ */
+function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; max: number } | null, width: number, height: number) {
+  const view = useRef<View>({ scale: 1, x: 0, y: 0 })
+  const min = range?.min
+  const max = range?.max
+  useEffect(() => {
+    const scroller = ref.current
+    if (scroller === null || min === undefined || max === undefined) return
+    const at = (event: { clientX: number; clientY: number }): Point => {
+      const r = scroller.getBoundingClientRect()
+      return { x: event.clientX - r.left, y: event.clientY - r.top }
+    }
+    // Keeps the drawing in the window: a drawing wider than the window covers it, a narrower one stays inside it.
+    const clamp = (next: View): View => {
+      const scale = Math.min(Math.max(next.scale, min), max)
+      const room = (inside: number, size: number, offset: number) => {
+        const free = inside - size * scale
+        return Math.min(Math.max(offset, Math.min(0, free)), Math.max(0, free))
+      }
+      return { scale, x: room(scroller.clientWidth, width, next.x), y: room(scroller.clientHeight, height, next.y) }
+    }
+    const show = (next: View) => {
+      view.current = clamp(next)
+      scroller.style.setProperty('--map-graph-scale', String(view.current.scale))
+      scroller.style.setProperty('--map-graph-x', `${String(view.current.x)}px`)
+      scroller.style.setProperty('--map-graph-y', `${String(view.current.y)}px`)
+    }
+    show(view.current)
+    // The pointers down, at most two, and where the gesture started.
+    const pointers = new Map<number, Point>()
+    let start: { view: View; points: Point[] } = { view: view.current, points: [] }
+    let dragging = false
+    let skipClick = false
+    const restart = () => {
+      start = { view: view.current, points: [...pointers.values()] }
+    }
+    const down = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      if (pointers.size >= 2) return
+      if (pointers.size === 0) {
+        dragging = false
+        skipClick = false
+      } else {
+        dragging = true
+      }
+      pointers.set(event.pointerId, at(event))
+      restart()
+    }
+    const move = (event: PointerEvent) => {
+      if (!pointers.has(event.pointerId)) return
+      pointers.set(event.pointerId, at(event))
+      const [a, b] = [...pointers.values()]
+      const [a0, b0] = start.points
+      if (a === undefined || a0 === undefined) return
+      if (b !== undefined && b0 !== undefined) {
+        // Scale by how far the pointers moved apart, about the drawing point that was under their midpoint.
+        const gap0 = Math.hypot(b0.x - a0.x, b0.y - a0.y)
+        if (gap0 === 0) return
+        const scale = Math.min(Math.max((start.view.scale * Math.hypot(b.x - a.x, b.y - a.y)) / gap0, min), max)
+        const mid0 = { x: (a0.x + b0.x) / 2, y: (a0.y + b0.y) / 2 }
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+        const fixed = { x: (mid0.x - start.view.x) / start.view.scale, y: (mid0.y - start.view.y) / start.view.scale }
+        show({ scale, x: mid.x - fixed.x * scale, y: mid.y - fixed.y * scale })
+        return
+      }
+      if (!dragging && Math.hypot(a.x - a0.x, a.y - a0.y) < TAP_SLOP) return
+      dragging = true
+      show({ scale: start.view.scale, x: start.view.x + a.x - a0.x, y: start.view.y + a.y - a0.y })
+    }
+    const up = (event: PointerEvent) => {
+      if (!pointers.delete(event.pointerId)) return
+      if (dragging) skipClick = true
+      // From two pointers to one: the one left drags on from the view the pinch left.
+      restart()
+    }
+    // The click after a drag or a pinch selects no node.
+    const click = (event: MouseEvent) => {
+      if (!skipClick) return
+      skipClick = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+    // A node that takes the focus moves into the window, since the window does not scroll.
+    const focus = (event: FocusEvent) => {
+      if (!(event.target instanceof Element)) return
+      const r = event.target.getBoundingClientRect()
+      const w = scroller.getBoundingClientRect()
+      const shift = (lo: number, hi: number, wLo: number, wHi: number) => (lo < wLo ? wLo - lo : hi > wHi ? Math.max(wHi - hi, wLo - lo) : 0)
+      const dx = shift(r.left, r.right, w.left, w.left + scroller.clientWidth)
+      const dy = shift(r.top, r.bottom, w.top, w.top + scroller.clientHeight)
+      if (dx !== 0 || dy !== 0) show({ ...view.current, x: view.current.x + dx, y: view.current.y + dy })
+    }
+    scroller.addEventListener('pointerdown', down)
+    scroller.addEventListener('click', click, true)
+    scroller.addEventListener('focusin', focus)
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+    return () => {
+      scroller.removeEventListener('pointerdown', down)
+      scroller.removeEventListener('click', click, true)
+      scroller.removeEventListener('focusin', focus)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+      scroller.style.removeProperty('--map-graph-scale')
+      scroller.style.removeProperty('--map-graph-x')
+      scroller.style.removeProperty('--map-graph-y')
+    }
+  }, [ref, min, max, width, height])
+}
 // The radius of the dot at the end of a link (426:369 is 6 × 6).
 const DOT = 3
 
@@ -308,6 +457,8 @@ const DOT = 3
  * and under each other, for the phone. For the Links graph (Toolkit D19)
  * the open item takes its own `size` and `labelStyle`, `nodeTone="muted"`
  * softens the other nodes' borders and `edgeEnd="none"` drops the dots.
+ * With `zoom` the map is a window that pinch zooms and drags its drawing,
+ * as on the phone (Toolkit M11).
  */
 export function MapGraph({
   label,
@@ -324,8 +475,12 @@ export function MapGraph({
   onSelect,
   legend,
   card,
+  zoom = false,
 }: MapGraphProps) {
   const idBase = useId()
+  const scroller = useRef<HTMLDivElement>(null)
+  const range = zoom === false ? null : zoom === true ? ZOOM : { min: zoom.min ?? ZOOM.min, max: zoom.max ?? ZOOM.max }
+  useZoom(scroller, range, width, height)
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
   const linksOf = (id: string) => {
@@ -380,8 +535,8 @@ export function MapGraph({
     }
   }
   return (
-    <GraphRoot role="group" aria-label={label}>
-      <Scroller>
+    <GraphRoot role="group" aria-label={label} zoomable={range === null ? undefined : true}>
+      <Scroller ref={scroller} data-allow-pinch={range === null ? undefined : ''}>
         <Svg width={width} height={height} viewBox={`0 0 ${String(width)} ${String(height)}`}>
           <g aria-hidden="true">
             {columns.map((c) => (

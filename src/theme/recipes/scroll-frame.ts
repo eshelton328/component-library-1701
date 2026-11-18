@@ -80,15 +80,19 @@ export const scrollFrame = defineSlotRecipe({
       minH: '0',
       overflowY: 'auto',
       overscrollBehavior: 'contain',
-      // A footer taller than the frame scrolls, so it clips what reaches past its box. Its 4 px of padding keep a
-      // child's focus ring (2 px, 2 out) inside it. On the sides and at the bottom the margin takes the padding
-      // back, so the content stays where it was and the box reaches 4 px past the frame, where nothing else is.
-      // At the top the padding stays: a margin there would lay the footer over the body (with gap 0 by 4 px), so
-      // the body ends 4 px above the footer's content. Under a tab bar, the bottom margin also lifts the footer
-      // by the inset.
-      p: '4',
-      mx: '-4',
-      mb: 'calc(var(--scroll-frame-inset) - token(spacing.4))',
+      // The footer's box is its content's box and stays inside the frame: no padding and no negative margin, so
+      // it never reaches past the frame (a 4 px margin made the-bridge's phone detail overflow, Workspaces #64).
+      // A footer that scrolls clips what reaches past its box, so a control deeper in it keeps its focus ring (2
+      // px, 2 out) inside its own padding: a Composer has 10 px around its buttons. Under a tab bar, the bottom
+      // margin lifts the footer by the inset.
+      mb: 'var(--scroll-frame-inset)',
+      // A direct child sits at the footer's edge, so its ring would be cut: it draws the ring inside its own box
+      // instead (Codex review of #134). The ring colour, border.focus, is also the primary button's fill, so a
+      // 2 px line in bg.canvas inside the ring keeps it visible on a primary button as on any other.
+      '& > :focus-visible': {
+        outlineOffset: 'calc(token(borderWidths.strong) * -1)',
+        boxShadow: 'inset 0 0 0 token(spacing.4) token(colors.bg.canvas)',
+      },
       // As in the body: a child that clips (a Card) keeps its height.
       '& > *': { flexShrink: '0' },
     },

@@ -30,7 +30,10 @@ under their purpose group, never under "Controls" (d-065).
   than the room the header leaves shrinks and scrolls inside; with
   `footerShrink={false}` it keeps its own height and only the body
   shrinks, for a footer that caps itself (a `Composer` with
-  `layout="inline"`). A page never targets the frame's class names, such
+  `layout="inline"`). The footer has no padding and no negative margin,
+  so it never reaches past the frame. A direct child draws its focus
+  ring inside its own box, with a `bg.canvas` line inside it; a control
+  deeper down keeps its ring inside its own padding, as a `Composer` does. A page never targets the frame's class names, such
   as `.scroll-frame__footer`; it asks for a prop. As the direct
   child of an `AppShell` detail with `tabBarOverlay`, it reaches under
   the tab bar and lifts its footer and its body's end above it; anywhere

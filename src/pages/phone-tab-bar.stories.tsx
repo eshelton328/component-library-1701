@@ -3,15 +3,15 @@ import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
-import { Container, Inline } from '../controls/layout'
+import { Container, Inline, Stack } from '../controls/layout'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { ArtifactsIcon, HomeIcon, InboxIcon, MoreIcon, WorkspacesIcon } from '../foundations/icons'
 import type { NavItem } from '../parts/nav-item'
 import { TabBar } from '../parts/tab-bar'
 import { AppShell } from '../shell/app-shell'
 
-// The phone tab bar in an AppShell on the iPhone screen (390 x 844), as the-bridge places it: in the AppShell tab
-// bar slot, over the page's foot (`tabBarOverlay`).
+// The Inbox list on the iPhone screen (390 x 844, Inbox M1 346:8982), with the phone tab bar as the-bridge places
+// it: in the AppShell tab bar slot, below the list or over its foot (`tabBarOverlay`).
 const phoneScreen = { m390: { name: 'Phone (390 x 844)', styles: { width: '390px', height: '844px' } } }
 const screenFrame = css({ display: 'flex', flexDirection: 'column', h: 'dvh' })
 const row = css({ textStyle: 'body', color: 'fg.default', py: '12' })
@@ -24,6 +24,68 @@ const items: readonly NavItem[] = [
   { value: 'more', label: 'More', icon: <MoreIcon /> },
 ]
 const tasks = Array.from({ length: 30 }, (_, i) => `Task ${String(i + 1)} needs a review`)
+
+function PhoneInbox({ tabBarOverlay }: { tabBarOverlay: boolean }) {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        tabBarOverlay={tabBarOverlay}
+        list={
+          <Container>
+            <Stack>
+              {tasks.map((t) => (
+                <p key={t} className={row}>
+                  {t}
+                </p>
+              ))}
+            </Stack>
+          </Container>
+        }
+        tabBar={<TabBar items={items} selected="inbox" />}
+      />
+    </div>
+  )
+}
+
+const meta = {
+  title: 'Examples/Phone tab bar',
+  component: PhoneInbox,
+  args: { tabBarOverlay: false },
+  parameters: { viewport: { options: phoneScreen } },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const root = canvasElement.querySelector('.app-shell__root')
+    if (!(root instanceof HTMLElement)) throw new Error('no shell')
+    const bar = within(canvasElement).getByRole('navigation', { name: 'Main' })
+    const tabs = bar.querySelector('.tab-bar__list')
+    if (!(tabs instanceof HTMLElement)) throw new Error('no tabs')
+    const shell = root.getBoundingClientRect()
+    const box = bar.getBoundingClientRect()
+    // The shell fills the screen, and the bar sits at its foot: its bottom is the shell's and the screen's, with no
+    // gap under it, whether the bar is below the list or over it.
+    await expect(Math.round(shell.height)).toBe(844)
+    await expect(Math.round(box.bottom)).toBe(Math.round(shell.bottom))
+    await expect(Math.round(box.bottom)).toBe(844)
+    // Where the device gives no home-indicator inset (env() is 0 in Chromium), the bar is the token's height, 77
+    // (sizes.shell.tabBar), with no padding of its own under the tabs: the 26 px under the 42 px tabs is the
+    // home-indicator area Figma draws.
+    const token = getComputedStyle(document.documentElement).getPropertyValue('--sizes-shell-tab-bar').trim()
+    await expect(token).toBe('77px')
+    await expect(`${String(Math.round(box.height))}px`).toBe(token)
+    await expect(getComputedStyle(bar).paddingBottom).toBe('0px')
+    await expect(Math.round(box.bottom - tabs.getBoundingClientRect().bottom)).toBe(26)
+  },
+} satisfies Meta<typeof PhoneInbox>
+export default meta
+
+/** The phone Inbox list with the tab bar below it: the bar is 77 high and ends at the screen's foot. */
+export const BelowDark: StoryObj<typeof meta> = { globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const BelowLight: StoryObj<typeof meta> = { globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+/** The phone Inbox list with the tab bar over its foot (`tabBarOverlay`): the same bar at the same place. */
+export const OverlayDark: StoryObj<typeof meta> = { args: { tabBarOverlay: true }, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const OverlayLight: StoryObj<typeof meta> = { args: { tabBarOverlay: true }, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // The composer row's sides.
 const startBar = css({ px: '16' })
@@ -90,13 +152,6 @@ function TabRoutes() {
     </div>
   )
 }
-
-const meta = {
-  title: 'Examples/Phone tab bar',
-  component: TabRoutes,
-  parameters: { viewport: { options: phoneScreen } },
-} satisfies Meta<typeof TabRoutes>
-export default meta
 
 // A tap on a tab while the message field has the focus. Safari focuses no button on a tap, so the field keeps the
 // focus until the new page unmounts it, and WebKit fires no focusout then; the capture listener keeps Chromium's

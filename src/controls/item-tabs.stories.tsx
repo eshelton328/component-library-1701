@@ -273,6 +273,14 @@ const phonePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
   await expect([box.left, box.right]).toEqual([12, 378])
   const tab = (name: string) => within(list).getByRole('tab', { name })
   const evals = tab('Evals')
+  // Measure in Geist, not in a fallback font: the play test can start before the label font has loaded, and
+  // a fallback (DejaVu Sans on Linux) draws each label about 2 px wider. Load the tabs' own font, then check it.
+  const font = getComputedStyle(evals)
+  const face = `${font.fontWeight} ${font.fontSize} "Geist Variable"`
+  const loaded = await document.fonts.load(face, 'Overview How it works Files Links Evals Activity')
+  await document.fonts.ready
+  await expect(loaded.length).toBeGreaterThan(0)
+  await expect(document.fonts.check(face)).toBe(true)
   await expect(evals).toHaveAttribute('aria-selected', 'true')
   // The selected tab's outline ends inside the list, so its scroll clip cuts none of it.
   const r = evals.getBoundingClientRect()

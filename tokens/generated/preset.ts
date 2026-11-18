@@ -1484,7 +1484,7 @@ export default definePreset({
           }
         },
         "monoSm": {
-          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, the mono description of an OptionList with size sm, and the trailing count and description of a Checkbox with size sm or compact, and the percentage of a ContextMeter. Not for group headers (eyebrow) or other meta (mono).",
+          "description": "Compact meta lines at 11 px, as Inbox draws them: the meta line of a ListRow with density compact, a MetaChip with size sm, a TagsLine with size sm, the mono description of an OptionList with size sm, the trailing count and description of a Checkbox with size sm or compact, the percentage of a ContextMeter, and the typed query after a PopoverSection label, in its own case (\"SKILLS MATCHING /wri\"). Not for group headers (eyebrow) or other meta (mono).",
           "value": {
             "fontFamily": "text.monoSm",
             "fontSize": "text.monoSm",

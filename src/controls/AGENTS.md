@@ -46,6 +46,10 @@ under their purpose group, never under "Controls" (d-065).
   a button that shows or hides a section in place (Hide transcript on a
   subagent card), sets `expandedBorder="default"` and keeps its variant's
   border; a page never overrides `_expanded` itself.
+- A `PopoverSection` label is in capitals (`eyebrow`). Text the user
+  typed, such as the "/wri" of a skill list's "SKILLS MATCHING /wri",
+  goes in its `query` prop, which keeps its case in `monoSm`; never put
+  typed text in `label`.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

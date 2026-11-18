@@ -743,3 +743,324 @@ const linksPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasEle
 
 export const LinksGraphDark: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'dark' } }
 export const LinksGraphLight: StoryObj<typeof meta> = { render: () => <LinksGraph />, play: linksPlay, globals: { mode: 'light' } }
+
+// The phone's map window (Toolkit M11 461:866) over a drawing wider than it: a 320 px frame round the 1384 × 460 map.
+const zoomFrame = css({ w: 'shell.popover', display: 'flex', flexDirection: 'column', gap: '24' })
+
+function ZoomMap({ onSelect }: { onSelect: (id: string | null) => void }) {
+  const [selected, setSelected] = useState<string | null>(null)
+  const select = (id: string | null) => {
+    setSelected(id)
+    onSelect(id)
+  }
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Zoom map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} selectedId={selected} onSelect={select} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Plain map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} />
+      </div>
+    </main>
+  )
+}
+
+const zoomPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
+  const map = within(canvasElement).getByRole('group', { name: 'Zoom map' })
+  const scroller = map.querySelector<HTMLElement>('.map-graph__scroller')
+  const svg = map.querySelector('svg')
+  if (scroller === null || svg === null) throw new Error('no drawing')
+  // The window takes its own gestures, clips the drawing and moves it from its top left corner.
+  await expect(scroller).toHaveAttribute('data-allow-pinch', '')
+  const sc = getComputedStyle(scroller)
+  await expect([sc.touchAction, sc.overflowX, sc.overflowY]).toEqual(['none', 'clip', 'clip'])
+  await expect(getComputedStyle(svg).transformOrigin).toBe('0px 0px')
+  const windowWidth = scroller.clientWidth
+  await expect(windowWidth).toBe(318)
+  await expect(scroller.clientHeight).toBe(460)
+  // Where the drawing is in the window, and how large: its left and top edges, width and height in px.
+  const drawing = () => {
+    const w = scroller.getBoundingClientRect()
+    const d = svg.getBoundingClientRect()
+    return { left: d.left - w.left, top: d.top - w.top, width: d.width, height: d.height }
+  }
+  const expectDrawing = async (expected: { left: number; top: number; width: number; height: number }) => {
+    const d = drawing()
+    for (const key of ['left', 'top', 'width', 'height'] as const) await expect(d[key], key).toBeCloseTo(expected[key], 1)
+  }
+  // A touch pointer event at x and y in the window.
+  const pointer = (type: string, id: number, x: number, y: number, target: Element = scroller) => {
+    const w = scroller.getBoundingClientRect()
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: w.left + x, clientY: w.top + y, bubbles: true, cancelable: true }))
+  }
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+
+  // One pointer drags the drawing.
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, 150, 100)
+  await expectDrawing({ left: -50, top: 0, width: 1384, height: 460 })
+  // At scale 1 the drawing is as high as the window, so it does not move up or down.
+  pointer('pointermove', 1, 150, 300)
+  await expectDrawing({ left: -50, top: 0, width: 1384, height: 460 })
+  // It stops where its left edge meets the window's left edge, and its right edge the window's right edge.
+  pointer('pointermove', 1, 5000, 100)
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+  pointer('pointermove', 1, -5000, 100)
+  await expectDrawing({ left: windowWidth - 1384, top: 0, width: 1384, height: 460 })
+  pointer('pointermove', 1, 5000, 100)
+  pointer('pointerup', 1, 5000, 100)
+  await expectDrawing({ left: 0, top: 0, width: 1384, height: 460 })
+
+  // Two pointers that move apart scale the drawing up about their midpoint: from 40 to 80 px apart is scale 2, and
+  // the drawing point under the first midpoint (120, 100) goes under the new one (140, 100).
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointerdown', 2, 140, 100)
+  pointer('pointermove', 2, 180, 100)
+  await expectDrawing({ left: 140 - 240, top: 100 - 200, width: 2768, height: 920 })
+  // Further apart, the scale stops at max (2).
+  pointer('pointermove', 2, 300, 100)
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  // At scale 2 one pointer drags it down and up too, until its top edge meets the window's top edge.
+  pointer('pointerup', 2, 300, 100)
+  pointer('pointermove', 1, 100, 160)
+  await expect(drawing().top).toBeCloseTo(-40, 1)
+  pointer('pointermove', 1, 100, 5000)
+  await expect(drawing().top).toBeCloseTo(0, 1)
+  pointer('pointerup', 1, 100, 5000)
+
+  // Two pointers that move together scale it down, and the scale stops at min (0.5).
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointerdown', 2, 300, 100)
+  pointer('pointermove', 1, 150, 100)
+  pointer('pointermove', 2, 250, 100)
+  await expect(drawing().width).toBeCloseTo(1384, 1)
+  pointer('pointermove', 1, 195, 100)
+  pointer('pointermove', 2, 205, 100)
+  await expect([drawing().width, drawing().height]).toEqual([692, 230])
+  pointer('pointerup', 1, 195, 100)
+  pointer('pointerup', 2, 205, 100)
+  // At scale 0.5 the drawing is lower than the window, so it stays inside it: its foot stops at the window's foot.
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointermove', 1, 100, 5000)
+  await expect(drawing().top).toBeCloseTo(460 - 230, 1)
+  pointer('pointerup', 1, 100, 5000)
+
+  // A tap on a node still selects it.
+  const node = (name: string) => within(map).getByRole('button', { name })
+  await userEvent.click(node('writer'))
+  await expect(args.onSelect).toHaveBeenLastCalledWith('writer')
+  // A press that moves less than 4 px is a tap too.
+  const ambitious = node('ambitious')
+  pointer('pointerdown', 1, 50, 50, ambitious)
+  pointer('pointermove', 1, 52, 51, ambitious)
+  pointer('pointerup', 1, 52, 51, ambitious)
+  ambitious.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  // A drag that starts and ends on a node moves the drawing and selects nothing.
+  const ste100 = node('ste100')
+  const before = drawing().left
+  pointer('pointerdown', 1, 150, 50, ste100)
+  pointer('pointermove', 1, 120, 50, ste100)
+  pointer('pointerup', 1, 120, 50, ste100)
+  // A pointer's click has detail 1; HTMLElement.click() would send detail 0, a keyboard click.
+  ste100.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
+  await expect(drawing().left).toBeCloseTo(before - 30, 1)
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  await expect(args.onSelect).not.toHaveBeenCalledWith('ste100')
+
+  // Without `zoom` the map is as before: no pinch attribute, no variant class, no view properties, and it scrolls.
+  const plain = within(canvasElement).getByRole('group', { name: 'Plain map' })
+  const plainScroller = plain.querySelector<HTMLElement>('.map-graph__scroller')
+  const plainSvg = plain.querySelector('svg')
+  if (plainScroller === null || plainSvg === null) throw new Error('no plain drawing')
+  await expect(plainScroller).not.toHaveAttribute('data-allow-pinch')
+  await expect(plainScroller).not.toHaveAttribute('style')
+  await expect([plain.className, plainScroller.className]).toEqual(['map-graph__root', 'map-graph__scroller'])
+  const ps = getComputedStyle(plainScroller)
+  await expect([ps.touchAction, ps.overflowX, getComputedStyle(plainSvg).transform]).toEqual(['auto', 'auto', 'none'])
+  await expect(plainScroller.scrollWidth).toBe(1384)
+}
+
+export const ZoomDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'dark' } }
+export const ZoomLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: zoomPlay, globals: { mode: 'light' } }
+
+// The window's size in px, and a touch pointer event at x and y in it, for the zoom stories.
+const zoomParts = (canvasElement: HTMLElement) => {
+  const map = within(canvasElement).getByRole('group', { name: 'Zoom map' })
+  const scroller = map.querySelector<HTMLElement>('.map-graph__scroller')
+  const svg = map.querySelector('svg')
+  if (scroller === null || svg === null) throw new Error('no drawing')
+  const drawing = () => {
+    const w = scroller.getBoundingClientRect()
+    const d = svg.getBoundingClientRect()
+    return { left: d.left - w.left, top: d.top - w.top, width: d.width, height: d.height }
+  }
+  const pointer = (type: string, id: number, x: number, y: number, target: Element = scroller) => {
+    const w = scroller.getBoundingClientRect()
+    target.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: w.left + x, clientY: w.top + y, bubbles: true, cancelable: true }))
+  }
+  return { map, scroller, svg, drawing, pointer, node: (name: string) => within(map).getByRole('button', { name }) }
+}
+const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+// A drag released outside the window fires no click there, and must not swallow the next key press or tap.
+const releaseOutsidePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
+  const { drawing, pointer, node } = zoomParts(canvasElement)
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, 150, 100)
+  pointer('pointerup', 1, 150, 600, document.body)
+  await expect(drawing().left).toBeCloseTo(-50, 1)
+  await nextTask()
+  // Enter on a node selects it.
+  const writer = node('writer')
+  writer.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(args.onSelect).toHaveBeenLastCalledWith('writer')
+  // A key press right after a drag that ends on a node selects too: only a pointer click is swallowed.
+  const ambitious = node('ambitious')
+  pointer('pointerdown', 1, 150, 50, ambitious)
+  pointer('pointermove', 1, 120, 50, ambitious)
+  pointer('pointerup', 1, 120, 50, ambitious)
+  ambitious.focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ambitious')
+  // After a drag released outside, a later pointer click on a node selects it.
+  pointer('pointerdown', 1, 150, 100)
+  pointer('pointermove', 1, 120, 100)
+  pointer('pointerup', 1, 120, 600, document.body)
+  await nextTask()
+  node('ste100').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }))
+  await expect(args.onSelect).toHaveBeenLastCalledWith('ste100')
+}
+
+export const ZoomReleaseOutsideDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'dark' } }
+export const ZoomReleaseOutsideLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: releaseOutsidePlay, globals: { mode: 'light' } }
+
+// When the window grows, the drawing is clamped again, so its right edge stays at the window's right edge.
+const resizePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { map, scroller, drawing, pointer } = zoomParts(canvasElement)
+  const frame = map.parentElement
+  if (frame === null) throw new Error('no frame')
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, -5000, 100)
+  pointer('pointerup', 1, -5000, 100)
+  await expect(drawing().left).toBeCloseTo(318 - 1384, 1)
+  // The test widens the frame from 320 to 600 px, so the window is 598 wide.
+  frame.style.width = '600px'
+  await waitFor(() => expect(scroller.clientWidth).toBe(598))
+  await waitFor(() => expect(drawing().left).toBeCloseTo(598 - 1384, 1))
+  // Narrower again, the drawing still covers the window, so it stays where it is.
+  frame.style.removeProperty('width')
+  await waitFor(() => expect(scroller.clientWidth).toBe(318))
+  await expect(drawing().left).toBeCloseTo(598 - 1384, 1)
+}
+
+export const ZoomResizeDark: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'dark' } }
+export const ZoomResizeLight: StoryObj<typeof meta> = { render: (args) => <ZoomMap onSelect={args.onSelect} />, play: resizePlay, globals: { mode: 'light' } }
+
+function KeysMap() {
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Zoom map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Empty zoom map" width={1384} height={460} nodes={[]} columns={columns} zoom={{ min: 0.5, max: 2 }} />
+        <MapGraph label="Plain map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} />
+      </div>
+    </main>
+  )
+}
+
+// Zoom without two pointers: keys when the focus is in the map, about the window's centre, and Control or Command
+// with the wheel, about the pointer. Each step is 1.25 times.
+const keysPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { map, scroller, drawing, pointer, node } = zoomParts(canvasElement)
+  const keys = 'Pinch, or press plus or minus, to zoom, and 0 to zoom out fully. Control or Command with the mouse wheel zooms too. Drag to move.'
+  await expect(map).toHaveAccessibleDescription(keys)
+  await expect(scroller).toHaveAttribute('aria-keyshortcuts', '+ = - 0')
+  // The nodes already take the focus, so the window is not in the tab order.
+  await expect(scroller).not.toHaveAttribute('tabindex')
+  // The drawing point under the window's centre.
+  const centre = () => {
+    const d = drawing()
+    const scale = d.width / 1384
+    return { x: (scroller.clientWidth / 2 - d.left) / scale, y: (scroller.clientHeight / 2 - d.top) / scale }
+  }
+  const expectCentre = async (before: { x: number; y: number }) => {
+    const after = centre()
+    await expect(after.x).toBeCloseTo(before.x, 1)
+    await expect(after.y).toBeCloseTo(before.y, 1)
+  }
+  node('writer').focus()
+  await expect(drawing().width).toBeCloseTo(1384, 1)
+  let c = centre()
+  await userEvent.keyboard('+')
+  await expect(drawing().width).toBeCloseTo(1384 * 1.25, 1)
+  await expectCentre(c)
+  c = centre()
+  await userEvent.keyboard('=')
+  await expect(drawing().width).toBeCloseTo(1384 * 1.25 ** 2, 1)
+  await expectCentre(c)
+  // It stops at max (2).
+  await userEvent.keyboard('++')
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  await userEvent.keyboard('-')
+  await expect(drawing().width).toBeCloseTo(2768 / 1.25, 1)
+  // 0 zooms out to min (0.5); a key with Control is the browser's, not the map's.
+  await userEvent.keyboard('0')
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  await userEvent.keyboard('{Control>}+{/Control}')
+  await expect(drawing().width).toBeCloseTo(692, 1)
+
+  // Control or Command with the wheel zooms about the pointer and keeps the page from zooming; a plain wheel does not.
+  const wheel = (init: WheelEventInit) => {
+    const w = scroller.getBoundingClientRect()
+    const event = new WheelEvent('wheel', { clientX: w.left + 100, clientY: w.top + 100, bubbles: true, cancelable: true, ...init })
+    scroller.dispatchEvent(event)
+    return event.defaultPrevented
+  }
+  await expect(wheel({ deltaY: -100, ctrlKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(692 * 1.25, 1)
+  await expect(wheel({ deltaY: 100, metaKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  await expect(wheel({ deltaY: -100 })).toBe(false)
+  await expect(drawing().width).toBeCloseTo(692, 1)
+  // Seven steps in from 0.5 would be 2.38; it stops at max (2).
+  await expect(wheel({ deltaY: -700, ctrlKey: true })).toBe(true)
+  await expect(drawing().width).toBeCloseTo(2768, 1)
+  // About the pointer: the drawing point under it stays under it while the drawing still covers the window. A drag
+  // first moves the drawing's top left corner away from the window's, so the zoom out is not clamped.
+  pointer('pointerdown', 1, 200, 200)
+  pointer('pointermove', 1, 100, 100)
+  pointer('pointerup', 1, 100, 100)
+  await expect(drawing().top).toBeLessThan(-50)
+  const d0 = drawing()
+  const under = { x: (100 - d0.left) / 2, y: (100 - d0.top) / 2 }
+  wheel({ deltaY: 100, ctrlKey: true })
+  const d1 = drawing()
+  await expect((100 - d1.left) / 1.6).toBeCloseTo(under.x, 1)
+  await expect((100 - d1.top) / 1.6).toBeCloseTo(under.y, 1)
+
+  // A map with no nodes has no other way in, so its window takes the focus and the keys.
+  const empty = within(canvasElement).getByRole('group', { name: 'Empty zoom map' })
+  const emptyScroller = empty.querySelector<HTMLElement>('.map-graph__scroller')
+  const emptySvg = empty.querySelector('svg')
+  if (emptyScroller === null || emptySvg === null) throw new Error('no empty drawing')
+  await expect(emptyScroller).toHaveAttribute('tabindex', '0')
+  await expect(emptyScroller).toHaveAccessibleDescription(keys)
+  emptyScroller.focus()
+  await userEvent.keyboard('+')
+  await expect(emptySvg.getBoundingClientRect().width).toBeCloseTo(1384 * 1.25, 1)
+
+  // Without zoom the keys do nothing and the map has no description, tab stop or shortcuts.
+  const plain = within(canvasElement).getByRole('group', { name: 'Plain map' })
+  const plainScroller = plain.querySelector<HTMLElement>('.map-graph__scroller')
+  const plainSvg = plain.querySelector('svg')
+  if (plainScroller === null || plainSvg === null) throw new Error('no plain drawing')
+  await expect(plain).not.toHaveAttribute('aria-describedby')
+  await expect(plainScroller).not.toHaveAttribute('tabindex')
+  await expect(plainScroller).not.toHaveAttribute('aria-keyshortcuts')
+  within(plain).getByRole('button', { name: 'writer' }).focus()
+  await userEvent.keyboard('+')
+  await expect(plainSvg.getBoundingClientRect().width).toBe(1384)
+}
+
+export const ZoomKeysDark: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'dark' } }
+export const ZoomKeysLight: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'light' } }

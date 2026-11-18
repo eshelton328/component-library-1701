@@ -302,6 +302,11 @@
         "$type": "dimension",
         "$value": { "value": 34, "unit": "px" },
         "$description": "Bottom padding for the phone home indicator."
+      },
+      "keyboard": {
+        "$type": "dimension",
+        "$value": { "value": 380, "unit": "px" },
+        "$description": "The phone's on-screen keyboard with Safari's form bar (Workbench M10 147:97): the inset AppShell expects before a first keyboard is measured. Not a layout size; never size a page or a pane with it."
       }
     }
   }

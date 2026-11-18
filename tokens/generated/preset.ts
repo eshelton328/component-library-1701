@@ -129,6 +129,10 @@ export default definePreset({
               "value": "1028px",
               "description": "Largest width of an open Toolkit item (Container size item), padding included: 948 of content and the desktop's 40 sides, as the 1512 px Figma frames draw it (D03 427:250, D17 474:393, D19 482:349). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the item then sits in the middle. Below that the item fills its space. Not for the Inbox task column, which takes detail and detailWide, or for a pane or a dialog."
             },
+            "keyboard": {
+              "value": "380px",
+              "description": "The phone's on-screen keyboard with Safari's form bar (Workbench M10 147:97): the inset AppShell expects before a first keyboard is measured. Not a layout size; never size a page or a pane with it."
+            },
             "listPane": {
               "value": "420px",
               "description": "Width of a list pane: Inbox, Artifacts and Toolkit."

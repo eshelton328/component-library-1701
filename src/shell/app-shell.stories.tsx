@@ -680,6 +680,37 @@ class FakeViewport extends EventTarget {
 
 let fakeViewport = new FakeViewport()
 
+// The device as the shell reads it through matchMedia: a touch screen (`coarse`) and reduced motion (`reduce`). The
+// stories of the dock's rules use a mouse and reduced motion, so each change is there at once; the motion stories
+// use a touch screen with motion.
+const emulateMedia = ({ coarse, reduce }: { coarse: boolean; reduce: boolean }) => {
+  const own = Object.getOwnPropertyDescriptor(window, 'matchMedia')
+  const real = window.matchMedia.bind(window)
+  const answers: Partial<Record<string, boolean>> = { '(pointer: coarse)': coarse, '(prefers-reduced-motion: reduce)': reduce }
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: (query: string) => {
+      const matches = answers[query]
+      return matches === undefined ? real(query) : { matches, media: query }
+    },
+  })
+  return () => {
+    if (own) Object.defineProperty(window, 'matchMedia', own)
+    else Reflect.deleteProperty(window, 'matchMedia')
+  }
+}
+// A fake visual viewport on a device with a mouse and reduced motion, for the stories of the dock's rules.
+const fakeDevice = (height?: number) => {
+  fakeViewport = new FakeViewport()
+  if (height !== undefined) fakeViewport.height = height
+  const restoreViewport = replaceVisualViewport(fakeViewport)
+  const restoreMedia = emulateMedia({ coarse: false, reduce: true })
+  return () => {
+    restoreMedia()
+    restoreViewport()
+  }
+}
+
 // Puts `value` in place of window.visualViewport for one story, and puts the browser's own back after it.
 const replaceVisualViewport = (value: FakeViewport | undefined) => {
   const own = Object.getOwnPropertyDescriptor(window, 'visualViewport')
@@ -724,10 +755,7 @@ const keyboardInset = (root: HTMLElement) => root.style.getPropertyValue('--app-
 const keyboard: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,
   parameters: { viewport: { options: phoneScreen } },
-  beforeEach: () => {
-    fakeViewport = new FakeViewport()
-    return replaceVisualViewport(fakeViewport)
-  },
+  beforeEach: () => fakeDevice(),
   play: async ({ canvasElement }) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
@@ -780,10 +808,7 @@ export const KeyboardLight: StoryObj<typeof meta> = { ...keyboard, globals: { mo
 const focusZoom: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,
   parameters: { viewport: { options: phoneScreen } },
-  beforeEach: () => {
-    fakeViewport = new FakeViewport()
-    return replaceVisualViewport(fakeViewport)
-  },
+  beforeEach: () => fakeDevice(),
   play: async ({ canvasElement }) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
@@ -828,10 +853,7 @@ export const FocusZoomLight: StoryObj<typeof meta> = { ...focusZoom, globals: { 
 
 const withFakeViewport = {
   parameters: { viewport: { options: phoneScreen } },
-  beforeEach: () => {
-    fakeViewport = new FakeViewport()
-    return replaceVisualViewport(fakeViewport)
-  },
+  beforeEach: () => fakeDevice(),
 }
 
 const noFieldFocused: StoryObj<typeof meta> = {
@@ -1233,11 +1255,7 @@ const staleViewport: StoryObj<typeof meta> = {
   parameters: { viewport: { options: phoneScreen } },
   // The visual viewport is 664 when the shell mounts: a standalone app whose viewport has not settled yet, or one
   // that a closed keyboard left short.
-  beforeEach: () => {
-    fakeViewport = new FakeViewport()
-    fakeViewport.height = 664
-    return replaceVisualViewport(fakeViewport)
-  },
+  beforeEach: () => fakeDevice(664),
   play: async ({ canvasElement }) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
@@ -1300,10 +1318,7 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
   globals: { mode: 'dark', viewport: { value: 'm390' } },
   render: () => <ClosingChat />,
   parameters: { viewport: { options: phoneScreen } },
-  beforeEach: () => {
-    fakeViewport = new FakeViewport()
-    return replaceVisualViewport(fakeViewport)
-  },
+  beforeEach: () => fakeDevice(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect([...fakeViewport.listening].sort()).toEqual(['resize', 'scroll'])
@@ -1360,7 +1375,7 @@ function ThreadChat() {
 type Frame = { shell: number; rise: number }
 // How far the dock (the ScrollFrame footer) is moved up from its place, read from its transform as the browser paints
 // it, so a transition shows each step.
-const riseOf = (footer: HTMLElement) => Math.round(0 - new DOMMatrixReadOnly(getComputedStyle(footer).transform).m42)
+const riseOf = (footer: HTMLElement) => 0 - new DOMMatrixReadOnly(getComputedStyle(footer).transform).m42
 // Records the shell's height and the dock's rise at every frame until `stop`.
 const recordFrames = (root: HTMLElement, footer: HTMLElement) => {
   const frames: Frame[] = []
@@ -1402,20 +1417,58 @@ const threadParts = (canvasElement: HTMLElement) => {
   }
 }
 
-const keyboardRise: StoryObj<typeof meta> = {
+// A touch screen with motion and no VirtualKeyboard API, as iOS Safari: a field's focus starts the dock at once, to
+// the expected keyboard, and each move runs on the keyboard's curve.
+const withMotion = {
   ...withFakeViewport,
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    const restoreViewport = replaceVisualViewport(fakeViewport)
+    const restoreMedia = emulateMedia({ coarse: true, reduce: false })
+    Object.defineProperty(navigator, 'virtualKeyboard', { configurable: true, value: undefined })
+    return () => {
+      Reflect.deleteProperty(navigator, 'virtualKeyboard')
+      restoreMedia()
+      restoreViewport()
+    }
+  },
+}
+const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
+
+const keyboardRise: StoryObj<typeof meta> = {
+  ...withMotion,
   render: () => <ThreadChat />,
   play: async ({ canvasElement }) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field, composer } = threadParts(canvasElement)
+    // The first open: the dock starts at once, before the browser reports a keyboard, toward Figma's 380 keyboard
+    // (346 over the 34 safe area), and holds there through the keyboard's smaller steps. Their measure settles at the
+    // real 300 keyboard, and the dock takes it: 266, on the keyboard's top.
+    const first = recordFrames(root, footer)
+    await userEvent.click(field)
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0))
+    await expect(fakeViewport.height).toBe(844)
+    await stepViewport(rising)
+    await settled(footer, 266)
+    first.stop()
+    await expect(first.frames.every((f) => f.shell === 844)).toBe(true)
+    await expect(Math.max(...first.frames.map((f) => f.rise))).toBeLessThanOrEqual(346)
+    // The keyboard closes, and opens again: the dock rises at once to the 300 keyboard measured last, and only up,
+    // with each frame on the curve between, never past the keyboard's top.
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await settled(footer, 0)
     const record = recordFrames(root, footer)
     await userEvent.click(field)
-    // The keyboard rises in steps of 50 to 544: the dock rides up with it and never moves down.
-    await stepViewport([844, ...rising])
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0))
+    await expect(fakeViewport.height).toBe(844)
+    await stepViewport(rising)
+    await settled(footer, 266)
     record.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
     await expect(directions(record.frames)).not.toContain(-1)
-    await expect(record.frames.at(-1)?.rise).toBe(266)
+    await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
+    await expect(record.frames.filter((f) => f.rise > 0 && f.rise < 266).length).toBeGreaterThan(2)
     await expect(Math.round(composer().bottom)).toBe(544)
   },
 }
@@ -1492,45 +1545,88 @@ const focusScroll: StoryObj<typeof meta> = {
 export const FocusScrollDark: StoryObj<typeof meta> = { ...focusScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FocusScrollLight: StoryObj<typeof meta> = { ...focusScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
-/** Phone chat: the keyboard rises in steps; the shell keeps its height and the composer rides up with the keyboard, never back down. */
+/** Phone chat: the keyboard rises in steps; the shell keeps its height and the composer starts at once and rides up on the keyboard's curve, never back down. */
 export const KeyboardRiseDark: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardRiseLight: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const keyboardFall: StoryObj<typeof meta> = {
-  ...withFakeViewport,
+  ...withMotion,
   render: () => <ThreadChat />,
   play: async ({ canvasElement }) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field, composer } = threadParts(canvasElement)
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
-    await expect(riseOf(footer)).toBe(266)
-    // The keyboard's Done blurs the field, and the keyboard falls in steps: the dock comes down with it and never
-    // back up, and the shell keeps its height.
+    await settled(footer, 266)
+    // The keyboard's Done blurs the field, and the keyboard falls in steps: the dock comes down with it on the
+    // curve and never back up, and the shell keeps its height.
     const record = recordFrames(root, footer)
     field.blur()
     await stepViewport(falling)
+    await settled(footer, 0)
     record.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
     await expect(directions(record.frames)).not.toContain(1)
-    await expect(record.frames.at(-1)?.rise).toBe(0)
+    await expect(record.frames.filter((f) => f.rise > 0 && f.rise < 266).length).toBeGreaterThan(2)
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
   },
 }
 
-/** Phone chat: the keyboard falls in steps after a blur; the shell keeps its height and the composer comes down with it, never back up. */
+/** Phone chat: the keyboard falls in steps after a blur; the shell keeps its height and the composer comes down on the keyboard's curve, never back up. */
 export const KeyboardFallDark: StoryObj<typeof meta> = { ...keyboardFall, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardFallLight: StoryObj<typeof meta> = { ...keyboardFall, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const keyboardReducedMotion: StoryObj<typeof meta> = {
+  ...withMotion,
+  beforeEach: () => {
+    const restore = withMotion.beforeEach()
+    const restoreMedia = emulateMedia({ coarse: true, reduce: true })
+    return () => {
+      restoreMedia()
+      restore()
+    }
+  },
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const { root, footer, field } = threadParts(canvasElement)
+    // With reduced motion the dock has no transition: each change is there in the same task, and no frame shows a
+    // step between.
+    const record = recordFrames(root, footer)
+    field.focus()
+    await expect(riseOf(footer)).toBe(346)
+    fakeViewport.move({ height: 544 })
+    await expect(riseOf(footer)).toBe(346)
+    await settled(footer, 266)
+    await nextFrame()
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await expect(riseOf(footer)).toBe(0)
+    await nextFrame()
+    record.stop()
+    await expect([...new Set(record.frames.map((f) => f.rise))].sort((x, y) => x - y)).toEqual([0, 266, 346])
+    await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
+  },
+}
+
+/** Phone chat with reduced motion: the composer docks and undocks at once, with no transition. */
+export const KeyboardReducedMotionDark: StoryObj<typeof meta> = { ...keyboardReducedMotion, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardReducedMotionLight: StoryObj<typeof meta> = { ...keyboardReducedMotion, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const keyboardAndroid: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <ThreadChat />,
+  // A touch screen with motion and Chromium's VirtualKeyboard API, as Chrome on Android.
   beforeEach: () => {
     fakeViewport = new FakeViewport()
-    const restore = replaceVisualViewport(fakeViewport)
+    const restoreViewport = replaceVisualViewport(fakeViewport)
+    const restoreMedia = emulateMedia({ coarse: true, reduce: false })
+    Object.defineProperty(navigator, 'virtualKeyboard', { configurable: true, value: { overlaysContent: false } })
     return async () => {
-      // The real visual viewport comes back first, so a failed resize cannot leave the fake one in place.
-      restore()
+      // The real visual viewport and media come back first, so a failed resize cannot leave the fakes in place.
+      restoreViewport()
+      Reflect.deleteProperty(navigator, 'virtualKeyboard')
+      restoreMedia()
       const { page } = await import('vitest/browser')
       await page.viewport(390, 844)
     }
@@ -1541,12 +1637,12 @@ const keyboardAndroid: StoryObj<typeof meta> = {
     const record = recordFrames(root, footer)
     await userEvent.click(field)
     // Chrome on Android with interactive-widget=resizes-content: the keyboard shrinks the layout viewport itself, and
-    // the visual viewport with it, to 544. The shell follows its parent to 544 and nothing docks.
+    // the visual viewport with it, to 544. The shell follows its parent to 544 and nothing docks in any frame.
     const { page } = await import('vitest/browser')
     await page.viewport(390, 544)
     await waitFor(() => expect(document.documentElement.clientHeight).toBe(544))
     fakeViewport.move({ height: 544 })
-    await nextFrame()
+    await new Promise((resolve) => setTimeout(resolve, 400))
     record.stop()
     await expect(Math.round(rect(root).height)).toBe(544)
     await expect(keyboardInset(root)).toBe('')

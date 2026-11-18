@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Container } from '../controls/layout'
+import { Button } from '../controls/button'
+import { Container, Inline } from '../controls/layout'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { ArtifactsIcon, HomeIcon, InboxIcon, MoreIcon, WorkspacesIcon } from '../foundations/icons'
 import type { NavItem } from '../parts/nav-item'
@@ -50,10 +51,10 @@ const replaceVisualViewport = (value: FakeViewport) => {
   }
 }
 
-const messageField = css({ display: 'block', textStyle: 'body', color: 'fg.default', bg: 'transparent' })
+const messageField = css({ display: 'block', flex: '1', textStyle: 'body', color: 'fg.default', bg: 'transparent' })
 
-// Two tab pages in one AppShell, as the-bridge keeps the shell across its routes: Inbox, a chat with a message field,
-// and Workspaces, with no field. A tab press swaps the detail.
+// Two tab pages in one AppShell, as the-bridge keeps the shell across its routes: Inbox, a chat with a message field
+// and Send, and Workspaces, with no field. A tab press swaps the detail.
 function TabRoutes() {
   const [page, setPage] = useState('inbox')
   return (
@@ -66,9 +67,10 @@ function TabRoutes() {
           page === 'inbox' ? (
             <ScrollFrame
               footer={
-                <div className={startBar}>
+                <Inline className={startBar}>
                   <textarea aria-label="Message" rows={1} className={messageField} />
-                </div>
+                  <Button>Send</Button>
+                </Inline>
               }
             >
               {tasks.map((t) => (
@@ -222,3 +224,48 @@ const blurLateResize: StoryObj<typeof meta> = {
 /** A blur whose viewport resize comes late and in steps (544, 700, 844): the shell is the full screen at each step. */
 export const BlurLateResizeDark: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const BlurLateResizeLight: StoryObj<typeof meta> = { ...blurLateResize, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const blurThenPress: StoryObj<typeof meta> = {
+  ...blurNoResize,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = canvasElement.querySelector('.app-shell__root')
+    if (!(root instanceof HTMLElement)) throw new Error('no shell')
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const send = canvas.getByRole('button', { name: 'Send' })
+    const height = () => Math.round(root.getBoundingClientRect().height)
+    // The shell's height at each click on Send.
+    const atClick: number[] = []
+    send.addEventListener('click', () => atClick.push(height()))
+    await userEvent.click(field)
+    fakeViewport.move(544)
+    await expect(height()).toBe(544)
+    // A blur with no pointer down starts the 300 ms end; within it the finger comes down on Send and stays down.
+    field.blur()
+    await expect(field).not.toHaveFocus()
+    const box = send.getBoundingClientRect()
+    const at = { bubbles: true, cancelable: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+    send.dispatchEvent(new PointerEvent('pointerdown', at))
+    send.dispatchEvent(new MouseEvent('mousedown', at))
+    // Past the 300 ms with the pointer down: the shell keeps its 544 and Send stays under the finger.
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    await expect(height()).toBe(544)
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('544px')
+    await expect(send.getBoundingClientRect().top).toBe(box.top)
+    await expect(document.elementFromPoint(at.clientX, at.clientY)?.closest('button')).toBe(send)
+    // The release: the click lands on Send while the shell is still 544, and one frame later the shell is 844.
+    send.dispatchEvent(new PointerEvent('pointerup', at))
+    send.dispatchEvent(new MouseEvent('mouseup', at))
+    send.dispatchEvent(new MouseEvent('click', at))
+    await expect(atClick).toEqual([544])
+    await expect(height()).toBe(544)
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    await expect(root.style.getPropertyValue('--app-shell-visible-height')).toBe('')
+    await expect(height()).toBe(844)
+  },
+}
+
+/** A blur with no pointer, then a press on Send within the 300 ms that stays down past them: the shell keeps its 544 fit until the release, the click lands on Send, and one frame later the shell is the full screen. */
+export const BlurThenPressDark: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const BlurThenPressLight: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'light', viewport: { value: 'm390' } } }

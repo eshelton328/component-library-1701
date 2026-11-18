@@ -44,7 +44,10 @@ Layout, Navigation or Overlays (d-065, d-066).
   keyboard's close late, in steps or never): one frame after the
   release (`pointerup` or `pointercancel`) of the press that took the
   focus, after its click, or 300 ms after a focusout with no pointer
-  down; a field that takes the focus first cancels the end. The
+  down; a field that takes the focus first cancels the end, and an end
+  that comes while a pointer is down (a press on Send within the 300 ms)
+  waits for that press's release and one frame, so its click lands
+  first. The
   window's `resize`, `orientationchange` and `pageshow` and the
   document's `visibilitychange` count as such an event: they read the
   focus again and drop a fit that no focused field needs. Each fit also

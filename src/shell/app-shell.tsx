@@ -44,7 +44,9 @@ const blurEndDelay = 300
  * from under the finger before the click and the tap would miss it. With no such event the fit ends on its own,
  * as iOS standalone may grow the visual viewport late, in steps or never: one frame after the release of the press
  * that took the focus (`pointerup` or `pointercancel`, after its click), or 300 ms after a focusout with no pointer
- * down (the keyboard's Done, a blur from code); a field taking the focus first cancels it. A `focusout` whose
+ * down (the keyboard's Done, a blur from code); a field taking the focus first cancels it. An end that comes while a
+ * pointer is down (a press on Send within the 300 ms) waits for that press's release and one frame, so its click
+ * lands on the button before the shell grows. A `focusout` whose
  * `relatedTarget` is another field keeps the fit too, so moving from one field to another never drops it. The
  * window's `resize`,
  * `orientationchange` and `pageshow` (a page back from the back-forward cache) and the document's
@@ -109,9 +111,11 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // The end of the fit after the focus left the fields, when the browser reports no viewport change (iOS standalone
     // may grow the visual viewport late, in steps, or not at all). With a pointer down at the focusout (the press
     // on Send), it comes one frame after that press's release (`pointerup` or `pointercancel`), so the press's
-    // `click` lands on the button where it started first. With no pointer down, it comes after `blurEndDelay`. The
-    // first viewport or window event before then ends the fit the same way, and a field taking the focus cancels
-    // the end. If the viewport is still short then, no fit starts again: with no field focused it is the bars.
+    // `click` lands on the button where it started first. With no pointer down, it comes after `blurEndDelay`; if a
+    // press is down by then, it waits for that press's release and a frame the same way. The first viewport or
+    // window event before then ends the fit at once, as a real change of the screen, and a field taking the focus
+    // cancels the end. If the viewport is still short then, no fit starts again: with no field focused it is the
+    // bars.
     let pressing = false
     let timer: ReturnType<typeof setTimeout> | undefined
     let frame: number | undefined
@@ -121,9 +125,17 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const release = () => {
       pressing = false
     }
+    // An end that comes while a pointer is down (a press that started after a blur, within `blurEndDelay`) waits
+    // for that press's release and one frame more, as the press path does, so the shell does not grow under the
+    // finger before the click.
     const end = () => {
       cancelEnd()
-      if (!editable(document.activeElement)) refit()
+      if (pressing) waitForRelease()
+      else if (!editable(document.activeElement)) refit()
+    }
+    const waitForRelease = () => {
+      document.addEventListener('pointerup', afterRelease)
+      document.addEventListener('pointercancel', afterRelease)
     }
     const afterRelease = () => {
       document.removeEventListener('pointerup', afterRelease)
@@ -140,12 +152,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     }
     const scheduleEnd = () => {
       cancelEnd()
-      if (pressing) {
-        document.addEventListener('pointerup', afterRelease)
-        document.addEventListener('pointercancel', afterRelease)
-      } else {
-        timer = setTimeout(end, blurEndDelay)
-      }
+      if (pressing) waitForRelease()
+      else timer = setTimeout(end, blurEndDelay)
     }
     // The window resizes or turns, the page comes back from the back-forward cache, or the installed app comes
     // back on screen: these may change the viewport with no visualViewport event, and they end a tap, so they

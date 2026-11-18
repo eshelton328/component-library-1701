@@ -199,7 +199,8 @@ export const SmallDark: StoryObj<typeof meta> = { render: () => <SmallPills />, 
 export const SmallLight: StoryObj<typeof meta> = { render: () => <SmallPills />, play: smallPlay, globals: { mode: 'light' } }
 
 // The New pill of the phone's artifact rows (M1 406:144, M6 408:513): Figma's 48 x 16 teal
-// pill with a filled 9 px star, here 16 high with SparkFilledIcon at 12 px.
+// pill with a filled 9 px star (406:145), here 16 high with SparkFilledIcon drawn at 8 px
+// (d-100), though the caller passes size 12, so the pill is about 48 x 16.
 function NewPills() {
   return (
     <main className={page}>
@@ -240,27 +241,35 @@ const newPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(xs.color).toBe(working.color)
   await expect(xs.backgroundColor).toBe(working.backgroundColor)
   await expect(parseFloat(xs.borderTopLeftRadius)).toBeGreaterThanOrEqual(8)
-  // The filled spark: 12 px, filled in the badge's colour, no stroke.
+  // The filled spark: an 8 px box (Figma's 9 on the 4 px grid, d-100), filled in the badge's
+  // colour, no stroke, and the pill stays 16 high around it.
   const star = badgeIn('new-xs').querySelector('svg')
   if (!(star instanceof SVGSVGElement)) throw new Error('no star')
-  await expect([star.getBoundingClientRect().width, star.getBoundingClientRect().height]).toEqual([12, 12])
+  await expect([star.getBoundingClientRect().width, star.getBoundingClientRect().height]).toEqual([8, 8])
+  await expect(height('new-xs')).toBeCloseTo(16, 0)
   const path = star.querySelector('path')
   if (path === null) throw new Error('no star path')
   await expect(getComputedStyle(path).fill).toBe(xs.color)
   await expect(getComputedStyle(path).stroke).toBe('none')
   await expect(badgeIn('new-xs').textContent).toBe('New')
-  // Figma's pill is 48 wide; the 12 px star and the 4 px gap keep it within 4 of that.
-  await expect(Math.abs(badgeIn('new-xs').getBoundingClientRect().width - 48)).toBeLessThanOrEqual(4)
+  // Figma's pill is 48 wide; the 8 px star and the 4 px gap keep it within 1 of that.
+  await expect(Math.abs(badgeIn('new-xs').getBoundingClientRect().width - 48)).toBeLessThanOrEqual(1)
   // The other sizes stay as they were: sm 20 high, md 24, and a tag ignores the size.
   await expect(height('new-sm')).toBeCloseTo(20, 0)
   await expect(getComputedStyle(badgeIn('new-sm')).paddingLeft).toBe('8px')
   await expect(height('new-md')).toBeCloseTo(24, 0)
   await expect(getComputedStyle(badgeIn('new-md')).columnGap).toBe('6px')
+  // The sm and md pills keep the 12 px icon the caller passes.
+  for (const id of ['new-sm', 'new-md']) {
+    const spark = badgeIn(id).querySelector('svg')
+    if (!(spark instanceof SVGSVGElement)) throw new Error(`no spark in ${id}`)
+    await expect([spark.getBoundingClientRect().width, spark.getBoundingClientRect().height]).toEqual([12, 12])
+  }
   await expect(getComputedStyle(badgeIn('tag-xs')).paddingTop).toBe('2px')
   await expect(getComputedStyle(badgeIn('tag-xs')).paddingLeft).toBe('6px')
   await expect(height('tag-xs')).toBeCloseTo(20, 0)
 }
 
-/** `size="xs"` with `SparkFilledIcon`: the 16 px New pill of the phone's artifact rows. */
+/** `size="xs"` with `SparkFilledIcon` at 8 px: the 48 x 16 New pill of the phone's artifact rows. */
 export const NewDark: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'dark' } }
 export const NewLight: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'light' } }

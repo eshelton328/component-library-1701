@@ -13,6 +13,7 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
   /**
    * An icon before the label, such as `<SparkIcon size="12" />`. It takes
    * the badge's colour. Figma draws it at 12 px, or 14 px in `quiet`; both take 12.
+   * A `size="xs"` pill draws it at 8 px, whatever its own `size`.
    */
   icon?: ReactNode
 }
@@ -26,7 +27,8 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
  * `size` sets a pill's height: `md` (the default) pads it 4 above and below,
  * 24 high; `sm` pads it 2, 20 high, as the Inbox draws its pills; `xs` pads
  * it 0 above and below and 6 at the sides with a 4 px gap, 16 high, as the
- * New pill of the phone's artifact rows (with `SparkFilledIcon` at 12 px).
+ * New pill of the phone's artifact rows, and draws its icon (`SparkFilledIcon`)
+ * at 8 px, about 48 × 16 in all. `md` and `sm` draw the icon at its own size.
  * The `tag`, `outline` and `quiet` badges have one size and ignore it.
  */
 export function Badge({ label, icon, variant, tone, size }: BadgeProps) {

@@ -649,6 +649,110 @@
           "$description": "Tint behind a toolkit hook mark, as on a kind tile or kind badge."
         }
       },
+      "kindBorder": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3686, 0.8824, 1.0],
+            "alpha": 0.6,
+            "hex": "#5ee1ff"
+          },
+          "$description": "Border of a toolkit skill node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.skill); its icon keeps kind.skill. Not for the toolkit map (D2), whose nodes use kind.skill, and not for text or icons."
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6196, 0.5608, 1.0],
+            "alpha": 0.6,
+            "hex": "#9e8fff"
+          },
+          "$description": "Border of a toolkit agent node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.agent); its icon keeps kind.agent. Not for the toolkit map (D2), whose nodes use kind.agent, and not for text or icons."
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.7216, 0.4196],
+            "alpha": 0.6,
+            "hex": "#ffb86b"
+          },
+          "$description": "Border of a toolkit rule node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.rule); its icon keeps kind.rule. Not for the toolkit map (D2), whose nodes use kind.rule, and not for text or icons."
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4314, 0.9059, 0.6588],
+            "alpha": 0.6,
+            "hex": "#6ee7a8"
+          },
+          "$description": "Border of a toolkit workflow node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.workflow); its icon keeps kind.workflow. Not for the toolkit map (D2), whose nodes use kind.workflow, and not for text or icons."
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.6039, 0.6706],
+            "alpha": 0.6,
+            "hex": "#ff9aab"
+          },
+          "$description": "Border of a toolkit hook node that is not the open item, on the Links graph (Toolkit D19 493:84, about 60 % of kind.hook); its icon keeps kind.hook. Not for the toolkit map (D2), whose nodes use kind.hook, and not for text or icons."
+        }
+      },
+      "kindBorderFaint": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3686, 0.8824, 1.0],
+            "alpha": 0.45,
+            "hex": "#5ee1ff"
+          },
+          "$description": "Border of a toolkit skill node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.skill), a step fainter than kindBorder.skill. Not for graph nodes, text or icons."
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6196, 0.5608, 1.0],
+            "alpha": 0.45,
+            "hex": "#9e8fff"
+          },
+          "$description": "Border of a toolkit agent node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.agent), a step fainter than kindBorder.agent. Not for graph nodes, text or icons."
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.7216, 0.4196],
+            "alpha": 0.45,
+            "hex": "#ffb86b"
+          },
+          "$description": "Border of a toolkit rule node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.rule), a step fainter than kindBorder.rule. Not for graph nodes, text or icons."
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.4314, 0.9059, 0.6588],
+            "alpha": 0.45,
+            "hex": "#6ee7a8"
+          },
+          "$description": "Border of a toolkit workflow node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.workflow), a step fainter than kindBorder.workflow. Not for graph nodes, text or icons."
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [1.0, 0.6039, 0.6706],
+            "alpha": 0.45,
+            "hex": "#ff9aab"
+          },
+          "$description": "Border of a toolkit hook node in a link row of the Links panels (Toolkit D19 482:549, about 45 % of kind.hook), a step fainter than kindBorder.hook. Not for graph nodes, text or icons."
+        }
+      },
       "agent": {
         "claude": {
           "$type": "color",
@@ -1374,6 +1478,100 @@
           }
         }
       },
+      "kindBorder": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0549, 0.4157, 0.5216],
+            "alpha": 0.6,
+            "hex": "#0e6a85"
+          }
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.2941, 0.8392],
+            "alpha": 0.6,
+            "hex": "#5b4bd6"
+          }
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6039, 0.2902, 0.0235],
+            "alpha": 0.6,
+            "hex": "#9a4a06"
+          }
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0863, 0.451, 0.2471],
+            "alpha": 0.6,
+            "hex": "#16733f"
+          }
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6902, 0.1294, 0.2235],
+            "alpha": 0.6,
+            "hex": "#b02139"
+          }
+        }
+      },
+      "kindBorderFaint": {
+        "skill": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0549, 0.4157, 0.5216],
+            "alpha": 0.45,
+            "hex": "#0e6a85"
+          }
+        },
+        "agent": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.2941, 0.8392],
+            "alpha": 0.45,
+            "hex": "#5b4bd6"
+          }
+        },
+        "rule": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6039, 0.2902, 0.0235],
+            "alpha": 0.45,
+            "hex": "#9a4a06"
+          }
+        },
+        "workflow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.0863, 0.451, 0.2471],
+            "alpha": 0.45,
+            "hex": "#16733f"
+          }
+        },
+        "hook": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6902, 0.1294, 0.2235],
+            "alpha": 0.45,
+            "hex": "#b02139"
+          }
+        }
+      },
       "agent": {
         "claude": {
           "$type": "color",
@@ -1584,7 +1782,7 @@
         "lineHeight": 1.4286,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
-      "$description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high."
+      "$description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, and the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81)."
     },
     "labelLg": {
       "$type": "typography",

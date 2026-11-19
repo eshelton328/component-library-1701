@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
-import { motionDone } from '../controls/bottom-sheet.testing'
+import { motionDone, restPointerOn } from '../controls/bottom-sheet.testing'
 import { MoreDrawer, type MoreDrawerGroup } from './more-drawer'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -70,6 +70,10 @@ const meta = {
     const body = within(document.body)
     const drawer = await body.findByRole('dialog', { name: 'More' })
     await motionDone(drawer)
+    // Put the runner's pointer on the title row, which has no hover style, before the items' idle fills are read.
+    const titleRow = drawer.querySelector('.bottom-sheet__header')
+    if (titleRow === null) throw new Error('no title row')
+    await restPointerOn(titleRow)
     const box = drawer.getBoundingClientRect()
     await expect(box.width).toBe(window.innerWidth)
     await expect(Math.round(box.bottom)).toBe(window.innerHeight)

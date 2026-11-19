@@ -25,6 +25,13 @@ import {
 // when nothing checks that it is.
 const typeSyntax = [
   {
+    // A catch with an empty body drops the error, also when the body holds
+    // only a comment (the audit's G-6).
+    selector: 'CatchClause > BlockStatement.body[body.length=0]',
+    message:
+      'An empty catch drops the error. Handle it, rethrow it, or return it as a value.',
+  },
+  {
     selector: 'PropertyDefinition[definite=true], VariableDeclarator[definite=true]',
     message:
       'A definite-assignment assertion ("!:") claims a value is set without a check. Initialise it, or type it as "T | undefined" and check before use.',
@@ -74,7 +81,7 @@ const typeRules = {
   ],
   '@typescript-eslint/switch-exhaustiveness-check': [
     'error',
-    { considerDefaultExhaustiveForUnions: false },
+    { considerDefaultExhaustiveForUnions: false, allowDefaultCaseForExhaustiveSwitch: false },
   ],
 }
 
@@ -265,8 +272,13 @@ export async function libraryConfig({ pandaConfig, tsconfigRootDir, files, srcDi
         '@pandacss/no-important': 'error',
         '@pandacss/no-debug': 'error',
         '@pandacss/extraction-diagnostics': 'error',
+        // Components report through props and callbacks, not the console.
+        'no-console': 'error',
       },
     },
+    // The AppShell names a ScrollFrame that cannot dock in a console warning
+    // (screen reviews R20, R21); no other console call is allowed in src.
+    { files: [`${srcDir}/shell/app-shell.tsx`], rules: { 'no-console': ['error', { allow: ['warn'] }] } },
     ...structureConfig(srcDir),
   )
 }

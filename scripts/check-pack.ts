@@ -6,7 +6,8 @@
 // types file for each runtime file and the reverse; the Panda manifest's
 // preset and build info must be packed; and every packed runtime entry
 // must import under plain Node ESM, as a consumer without a bundler
-// loads it.
+// loads it. publint (warnings fail) and attw (--profile esm-only) also
+// check the packed tarball, the file a consumer installs.
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { join, posix } from 'node:path'
@@ -85,6 +86,14 @@ const smoke = mkdtempSync(join(root, '.pack-smoke-'))
 try {
   const tgz = execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', smoke, '--silent'], { cwd: root, encoding: 'utf8' }).trim().split('\n').pop() ?? ''
   execFileSync('tar', ['-xzf', join(smoke, tgz), '-C', smoke])
+  const tools: [string, string[]][] = [
+    ['publint', ['run', join(smoke, tgz), '--strict']],
+    ['attw', [join(smoke, tgz), '--profile', 'esm-only', '--format', 'ascii']],
+  ]
+  for (const [tool, args] of tools) {
+    const r = spawnSync(join(root, 'node_modules/.bin', tool), args, { cwd: root, encoding: 'utf8' })
+    if (r.status !== 0) problems.push(`${tool} fails on the packed tarball:\n${(r.stdout + r.stderr).trim().split('\n').slice(-15).join('\n')}`)
+  }
   const pkgDir = join(smoke, 'package') + '/'
   const failed: string[] = []
   for (const entry of new Set(runtime)) {

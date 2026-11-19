@@ -20,7 +20,10 @@ release checks, the component build and their tests.
 - Exempt a folder from `check-agents-md.ts` in `../.agentsignore`, never
   by deleting its `AGENTS.md`.
 - `check-api.ts` reads `styled-system/recipes/`, so run `pnpm codegen`
-  first.
+  first. API Extractor fails on a forgotten export (`ae-forgotten-export`):
+  export each type that a public signature names.
+- `check-pack.ts` also runs `publint --strict` and
+  `attw --profile esm-only` on the packed tarball.
 - The `api-report` workflow runs on `pull_request_target`, with the base
   branch's copy of itself and of `check-api-diff.ts`. A change to either
   takes effect only after it merges.

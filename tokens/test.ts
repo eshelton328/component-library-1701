@@ -25,7 +25,9 @@ const parseBuild = (stdout: string, stderr: string) => {
     if (isRecord(data) && typeof data['ok'] === 'boolean' && Array.isArray(data['problems']) && data['problems'].every(isProblem)) {
       return { ok: data['ok'], problems: data['problems'].filter(isProblem) }
     }
-  } catch { /* falls through to a crash result */ }
+  } catch (error) {
+    return crash(`stdout is not JSON (${String(error)}): ${stderr.slice(0, 300)}`)
+  }
   return crash(stderr.slice(0, 300))
 }
 

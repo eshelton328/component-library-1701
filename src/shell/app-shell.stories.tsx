@@ -1478,11 +1478,17 @@ const curveTime = (progress: number) => {
   }
   return bezier(x1, x2, high) * Number.parseFloat(token('durations.keyboard'))
 }
+// The rise one frame after the first frame drawn at `at` or later: the recorder can run before the hook in a frame,
+// and then reads the frame before.
+const riseAfter = (frames: { at: number; rise: number }[], at: number) => {
+  const index = frames.findIndex((f) => f.at >= at)
+  return Math.round(frames[index + 1]?.rise ?? frames[index]?.rise ?? 0)
+}
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // A first open where the real keyboard is 50 px off the 380 guess, reported `delay` ms after the focus: during the
 // dock's 250 ms move, or after it. The composer must make one move that ends on the real keyboard, as the Claude iOS
 // app's does (screen review R22, rec3), with no hold and no second move.
-const guessOff = (real: number, delay: number): StoryObj<typeof meta> => ({
+const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta> => ({
   ...withMotion,
   render: () => <ThreadChat />,
   play: async ({ canvasElement }) => {
@@ -1492,6 +1498,8 @@ const guessOff = (real: number, delay: number): StoryObj<typeof meta> => ({
     await userEvent.click(field)
     const focused = performance.now()
     if (delay > 0) await wait(delay)
+    // Or a few frames in, counted in frames, so a slow runner still reports early in the move.
+    for (let i = 0; i < frames; i++) await nextFrame()
     const reported = performance.now()
     fakeViewport.move({ height: 844 - real })
     await settled(footer, rise)
@@ -1506,23 +1514,24 @@ const guessOff = (real: number, delay: number): StoryObj<typeof meta> => ({
       const after = moved.filter((f) => f.at >= reported)
       await expect(before.slice(1).filter((f, i) => f.rise < (before[i]?.rise ?? f.rise))).toEqual([])
       await expect(after.slice(1).filter((f, i) => Math.abs(rise - f.rise) > Math.abs(rise - (after[i]?.rise ?? f.rise)))).toEqual([])
-      // The first frame drawn 250 ms or more after the focus shows the dock on the keyboard, whatever the frame rate.
-      await expect(Math.round(moved.find((f) => f.at >= focused + 250)?.rise ?? 0)).toBe(rise)
+      // The dock is on the keyboard by the frame after the first one drawn 250 ms or more after the focus, whatever
+      // the frame rate.
+      await expect(riseAfter(moved, focused + 250)).toBe(rise)
     } else {
       // A report after the move: one correction that starts at the report and runs 250 ms, with no 300 ms wait: the
-      // first frame drawn 250 ms or more after the report shows the dock on the keyboard.
-      await expect(Math.round(moved.find((f) => f.at >= reported + 250)?.rise ?? 0)).toBe(rise)
+      // dock is on the keyboard by the frame after the first one drawn 250 ms or more after the report.
+      await expect(riseAfter(moved, reported + 250)).toBe(rise)
     }
     await expect(moved.filter((f) => f.rise > Math.max(rise, 346) + 1)).toEqual([])
   },
 })
 const phone = { viewport: { value: 'm390' } }
 /** First open, the real keyboard 50 px lower than the guess, reported during the move: one rise, on time. */
-export const GuessHighDuringDark = { ...guessOff(330, 0), globals: { mode: 'dark', ...phone } }
-export const GuessHighDuringLight = { ...guessOff(330, 0), globals: { mode: 'light', ...phone } }
+export const GuessHighDuringDark = { ...guessOff(330, 0, 1), globals: { mode: 'dark', ...phone } }
+export const GuessHighDuringLight = { ...guessOff(330, 0, 1), globals: { mode: 'light', ...phone } }
 /** First open, the real keyboard 50 px higher than the guess, reported during the move: one rise, on time. */
-export const GuessLowDuringDark = { ...guessOff(430, 0), globals: { mode: 'dark', ...phone } }
-export const GuessLowDuringLight = { ...guessOff(430, 0), globals: { mode: 'light', ...phone } }
+export const GuessLowDuringDark = { ...guessOff(430, 0, 3), globals: { mode: 'dark', ...phone } }
+export const GuessLowDuringLight = { ...guessOff(430, 0, 3), globals: { mode: 'light', ...phone } }
 /** First open, the real keyboard 50 px lower than the guess, reported after the move: the correction starts at once. */
 export const GuessHighAfterDark = { ...guessOff(330, 400), globals: { mode: 'dark', ...phone } }
 export const GuessHighAfterLight = { ...guessOff(330, 400), globals: { mode: 'light', ...phone } }

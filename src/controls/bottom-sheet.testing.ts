@@ -13,6 +13,28 @@ export async function motionDone(sheet: Element) {
 }
 
 /**
+ * Resolves when `el` leaves the document. Ark unmounts a closed sheet when
+ * its close motion (`durations.sheetClose`) ends, so a play function awaits
+ * this after a close, then checks that no dialog is left. A loaded runner can
+ * take longer than `waitFor`'s 1000 ms for that; the story's own timeout
+ * still ends a sheet that never closes.
+ */
+export function unmounted(el: Element): Promise<void> {
+  return new Promise((resolve) => {
+    if (!el.isConnected) {
+      resolve()
+      return
+    }
+    const watch = new MutationObserver(() => {
+      if (el.isConnected) return
+      watch.disconnect()
+      resolve()
+    })
+    watch.observe(el.ownerDocument, { childList: true, subtree: true })
+  })
+}
+
+/**
  * Moves the test runner's real pointer onto `el`, a part of the sheet with no
  * hover style. The pointer keeps its place from the story before, and Chromium
  * can hover what opens under it a frame later, so a play function calls this

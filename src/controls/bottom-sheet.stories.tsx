@@ -9,7 +9,7 @@ import { Menu } from './menu'
 import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
-import { motionDone } from './bottom-sheet.testing'
+import { motionDone, unmounted } from './bottom-sheet.testing'
 import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -247,21 +247,24 @@ export const Behaviour: StoryObj<typeof meta> = {
       await expect(sheet.contains(document.activeElement)).toBe(true)
     }
     await userEvent.keyboard('{Escape}')
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await unmounted(sheet)
+    await expect(body.queryByRole('dialog')).toBeNull()
     await expect(onOpenChange).toHaveBeenLastCalledWith(false)
     await waitFor(() => expect(trigger).toHaveFocus())
     // A click on the scrim above the sheet closes it.
     await userEvent.click(trigger)
-    await body.findByRole('dialog', { name: 'Sort by' })
+    const scrimmed = await body.findByRole('dialog', { name: 'Sort by' })
     const above = document.elementFromPoint(20, 10)
     if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
     await userEvent.click(above)
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await unmounted(scrimmed)
+    await expect(body.queryByRole('dialog')).toBeNull()
     // A pick in the sort list closes it, and the focus goes back to the trigger.
     await userEvent.click(trigger)
     const sorted = await body.findByRole('dialog', { name: 'Sort by' })
     await userEvent.click(within(sorted).getByText('Name'))
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await unmounted(sorted)
+    await expect(body.queryByRole('dialog')).toBeNull()
     await expect(onOpenChange).toHaveBeenLastCalledWith(false)
     await waitFor(() => expect(trigger).toHaveFocus())
     // The pick stays chosen, and an arrow key moves the choice without closing the sheet.
@@ -273,11 +276,14 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(within(reopened).getByRole('radio', { name: 'Oldest first' })).toBeChecked()
     await expect(body.getByRole('dialog', { name: 'Sort by' })).toBeInTheDocument()
     await userEvent.keyboard('{Enter}')
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await unmounted(reopened)
+    await expect(body.queryByRole('dialog')).toBeNull()
     // A row wrapped in BottomSheetClose closes its sheet.
     await userEvent.click(canvas.getByRole('button', { name: 'Snooze' }))
-    await userEvent.click(within(await body.findByRole('dialog', { name: 'Snooze' })).getByRole('button', { name: 'Tomorrow' }))
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    const snooze = await body.findByRole('dialog', { name: 'Snooze' })
+    await userEvent.click(within(snooze).getByRole('button', { name: 'Tomorrow' }))
+    await unmounted(snooze)
+    await expect(body.queryByRole('dialog')).toBeNull()
     // The close button closes the side chat.
     await userEvent.click(canvas.getByRole('button', { name: 'Side chat' }))
     const chat = await body.findByRole('dialog', { name: 'Side chat' })
@@ -291,7 +297,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([16, 16])
     await expect(getComputedStyle(x).stroke).toBe(getComputedStyle(closeButton).color)
     await userEvent.click(within(chat).getByRole('button', { name: 'Close' }))
-    await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+    await unmounted(chat)
+    await expect(body.queryByRole('dialog')).toBeNull()
     await waitFor(() => expect(canvas.getByRole('button', { name: 'Side chat' })).toHaveFocus())
     await expect(body.queryByRole('dialog', { name: 'Controlled' })).toBeNull()
   },

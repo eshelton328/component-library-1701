@@ -137,7 +137,10 @@ under their purpose group, never under "Controls" (d-065).
   a sheet first calls `restPointerOn` from the same file with a part
   that has no hover style (the title row): the runner's real pointer
   keeps its place from the story before. It does nothing in the
-  Storybook UI.
+  Storybook UI. After a close, a play function awaits `unmounted` from
+  the same file with the sheet, then checks that no dialog is left: the
+  close motion can take longer than `waitFor`'s 1000 ms on a loaded
+  runner.
 - `BottomSheet scrim={false}` draws no scrim (the tablet side chat) and
   changes nothing else: the focus stays inside, the page stays hidden from
   assistive technology, and a press outside closes the sheet without

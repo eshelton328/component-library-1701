@@ -17,9 +17,8 @@ const TabBar = withContext('div', 'tabBar')
 const SafeArea = withContext('div', 'safeArea')
 
 
-// The custom properties that the recipe's root reads: the visible height and the visible area's top.
-const visibleHeight = '--app-shell-visible-height'
-const visibleTop = '--app-shell-visible-top'
+// The custom property that the recipes read: how far the on-screen keyboard covers the bottom of the detail, in px.
+const keyboardInset = '--app-shell-keyboard'
 // How long the fit stays after the focus leaves the fields with no pointer down (the keyboard's Done, the iOS form
 // bar's check, a blur from code) when no viewport event ends it first. iOS animates the keyboard away in 250 ms and
 // reports the visual viewport's resize during it, so 300 lets that resize come first and end the fit in step with
@@ -27,38 +26,38 @@ const visibleTop = '--app-shell-visible-top'
 const blurEndDelay = 300
 
 /**
- * Keeps the shell inside the visual viewport when the browser does not resize the layout for the on-screen
- * keyboard. Chrome on Android with `interactive-widget=resizes-content` shrinks the layout viewport itself, so the
+ * Docks the foot of the page on the on-screen keyboard (the fit) when the browser does not resize the layout for
+ * it. Chrome on Android with `interactive-widget=resizes-content` shrinks the layout viewport itself, so the
  * visual viewport stays as tall as the layout (`documentElement.clientHeight`) and nothing is set. iOS Safari
- * only shrinks `visualViewport` and may pan it down (`offsetTop`); then the root gets the visible height and top
- * as two custom properties, the measured runtime values, which the recipe turns into `max-height` and
- * `margin-top`. A zoom (`scale` above 1) shrinks the visual viewport's CSS height by the scale too, so the
+ * only shrinks `visualViewport` and may pan it down (`offsetTop`); the keyboard's top is then the visible area's
+ * bottom, and the root gets `--app-shell-keyboard`, the measured runtime value of how far the keyboard covers the
+ * detail's bottom. The shell keeps its full height and nothing in the layout moves: the detail ends its scroll that
+ * far up, and a `ScrollFrame` that is its child moves its footer onto the keyboard with `translateY` and ends its
+ * body's view above it (the recipes), while the tab bar or the safe area stays under the keyboard. A zoom (`scale` above 1) shrinks the visual viewport's CSS height by the scale too, so the
  * keyboard-free part of the screen is `height * scale` CSS px: a pinch zoom with no keyboard gives the layout's
  * height and sets nothing, and Safari's focus zoom on a field under 16 px (the Composer's 14) keeps the fit while
  * the keyboard is open. The fit applies only while an editable field (`editable`: a textarea, a text-like input or
  * a contenteditable element) has the focus, the keyboard case: the browser's top and bottom bars also shrink the
  * visual viewport as they show and hide on a scroll, and following them would move the page under the user's
- * finger. With no focused field both properties are removed, and the shell keeps the stable height its parent
- * gives it. A `focusin` on a field starts the fit at once. When the focus leaves the fields (to a button, or to
+ * finger. With no focused field the property is removed. A `focusin` on a field starts the fit at once. When the focus leaves the fields (to a button, or to
  * nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the keyboard closing: a
- * tap on the composer's Send takes the focus on its press, and if the shell grew then, the button would move
+ * tap on the composer's Send takes the focus on its press, and if the dock fell then, the button would move
  * from under the finger before the click and the tap would miss it. With no such event the fit ends on its own,
  * as iOS standalone may grow the visual viewport late, in steps or never: one frame after the release of the press
  * that took the focus (`pointerup` or `pointercancel`, after its click), or 300 ms after a focusout with no pointer
  * down (the keyboard's Done, a blur from code); a field taking the focus first cancels it. An end that comes while a
  * pointer is down (a press on Send within the 300 ms) waits for that press's release and one frame, so its click
- * lands on the button before the shell grows. A `focusout` whose
+ * lands on the button before the dock falls. A `focusout` whose
  * `relatedTarget` is another field keeps the fit too, so moving from one field to another never drops it. The
  * window's `resize`,
  * `orientationchange` and `pageshow` (a page back from the back-forward cache) and the document's
  * `visibilitychange` (an installed app back on screen) count as such an event: they read the focus again and fit,
  * so a fit that no focused field needs is dropped there too, and a stale small visual viewport with no field
- * focused gives the full height. Every fit also checks that a field still has the focus (`document.activeElement`),
+ * focused docks nothing. Every fit also checks that a field still has the focus (`document.activeElement`),
  * not only the flag the focus events keep: WebKit fires no `focusout` when the focused field is removed from the
- * page (a route change, or a closed dialog), so the flag alone would keep the shell following the visual viewport,
- * and a later shrink with no field focused would leave the shell short of the screen. A route change is not
- * visible to the library; the removed field counts as not focused at the next event, which drops the fit and
- * gives the parent's height. Without `visualViewport` (an old browser, or no window when rendered on the server)
+ * page (a route change, or a closed dialog), so the flag alone would keep the dock following the visual viewport,
+ * and a later shrink with no field focused would lift the page's foot for nothing. A route change is not
+ * visible to the library; the removed field counts as not focused at the next event, which drops the fit. Without `visualViewport` (an old browser, or no window when rendered on the server)
  * nothing changes: the hook reads the window only in its effect.
  */
 function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
@@ -67,14 +66,22 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const viewport = window.visualViewport
     const root = ref.current
     if (!viewport || !root) return
-    // The shell's top in the layout, kept between measures. At scale 1 it is `offsetTop`, where Safari panned the
-    // visible area. Under a zoom `offsetTop` also holds the zoom's own pan inside that area, so following it would
-    // push the shell's foot (the composer) below the screen. The zoom pans over a page that stays put, so the top
-    // stays where the last scale-1 measure put it, moved only as far as needed for the shell to cover the visible
-    // area (`offsetTop` to `offsetTop + height`), so no page shows above or below it.
+    // The visible area's top in the layout, kept between measures. At scale 1 it is `offsetTop`, where Safari panned
+    // it. Under a zoom `offsetTop` also holds the zoom's own pan inside that area, so following it would
+    // put the keyboard's top, and the composer, below the screen. The zoom pans over a page that stays put, so the
+    // top stays where the last scale-1 measure put it, moved only as far as needed for the keyboard-free area to
+    // cover the visible area (`offsetTop` to `offsetTop + height`).
     let top = 0
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
     let typing = editable(document.activeElement)
+    // Shows a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
+    const show = (inset: number) => {
+      const detail = root.querySelector(':scope > .app-shell__detail')
+      const keyboardTop = document.documentElement.clientHeight - inset
+      const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom - keyboardTop)
+      if (covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
+      else root.style.removeProperty(keyboardInset)
+    }
     const fit = () => {
       // A field removed while it had the focus fires no focusout in WebKit: the focus is then on the body, and the
       // fit must not stay on for it.
@@ -86,11 +93,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // layout. With no focused field it is the browser's bars, which the shell does not follow.
       if (typing && layout - visible > 1) {
         top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
-        root.style.setProperty(visibleHeight, `${String(visible)}px`)
-        root.style.setProperty(visibleTop, `${String(top)}px`)
+        show(layout - top - visible)
       } else {
-        root.style.removeProperty(visibleHeight)
-        root.style.removeProperty(visibleTop)
+        show(0)
       }
     }
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
@@ -189,8 +194,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)
-      root.style.removeProperty(visibleHeight)
-      root.style.removeProperty(visibleTop)
+      root.style.removeProperty(keyboardInset)
     }
   }, [])
   return ref
@@ -237,14 +241,15 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * parent, which should fill the screen from its top. When an on-screen
  * keyboard covers the bottom of the page and the browser does not resize
  * the layout for it (iOS Safari, which only shrinks `window.visualViewport`),
- * the shell shrinks to the visible area and moves with it, so a composer at
- * its foot stays above the keyboard. It does so only while a text field has
+ * the shell keeps its height and a `ScrollFrame` in the detail moves its
+ * footer (a composer) up onto the keyboard, while the tab bar or the safe
+ * area stays under it. It does so only while a text field has
  * the focus, and after the focus leaves it until the keyboard closes, the
  * tap that took the focus ends or 300 ms pass (so a tap on Send lands):
  * otherwise the browser's bars that show and hide on a
- * scroll leave the shell at its parent's height; where the browser resizes the layout
+ * scroll move nothing; where the browser resizes the layout
  * (Chrome on Android with `interactive-widget=resizes-content`), or with no
- * `visualViewport`, it keeps its height. The scrolling pane is focusable, so the keyboard can scroll it
+ * `visualViewport`, nothing docks. The scrolling pane is focusable, so the keyboard can scroll it
  * when it holds only text. It draws no scroll bar, and a scroll that reaches its end stops there and does not move
  * the page (the shared `scrollArea` style); a wheel, a trackpad, a touch drag and the keys still scroll it.
  */

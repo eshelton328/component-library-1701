@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
 import { Portal } from '@ark-ui/react/portal'
-import { useEffect, useId, useRef, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
@@ -98,6 +98,8 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
   // The sheet's own id, so the focus can find it when it opens.
   const contentId = useId()
   const firstFocus = initialFocus ?? (focusSheet ? () => document.getElementById(contentId) : undefined)
+  // The element that had the focus when the sheet opened, such as its trigger.
+  const returnToRef = useRef<HTMLElement | null>(null)
   return (
     <Root
       size={size}
@@ -111,12 +113,14 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
         onOpenChange?.(details.open)
       }}
     >
+      <FocusOrigin returnToRef={returnToRef} />
       {trigger === undefined ? null : <ArkDialog.Trigger asChild>{trigger}</ArkDialog.Trigger>}
       <Portal>
         <Backdrop />
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
           <DraggableContent aria-label={title ?? label}>
+            <FocusReturn returnToRef={returnToRef} />
             <Grabber aria-hidden="true" data-drag-handle="grabber" />
             {title === undefined ? null : (
               <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="title">
@@ -136,6 +140,40 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       </Portal>
     </Root>
   )
+}
+
+// Notes the element that has the focus as the sheet opens, before Ark moves the focus into it.
+function FocusOrigin({ returnToRef }: { returnToRef: RefObject<HTMLElement | null> }) {
+  const { open } = useDialogContext()
+  useLayoutEffect(() => {
+    if (!open) return
+    const active = document.activeElement
+    returnToRef.current = active instanceof HTMLElement && active !== document.body ? active : null
+  }, [open, returnToRef])
+  return null
+}
+
+// Renders nothing; when the sheet's content unmounts, its effect cleanup runs after React removed the content, and
+// gives the focus back.
+function FocusReturn({ returnToRef }: { returnToRef: RefObject<HTMLElement | null> }) {
+  useEffect(
+    () => () => {
+      returnFocus(returnToRef)
+    },
+    [returnToRef],
+  )
+  return null
+}
+
+// When the sheet has unmounted, gives the focus back to the element that had it at the open, if the focus was lost
+// with the sheet. Ark returns the focus only after its focus trap is on; a sheet closed in its first frames (a fast
+// pick, before the open motion starts) unmounts with the focus inside it, and the focus would fall to the body.
+function returnFocus(returnToRef: RefObject<HTMLElement | null>) {
+  const target = returnToRef.current
+  returnToRef.current = null
+  const active = document.activeElement
+  if (target === null || !target.isConnected) return
+  if (active === null || active === document.body) target.focus({ preventScroll: true })
 }
 
 function present(node: ReactNode) {

@@ -950,3 +950,58 @@ export const ReopenDuringClose: StoryObj<typeof meta> = { render: () => <ReopenS
 
 /** A swipe past 30% closes the sheet, and it slides down from the finger. */
 export const SwipeCloseMotion: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipeClosePlay }
+
+// A sheet closed in the same task that opens it: the pick lands before Ark moves the focus in and before the open
+// motion starts, so the sheet unmounts at once with the focus inside it. The focus still goes back to the trigger.
+// A MutationObserver picks Name as soon as the sheet is in the page, before the next frame.
+const quickClosePlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const trigger = within(canvasElement).getByRole('button', { name: 'Sort' })
+  const body = within(document.body)
+  const picked = new Promise<void>((resolve) => {
+    const observer = new MutationObserver(() => {
+      const sheet = document.querySelector('[role="dialog"]')
+      if (!(sheet instanceof HTMLElement)) return
+      const name = within(sheet).queryByRole('radio', { name: 'Name' })
+      if (name === null) return
+      observer.disconnect()
+      name.focus()
+      name.click()
+      resolve()
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+  })
+  await userEvent.click(trigger)
+  await picked
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  await waitFor(() => expect(trigger).toHaveFocus())
+}
+
+/** A sheet closed before its open motion starts gives the focus back to its trigger. */
+export const QuickCloseDark: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <SortSheet />
+    </main>
+  ),
+  play: quickClosePlay,
+  globals: { mode: 'dark' },
+}
+
+/** The same with prefers-reduced-motion, where the sheet only fades. */
+export const QuickCloseReducedMotionDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the DevTools session that emulates the media.
+  tags: ['!dev'],
+  render: () => (
+    <main className={page}>
+      <SortSheet />
+    </main>
+  ),
+  globals: { mode: 'dark' },
+  beforeEach: async () => {
+    await emulateReducedMotion(true)
+    return async () => {
+      await emulateReducedMotion(false)
+    }
+  },
+  play: quickClosePlay,
+}

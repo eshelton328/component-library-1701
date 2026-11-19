@@ -345,13 +345,108 @@ function RowUi() {
 
 const rowDrawings: Record<ThumbnailKind, (props: DrawingProps) => ReactNode> = { chart: RowChart, diagram: RowDiagram, doc: RowDoc, grid: RowGrid, ui: RowUi }
 
-// The row sizes' boxes. md is 76 × 48 (M1 406:122): the 64 × 40 drawing at
-// 1.2, 76.8 wide, centred, so 0.4 of the window bar's ends is cut.
-const rowBoxes = { sm: { w: 64, h: 40, scale: 1 }, md: { w: 76, h: 48, scale: 1.2 } } as const
+// The phone row drawings, on Figma's 76 × 48 row preview (M1 406:122 to
+// 406:278): drawn for the phone, with a 76-wide top bar and no window dots,
+// and larger shapes than the desktop drawing. Figma gives each layer's place
+// inside the 1 px frame border, so each x and y here is Figma's plus 1, as
+// in the desktop drawings. A radius larger than half a shape's height is
+// drawn at half its height, as Figma and CSS clamp it.
+
+// Chart 406:122: a title bar (406:124), nine bars on a baseline (406:125 to
+// 406:133), every third violet, and the baseline (406:134).
+const phoneBars = [11.454, 27.777, 10.987, 27.206, 15.737, 25.411, 20.025, 22.511, 23.565]
+function PhoneChart({ tone }: DrawingProps) {
+  const { solid } = tones[tone]
+  return (
+    <>
+      <Rect x={6} y={8} w={25.6} h={3} r={1.5} fill={solid} />
+      <g data-bars="">
+        {phoneBars.map((h, i) => (
+          <Rect key={String(i)} x={7.28 + i * 7.11} y={43 - h} w={4.551} h={h} fill={i % 3 === 2 ? 'violet' : solid} />
+        ))}
+      </g>
+      <Rect x={6} y={43} w={64} h={1} r={0} fill="muted" />
+    </>
+  )
+}
+
+// Diagram 406:176: one line (406:178) under four violet-edged nodes
+// (406:179 to 406:182).
+const phoneNodes = [
+  [11.12, 16.75],
+  [32.88, 12.2],
+  [32.88, 27.25],
+  [54.64, 19.55],
+] as const
+function PhoneDiagram() {
+  return (
+    <>
+      <Rect x={18.8} y={20.25} w={16} h={1.5} r={0} fill="muted" />
+      {phoneNodes.map(([x, y]) => (
+        <Rect key={`${String(x)}-${String(y)}`} x={x} y={y} w={12.8} h={8.4} r={3} fill="violetEdge" />
+      ))}
+    </>
+  )
+}
+
+// Doc 414:799 (and 406:221; 406:259 in green): a title bar (414:801) and
+// seven text lines (414:802 to 414:808), 3.12 apart; no chips.
+const phoneLines = [60.8, 60.8, 38.4, 60.8, 60.8, 38.4, 60.8]
+function PhoneDoc({ tone }: DrawingProps) {
+  return (
+    <>
+      <Rect x={6} y={8} w={35.2} h={3} r={1.5} fill={tones[tone].solid} />
+      {phoneLines.map((w, i) => (
+        <Rect key={String(i)} x={6} y={13.76 + i * 3.12} w={w} h={2} r={1} fill="muted" />
+      ))}
+    </>
+  )
+}
+
+// Grid 406:204 (and 406:240): two rows of three outlined cells, 18.667 ×
+// 15.5 with radius 3 (406:206 to 406:211), no labels.
+function PhoneGrid() {
+  return (
+    <>
+      {cells.map(([edge], i) => (
+        <Rect key={String(i)} x={6 + (i % 3) * 22.665} y={i < 3 ? 8 : 27.5} w={18.667} h={15.5} r={3} fill={edge} />
+      ))}
+    </>
+  )
+}
+
+// UI 406:149: a side bar (406:151) and four rows (406:152 to 406:158), each
+// with a green pill (406:153 to 406:159).
+function PhoneUi() {
+  return (
+    <>
+      <Rect x={6} y={8} w={14.08} h={35} r={3} fill="well" />
+      {[0, 1, 2, 3].map((i) => {
+        const y = 8 + i * 8.75
+        return (
+          <g key={`row-${String(i)}`}>
+            <Rect x={22.64} y={y} w={47.36} h={5.75} r={2.875} fill="inset" />
+            <Rect x={63.6} y={y + 3} w={3.84} h={2.4} r={1.2} fill="green" />
+          </g>
+        )
+      })}
+    </>
+  )
+}
+
+const phoneDrawings: Record<ThumbnailKind, (props: DrawingProps) => ReactNode> = { chart: PhoneChart, diagram: PhoneDiagram, doc: PhoneDoc, grid: PhoneGrid, ui: PhoneUi }
+
+// The row sizes: sm is the desktop row's 64 × 40 (D2 403:194) with its
+// window dots, md the phone row's 76 × 48 (M1 406:122) with none.
+const rowBoxes = {
+  sm: { w: 64, h: 40, dots: [10.5, 19.5, 28.5], drawings: rowDrawings },
+  md: { w: 76, h: 48, dots: [], drawings: phoneDrawings },
+} as const
 
 function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind; tone: ThumbnailTone; size: keyof typeof rowBoxes; framed: boolean | undefined; label: string | undefined }) {
   const box = rowBoxes[size]
-  const Drawing = rowDrawings[kind]
+  const Drawing = box.drawings[kind]
+  const dots: readonly number[] = box.dots
   const named = label !== undefined && label.trim() !== ''
   return (
     <Root framed={framed} size={size} data-kind={kind} data-shape="compact" data-size={size}>
@@ -362,9 +457,9 @@ function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind
         aria-hidden={named ? undefined : true}
         focusable="false"
       >
-        <g transform={`translate(${String((box.w - 64 * box.scale) / 2)} 0) scale(${String(box.scale)})`}>
-          <rect x={0} y={0} width={64} height={4} className={slots.chrome} />
-          {[10.5, 19.5, 28.5].map((cx) => (
+        <g>
+          <rect x={0} y={0} width={box.w} height={4} className={slots.chrome} />
+          {dots.map((cx) => (
             <circle key={String(cx)} cx={cx} cy={2} r={2.5} className={slots.dot} />
           ))}
           <Drawing tone={tone} />
@@ -382,10 +477,11 @@ function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind
  *
  * `size` sets the width. `fill` (the default) fills the container's width
  * at `shape`'s ratio, with the card's drawing. `sm` is the 64 × 40 preview
- * at the start of a desktop artifact row and `md` the 76 × 48 one of a
- * phone row; both draw each kind's row drawing (a grid of six round-cornered
- * cells, a window with a side bar and rows), not the card's drawing
- * scaled down, and ignore `shape`. `lg` is 128 wide at `shape`'s ratio
+ * at the start of a desktop artifact row, with the window bar's three
+ * dots, and `md` the 76 × 48 one of a phone row, drawn for the phone: a top
+ * bar with no dots and larger shapes. Both draw each kind's row drawing (a
+ * grid of six round-cornered cells, a window with a side bar and rows), not
+ * the card's drawing scaled down, and ignore `shape`. `lg` is 128 wide at `shape`'s ratio
  * with the card's drawing, 128 × 72 with `shape="wide"`, as the desktop
  * list view and search results draw it.
  *

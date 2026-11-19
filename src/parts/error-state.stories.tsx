@@ -90,7 +90,7 @@ function Gallery() {
           <ErrorState
             size="pane"
             title="The file tree did not load"
-            description="git ls-files exited with code 128 in /Users/erik/ncc-1701/projects/ncc-1701/component-library-1701-worktrees/a-very-long-branch-name-that-does-not-fit"
+            description="git ls-files exited with code 128 in /home/dev/workspace/projects/library-1/component-library-1701-worktrees/a-very-long-branch-name-that-does-not-fit"
             actions={<Button size="sm">Try again</Button>}
           />
         </div>
@@ -116,7 +116,7 @@ function Gallery() {
         <div className={inlineFrame} data-testid="inline-long">
           <ErrorState
             size="inline"
-            title="Failed:/Users/erik/ncc-1701/projects/ncc-1701/component-library-1701-worktrees/a-very-long-branch-name/src/parts/a-file.tsx"
+            title="Failed:/home/dev/workspace/projects/library-1/component-library-1701-worktrees/a-very-long-branch-name/src/parts/a-file.tsx"
             actions={<Button size="sm">Retry</Button>}
           />
         </div>

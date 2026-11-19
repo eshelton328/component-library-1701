@@ -23,6 +23,7 @@ jobs:
     permissions:
       actions: read # list the ci runs of the head commit
       issues: read # read the PR's base-branch changes
+      pull-requests: read # the events of an issue that is a PR
     steps:
       # A base-branch change is an `edited` event, and ci.yml does not run
       # on edits. Fail until ci.yml has run on the head commit after the

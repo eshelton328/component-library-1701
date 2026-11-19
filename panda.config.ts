@@ -22,6 +22,8 @@ export default defineConfig({
   jsxStyleProps: 'none',
   strictTokens: true,
   strictPropertyValues: true,
+  // A config problem fails codegen instead of a warning.
+  validation: 'error',
   // Component styles are config recipes in src/theme/recipes (d-067).
   theme: { extend: { recipes, slotRecipes, keyframes } },
   globalCss: {

@@ -20,13 +20,14 @@
   "scripts": {
     "prepare": "panda codegen --log-level silent",
     "codegen": "panda codegen",
+    "check:css": "panda cssgen --max-warnings 0",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint --max-warnings 0 .",
     "checks": "node scripts/check-fixtures.ts",
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm test:figma && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test:cycles && pnpm check:cycles && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm test:figma && pnpm codegen && pnpm check:css && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test:cycles && pnpm check:cycles && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
     "test:hooks": "node scripts/agent-hooks/test.ts",
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
@@ -59,6 +60,7 @@
     "@fontsource-variable/geist-mono": "5.3.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "0.18.5",
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint/js": "10.0.1",
     "@microsoft/api-extractor": "7.60.1",
@@ -88,6 +90,7 @@
     "eslint-plugin-storybook": "10.6.7",
     "globals": "17.14.0",
     "playwright": "1.65.1",
+    "publint": "0.3.25",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "semantic-release": "25.0.9",

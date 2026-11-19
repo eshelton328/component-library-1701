@@ -9,6 +9,16 @@ import { focusRing } from './focus'
 // shadow and radius md, with small text in a 4 × 8 box no wider than
 // shell.popover. A long text wraps. No arrow. The pointer can move onto it
 // and it stays open there (WCAG 1.4.13), so it takes pointer events.
+//
+// The tooltip of TruncatedText, which only shows the whole of a cut text, is
+// the one exception (the `cutText` variant): it takes no pointer events, so a
+// click where it covers a card's title button or a row reaches what lies
+// under it. TruncatedText turns Ark's `interactive` off, and Ark then writes
+// `pointer-events: none` on the content as an inline style; the variant sets
+// it on the positioner, the box around the content. This gives up WCAG
+// 1.4.13 "hoverable" for this tooltip only: it repeats text that is already
+// on the page, holds no control, opens on keyboard focus too, and Escape
+// closes it ("dismissible").
 export const tooltip = defineSlotRecipe({
   className: 'tooltip',
   jsx: ['Tooltip', 'TruncatedText'],
@@ -29,6 +39,11 @@ export const tooltip = defineSlotRecipe({
       borderColor: 'border.default',
       boxShadow: 'overlay',
       _closed: { display: 'none' },
+    },
+  },
+  variants: {
+    cutText: {
+      true: { positioner: { pointerEvents: 'none' } },
     },
   },
 })

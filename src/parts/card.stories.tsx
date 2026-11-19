@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Grid, Inline, Stack } from '../controls/layout'
 import { SparkIcon } from '../foundations/icons'
@@ -277,6 +277,137 @@ export const LongText: StoryObj<typeof meta> = {
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }
+
+// A card pinned to the window's foot, so its cut description has no room for a tooltip below it.
+const foot = css({ position: 'fixed', bottom: '0', left: '0', w: 'shell.sidebar', p: '24', bg: 'bg.canvas' })
+const footDescription = 'Routes, the RPC client and the owner check over the bridge API, with the held-out cases'
+const onSelectFoot = fn()
+
+function CardAtFoot() {
+  return (
+    <main className={foot}>
+      <Card title="hono-server" description={footDescription} onSelect={onSelectFoot} />
+    </main>
+  )
+}
+
+// The intersection of two boxes, empty when they do not overlap.
+const overlap = (a: DOMRect, b: DOMRect) => ({
+  left: Math.max(a.left, b.left),
+  right: Math.min(a.right, b.right),
+  top: Math.max(a.top, b.top),
+  bottom: Math.min(a.bottom, b.bottom),
+})
+
+/**
+ * A clickable card at the window's foot. Its cut description opens the
+ * tooltip on hover and on focus, and Escape closes it. The tooltip has no
+ * room below the description, so it opens above it, over the title button.
+ * It takes no pointer events, so a click at a point it covers on the title
+ * button still selects the card.
+ */
+const cutTextClickPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onSelectFoot.mockClear()
+  const description = find(canvasElement, '.card__description')
+  await expectCutText(description, footDescription)
+  const text = find(description, '.truncated-text')
+  await userEvent.hover(text)
+  // Wait for Ark to place the open tooltip in the window: it has no room below the text, so it flips above it.
+  await waitFor(async () => {
+    const open = within(document.body).getByRole('tooltip')
+    await expect(open).toHaveTextContent(footDescription)
+    await expect(open.getAttribute('data-placement')).toBe('top')
+    await expect(open.getBoundingClientRect().top).toBeGreaterThanOrEqual(0)
+    await expect(open.getBoundingClientRect().bottom).toBeLessThanOrEqual(description.getBoundingClientRect().top)
+  })
+  const tip = within(document.body).getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  // A point that lies on both the tooltip and the title button.
+  const action = find(canvasElement, '.card__action')
+  const both = overlap(tip.getBoundingClientRect(), action.getBoundingClientRect())
+  await expect(both.right).toBeGreaterThan(both.left)
+  await expect(both.bottom).toBeGreaterThan(both.top)
+  const target = document.elementFromPoint((both.left + both.right) / 2, (both.top + both.bottom) / 2)
+  if (!(target instanceof HTMLElement)) throw new Error('nothing at the point')
+  // A pointer there hits the card, not the tooltip, which takes no pointer events. (React passes a click on the
+  // tooltip up to the card through the portal, so only this hit test shows what a real pointer, or Playwright,
+  // would press.)
+  await expect(tip.contains(target)).toBe(false)
+  await expect(find(canvasElement, 'article').contains(target)).toBe(true)
+  await expect(getComputedStyle(tip).pointerEvents).toBe('none')
+  await userEvent.click(target)
+  await expect(onSelectFoot).toHaveBeenCalledTimes(1)
+  await userEvent.keyboard('{Escape}')
+}
+export const CutTextClickDark: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'dark' }, play: cutTextClickPlay }
+export const CutTextClickLight: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'light' }, play: cutTextClickPlay }
+
+// A pane that clips what is past the window's foot, as a scrolled pane of the-bridge does, with a card whose cut
+// description lies below the foot.
+const clipPane = css({ position: 'fixed', top: '0', bottom: '0', right: '0', w: 'shell.sidebar', overflow: 'hidden', display: 'flex', flexDirection: 'column' })
+// Fills the pane, so the card after it starts at the window's foot.
+const paneFill = css({ h: 'dvh', flexShrink: '0' })
+
+function CardsAtFoot() {
+  return (
+    <main>
+      <div className={foot} data-testid="foot">
+        <Card title="hono-server" description={footDescription} onSelect={() => undefined} />
+      </div>
+      <div className={clipPane}>
+        <div className={paneFill} />
+        <div data-testid="past-foot">
+          <Card title="rpc-client" description={footDescription} onSelect={() => undefined} />
+        </div>
+      </div>
+    </main>
+  )
+}
+
+const tooltipOf = () => within(document.body).queryByRole('tooltip')
+
+/**
+ * A cut description's tooltip at the window's foot stays in the window: it
+ * has no room below the text, so it flips above it. The tooltip is fixed to
+ * the window, so it never makes the document taller and the page never
+ * scrolls, also when its text lies past the foot in a pane that clips it.
+ */
+const cutTextFootPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const cutIn = (id: string) => find(find(within(canvasElement).getByTestId(id), '.card__description'), '.truncated-text')
+  const text = cutIn('foot')
+  await userEvent.hover(text)
+  // Wait for Ark to place the open tooltip: it has no room below the text, so it flips above it.
+  await waitFor(async () => {
+    const open = within(document.body).getByRole('tooltip')
+    await expect(open).toHaveTextContent(footDescription)
+    await expect(open.getAttribute('data-placement')).toBe('top')
+    // 6 px above the text.
+    await expect(Math.round(text.getBoundingClientRect().top - open.getBoundingClientRect().bottom)).toBe(6)
+  })
+  const tip = within(document.body).getByRole('tooltip')
+  await expect(tip).toBeVisible()
+  await expect(document.documentElement.scrollHeight).toBe(window.innerHeight)
+  const box = tip.getBoundingClientRect()
+  await expect(box.top).toBeGreaterThanOrEqual(0)
+  await expect(box.left).toBeGreaterThanOrEqual(0)
+  await expect(box.bottom).toBeLessThanOrEqual(window.innerHeight)
+  await expect(box.right).toBeLessThanOrEqual(window.innerWidth)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(tooltipOf()).toBeNull())
+  await userEvent.unhover(text)
+
+  // The text past the foot: its tooltip follows it out of the window, and the document keeps the window's height.
+  const hidden = cutIn('past-foot')
+  await expect(hidden.getBoundingClientRect().top).toBeGreaterThan(window.innerHeight)
+  await userEvent.hover(hidden)
+  await waitFor(() => expect(tooltipOf()).toHaveTextContent(footDescription))
+  await waitFor(() => expect(tooltipOf()?.getBoundingClientRect().bottom).toBeGreaterThan(window.innerHeight))
+  await expect(document.documentElement.scrollHeight).toBe(window.innerHeight)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(tooltipOf()).toBeNull())
+}
+export const CutTextFootDark: StoryObj<typeof meta> = { render: () => <CardsAtFoot />, globals: { mode: 'dark' }, play: cutTextFootPlay }
+export const CutTextFootLight: StoryObj<typeof meta> = { render: () => <CardsAtFoot />, globals: { mode: 'light' }, play: cutTextFootPlay }
 
 /**
  * The Toolkit tablet row (T1 428:59): `padding="compact"` pads 10 above and

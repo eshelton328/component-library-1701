@@ -24,17 +24,20 @@ export type TooltipProps = {
   disabled?: boolean | undefined
 }
 
-// The pointer handlers of the tooltip box, for TruncatedText inside a focusable element.
-type ContentPointer = { onPointerEnter?: (() => void) | undefined; onPointerLeave?: (() => void) | undefined }
-
-function TooltipBase({ children, content, open, onOpenChange, placement = 'top', disabled, contentPointer }: TooltipProps & { contentPointer?: ContentPointer | undefined }) {
+// `cutText` marks the tooltip of TruncatedText, which only shows a cut text (see the tooltip recipe's comment). It
+// is fixed to the window (Ark's `fixed` strategy), so near the window's foot, or with its text past the foot in a
+// pane that clips it, it never makes the document taller; it flips and slides to stay in the window.
+function TooltipBase({ children, content, open, onOpenChange, placement = 'top', disabled, cutText = false }: TooltipProps & { cutText?: boolean | undefined }) {
   return (
     <Root
-      positioning={{ placement, gutter: 6 }}
+      cutText={cutText}
+      positioning={cutText ? { placement, gutter: 6, strategy: 'fixed', flip: true, slide: true } : { placement, gutter: 6 }}
       lazyMount
       unmountOnExit
-      // The pointer can move onto the tooltip, and it stays open there (WCAG 1.4.13).
-      interactive
+      // The pointer can move onto a plain tooltip, and it stays open there (WCAG 1.4.13). The tooltip of cut text
+      // is not interactive: Ark gives its content `pointer-events: none`, the recipe's `cutText` variant gives its
+      // positioner the same, and a click there reaches the element under it.
+      interactive={!cutText}
       {...(open === undefined ? {} : { open })}
       {...(disabled === undefined ? {} : { disabled })}
       onOpenChange={(details) => {
@@ -44,7 +47,7 @@ function TooltipBase({ children, content, open, onOpenChange, placement = 'top',
       <ArkTooltip.Trigger asChild>{children}</ArkTooltip.Trigger>
       <Portal>
         <Positioner>
-          <Content {...contentPointer}>{content}</Content>
+          <Content>{content}</Content>
         </Positioner>
       </Portal>
     </Root>
@@ -83,14 +86,18 @@ function focusOwner(node: HTMLElement): HTMLElement | null {
 export type TruncatedTextProps = {
   /** The text. It shows on one line and ends with an ellipsis when it does not fit. */
   children: string
-  /** Where the tooltip opens; `top` when not set. */
+  /**
+   * Where the tooltip opens; `bottom` when not set, below the text and away from a card's title above it. Where the
+   * window has no room there, it flips to the other side, and it slides along the text to stay in the window.
+   */
   placement?: TooltipProps['placement']
   /** A search query, or several, whose matches in the text are marked as `Highlight` marks them. The tooltip shows the plain text. */
   highlight?: string | readonly string[] | undefined
 }
 
 // How long the pointer rests on an element before its tooltip opens, and how long the tooltip waits after the
-// pointer leaves before it closes, so the pointer can cross onto it. Ark's tooltip uses the same delays.
+// pointer leaves before it closes. Ark's tooltip uses the same delays, so cut text inside a focusable element opens
+// and closes as cut text with its own tab stop does.
 const OPEN_DELAY = 400
 const CLOSE_DELAY = 150
 
@@ -105,8 +112,12 @@ const CLOSE_DELAY = 150
  * node or a card's title button, the tooltip opens while the pointer rests
  * anywhere on that element or it has the keyboard focus. Anywhere else, cut
  * text becomes a tab stop of its own; text that fits never does.
+ *
+ * The tooltip only shows: it takes no pointer events, so a click where it
+ * covers a card's title or a row reaches that element, and the pointer
+ * cannot rest on it. Escape closes it.
  */
-export function TruncatedText({ children, placement, highlight }: TruncatedTextProps) {
+export function TruncatedText({ children, placement = 'bottom', highlight }: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)
@@ -137,8 +148,7 @@ export function TruncatedText({ children, placement, highlight }: TruncatedTextP
     }
   }, [element, children, marks])
 
-  // Inside an element that takes the focus, follow its pointer and keyboard focus. The timers are shared with the
-  // tooltip box, so the pointer can move from the owner onto the tooltip and back.
+  // Inside an element that takes the focus, follow its pointer and keyboard focus.
   const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const clearTimers = () => {
@@ -209,16 +219,7 @@ export function TruncatedText({ children, placement, highlight }: TruncatedTextP
       onOpenChange={(next) => {
         if (!inOwner) setHoverOpen(next)
       }}
-      contentPointer={
-        inOwner
-          ? {
-              onPointerEnter: () => {
-                clearTimeout(closeTimer.current)
-              },
-              onPointerLeave: closeLater,
-            }
-          : undefined
-      }
+      cutText
     >
       <Text ref={ref} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
         {highlight === undefined ? children : <Highlight text={children} query={highlight} />}

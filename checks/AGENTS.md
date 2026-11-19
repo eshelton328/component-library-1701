@@ -18,3 +18,7 @@ Proof that the library's checks catch what they must. `../scripts/check-fixtures
   catch, and run `pnpm checks`.
 - Agents change files here only in a session started with
   `LIB_ALLOW_CHECK_EDITS=1`.
+
+## Folders
+
+- [fixtures/AGENTS.md](fixtures/AGENTS.md): read before you add or change a fixture.

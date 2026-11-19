@@ -59,7 +59,8 @@ Layout, Navigation or Overlays (d-065, d-066).
   shell that mounts on a new page expects the last measured keyboard. A new target in the first 70 % of a move's time keeps the move's end
   and curve, so a keyboard reported in the move makes one motion (R22);
   the limit is on the time, as the keyboard's curve is nine tenths done
-  at 43 % of it. A keyboard step of 2
+  at 43 % of it. A target back within 2 px of where the move began (a
+  reopen while the dock comes down) starts a new move. A keyboard step of 2
   px or less (a keyboard that rises frame by frame) keeps the move's end
   even late in it, and after the move it is followed at once, so the
   composer stays on the keyboard. Until the keyboard's

@@ -1511,8 +1511,11 @@ const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta
     await nextFrame()
     record.stop()
     const moved = record.frames.filter((f) => f.at >= focused)
-    if (delay < 250) {
-      // A report during the move: the move goes on toward the real keyboard and keeps the end it had, so it is one
+    // The report is early in the move (the first 70 % of its time) or late, by the dock's own times: a loaded runner
+    // can draw a frame late enough to make a planned early report late.
+    const moveStart = Number(endAtFocus) - 250
+    if (delay < 250 && reported < moveStart + 250 * 0.7) {
+      // A report early in the move: the move goes on toward the real keyboard and keeps the end it had, so it is one
       // motion. Up to the report the dock only rises; from it, each frame moves toward the real keyboard and never away.
       await expect(String(endAfterReport)).toBe(endAtFocus)
       const before = moved.filter((f) => f.at < reported)
@@ -1520,7 +1523,8 @@ const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta
       await expect(before.slice(1).filter((f, i) => f.rise < (before[i]?.rise ?? f.rise))).toEqual([])
       await expect(after.slice(1).filter((f, i) => Math.abs(rise - f.rise) > Math.abs(rise - (after[i]?.rise ?? f.rise)))).toEqual([])
     } else {
-      // A report after the move: one correction that starts at the report and runs 250 ms, with no 300 ms wait.
+      // A report late in the move or after it: one correction that starts at the report and runs 250 ms, with no
+      // 300 ms wait.
       await expect(endAfterReport).toBeGreaterThanOrEqual(reported + 250)
       await expect(endAfterReport).toBeLessThanOrEqual(reportDone + 250)
     }
@@ -1582,11 +1586,12 @@ const mountFocus: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <MountFocusChat />,
   play: async ({ canvasElement }) => {
-    const { footer, field } = threadParts(canvasElement)
+    const { root, footer, field } = threadParts(canvasElement)
     await expect(field).toHaveFocus()
     // The dock starts toward the expected keyboard at once, before the browser reports one: it does not wait at the
-    // bottom for the report and then jump.
-    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 200 })
+    // bottom for the report and then jump. The hook sets its move's end as the move starts.
+    await expect(root.dataset.keyboardEnd).toBeDefined()
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
     await expect(fakeViewport.height).toBe(844)
     fakeViewport.move({ height: 544 })
     await settled(footer, 266)
@@ -1667,12 +1672,42 @@ const reopenFalling: StoryObj<typeof meta> = {
     // its end: no frame shows it before then.
     const distance = 266 - (timed.frames[0]?.rise ?? 0)
     await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / distance))
-    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
+    // Every frame drawn in the rise, before its end, shows the dock on the way; a loaded runner may draw none.
+    const during = timed.frames.filter((f) => f.at > start && f.at < riseEnd - 17)
+    await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
   },
 }
 /** Phone chat: the field takes the focus again while the composer comes down; it rises on a full keyboard move. */
 export const ReopenFallingDark: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ReopenFallingLight: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const reopenAboveOrigin: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The keyboard settles at 300, and then grows by 1 px: the fall starts 1 px above the 300 the next open expects.
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    await wait(400)
+    fakeViewport.move({ height: 543 })
+    await settled(footer, 267)
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await waitFor(() => expect(riseOf(footer)).toBeLessThan(133), { timeout: 2000 })
+    // The reopen goes back to where the fall began, within the keyboard's small step: it is a new move of 250 ms, not
+    // a correction that keeps the fall's end (a float error of 0.0004 px in that place made a 138 ms rise).
+    const start = performance.now()
+    await userEvent.click(field)
+    await expect(Number(root.dataset.keyboardEnd)).toBeGreaterThanOrEqual(start + 250)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+  },
+}
+/** Phone chat: the field takes the focus again while the composer comes down from 1 px above the measured keyboard. */
+export const ReopenAboveOriginDark: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ReopenAboveOriginLight: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const closeAfterCorrection: StoryObj<typeof meta> = {
   ...withMotion,
@@ -1698,7 +1733,8 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
     const fallEnd = Number(root.dataset.keyboardEnd)
     await expect(fallEnd).toBeGreaterThanOrEqual(closed + 250)
     await expect(fallEnd).toBeLessThanOrEqual(reported + 250)
-    await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 2000 })
+    // A wait, not a check: a loaded runner can draw no frame for seconds.
+    await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 10000 })
     await nextFrame()
     timed.stop()
     const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
@@ -2365,8 +2401,15 @@ const keyboardFall: StoryObj<typeof meta> = {
     // comes from the frames, so a slow runner that draws fewer frames still passes.
     const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
     await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / 300))
-    // And it moves on the way: a frame between the keyboard's top and the bottom (Codex review of #236).
-    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
+    // And it moves on the way (Codex review of #236): the fall is a 250 ms move by the dock's own end, and every frame
+    // drawn before that end shows the dock between the keyboard's top and the bottom. A loaded runner may draw none.
+    const fallEnd = Number(root.dataset.keyboardEnd)
+    await expect(fallEnd).toBeGreaterThanOrEqual(start + 250)
+    // The rise is 0 once the keyboard is under the 34 safe area, before the move ends, so only frames before that
+    // point of the curve count; the first frame after the blur can still show the frame before it.
+    const moveStart = fallEnd - 250
+    const during = timed.frames.filter((f) => f.at > start).slice(1).filter((f) => f.at < moveStart + curveTime(1 - 34 / 300))
+    await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
   },
 }

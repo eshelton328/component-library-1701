@@ -110,6 +110,8 @@ const formPlay = async () => {
   const box = await body.findByRole('dialog', { name: 'New chat' })
   await expect(box.getBoundingClientRect().width).toBe(540)
   await expect(getComputedStyle(within(box).getByText('New chat')).fontSize).toBe('20px')
+  // Without `padding`, a large dialog pads 20.
+  await expect(getComputedStyle(box).paddingLeft).toBe('20px')
   const close = within(box).getByRole('button', { name: 'Close' })
   // The close icon is the icon set's CloseIcon (24 grid) at 18 px, in the button's colour.
   const x = close.querySelector('svg')
@@ -282,3 +284,47 @@ const metaPlay: StoryObj<typeof meta>['play'] = async () => {
 /** The confirm dialog with a meta line under its title (Inbox D20). */
 export const MetaDark: StoryObj<typeof meta> = { render: () => <ConfirmWithMeta />, play: metaPlay, globals: { mode: 'dark' } }
 export const MetaLight: StoryObj<typeof meta> = { render: () => <ConfirmWithMeta />, play: metaPlay, globals: { mode: 'light' } }
+
+// The Artifacts Add a link dialog (D5 403:7542): a large dialog padded 24, with its close icon at 20 (403:7545).
+function AddLink() {
+  return (
+    <main className={page}>
+      <Dialog
+        open
+        size="lg"
+        padding="form"
+        closeSize="20"
+        title="Add a link"
+        closeButton
+        actions={
+          <>
+            <DialogClose>
+              <Button size="sm">Cancel</Button>
+            </DialogClose>
+            <Button size="sm" variant="primary">
+              Add link
+            </Button>
+          </>
+        }
+      >
+        <TextField label="Link" />
+      </Dialog>
+    </main>
+  )
+}
+
+const addLinkPlay = async () => {
+  const box = await within(document.body).findByRole('dialog', { name: 'Add a link' })
+  const b = getComputedStyle(box)
+  await expect([b.paddingTop, b.paddingRight, b.paddingBottom, b.paddingLeft]).toEqual(['24px', '24px', '24px', '24px'])
+  // shell.dialogLg: 540, so a field is 540 - 2 * (1 + 24) = 490 wide, Figma's.
+  await expect(box.getBoundingClientRect().width).toBe(540)
+  await expect(within(box).getByRole('textbox', { name: 'Link' }).getBoundingClientRect().width).toBe(490)
+  const x = within(box).getByRole('button', { name: 'Close' }).querySelector('svg')
+  if (x === null) throw new Error('no close icon')
+  await expect([x.getBoundingClientRect().width, x.getBoundingClientRect().height]).toEqual([20, 20])
+}
+
+/** The Add a link dialog (Artifacts D5): `padding="form"` and `closeSize="20"`. */
+export const AddLinkDark: StoryObj<typeof meta> = { render: () => <AddLink />, play: addLinkPlay, globals: { mode: 'dark' } }
+export const AddLinkLight: StoryObj<typeof meta> = { render: () => <AddLink />, play: addLinkPlay, globals: { mode: 'light' } }

@@ -1697,6 +1697,8 @@ export type TextFieldBaseProps = {
     required?: boolean | undefined;
     name?: string | undefined;
     textSize?: Scalar<TextFieldVariantProps>['textSize'];
+    labelStyle?: Scalar<TextFieldVariantProps>['labelStyle'];
+    icon?: ReactNode;
 };
 
 // @public (undocumented)

@@ -333,6 +333,8 @@ import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recip
 
 export type DialogVariant = {
   size?: "md" | "lg" | "wide"
+  padding?: "default" | "form"
+  closeSize?: "16" | "20"
 }
 
 export type DialogVariantProps = {
@@ -1597,8 +1599,11 @@ import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recip
 export type TextFieldVariant = {
   variant?: "field" | "bare"
   labelHidden?: boolean
-  size?: "sm" | "md" | "lg" | "xl"
+  size?: "sm" | "md" | "lg" | "xl" | "form"
+  padding?: "default" | "form"
   textSize?: "md" | "sm"
+  labelStyle?: "small" | "label"
+  valueStyle?: "text" | "mono"
 }
 
 export type TextFieldVariantProps = {
@@ -1607,7 +1612,7 @@ export type TextFieldVariantProps = {
 
 export type TextFieldVariantMap = RecipeVariantMap<TextFieldVariant>
 
-export type TextFieldSlot = "root" | "errorText" | "helperText" | "input" | "label" | "select" | "textarea" | "requiredIndicator"
+export type TextFieldSlot = "root" | "errorText" | "helperText" | "input" | "label" | "select" | "textarea" | "requiredIndicator" | "control" | "icon"
 
 export type TextFieldRecipe = ConfigSlotRecipeRuntimeFn<TextFieldSlot, TextFieldVariantProps, TextFieldVariantMap>
 

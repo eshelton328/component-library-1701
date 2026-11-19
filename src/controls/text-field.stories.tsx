@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { LinkIcon } from '../foundations/icons'
 import { TextArea, TextField } from './text-field'
 import { expectScrollAreas } from './scroll-area.testing'
 
@@ -134,3 +135,84 @@ const smallTextPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 
 export const SmallTextDark: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'dark' } }
 export const SmallTextLight: StoryObj<typeof meta> = { render: () => <SmallText />, play: smallTextPlay, globals: { mode: 'light' } }
+
+/**
+ * The Artifacts Add a link form (D5 403:7551 to 403:7581, M6 408:713 to 408:745): `labelStyle="label"`, the 40 px
+ * `size="form"`, the 12 px `padding="form"` sides, a leading link icon and a `mono` value.
+ */
+function AddLinkFields() {
+  return (
+    <main className={page}>
+      <TextField label="Link" labelStyle="label" size="form" padding="form" valueStyle="mono" icon={<LinkIcon />} defaultValue="https://github.com/eshelton328/the-bridge" />
+      <TextField label="Title" labelStyle="label" size="form" padding="form" defaultValue="The bridge" />
+      <TextField label="Project" labelStyle="label" size="xl" padding="form" valueStyle="mono" defaultValue="ncc-1701" />
+      <TextArea label="Note" labelStyle="label" icon={<LinkIcon />} rows={2} />
+      <TextField label="Name, default" defaultValue="Token sync" />
+    </main>
+  )
+}
+
+const addLinkPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const field = (name: string) => canvas.getByRole('textbox', { name })
+  const labelOf = (name: string) => {
+    const label = canvasElement.querySelector(`label[for="${field(name).id}"]`)
+    if (!(label instanceof HTMLElement)) throw new Error(`no label for ${name}`)
+    return label
+  }
+  const font = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    return [s.fontSize, Math.round(Number.parseFloat(s.lineHeight)), s.fontWeight]
+  }
+  // labelStyle="label": Medium 14/20 in fg.default (the input's own colour), 6 above the control.
+  for (const name of ['Link', 'Title', 'Project', 'Note']) {
+    const label = labelOf(name)
+    await expect(font(label)).toEqual(['14px', 20, '500'])
+    await expect(getComputedStyle(label).color).toBe(getComputedStyle(field(name)).color)
+    await expect(Math.round(field(name).getBoundingClientRect().top - label.getBoundingClientRect().bottom)).toBe(6)
+  }
+  // size="form" is 40 high; xl stays 44.
+  await expect(field('Link').getBoundingClientRect().height).toBe(40)
+  await expect(field('Title').getBoundingClientRect().height).toBe(40)
+  await expect(field('Project').getBoundingClientRect().height).toBe(44)
+  // padding="form": 12 at the sides (Figma 13, d-072).
+  const title = getComputedStyle(field('Title'))
+  await expect([title.paddingLeft, title.paddingRight]).toEqual(['12px', '12px'])
+  // The link icon: 16 px in fg.muted, 13 from the box's edge (border and padding), centred, the text 6 after it.
+  const link = field('Link')
+  const icon = link.parentElement?.querySelector('.text-field__icon svg')
+  if (!(icon instanceof SVGElement)) throw new Error('no icon')
+  const i = icon.getBoundingClientRect()
+  const box = link.getBoundingClientRect()
+  await expect([i.width, i.height]).toEqual([16, 16])
+  await expect(Math.round(i.left - box.left)).toBe(13)
+  await expect(Math.abs(i.top + i.height / 2 - (box.top + box.height / 2))).toBeLessThanOrEqual(0.5)
+  await expect(getComputedStyle(link).paddingLeft).toBe('34px')
+  await expect(icon.closest('[aria-hidden="true"]')).not.toBeNull()
+  // In a text area the icon sits on the first line, 11 from the top and the start (border, 10, and 2 to centre it on
+  // the 20 px line), with the text 6 after it.
+  const note = field('Note')
+  const noteIcon = note.parentElement?.querySelector('.text-field__icon svg')
+  if (!(noteIcon instanceof SVGElement)) throw new Error('no note icon')
+  const n = noteIcon.getBoundingClientRect()
+  await expect([Math.round(n.left - note.getBoundingClientRect().left), Math.round(n.top - note.getBoundingClientRect().top), n.height]).toEqual([11, 11, 16])
+  await expect(getComputedStyle(note).paddingLeft).toBe('32px')
+  await expect(getComputedStyle(icon).color).toBe(getComputedStyle(labelOf('Name, default')).color)
+  // valueStyle="mono": the link and the project in mono 12/16.
+  for (const name of ['Link', 'Project']) {
+    await expect(font(field(name))).toEqual(['12px', 16, '400'])
+    await expect(getComputedStyle(field(name)).fontFamily).toMatch(/Mono/)
+  }
+  await expect(getComputedStyle(field('Title')).fontFamily).not.toMatch(/Mono/)
+  // The default stays: small (12/16) in fg.muted, 32 high, 10 at the sides, body (14/20).
+  const name = field('Name, default')
+  await expect(font(labelOf('Name, default'))).toEqual(['12px', 16, '400'])
+  await expect(getComputedStyle(labelOf('Name, default')).color).not.toBe(getComputedStyle(name).color)
+  await expect(name.getBoundingClientRect().height).toBe(32)
+  await expect(getComputedStyle(name).paddingLeft).toBe('10px')
+  await expect(font(name)).toEqual(['14px', 20, '400'])
+  await expect(name.parentElement?.classList.contains('text-field__control')).toBe(false)
+}
+
+export const AddLinkDark: StoryObj<typeof meta> = { render: () => <AddLinkFields />, play: addLinkPlay, globals: { mode: 'dark' } }
+export const AddLinkLight: StoryObj<typeof meta> = { render: () => <AddLinkFields />, play: addLinkPlay, globals: { mode: 'light' } }

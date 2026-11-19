@@ -8,7 +8,7 @@ const StyledButton = styled('button', button)
 
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
- * `textSize`, `padding`, `pressedTone`, `pressedBorder`, `expandedBorder` and
+ * `textSize`, `padding`, `keepIconSize`, `pressedTone`, `pressedBorder`, `expandedBorder` and
  * `iconOnly`, `pressed` and `indicator`. `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
@@ -20,8 +20,15 @@ const StyledButton = styled('button', button)
  * height and padding of `size`.
  *
  * `padding="compact"` pads a `lg` button 12 at the sides, where `default`
- * pads it 16, as Toolkit's Sort button (D1 425:62) does. It changes only a
- * `lg` button that is not `iconOnly`.
+ * pads it 16, as Toolkit's Sort button (D1 425:62) does, and a `md` button
+ * 10, where `default` pads it 12, as Artifacts' Sort and Filter (D1
+ * 402:15404, 402:15413) do. It changes only a `md` or `lg` button that is
+ * not `iconOnly`.
+ *
+ * Every icon in a button draws at 16, whatever its `size`. With
+ * `keepIconSize`, an icon given a `size` keeps it, such as the
+ * `<ChevronDownIcon size="12" />` after Artifacts' Sort label (402:15410);
+ * an icon without a `size` still draws at 16.
  *
  * `expandedBorder` sets the border while `aria-expanded` is true. `active`
  * (the default) draws `border.active` (cyan): keep it on the trigger of a

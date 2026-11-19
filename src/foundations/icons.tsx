@@ -11,7 +11,11 @@ import { icon, type IconVariantProps } from '../../styled-system/recipes'
 export type IconSize = Extract<IconVariantProps['size'], string>
 
 export type IconProps = {
-  /** The size in px, from the `sizes.icon` tokens. Defaults to `24`. */
+  /**
+   * The size in px, from the `sizes.icon` tokens. Defaults to `24`. A
+   * component that holds icons may draw them at its own size; a Button
+   * draws them at 16, and keeps a size you set with `keepIconSize`.
+   */
   size?: IconSize | undefined
   /**
    * A name for an icon that stands alone. Without one (or with only
@@ -23,13 +27,17 @@ export type IconProps = {
 
 type SvgProps = IconProps & { strokeWidth?: string | undefined; children: ReactNode }
 
-function Svg({ size = '24', title, strokeWidth, children }: SvgProps) {
+// An icon given a `size` carries it in `data-icon-size`, so a component that
+// sizes the icons in its slots (Button with `keepIconSize`) can leave that
+// icon at its own size.
+function Svg({ size, title, strokeWidth, children }: SvgProps) {
   const named = title !== undefined && title.trim() !== ''
   const stroked = strokeWidth !== undefined
   return (
     <svg
       viewBox="0 0 24 24"
-      className={icon({ size })}
+      className={icon({ size: size ?? '24' })}
+      data-icon-size={size}
       fill={stroked ? 'none' : 'currentColor'}
       stroke={stroked ? 'currentColor' : 'none'}
       strokeWidth={strokeWidth}

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { ChartIcon, ChevronDownIcon, CopyIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortIcon } from '../foundations/icons'
+import { ChartIcon, ChevronDownIcon, CopyIcon, FilterIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortDescIcon, SortIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -738,8 +738,8 @@ export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <Discuss
 export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }
 
 // Toolkit's Sort button (D1 425:62): a 36 px secondary button with the sort icon, the label and a chevron, 13 px
-// sides in Figma. `padding="compact"` pads it 12 (nearest token); the default `lg` keeps 16, and an icon-only
-// button keeps its square.
+// sides in Figma. `padding="compact"` pads it 12 (nearest token); the default `lg` keeps 16, a compact `md`
+// pads 10, and an icon-only button keeps its square.
 function CompactButtons() {
   return (
     <main className={page}>
@@ -778,9 +778,10 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   if (icon === null) throw new Error('no icon')
   await expect(icon.getBoundingClientRect().left - sort.getBoundingClientRect().left).toBe(13)
   await expect(getComputedStyle(sort).fontSize).toBe('14px')
-  // The default lg keeps 16, md keeps 12, and an icon-only lg stays a 36 px square.
+  // The default lg keeps 16, a compact md pads 10 (Artifacts' Sort, 402:15404), and an icon-only lg stays a
+  // 36 px square.
   await expect(sides('Sort default')).toEqual(['16px', '16px', '36px'])
-  await expect(sides('Medium compact')).toEqual(['12px', '12px', '32px'])
+  await expect(sides('Medium compact')).toEqual(['10px', '10px', '32px'])
   const square = canvas.getByRole('button', { name: 'Icon only compact' }).getBoundingClientRect()
   await expect([square.width, square.height]).toEqual([36, 36])
 }
@@ -788,3 +789,77 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 /** `padding="compact"`: Toolkit's Sort button with 12 px sides (D1 425:62). */
 export const CompactPaddingDark: StoryObj<typeof meta> = { render: () => <CompactButtons />, globals: { mode: 'dark' }, play: compactPlay }
 export const CompactPaddingLight: StoryObj<typeof meta> = { render: () => <CompactButtons />, globals: { mode: 'light' }, play: compactPlay }
+
+// Artifacts' Sort and Filter (D1 402:15404, 402:15413; 32 high, radius 8, gap 6): 10 px sides inside the 1 px
+// border, a 15 px icon (402:15405, icon.16 on the 4 px grid, d-100), the label in Geist Medium 13 (labelSm) and,
+// on Sort, a 12 px chevron (402:15410) 11 from the end. `padding="compact"` pads an `md` button 10 at the sides.
+// With `keepIconSize`, an icon passed with a `size` keeps it and an icon without one still draws at 16; without
+// it, every icon draws at 16.
+function SortFilterButtons() {
+  return (
+    <main className={page}>
+      <div className={row}>
+        <Button textSize="sm" padding="compact" keepIconSize>
+          <SortDescIcon />
+          Newest
+          <ChevronDownIcon size="12" />
+        </Button>
+        <Button textSize="sm" padding="compact" keepIconSize>
+          <FilterIcon />
+          Filter
+        </Button>
+        <Button textSize="sm" keepIconSize>
+          <SortDescIcon />
+          Newest default
+          <ChevronDownIcon size="12" />
+        </Button>
+        <Button textSize="sm">
+          <FilterIcon />
+          Filter default
+        </Button>
+        <Button textSize="sm">
+          <SortDescIcon />
+          Forced
+          <ChevronDownIcon size="12" />
+        </Button>
+      </div>
+    </main>
+  )
+}
+
+const sortFilterPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const parts = (name: string) => {
+    const button = canvas.getByRole('button', { name })
+    const icons = Array.from(button.querySelectorAll('svg'), (svg) => svg.getBoundingClientRect())
+    return { box: button.getBoundingClientRect(), style: getComputedStyle(button), icons }
+  }
+  const box = (r: DOMRect) => [r.width, r.height]
+  const sort = parts('Newest')
+  const filter = parts('Filter')
+  const sortDefault = parts('Newest default')
+  const filterDefault = parts('Filter default')
+  // The leading icon has no size and draws at 16; the chevron keeps its 12.
+  const [sortIcon, chevron] = sort.icons
+  const [filterIcon] = filter.icons
+  if (sortIcon === undefined || chevron === undefined || filterIcon === undefined) throw new Error('no icon')
+  await expect(box(sortIcon)).toEqual([16, 16])
+  await expect(box(chevron)).toEqual([12, 12])
+  await expect(box(filterIcon)).toEqual([16, 16])
+  await expect(sortDefault.icons.map(box)).toEqual([[16, 16], [12, 12]])
+  await expect(filterDefault.icons.map(box)).toEqual([[16, 16]])
+  // Without `keepIconSize`, a sized icon still draws at 16, as before.
+  await expect(parts('Forced').icons.map(box)).toEqual([[16, 16], [16, 16]])
+  // Compact: 10 px sides, so the icon starts 11 in with the border and the chevron ends 11 from the end.
+  await expect([sort.style.paddingLeft, sort.style.paddingRight, sort.style.height]).toEqual(['10px', '10px', '32px'])
+  await expect(sortIcon.left - sort.box.left).toBe(11)
+  await expect(sort.box.right - chevron.right).toBe(11)
+  await expect(filterIcon.left - filter.box.left).toBe(11)
+  await expect(sort.style.fontSize).toBe('13px')
+  // Without `padding`, an md button keeps its 12 px sides.
+  await expect([sortDefault.style.paddingLeft, filterDefault.style.paddingRight]).toEqual(['12px', '12px'])
+}
+
+/** Artifacts' Sort and Filter: 10 px sides with `padding="compact"`, and a 12 px chevron kept with `keepIconSize`. */
+export const SortFilterDark: StoryObj<typeof meta> = { render: () => <SortFilterButtons />, globals: { mode: 'dark' }, play: sortFilterPlay }
+export const SortFilterLight: StoryObj<typeof meta> = { render: () => <SortFilterButtons />, globals: { mode: 'light' }, play: sortFilterPlay }

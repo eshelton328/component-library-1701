@@ -27,6 +27,9 @@ from `../../tokens/`.
   When the caller passes the icon in, size it with `!` (`'icon.12!'`).
   An important style in `base` also wins over one in a variant, so
   when a variant changes the size, set every size in the variants.
+  An icon given a `size` carries `data-icon-size`; a slot that keeps
+  the caller's size (Button `keepIconSize`) sizes only
+  `svg:not([data-icon-size])`.
 - Write a focus ring under `[focusRing]` from `recipes/focus.ts`, never
   under `_focusVisible`, and set `outline: 'none'` on the same slot, so no
   state draws the browser's default outline. The ring shows on

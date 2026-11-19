@@ -326,6 +326,9 @@ export function ClipIcon(props: IconProps): JSX.Element;
 export function ClockIcon(props: IconProps): JSX.Element;
 
 // @public
+export function CloseBoldIcon(props: IconProps): JSX.Element;
+
+// @public
 export function CloseCircleIcon(props: IconProps): JSX.Element;
 
 // @public

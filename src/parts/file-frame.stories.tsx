@@ -52,7 +52,13 @@ function Frames() {
         <FileFrame name="doc.md" variant="flush" readOnly />
       </div>
       <div className={narrow} data-testid="narrow-cut">
-        <FileFrame name="agents/diagram-reviewer.md" meta="88 lines · the prompt" readOnly barEnd="cut" />
+        <FileFrame name="agents/grader.md" meta="88 lines" readOnly barEnd="cut" />
+      </div>
+      <div className={narrow} data-testid="narrow-cut-long">
+        <FileFrame name="agents/diagram-reviewer-long-name.md" meta="88 lines · the prompt" readOnly barEnd="cut" />
+      </div>
+      <div className={wide} data-testid="wide-cut">
+        <FileFrame name="agents/eval-grader.md" meta="40 lines" readOnly barEnd="cut" />
       </div>
       <div className={narrow} data-testid="narrow">
         <FileFrame name="agents/writing-reviewer.md" meta="96 lines · the prompt" onCopy={() => undefined} readOnly />
@@ -221,6 +227,16 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(rect(el(cut, '.file-frame__readOnly')).right).toBeGreaterThan(rect(cut).right)
   await expect(rect(el(cut, '.file-frame__bar')).height).toBe(37)
   await expect(getComputedStyle(cut).overflow).toBe('hidden')
+  // Read-only starts 8 after the meta, so it never paints over it.
+  await expect(rect(el(cut, '.file-frame__readOnly')).left).toBe(rect(el(cut, '.file-frame__meta')).right + 8)
+
+  // A name too long for the bar still gives way with an ellipsis and its tooltip.
+  const long = el(canvas.getByTestId('narrow-cut-long'), '.file-frame__root')
+  await expectCutText(el(long, '.file-frame__name'), 'agents/diagram-reviewer-long-name.md')
+
+  // With room to spare, Read-only stays at the bar's end, 12 in from the border, as with barEnd="keep".
+  const roomy = el(canvas.getByTestId('wide-cut'), '.file-frame__root')
+  await expect(rect(el(roomy, '.file-frame__readOnly')).right).toBe(rect(roomy).right - 13)
 }
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, play }

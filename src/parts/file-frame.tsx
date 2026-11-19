@@ -69,9 +69,10 @@ export type FileFrameProps = Scalar<FileFrameVariantProps> & {
  * bordered box with round corners; `variant="flush"` draws no border and
  * fills its column, for the viewer inside a `FileBrowser`. In a box too
  * narrow for the bar, `barEnd="keep"` (the default) keeps the end group and
- * cuts the meta, then the name, with an ellipsis; `barEnd="cut"` keeps the
- * name and the meta whole and the box cuts the bar's end, for a bar whose end
- * holds no control (Read-only only).
+ * cuts the meta, then the name, with an ellipsis; `barEnd="cut"` lets the
+ * name and the meta take the bar first and the box cuts the bar's end, for a
+ * bar whose end holds no control (Read-only only). A name and meta wider than
+ * the bar still end with an ellipsis and show the whole text in a tooltip.
  */
 export function FileFrame({
   name,

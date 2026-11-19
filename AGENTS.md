@@ -46,9 +46,11 @@ checks, test, package, build, worktree), so a PR shows which one failed.
 A new step in `verify` needs a `run: pnpm <step>` line in
 `.github/workflows/ci.yml`; `pnpm check:ci` fails without it.
 
-`.github/workflows/actions-minutes.yml` counts the repository's billed
-Actions minutes each day and opens an issue at 80 % of the weekly
-budget. The brain's `actions-minutes` skill generates it from the
+`.github/workflows/actions-minutes.yml` counts the repository's Actions
+spend in USD for the month to date every 3 hours, and the storage of the
+package in GitHub Packages. It opens an issue at 50 % and 80 % of the
+repository's part of the monthly budget, or when the month-end forecast
+reaches 100 %. The brain's `actions-minutes` skill generates it from the
 project facts; render it again there, never edit it by hand.
 
 The `secrets` job in `ci.yml` runs gitleaks 8.30.1 on the commits of

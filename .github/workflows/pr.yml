@@ -26,13 +26,16 @@ jobs:
       pull-requests: read # the events of an issue that is a PR
     steps:
       # A base-branch change is an `edited` event, and ci.yml does not run
-      # on edits. On an edit, fail until ci.yml has run for this PR on the
+      # on edits. On an edit or a label change, fail until ci.yml has run for this PR on the
       # head commit after the last base change, so the code checks always
       # cover the current base. A push or reopen starts ci.yml itself, so
-      # the step runs only on edits: on a push its run may not be listed
-      # yet, and a failed pr-title would stay failed after ci passed.
+      # the step skips those events: on a push its run may not be listed
+      # yet, and a failed pr-title would stay failed after ci passed. It
+      # runs on a label change too, because a newer run replaces the older
+      # one, and a label change after a base change must not turn a failed
+      # pr-title green without a ci run on the new base.
       - name: Require a ci run after the last base-branch change
-        if: github.event.action == 'edited'
+        if: contains(fromJSON('["edited", "labeled", "unlabeled"]'), github.event.action)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

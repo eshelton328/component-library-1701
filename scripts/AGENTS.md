@@ -111,7 +111,8 @@ Repository scripts that are not part of the package.
   whole.
 - `pr-workflow.test.ts` (also in `pnpm test:release`) reads the
   base-branch guard step of `.github/workflows/pr.yml`. It checks that
-  the step runs only on an `edited` event and counts only the ci runs
+  the step runs only on an `edited`, `labeled` or `unlabeled` event
+  (never on a push, open or reopen) and counts only the ci runs
   whose `pull_requests` include this PR.
 
 ## Folders

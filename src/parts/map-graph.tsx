@@ -46,6 +46,18 @@ export type MapNodeLabelStyle = 'mono' | 'label'
  */
 export type MapNodeDensity = 'default' | 'compact'
 
+/**
+ * The size of a node's kind icon in px: `16` (the default density's) or `12`
+ * (the compact density's). `12` at the default density is the Links panels'
+ * rows and the phone Links graph's side nodes (Toolkit D19 `icon/rule`
+ * 500:9871, M17 500:10189), whose 13 px icon has no token (icon.12, d-100);
+ * the node keeps its sides, gap and height, so the name starts 4 px nearer.
+ */
+export type MapNodeIconSize = '12' | '16'
+
+// The icon size of each density when a node sets none.
+const densityIcon: Record<MapNodeDensity, MapNodeIconSize> = { default: '16', compact: '12' }
+
 const node = createSlotRecipeContext(mapNode)
 const NodeRoot = node.withProvider('button', 'root')
 const NodeIcon = node.withContext('span', 'icon')
@@ -67,6 +79,8 @@ export type MapNodeProps = {
   labelStyle?: MapNodeLabelStyle | undefined
   /** `default` or `compact` (a 12 px icon and tighter sides); see `MapNodeDensity`. */
   density?: MapNodeDensity | undefined
+  /** The kind icon's size, `12` or `16`; the density's size (16, or 12 for `compact`) when not set. See `MapNodeIconSize`. */
+  iconSize?: MapNodeIconSize | undefined
   /** Called when the node is clicked, or pressed with Enter or Space. */
   onClick?: (() => void) | undefined
   /** Called on a key press, before the button handles it. */
@@ -82,7 +96,7 @@ export type MapNodeProps = {
  * and keyboard focus. `aria-pressed`
  * tells assistive technology whether it is the selected item.
  */
-export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', labelStyle = 'mono', density = 'default', onClick, onKeyDown, describedBy }: MapNodeProps) {
+export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', labelStyle = 'mono', density = 'default', iconSize, onClick, onKeyDown, describedBy }: MapNodeProps) {
   const Icon = kindIcons[kind]
   return (
     <NodeRoot
@@ -98,7 +112,7 @@ export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', label
       onKeyDown={onKeyDown}
     >
       <NodeIcon>
-        <Icon size={density === 'compact' ? '12' : '16'} />
+        <Icon size={iconSize ?? densityIcon[density]} />
       </NodeIcon>
       <NodeLabel>
         <TruncatedText>{label}</TruncatedText>
@@ -299,6 +313,8 @@ export type MapGraphNode = {
   size?: { width: number; height: number } | undefined
   /** How the node draws its name: `mono` (the default) or `label`, as the open item on the Links graph. */
   labelStyle?: MapNodeLabelStyle | undefined
+  /** This node's kind icon size, in place of the map's `nodeIconSize`, such as 16 for the Links graph's open item. */
+  iconSize?: MapNodeIconSize | undefined
 }
 
 export type MapGraphEdge = {
@@ -352,6 +368,8 @@ export type MapGraphProps = {
    * name 27 px in; see `MapNodeDensity`.
    */
   nodeDensity?: MapNodeDensity | undefined
+  /** The kind icon size of each node with no `iconSize` of its own; the density's size when not set. See `MapNodeIconSize`. */
+  nodeIconSize?: MapNodeIconSize | undefined
   /**
    * What each line ends in: `dot` (the default), a 6 px dot at the node it
    * links to, as on the toolkit map (D2 426:447); or `none`, a line that
@@ -423,8 +441,10 @@ type View = { scale: number; x: number; y: number }
 
 // The scale of the minimap: Figma draws the 712 × 900 drawing 85.44 × 108 (M11 461:1061).
 const MINIMAP_SCALE = 0.12
-// Where a node's name starts, in px from its left edge (1 px border, side padding, icon and gap), for each density.
-const LABEL_START: Record<MapNodeDensity, number> = { default: 35, compact: 27 }
+// Where a node's name starts, in px from its left edge: the 1 px border, the side padding and the gap of each density
+// (19 and 15), then the icon (16 and 12 by default, so 35 and 27).
+const LABEL_BEFORE_ICON: Record<MapNodeDensity, number> = { default: 19, compact: 15 }
+const labelStart = (density: MapNodeDensity, icon: MapNodeIconSize) => LABEL_BEFORE_ICON[density] + Number(icon)
 
 /**
  * Moves the minimap's box to the part of the drawing that the window shows:
@@ -669,6 +689,7 @@ export function MapGraph({
   nodeSize = NODE_SIZE,
   nodeTone = 'kind',
   nodeDensity = 'default',
+  nodeIconSize,
   edgeEnd = 'dot',
   orientation = 'horizontal',
   selectedId = null,
@@ -774,6 +795,7 @@ export function MapGraph({
                   tone={nodeTone}
                   labelStyle={n.labelStyle}
                   density={nodeDensity}
+                  iconSize={n.iconSize ?? nodeIconSize}
                   onClick={() => onSelect?.(n.id)}
                   onKeyDown={onKeyDown}
                   describedBy={links === '' ? undefined : linksId}
@@ -804,7 +826,7 @@ export function MapGraph({
               return (
                 <g key={n.id}>
                   <MinimapNode x={n.x} y={n.y} width={size.width} height={size.height} rx={8} data-kind={n.kind} data-state={state} />
-                  <MinimapLabel x={n.x + LABEL_START[nodeDensity]} y={n.y + size.height / 2} dominantBaseline="central" data-state={state}>
+                  <MinimapLabel x={n.x + labelStart(nodeDensity, n.iconSize ?? nodeIconSize ?? densityIcon[nodeDensity])} y={n.y + size.height / 2} dominantBaseline="central" data-state={state}>
                     {n.label}
                   </MinimapLabel>
                 </g>

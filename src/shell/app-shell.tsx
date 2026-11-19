@@ -165,6 +165,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     let shown = 0
     let target = 0
     let from = 0
+    let origin = 0
     let start = 0
     let motion: number | undefined
     // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
@@ -193,16 +194,18 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // A new target during a move keeps that move's end and curve: the rest of the curve takes the dock from where it
       // is to the new target, so a keyboard reported in the move makes one motion, not two (screen review R22). Late in
       // a move (the curve past nine tenths) the rest is too short for a change, so a new move starts.
-      // A target back past where the move began (a reopen while the dock comes down) starts a new move; a target on the
-      // same side is a correction of this move.
+      // A target back past where the move began (a reopen while the dock comes down, or a close after a correction)
+      // starts a new move; a target on the same side of that place is a correction of this move. The place is kept in
+      // `origin`: `from` is recomputed by a correction and can lie anywhere (Codex review of #236).
       const now = performance.now()
       const done = ease(Math.min(1, Math.max(0, (now - start) / keyboardMotion)))
-      const ahead = Math.sign(inset - from) === Math.sign(previous - from)
+      const ahead = Math.sign(inset - origin) === Math.sign(previous - origin)
       if (motion !== undefined && done < 0.9 && ahead) {
         from = (shown - inset * done) / (1 - done)
         return
       }
       from = shown
+      origin = shown
       start = now
       motion ??= requestAnimationFrame(step)
     }

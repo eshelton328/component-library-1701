@@ -1491,7 +1491,7 @@ const guessOff = (real: number, delay: number): StoryObj<typeof meta> => ({
     const record = recordRise(footer)
     await userEvent.click(field)
     const focused = performance.now()
-    await wait(delay)
+    if (delay > 0) await wait(delay)
     const reported = performance.now()
     fakeViewport.move({ height: 844 - real })
     await settled(footer, rise)
@@ -1518,11 +1518,11 @@ const guessOff = (real: number, delay: number): StoryObj<typeof meta> => ({
 })
 const phone = { viewport: { value: 'm390' } }
 /** First open, the real keyboard 50 px lower than the guess, reported during the move: one rise, on time. */
-export const GuessHighDuringDark = { ...guessOff(330, 100), globals: { mode: 'dark', ...phone } }
-export const GuessHighDuringLight = { ...guessOff(330, 100), globals: { mode: 'light', ...phone } }
+export const GuessHighDuringDark = { ...guessOff(330, 0), globals: { mode: 'dark', ...phone } }
+export const GuessHighDuringLight = { ...guessOff(330, 0), globals: { mode: 'light', ...phone } }
 /** First open, the real keyboard 50 px higher than the guess, reported during the move: one rise, on time. */
-export const GuessLowDuringDark = { ...guessOff(430, 100), globals: { mode: 'dark', ...phone } }
-export const GuessLowDuringLight = { ...guessOff(430, 100), globals: { mode: 'light', ...phone } }
+export const GuessLowDuringDark = { ...guessOff(430, 0), globals: { mode: 'dark', ...phone } }
+export const GuessLowDuringLight = { ...guessOff(430, 0), globals: { mode: 'light', ...phone } }
 /** First open, the real keyboard 50 px lower than the guess, reported after the move: the correction starts at once. */
 export const GuessHighAfterDark = { ...guessOff(330, 400), globals: { mode: 'dark', ...phone } }
 export const GuessHighAfterLight = { ...guessOff(330, 400), globals: { mode: 'light', ...phone } }
@@ -1640,11 +1640,38 @@ const reopenFalling: StoryObj<typeof meta> = {
     timed.stop()
     const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
     await expect(up - start).toBeGreaterThanOrEqual(250)
+    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
   },
 }
 /** Phone chat: the field takes the focus again while the composer comes down; it rises on a full keyboard move. */
 export const ReopenFallingDark: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ReopenFallingLight: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const closeAfterCorrection: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The real keyboard is 50 px over the guess and corrects the rise; the keyboard closes before the rise ends. The
+    // fall is a new move on the curve from where the dock is, not the rest of the rise's (Codex review of #236).
+    await userEvent.click(field)
+    fakeViewport.move({ height: 844 - 430 })
+    await wait(60)
+    const timed = recordRise(footer, root)
+    const start = performance.now()
+    const from = riseOf(footer) + 34
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 2000 })
+    await nextFrame()
+    timed.stop()
+    const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
+    await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / from))
+  },
+}
+/** Phone chat: the keyboard closes during a corrected rise; the composer comes down on a full keyboard move. */
+export const CloseAfterCorrectionDark: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const CloseAfterCorrectionLight: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.
@@ -2091,6 +2118,8 @@ const keyboardFall: StoryObj<typeof meta> = {
     // comes from the frames, so a slow runner that draws fewer frames still passes.
     const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
     await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / 300))
+    // And it moves on the way: a frame between the keyboard's top and the bottom (Codex review of #236).
+    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
   },
 }

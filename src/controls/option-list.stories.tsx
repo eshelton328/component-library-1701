@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BrainIcon, PlusIcon, TerminalIcon } from '../foundations/icons'
 import { OptionList, type OptionListItem } from './option-list'
+import { restPointerOn } from './pointer.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 // The sort sheet's surface at the sheet body's width (Artifacts M4, 407:814: 364 wide inside 12 padding).
@@ -72,6 +73,8 @@ const meta = {
   title: 'Forms/Option list',
   component: Sorts,
   play: async ({ canvasElement }) => {
+    // Put the runner's pointer on the canvas padding before the rows' idle fills are read.
+    await restPointerOn(canvasElement)
     const canvas = within(canvasElement)
     const group = canvas.getByRole('radiogroup', { name: 'Sort by' })
     const radios = within(group).getAllByRole('radio')

@@ -25,6 +25,8 @@ components (d-066).
   text goes in a `PopoverSection`'s `query`, never its capitals `label`.
 - Stories of a scrolling box call `expectScrollAreas`, and of a scrolled
   pane also `expectScrollsByWheelAndKeys` (`scroll-area.testing.ts`).
-- A `BottomSheet` play function awaits `motionDone` before it measures,
-  calls `restPointerOn` before it reads an idle fill, and awaits
-  `unmounted` after a close (`bottom-sheet.testing.ts`).
+- A `BottomSheet` play function awaits `motionDone` before it measures
+  and awaits `unmounted` after a close (`bottom-sheet.testing.ts`).
+- A play function that reads an idle fill first calls `restPointerOn`
+  (`pointer.testing.ts`) with a place that has no hover style, such as a
+  sheet's title row or the story's canvas.

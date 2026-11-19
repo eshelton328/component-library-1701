@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
-import { motionDone, restPointerOn } from '../controls/bottom-sheet.testing'
+import { motionDone } from '../controls/bottom-sheet.testing'
+import { restPointerOn } from '../controls/pointer.testing'
 import { MoreDrawer, type MoreDrawerGroup } from './more-drawer'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })

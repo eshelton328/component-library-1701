@@ -1,5 +1,5 @@
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, useRef } from 'react'
-import { AgentIcon, ChevronRightIcon, CloseIcon, HookIcon, type IconProps, RuleIcon, SkillIcon, WorkflowIcon } from '../foundations/icons'
+import { AgentIcon, ChevronRightIcon, CloseIcon, HookIcon, type IconProps, LinksIcon, RuleIcon, SkillIcon, WorkflowIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { mapGraph, mapLegend, mapNode, mapSelectionCard } from '../../styled-system/recipes'
 import { Button } from '../controls/button'
@@ -37,6 +37,15 @@ export type MapNodeTone = 'kind' | 'muted' | 'faint'
  */
 export type MapNodeLabelStyle = 'mono' | 'label'
 
+/**
+ * How tight a node draws: `default` pads 10 px each side with a 16 px icon
+ * and an 8 px gap, so the name starts 35 px in; `compact` pads 8 with a 12 px
+ * icon and a 6 px gap, so the name starts 27 px in, for the tablet's and the
+ * phone's 140 × 30 nodes (Toolkit T2 428:402, M11 461:921), whose 104 px
+ * names show `pr-description` whole.
+ */
+export type MapNodeDensity = 'default' | 'compact'
+
 const node = createSlotRecipeContext(mapNode)
 const NodeRoot = node.withProvider('button', 'root')
 const NodeIcon = node.withContext('span', 'icon')
@@ -56,6 +65,8 @@ export type MapNodeProps = {
   tone?: MapNodeTone | undefined
   /** `mono` (the default) or `label`; see `MapNodeLabelStyle`. */
   labelStyle?: MapNodeLabelStyle | undefined
+  /** `default` or `compact` (a 12 px icon and tighter sides); see `MapNodeDensity`. */
+  density?: MapNodeDensity | undefined
   /** Called when the node is clicked, or pressed with Enter or Space. */
   onClick?: (() => void) | undefined
   /** Called on a key press, before the button handles it. */
@@ -71,13 +82,14 @@ export type MapNodeProps = {
  * and keyboard focus. `aria-pressed`
  * tells assistive technology whether it is the selected item.
  */
-export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', labelStyle = 'mono', onClick, onKeyDown, describedBy }: MapNodeProps) {
+export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', labelStyle = 'mono', density = 'default', onClick, onKeyDown, describedBy }: MapNodeProps) {
   const Icon = kindIcons[kind]
   return (
     <NodeRoot
       type="button"
       kind={kind}
       labelStyle={labelStyle}
+      density={density}
       aria-pressed={state === 'selected'}
       aria-describedby={describedBy}
       data-state={state}
@@ -86,7 +98,7 @@ export function MapNode({ label, kind, meta, state = 'lit', tone = 'kind', label
       onKeyDown={onKeyDown}
     >
       <NodeIcon>
-        <Icon size="16" />
+        <Icon size={density === 'compact' ? '12' : '16'} />
       </NodeIcon>
       <NodeLabel>
         <TruncatedText>{label}</TruncatedText>
@@ -158,16 +170,51 @@ export type MapSelectionCardProps = {
   actionLabel?: string | undefined
   /** Called by the open button. */
   onAction?: (() => void) | undefined
+  /**
+   * The label of a links button, such as "Show links", drawn first in the
+   * action row as a primary button with the links icon (Toolkit M11
+   * 461:1268). With it, the open button turns secondary with no chevron and
+   * both buttons take their own width, 8 px apart. No links button when not set.
+   */
+  linksLabel?: string | undefined
+  /** Called by the links button. */
+  onLinks?: (() => void) | undefined
   /** Called by the close button. No close button when not set. */
   onClose?: (() => void) | undefined
+  /**
+   * `default` draws the counts in words on their own line
+   * (`→ links to 7   ← linked from 4`) with 16 px padding; `compact` is the
+   * phone's card (Toolkit M11 461:1259): the counts as arrows and numbers
+   * (`→7  ←4`, muted) at the end of the title row, 12 px top and bottom
+   * padding and an 8 px gap.
+   */
+  density?: 'default' | 'compact' | undefined
 }
 
-/** The card for the selected map item: its name and kind, what it does, its link counts and an open button. */
-export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom, actionLabel, onAction, onClose }: MapSelectionCardProps) {
+/** The card for the selected map item: its name and kind, what it does, its link counts and its buttons. */
+export function MapSelectionCard({
+  name,
+  kind,
+  description,
+  linksTo,
+  linkedFrom,
+  actionLabel,
+  onAction,
+  linksLabel,
+  onLinks,
+  onClose,
+  density = 'default',
+}: MapSelectionCardProps) {
   const Icon = kindIcons[kind]
-  const counts = [linksTo === undefined ? '' : `→ links to ${String(linksTo)}`, linkedFrom === undefined ? '' : `← linked from ${String(linkedFrom)}`].filter((c) => c !== '')
+  const compact = density === 'compact'
+  const counts = compact
+    ? [linksTo === undefined ? '' : `→${String(linksTo)}`, linkedFrom === undefined ? '' : `←${String(linkedFrom)}`].filter((c) => c !== '')
+    : [linksTo === undefined ? '' : `→ links to ${String(linksTo)}`, linkedFrom === undefined ? '' : `← linked from ${String(linkedFrom)}`].filter((c) => c !== '')
+  const countsText = counts.length > 0 ? counts.join(compact ? '  ' : '   ') : null
+  const hasLinks = linksLabel !== undefined && linksLabel !== ''
+  const hasAction = actionLabel !== undefined && actionLabel !== ''
   return (
-    <CardRoot kind={kind} aria-label={name}>
+    <CardRoot kind={kind} density={density} aria-label={name}>
       <CardTitle>
         <CardIcon>
           <Icon size="16" />
@@ -176,6 +223,7 @@ export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom,
           <TruncatedText>{name}</TruncatedText>
         </CardName>
         <CardKind>{kindNames[kind]}</CardKind>
+        {compact && countsText !== null ? <CardCounts>{countsText}</CardCounts> : null}
         {onClose === undefined ? null : (
           <CardClose>
             <Button variant="secondary" size="sm" iconOnly aria-label={`Close ${name}`} onClick={onClose}>
@@ -185,13 +233,21 @@ export function MapSelectionCard({ name, kind, description, linksTo, linkedFrom,
         )}
       </CardTitle>
       {description !== undefined && description !== '' ? <CardDescription>{description}</CardDescription> : null}
-      {counts.length > 0 ? <CardCounts>{counts.join('   ')}</CardCounts> : null}
-      {actionLabel !== undefined && actionLabel !== '' ? (
-        <CardAction>
-          <Button variant="primary" onClick={onAction}>
-            {actionLabel}
-            <ChevronRightIcon size="12" />
-          </Button>
+      {!compact && countsText !== null ? <CardCounts>{countsText}</CardCounts> : null}
+      {hasLinks || hasAction ? (
+        <CardAction data-links={hasLinks ? '' : undefined}>
+          {hasLinks ? (
+            <Button variant="primary" onClick={onLinks}>
+              <LinksIcon size="16" />
+              {linksLabel}
+            </Button>
+          ) : null}
+          {hasAction ? (
+            <Button variant={hasLinks ? 'secondary' : 'primary'} onClick={onAction}>
+              {actionLabel}
+              {hasLinks ? null : <ChevronRightIcon size="12" />}
+            </Button>
+          ) : null}
         </CardAction>
       ) : null}
     </CardRoot>
@@ -209,6 +265,12 @@ const NodeBox = graph.withContext('foreignObject', 'node')
 const Links = graph.withContext('span', 'links')
 const Legend = graph.withContext('div', 'legend')
 const Card = graph.withContext('div', 'card')
+const Minimap = graph.withContext('div', 'minimap')
+const MinimapSvg = graph.withContext('svg', 'minimapSvg')
+const MinimapEdge = graph.withContext('path', 'minimapEdge')
+const MinimapNode = graph.withContext('rect', 'minimapNode')
+const MinimapLabel = graph.withContext('text', 'minimapLabel')
+const MinimapView = graph.withContext('div', 'minimapView')
 
 export type MapGraphNode = {
   /** A unique id, used by edges and `selectedId`. */
@@ -279,6 +341,12 @@ export type MapGraphProps = {
   /** The border of each lit node: `kind` (the default), or `muted` for the Links graph (D19); see `MapNodeTone`. */
   nodeTone?: MapNodeTone | undefined
   /**
+   * How tight each node draws: `default`, or `compact` for the tablet's and
+   * the phone's 140 × 30 nodes (Toolkit T2, M11), with a 12 px icon and the
+   * name 27 px in; see `MapNodeDensity`.
+   */
+  nodeDensity?: MapNodeDensity | undefined
+  /**
    * What each line ends in: `dot` (the default), a 6 px dot at the node it
    * links to, as on the toolkit map (D2 426:447); or `none`, a line that
    * ends at the node's edge, as on the Links graph (D19 493:89).
@@ -323,6 +391,15 @@ export type MapGraphProps = {
    * its window in the tab order, so the keys can reach it.
    */
   zoom?: boolean | MapGraphZoom | undefined
+  /**
+   * A small map of the whole drawing in the window's top right corner, as on
+   * the phone (Toolkit M11 `minimap bg` 461:1255): every heading, line and
+   * node, with its name, at 0.12 scale, and a cyan box round the part of the
+   * drawing that the window shows, which follows a scroll, a drag and a
+   * zoom. It is a picture only: hidden from assistive technology, and a
+   * pointer on it reaches the map under it. Off by default.
+   */
+  minimap?: boolean | undefined
 }
 
 const NODE_SIZE = { width: 220, height: 34 }
@@ -338,6 +415,55 @@ const WHEEL_LINE = 40
 type Point = { x: number; y: number }
 type View = { scale: number; x: number; y: number }
 
+// The scale of the minimap: Figma draws the 712 × 900 drawing 85.44 × 108 (M11 461:1061).
+const MINIMAP_SCALE = 0.12
+// Where a node's name starts, in px from its left edge (1 px border, side padding, icon and gap), for each density.
+const LABEL_START: Record<MapNodeDensity, number> = { default: 35, compact: 27 }
+
+/**
+ * Moves the minimap's box to the part of the drawing that the window shows:
+ * the window's size at the view's scale, from the view's offset, cut to the
+ * drawing, at the minimap's scale. It writes --map-graph-mini-x, -y, -w and -h,
+ * which the recipe's `minimapView` reads.
+ */
+function placeMinimap(box: HTMLElement | null, view: View, windowWidth: number, windowHeight: number, width: number, height: number) {
+  if (box === null) return
+  const span = (offset: number, size: number, total: number) => {
+    const start = Math.min(Math.max(-offset / view.scale, 0), total)
+    const end = Math.min(Math.max((size - offset) / view.scale, 0), total)
+    return { at: start * MINIMAP_SCALE, size: (end - start) * MINIMAP_SCALE }
+  }
+  const x = span(view.x, windowWidth, width)
+  const y = span(view.y, windowHeight, height)
+  box.style.setProperty('--map-graph-mini-x', `${String(x.at)}px`)
+  box.style.setProperty('--map-graph-mini-y', `${String(y.at)}px`)
+  box.style.setProperty('--map-graph-mini-w', `${String(x.size)}px`)
+  box.style.setProperty('--map-graph-mini-h', `${String(y.size)}px`)
+}
+
+/**
+ * The minimap's box for a map with no zoom: the window scrolls, so the view
+ * is the scroll offset at scale 1. It follows each scroll and each change of
+ * the window's size. A zoomable map places the box from `useZoom` instead.
+ */
+function useScrollMinimap(ref: RefObject<HTMLDivElement | null>, box: RefObject<HTMLDivElement | null>, on: boolean, width: number, height: number) {
+  useEffect(() => {
+    const scroller = ref.current
+    if (scroller === null || !on) return
+    const place = () => {
+      placeMinimap(box.current, { scale: 1, x: -scroller.scrollLeft, y: -scroller.scrollTop }, scroller.clientWidth, scroller.clientHeight, width, height)
+    }
+    place()
+    const resize = new ResizeObserver(place)
+    resize.observe(scroller)
+    scroller.addEventListener('scroll', place, { passive: true })
+    return () => {
+      resize.disconnect()
+      scroller.removeEventListener('scroll', place)
+    }
+  }, [ref, box, on, width, height])
+}
+
 /**
  * The pinch zoom and drag of a zoomable map. It keeps the view (scale and
  * offset) in a ref and writes it to the scroller as --map-graph-scale,
@@ -345,7 +471,14 @@ type View = { scale: number; x: number; y: number }
  * reads, so a gesture renders nothing in React. With `range` null it does
  * nothing and removes the properties.
  */
-function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; max: number } | null, width: number, height: number) {
+function useZoom(
+  ref: RefObject<HTMLDivElement | null>,
+  range: { min: number; max: number } | null,
+  width: number,
+  height: number,
+  minimap: RefObject<HTMLDivElement | null>,
+  withMinimap: boolean,
+) {
   const view = useRef<View>({ scale: 1, x: 0, y: 0 })
   const min = range?.min
   const max = range?.max
@@ -370,6 +503,7 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       scroller.style.setProperty('--map-graph-scale', String(view.current.scale))
       scroller.style.setProperty('--map-graph-x', `${String(view.current.x)}px`)
       scroller.style.setProperty('--map-graph-y', `${String(view.current.y)}px`)
+      if (withMinimap) placeMinimap(minimap.current, view.current, scroller.clientWidth, scroller.clientHeight, width, height)
     }
     show(view.current)
     // Scales the view by `factor` about a point of the window, so the drawing point under it stays there.
@@ -499,7 +633,7 @@ function useZoom(ref: RefObject<HTMLDivElement | null>, range: { min: number; ma
       scroller.style.removeProperty('--map-graph-x')
       scroller.style.removeProperty('--map-graph-y')
     }
-  }, [ref, min, max, width, height])
+  }, [ref, min, max, width, height, minimap, withMinimap])
 }
 // The radius of the dot at the end of a link (426:369 is 6 × 6).
 const DOT = 3
@@ -515,7 +649,9 @@ const DOT = 3
  * the open item takes its own `size` and `labelStyle`, `nodeTone="muted"`
  * softens the other nodes' borders and `edgeEnd="none"` drops the dots.
  * With `zoom` the map is a window that pinch zooms and drags its drawing,
- * as on the phone (Toolkit M11).
+ * as on the phone (Toolkit M11); `minimap` adds a small map of the whole
+ * drawing that shows where the window is, and `nodeDensity="compact"` draws
+ * the tablet's and the phone's 140 × 30 nodes.
  */
 export function MapGraph({
   label,
@@ -526,6 +662,7 @@ export function MapGraph({
   columns = [],
   nodeSize = NODE_SIZE,
   nodeTone = 'kind',
+  nodeDensity = 'default',
   edgeEnd = 'dot',
   orientation = 'horizontal',
   selectedId = null,
@@ -533,11 +670,14 @@ export function MapGraph({
   legend,
   card,
   zoom = false,
+  minimap = false,
 }: MapGraphProps) {
   const idBase = useId()
   const scroller = useRef<HTMLDivElement>(null)
+  const minimapView = useRef<HTMLDivElement>(null)
   const range = zoom === false ? null : zoom === true ? ZOOM : { min: zoom.min ?? ZOOM.min, max: zoom.max ?? ZOOM.max }
-  useZoom(scroller, range, width, height)
+  useZoom(scroller, range, width, height, minimapView, minimap)
+  useScrollMinimap(scroller, minimapView, minimap && range === null, width, height)
   const keysId = `${idBase}-zoom-keys`
   const names = new Map(nodes.map((n) => [n.id, n.label]))
   // The links of a node as a sentence, so a screen reader hears their direction.
@@ -627,6 +767,7 @@ export function MapGraph({
                   state={stateOf(n.id)}
                   tone={nodeTone}
                   labelStyle={n.labelStyle}
+                  density={nodeDensity}
                   onClick={() => onSelect?.(n.id)}
                   onKeyDown={onKeyDown}
                   describedBy={links === '' ? undefined : linksId}
@@ -640,6 +781,33 @@ export function MapGraph({
       {range === null ? null : (
         <Links id={keysId}>Pinch, or press plus or minus, to zoom, and 0 to zoom out fully. Control or Command with the mouse wheel zooms too. Drag to move.</Links>
       )}
+      {minimap ? (
+        <Minimap aria-hidden="true" data-minimap="">
+          <MinimapSvg width={width * MINIMAP_SCALE} height={height * MINIMAP_SCALE} viewBox={`0 0 ${String(width)} ${String(height)}`}>
+            {columns.map((c) => (
+              <ColumnLabel key={`${c.label}:${String(c.x)}`} x={c.x} y={c.y} dominantBaseline="hanging">
+                {c.label}
+              </ColumnLabel>
+            ))}
+            {ordered.map((e) => (
+              <MinimapEdge key={e.key} d={e.d} data-lit={e.lit ? '' : undefined} />
+            ))}
+            {nodes.map((n) => {
+              const size = n.size ?? nodeSize
+              const state = stateOf(n.id)
+              return (
+                <g key={n.id}>
+                  <MinimapNode x={n.x} y={n.y} width={size.width} height={size.height} rx={8} data-kind={n.kind} data-state={state} />
+                  <MinimapLabel x={n.x + LABEL_START[nodeDensity]} y={n.y + size.height / 2} dominantBaseline="central" data-state={state}>
+                    {n.label}
+                  </MinimapLabel>
+                </g>
+              )
+            })}
+          </MinimapSvg>
+          <MinimapView ref={minimapView} />
+        </Minimap>
+      ) : null}
       {legend === undefined || legend === null ? null : <Legend>{legend}</Legend>}
       {card === undefined || card === null ? null : <Card>{card}</Card>}
     </GraphRoot>

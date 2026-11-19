@@ -564,6 +564,95 @@ const noteDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** A drag in a text field of the sheet selects text; the sheet stays open and in place. */
 export const SwipeInTextField: StoryObj<typeof meta> = { render: () => <NoteSheet />, play: noteDragPlay }
 
+// A sheet of prompt text, as the-bridge shows a prompt on a tablet or a phone (the-bridge #126 review).
+const promptLines = ['Summarise the open pull requests of the library.', 'Then list each failing check with a link to its run.']
+const onPrompt = fn<(open: boolean) => void>()
+
+function PromptSheet() {
+  const [open, setOpen] = useState(false)
+  const change = (next: boolean) => {
+    setOpen(next)
+    onPrompt(next)
+  }
+  return (
+    <main className={page}>
+      <BottomSheet title="Prompt" trigger={<Button>Prompt</Button>} open={open} onOpenChange={change}>
+        {promptLines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
+      </BottomSheet>
+    </main>
+  )
+}
+
+const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onPrompt.mockClear()
+  // A real mouse, through the test runner's Playwright session: only a real press and move select text.
+  const { userEvent: mouse } = await import('vitest/browser')
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Prompt' })
+  const open = async () => {
+    await userEvent.click(trigger)
+    const sheet = await body.findByRole('dialog', { name: 'Prompt' })
+    return { sheet, top: sheet.getBoundingClientRect().top }
+  }
+  // From a point in `from` to the foot of the sheet: further down than 30% of the sheet's height.
+  const dragDown = async (from: Element, sheet: HTMLElement, at: { x: number; y: number }) => {
+    const box = sheet.getBoundingClientRect()
+    await expect(box.bottom - 4 - (from.getBoundingClientRect().top + at.y)).toBeGreaterThan(box.height * 0.3)
+    await mouse.dragAndDrop(from, sheet, { sourcePosition: at, targetPosition: { x: box.width / 2, y: box.height - 4 }, steps: 10 })
+  }
+
+  let { sheet, top } = await open()
+  const text = within(sheet).getByText(promptLines[0] ?? '')
+  document.getSelection()?.removeAllRanges()
+  // A mouse drag down from the prompt text selects the text; the sheet stays open and in place.
+  await dragDown(text, sheet, { x: 2, y: 4 })
+  await expect(document.getSelection()?.toString() ?? '').toContain('Summarise the open pull requests')
+  await expect(body.queryByRole('dialog', { name: 'Prompt' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(onPrompt).not.toHaveBeenCalledWith(false)
+
+  // A mouse drag of the title row selects too: with a mouse, only the grabber moves the sheet.
+  const header = sheet.querySelector('.bottom-sheet__header')
+  if (header === null) throw new Error('no title row')
+  document.getSelection()?.removeAllRanges()
+  await dragDown(header, sheet, { x: 8, y: header.getBoundingClientRect().height / 2 })
+  await expect(body.queryByRole('dialog', { name: 'Prompt' })).toBe(sheet)
+  await expect(sheet.getBoundingClientRect().top).toBe(top)
+  await expect(onPrompt).not.toHaveBeenCalledWith(false)
+
+  // A mouse drag down from the grabber closes the sheet.
+  const grabber = grabberOf(sheet)
+  await dragDown(grabber, sheet, { x: grabber.getBoundingClientRect().width / 2, y: 2 })
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  await expect(onPrompt).toHaveBeenLastCalledWith(false)
+
+  // A touch drag from the title row still closes it, as a finger on a phone does.
+  ;({ sheet, top } = await open())
+  const row = sheet.querySelector('.bottom-sheet__header')
+  if (row === null) throw new Error('no title row')
+  const far = Math.ceil((sheet.getBoundingClientRect().height * 0.3) / 20) * 20 + 20
+  await slowDrag(row, middleY(row), far, sheet, top)
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  await expect(onPrompt).toHaveBeenLastCalledWith(false)
+}
+
+/**
+ * With a mouse, a drag down from the sheet's text selects the text and leaves the sheet in place; only a drag of the
+ * grabber moves it. A touch drag from the title row still closes it.
+ */
+export const MouseDragDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragLight: StoryObj<typeof meta> = { ...MouseDragDark, globals: { mode: 'light' } }
+
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }
 export const SwipeLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'light' } }

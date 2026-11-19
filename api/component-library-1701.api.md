@@ -11,6 +11,8 @@ import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
 import { ErrorStateVariantProps } from '../../styled-system/recipes';
+import { FileBrowserVariantProps } from '../../styled-system/recipes';
+import { FileFrameVariantProps } from '../../styled-system/recipes';
 import { GroupHeaderVariantProps } from '../../styled-system/recipes';
 import { IconVariantProps } from '../../styled-system/recipes';
 import { ItemTabsVariantProps } from '../../styled-system/recipes';
@@ -523,6 +525,32 @@ export function ExternalLinkIcon(props: IconProps): JSX.Element;
 
 // @public
 export function FeatureIcon(props: IconProps): JSX.Element;
+
+// @public
+export function FileBrowser(input: FileBrowserProps): JSX.Element;
+
+// @public (undocumented)
+export type FileBrowserProps = Scalar<FileBrowserVariantProps> & {
+    tree: ReactNode;
+    children?: ReactNode;
+};
+
+// @public
+export function FileFrame(input: FileFrameProps): JSX.Element;
+
+// @public (undocumented)
+export type FileFrameProps = Scalar<FileFrameVariantProps> & {
+    name: string;
+    icon?: 'file' | 'code' | undefined;
+    meta?: ReactNode;
+    actions?: ReactNode;
+    onCopy?: ((name: string) => void) | undefined;
+    copyLabel?: string | undefined;
+    readOnly?: boolean | undefined;
+    foot?: ReactNode;
+    footIcon?: ReactNode;
+    children?: ReactNode;
+};
 
 // @public
 export function FileIcon(props: IconProps): JSX.Element;

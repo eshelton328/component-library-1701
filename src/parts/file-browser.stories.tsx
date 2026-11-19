@@ -23,6 +23,10 @@ const nodes: FileTreeNode[] = [
   { path: 'scripts/', name: 'scripts/', type: 'folder', children: [{ path: 'scripts/check', name: 'check', type: 'code' }] },
 ]
 const lines = ['#!/usr/bin/env python3', 'import json']
+// A browser in a bounded pane, with a tree and a file longer than the box.
+const bounded = css({ w: 'shell.detailWide', h: 'shell.listPane', display: 'flex', flexDirection: 'column' })
+const manyNodes: FileTreeNode[] = Array.from({ length: 40 }, (_, i) => ({ path: `file-${String(i)}.md`, name: `file-${String(i)}.md` }))
+const manyLines = Array.from({ length: 80 }, (_, i) => `line ${String(i)}`)
 
 function Browsers() {
   return (
@@ -40,6 +44,13 @@ function Browsers() {
             footIcon={<SkillIcon />}
           >
             <CodeLines lines={lines} />
+          </FileFrame>
+        </FileBrowser>
+      </div>
+      <div className={bounded} data-testid="bounded">
+        <FileBrowser tree={<FileTree label="Many files" nodes={manyNodes} selected="file-0.md" />}>
+          <FileFrame name="long.md" variant="flush" readOnly>
+            <CodeLines lines={manyLines} />
           </FileFrame>
         </FileBrowser>
       </div>
@@ -112,6 +123,20 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect([rect(bar).top - rect(box).top, rect(bar).height]).toEqual([1, 37])
   await expect(rect(el(bar, '.file-frame__icon')).left - rect(tree).right).toBe(12)
   await expect(rect(el(viewer, '.file-frame__foot')).bottom).toBe(rect(box).bottom - 1)
+
+  // In a bounded pane the box keeps the pane's height, and the tree and the file each scroll to their ends.
+  const pane = canvas.getByTestId('bounded')
+  const held = el(pane, '.file-browser__root')
+  await expect(rect(held).height).toBe(rect(pane).height)
+  const longTree = el(held, '.file-browser__tree')
+  const longBody = el(canvas.getByRole('region', { name: 'long.md' }), '.file-frame__body')
+  for (const scroller of [longTree, longBody]) {
+    await expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight)
+    scroller.scrollTop = scroller.scrollHeight
+    await expect(scroller.scrollTop).toBeGreaterThan(0)
+    await expect(rect(scroller).bottom).toBeLessThanOrEqual(rect(held).bottom)
+  }
+  await expect(canvas.getByText('file-39.md')).toBeInTheDocument()
 
   const stacked = canvas.getByTestId('stacked')
   const root = el(stacked, '.file-browser__root')

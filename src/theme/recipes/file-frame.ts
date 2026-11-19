@@ -13,9 +13,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   apart. The end group (the caller's actions, the 12 px copy icon 432:2297
 //   and the 12 px `icon/lock` with Read-only in small text) starts at the
 //   bar's end; its items are 8 apart.
-// - The name and the end keep their width: on the phone (M20 487:1650) the
-//   bar is one line and the box cuts Read-only at its edge (487:1660 starts
-//   past the box), so nothing ends with an ellipsis.
+// - The end group keeps its width, so the copy icon and Read-only stay in
+//   the box at any width. On the phone (M20 487:1650) Figma cuts Read-only
+//   at the box's edge (487:1660 starts past it); here the meta, then the
+//   name, give way first and end with an ellipsis (TruncatedText shows them
+//   whole in a tooltip), so the copy icon can always be pressed.
 // - foot: the line on what uses the file (`used by` 432:2347): a 12 px icon
 //   (Figma 13; icon.12, d-100) 12 in, the text in small muted text 8 after
 //   it, 10 above and below.
@@ -43,11 +45,15 @@ export const fileFrame = defineSlotRecipe({
       color: 'fg.muted',
     },
     icon: { display: 'inline-flex', flexShrink: '0' },
-    name: { textStyle: 'mono', color: 'fg.default', whiteSpace: 'nowrap', flexShrink: '0' },
-    meta: { textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap', flexShrink: '0' },
+    // The meta gives way before the name: it shrinks 4 times as fast.
+    name: { textStyle: 'mono', color: 'fg.default', whiteSpace: 'nowrap', minW: '0', flexShrink: '1' },
+    meta: { textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap', minW: '0', flexShrink: '4', overflow: 'hidden' },
     end: { display: 'inline-flex', alignItems: 'center', gap: '8', ms: 'auto', flexShrink: '0' },
     readOnly: { display: 'inline-flex', alignItems: 'center', gap: '8', textStyle: 'small', whiteSpace: 'nowrap' },
-    body: { display: 'flex', flexDirection: 'column', flexGrow: '1', minW: '0', minH: '0' },
+    // In a bounded parent (a FileBrowser in a pane) the body scrolls, so a long file stays reachable.
+    // Its content keeps its height (a CodeLines, whose overflowX would let it shrink and scroll on its own), so
+    // the body is the one scroll for code and Markdown.
+    body: { display: 'flex', flexDirection: 'column', flexGrow: '1', minW: '0', minH: '0', overflowY: 'auto', '& > *': { flexShrink: '0' } },
     foot: { display: 'flex', alignItems: 'center', gap: '8', px: '12', py: '10', textStyle: 'small', color: 'fg.muted' },
     // The caller passes the icon in, so `!` wins over its own size (../AGENTS.md).
     footIcon: { display: 'inline-flex', flexShrink: '0', '& svg': { w: 'icon.12!', h: 'icon.12!' } },
@@ -57,7 +63,7 @@ export const fileFrame = defineSlotRecipe({
       box: {
         root: { borderWidth: 'default', borderStyle: 'solid', borderColor: 'border.default', borderRadius: 'xl', overflow: 'hidden' },
       },
-      flush: { root: { flexGrow: '1' } },
+      flush: { root: { flexGrow: '1', minH: '0' } },
     },
   },
   defaultVariants: { variant: 'box' },

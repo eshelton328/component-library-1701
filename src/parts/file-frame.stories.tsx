@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { expectCutText } from '../controls/tooltip.testing'
 import { SkillIcon } from '../foundations/icons'
 import { CodeLines } from './code-lines'
 import { FileFrame } from './file-frame'
@@ -50,7 +51,7 @@ function Frames() {
         <FileFrame name="doc.md" variant="flush" readOnly />
       </div>
       <div className={narrow} data-testid="narrow">
-        <FileFrame name="agents/writing-reviewer.md" meta="96 lines · the prompt" readOnly />
+        <FileFrame name="agents/writing-reviewer.md" meta="96 lines · the prompt" onCopy={() => undefined} readOnly />
       </div>
       <div hidden>
         {Object.entries(swatches).map(([name, className]) => (
@@ -184,12 +185,17 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect([flush.borderTopWidth, flush.borderTopLeftRadius]).toEqual(['0px', '0px'])
   await expect(rect(canvas.getByRole('region', { name: 'doc.md' })).width).toBe(540)
 
-  // M20 487:1650: a narrow box keeps the bar one line and the name whole, and cuts the end at its edge.
+  // M20 487:1650: a narrow box keeps the bar one line. The meta and then the name give way, so the copy icon and
+  // Read-only stay inside the box and the copy icon can be pressed; the cut name shows whole in a tooltip.
   const thin = canvas.getByRole('region', { name: 'agents/writing-reviewer.md' })
   const thinBar = el(thin, '.file-frame__bar')
   await expect(rect(thinBar).height).toBe(37)
-  await expect(el(thin, '.file-frame__name').scrollWidth).toBe(el(thin, '.file-frame__name').clientWidth)
-  await expect(rect(el(thin, '.file-frame__readOnly')).right).toBeGreaterThan(rect(thin).right)
+  const thinCopy = within(thin).getByRole('button', { name: 'Copy agents/writing-reviewer.md' })
+  await expect(rect(thinCopy).left).toBeGreaterThanOrEqual(rect(thin).left)
+  await expect(rect(thinCopy).right).toBeLessThanOrEqual(rect(thin).right)
+  await expect(rect(el(thin, '.file-frame__readOnly')).right).toBeLessThanOrEqual(rect(thin).right)
+  await expect(rect(el(thin, '.file-frame__meta')).width).toBeLessThan(rect(el(thin, '.file-frame__name')).width)
+  await expectCutText(el(thin, '.file-frame__name'), 'agents/writing-reviewer.md')
   await expect(getComputedStyle(thin).overflow).toBe('hidden')
 }
 

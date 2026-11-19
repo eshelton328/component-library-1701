@@ -3,6 +3,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { fileFrame, type FileFrameVariantProps } from '../../styled-system/recipes'
 import { BareIconButton } from '../controls/bare-icon-button'
 import type { Scalar } from '../controls/scalar'
+import { TruncatedText } from '../controls/tooltip'
 import { CodeIcon, CopyIcon, FileIcon, LockIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(fileFrame)
@@ -73,8 +74,10 @@ export function FileFrame({
     <Root variant={variant} aria-label={name}>
       <Bar>
         <Icon>{icon === 'code' ? <CodeIcon size="16" /> : <FileIcon size="16" />}</Icon>
-        <Name>{name}</Name>
-        {shown(meta) ? <Meta>{meta}</Meta> : null}
+        <Name>
+          <TruncatedText>{name}</TruncatedText>
+        </Name>
+        {shown(meta) ? <Meta>{typeof meta === 'string' ? <TruncatedText>{meta}</TruncatedText> : meta}</Meta> : null}
         {hasActions || onCopy !== undefined || readOnly ? (
           <End>
             {hasActions ? actions : null}

@@ -6,7 +6,8 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   432:2142, 330 in Figma) is `shell.sidebar` (328, the file tree's width,
 //   d-100) on `surface.well`, as high as the box, and the viewer (`viewer`
 //   432:2290) fills the rest. The box grows to fill a flex parent, as
-//   Figma's runs to the pane's foot.
+//   Figma's runs to the pane's foot. In a bounded parent each column
+//   scrolls on its own: the tree here, the file in its FileFrame body.
 // - `stacked`: a tablet's two boxes (T4 `tree` 434:408, `viewer` 434:485;
 //   T32 to T35): the tree in a bordered box as high as its rows, the viewer
 //   12 under it (Figma 14; no space token has 14, d-050). The viewer brings
@@ -19,7 +20,7 @@ export const fileBrowser = defineSlotRecipe({
   base: {
     root: { display: 'flex', minW: '0', color: 'fg.default' },
     tree: { display: 'flex', flexDirection: 'column', minW: '0', bg: 'surface.well', '& > *': { flexGrow: '1' } },
-    viewer: { display: 'flex', flexDirection: 'column', minW: '0' },
+    viewer: { display: 'flex', flexDirection: 'column', minW: '0', minH: '0' },
   },
   variants: {
     layout: {
@@ -33,8 +34,9 @@ export const fileBrowser = defineSlotRecipe({
           borderColor: 'border.default',
           borderRadius: 'xl',
           overflow: 'hidden',
+          minH: '0',
         },
-        tree: { w: 'shell.sidebar', flexShrink: '0' },
+        tree: { w: 'shell.sidebar', flexShrink: '0', minH: '0', overflowY: 'auto' },
         viewer: { flexGrow: '1' },
       },
       stacked: {

@@ -46,9 +46,11 @@ jobs:
           A query over the 1,000-run cap is split. Calls use "gh api"; a failure other
           than HTTP 4xx is tried twice more. It never reads the billing API or runs "gh auth".
           --since/--until: UTC days (until defaults to yesterday). --days N: the N days
-          before --today. --ledger keeps days older than 2 days; newer days, which a
-          re-run may change, are counted again. --max-calls N stops before a day that would
-          pass about N calls; days not counted are in "missing" (a lower bound). --budget
+          before --today. --ledger keeps each run's count, so a later run counts only runs
+          it does not have or that have a new attempt; a day is final once a count after it
+          is 2 days old is complete. --max-calls N stops at about N calls and the next run
+          goes on from there; a day not final and not counted complete in this run is in
+          "missing" (the totals are then a lower bound). --budget
           adds a "budget" object; --issue opens or updates the first repo's issue "Actions
           minutes at the weekly alert level" at the alert level, and closes it when a
           complete count is below. Prints JSON. Exit 0; 4 at the alert level without
@@ -71,10 +73,6 @@ jobs:
 
           class ApiError(Exception):
               """A gh api call failed."""
-
-
-          class Stop(Exception):
-              """The call limit would be passed."""
 
 
           class Api:
@@ -170,28 +168,42 @@ jobs:
               e[1] += n
 
 
-          def count_day(api, repo, day):
+          def count_day(api, repo, day, prior, settled):
+              """Counts a day's runs, reusing prior counts. Returns (runs, complete, stopped)."""
               start = dt.datetime.combine(day, dt.time(0, 0), dt.timezone.utc)
-              end = start + dt.timedelta(days=1, seconds=-1)
-              runs = list_runs(api, repo, start, end)
-              if not api.room(len(runs)):
-                  raise Stop()
-              out = {"minutes": 0, "runs": len(runs), "jobs": 0, "incomplete": 0,
-                     "by_workflow": {}, "by_job": {}, "by_runner": {}}
+              runs = list_runs(api, repo, start, start + dt.timedelta(days=1, seconds=-1))
+              done, complete = {}, True
               for run in runs:
+                  rid, att = str(run["id"]), run.get("run_attempt")
+                  p = prior.get(rid)
+                  if p and (p["attempt"] == att if att is not None else settled):
+                      done[rid] = p
+                      continue
                   if run.get("status") != "completed":
-                      out["incomplete"] += 1
-                  wf = run.get("name") or str(run.get("workflow_id"))
-                  for job in list_jobs(api, repo, run["id"]):
-                      if job.get("status") not in (None, "completed"):
-                          out["incomplete"] += 1
-                          continue
-                      m = billed(job)
+                      complete = False
+                      continue
+                  if not api.room(1):
+                      return done, False, True
+                  wf, rows = run.get("name") or str(run.get("workflow_id")), []
+                  jobs = list_jobs(api, repo, run["id"])
+                  if any(j.get("status") not in (None, "completed") for j in jobs):
+                      complete = False
+                      continue
+                  for job in jobs:
+                      rows.append([wf, str(job.get("name")), (job.get("labels") or ["?"])[0], billed(job)])
+                  done[rid] = {"attempt": att, "jobs": rows}
+              return done, complete, False
+
+
+          def day_total(runs):
+              out = {"minutes": 0, "runs": len(runs), "jobs": 0, "by_workflow": {}, "by_job": {}, "by_runner": {}}
+              for r in runs.values():
+                  for wf, name, runner, m in r["jobs"]:
                       out["minutes"] += m
                       out["jobs"] += 1
                       add(out["by_workflow"], wf, m)
-                      add(out["by_job"], f"{wf} / {job.get('name')}", m)
-                      add(out["by_runner"], (job.get("labels") or ["?"])[0], m)
+                      add(out["by_job"], f"{wf} / {name}", m)
+                      add(out["by_runner"], runner, m)
               return out
 
 
@@ -305,13 +317,15 @@ jobs:
                   return 2
 
               ledger_path = a.get("--ledger")
-              ledger = {"version": 1, "days": {}}
+              ledger = {"version": 3, "days": {}}
               if ledger_path and os.path.exists(ledger_path):
                   try:
                       with open(ledger_path) as f:
-                          ledger = json.load(f)
+                          have = json.load(f)
+                      if have.get("version") == 3:
+                          ledger = have
                   except (OSError, ValueError):
-                      ledger = {"version": 1, "days": {}}
+                      pass
               api = Api(max_calls)
               res = {"repos": {}, "minutes": 0, "days": [d.isoformat() for d in days], "missing": [],
                      "partial": False, "errors": []}
@@ -322,23 +336,29 @@ jobs:
                   kept = ledger["days"].setdefault(repo, {})
                   for d in days:
                       key = d.isoformat()
-                      day = kept.get(key)
-                      if day is None and not stopped:
-                          try:
-                              day = count_day(api, repo, d)
-                              counted += 1
-                              if day["incomplete"] == 0 and d < today - dt.timedelta(days=SETTLE):
-                                  kept[key] = day
-                          except Stop:
+                      entry = kept.get(key) or {"complete": False, "final": False, "runs": {}}
+                      settled = d < today - dt.timedelta(days=SETTLE)
+                      fresh = False
+                      if not entry.get("final") and not stopped:
+                          if not api.room(12):
                               stopped = True
+                      if not entry.get("final") and not stopped:
+                          try:
+                              runs, complete, stopped = count_day(api, repo, d, entry["runs"], settled)
+                              complete = complete and d < today
+                              entry = {"complete": complete, "final": complete and settled, "runs": runs}
+                              kept[key] = entry
+                              counted += 1
+                              fresh = True
                           except ApiError as e:
                               res["errors"].append(str(e))
                               stopped = True
-                      if day is None:
+                      if not (entry.get("final") or (fresh and entry["complete"])):
                           res["missing"].append({"repo": repo, "day": key})
-                          continue
-                      merge(tot, day)
-                      tot["days"][key] = day["minutes"]
+                      if key in kept:
+                          day = day_total(entry["runs"])
+                          merge(tot, day)
+                          tot["days"][key] = day["minutes"]
                   res["repos"][repo] = tot
                   res["minutes"] += tot["minutes"]
                   oldest = (today - dt.timedelta(days=35)).isoformat()

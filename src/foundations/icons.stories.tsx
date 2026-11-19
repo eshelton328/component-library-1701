@@ -43,6 +43,7 @@ import {
   InboxIcon,
   LinearIcon,
   LinkIcon,
+  LinkMarkIcon,
   ListIcon,
   LockIcon,
   LoopIcon,
@@ -172,6 +173,7 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'folder', Icon: FolderIcon },
       { name: 'tag', Icon: TagIcon },
       { name: 'link', Icon: LinkIcon },
+      { name: 'linkMark', Icon: LinkMarkIcon },
       { name: 'lock', Icon: LockIcon },
       { name: 'branch', Icon: BranchIcon },
       { name: 'chat', Icon: ChatIcon },
@@ -368,3 +370,81 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The link mark (Artifacts D2 403:500, T2 405:472) fills its box: Figma's 13 px frame is size 12 on the 4 px
+// grid. LinkIcon at the same size keeps its links in the middle 15 of the 24 grid.
+function LinkMarks() {
+  return (
+    <main className={page}>
+      <div className={row}>
+        <span data-testid="link-mark-12">
+          <LinkMarkIcon size="12" />
+        </span>
+        <span data-testid="link-mark-16">
+          <LinkMarkIcon size="16" />
+        </span>
+        <span data-testid="link-12">
+          <LinkIcon size="12" />
+        </span>
+        <span data-testid="link-20">
+          <LinkIcon size="20" />
+        </span>
+      </div>
+    </main>
+  )
+}
+
+// The gaps in px between the svg's box and the box its paths draw, the stroke included: [left, top, right, bottom].
+const drawnGaps = (el: HTMLElement) => {
+  const svg = svgIn(el)
+  const boxes = Array.from(svg.querySelectorAll('path')).map((p) => p.getBBox())
+  const half = Number.parseFloat(getComputedStyle(svg).strokeWidth) / 2
+  const left = Math.min(...boxes.map((b) => b.x)) - half
+  const top = Math.min(...boxes.map((b) => b.y)) - half
+  const right = Math.max(...boxes.map((b) => b.x + b.width)) + half
+  const bottom = Math.max(...boxes.map((b) => b.y + b.height)) + half
+  const rect = svg.getBoundingClientRect()
+  const scale = rect.width / 24
+  return { size: [rect.width, rect.height], gaps: [left, top, 24 - right, 24 - bottom].map((g) => g * scale) }
+}
+
+const linkMarkPlay: StoryObj<typeof LinkMarks>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  // The link mark fills its box within 1 px on each side, at the app's 12 and at 16.
+  for (const [id, px] of [
+    ['link-mark-12', 12],
+    ['link-mark-16', 16],
+  ] as const) {
+    const { size, gaps } = drawnGaps(canvas.getByTestId(id))
+    await expect(size).toEqual([px, px])
+    for (const gap of gaps) {
+      await expect(gap).toBeGreaterThanOrEqual(-0.01)
+      await expect(gap).toBeLessThanOrEqual(1)
+    }
+  }
+  // LinkIcon keeps its old drawing: 15.07 by 17.07 of the 24 grid in the middle (4.46, 3.46 from the sides).
+  for (const [id, px] of [
+    ['link-12', 12],
+    ['link-20', 20],
+  ] as const) {
+    const { size, gaps } = drawnGaps(canvas.getByTestId(id))
+    await expect(size).toEqual([px, px])
+    const scale = px / 24
+    const [left, top, right, bottom] = gaps
+    await expect(left).toBeCloseTo(4.464 * scale, 2)
+    await expect(top).toBeCloseTo(3.464 * scale, 2)
+    await expect(right).toBeCloseTo(4.464 * scale, 2)
+    await expect(bottom).toBeCloseTo(3.465 * scale, 2)
+  }
+}
+
+export const LinkMarkDark: StoryObj<typeof LinkMarks> = {
+  render: () => <LinkMarks />,
+  globals: { mode: 'dark' },
+  play: linkMarkPlay,
+}
+export const LinkMarkLight: StoryObj<typeof LinkMarks> = {
+  render: () => <LinkMarks />,
+  globals: { mode: 'light' },
+  play: linkMarkPlay,
+}

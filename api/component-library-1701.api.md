@@ -823,6 +823,9 @@ export function LinearIcon(props: IconProps): JSX.Element;
 export function LinkIcon(props: IconProps): JSX.Element;
 
 // @public
+export function LinkMarkIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ListIcon(props: IconProps): JSX.Element;
 
 // @public

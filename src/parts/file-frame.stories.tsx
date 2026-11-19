@@ -32,6 +32,7 @@ function Frames() {
           readOnly
           foot="Used by writer and writing-reviewer"
           footIcon={<SkillIcon size="16" />}
+          figma={{ root: 'file preview', bar: 'preview bar', body: 'rendered markdown', foot: 'used by' }}
         >
           <MarkdownView>
             <h1>writer</h1>
@@ -166,12 +167,21 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(rect(footIcon).left - box.left).toBe(13)
   await expect(foot.textContent).toBe('Used by writer and writing-reviewer')
 
+  // `figma` writes each named part's data-figma (D3 427:273, 427:274, 427:284; D6 432:2347); a frame with no `figma` has
+  // none.
+  await expect(md.getAttribute('data-figma')).toBe('file preview')
+  await expect(bar.getAttribute('data-figma')).toBe('preview bar')
+  await expect(body.getAttribute('data-figma')).toBe('rendered markdown')
+  await expect(foot.getAttribute('data-figma')).toBe('used by')
+
   // The code icon for a script, the code under the bar; no copy icon without onCopy.
   const code = canvas.getByRole('region', { name: 'scripts/check' })
   const codeIcon = svg(el(code, '.file-frame__icon'))
   await expect(codeIcon.innerHTML).not.toBe(icon.innerHTML)
   await expect(size(codeIcon)).toEqual([16, 16])
   await expect(within(code).queryByRole('button')).toBeNull()
+  await expect(code.hasAttribute('data-figma')).toBe(false)
+  await expect(code.querySelector('[data-figma]')).toBeNull()
   await expect(rect(el(code, '.code-lines__root')).top).toBe(rect(el(code, '.file-frame__bar')).bottom)
   await expect(rect(el(code, '.file-frame__readOnly')).right).toBe(rect(code).right - 13)
 

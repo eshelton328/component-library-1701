@@ -21,6 +21,14 @@ const FootIcon = withContext('span', 'footIcon')
 // A slot given as `false`, `null` or an empty string is left out, as React leaves it out.
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
 
+/** The `data-figma` names of a FileFrame's root, bar, body and foot. */
+export type FileFrameLayers = {
+  root?: string | undefined
+  bar?: string | undefined
+  body?: string | undefined
+  foot?: string | undefined
+}
+
 export type FileFrameProps = Scalar<FileFrameVariantProps> & {
   /** The file's name or path, such as "SKILL.md" or "scripts/check", in mono after the icon. It names the frame. */
   name: string
@@ -43,6 +51,12 @@ export type FileFrameProps = Scalar<FileFrameVariantProps> & {
   foot?: ReactNode
   /** An icon before `foot`, such as `<SkillIcon />`. It draws at 12 px whatever its `size`. */
   footIcon?: ReactNode
+  /**
+   * Names for the frame's parts, each written as its `data-figma` attribute, such as "file preview" for the root and
+   * "preview bar" for the bar, so an app's check can find the element that matches a Figma layer. It changes nothing on
+   * screen; a part not named has no `data-figma`.
+   */
+  figma?: FileFrameLayers | undefined
   /** The file's body, such as a `MarkdownView` or `CodeLines`; it sits under the bar with no padding. Bar only when not set. */
   children?: ReactNode
 }
@@ -68,11 +82,12 @@ export function FileFrame({
   footIcon,
   children,
   variant,
+  figma,
 }: FileFrameProps) {
   const hasActions = shown(actions)
   return (
-    <Root variant={variant} aria-label={name}>
-      <Bar>
+    <Root variant={variant} aria-label={name} data-figma={figma?.root}>
+      <Bar data-figma={figma?.bar}>
         <Icon>{icon === 'code' ? <CodeIcon size="16" /> : <FileIcon size="16" />}</Icon>
         <Name>
           <TruncatedText>{name}</TruncatedText>
@@ -99,9 +114,9 @@ export function FileFrame({
           </End>
         ) : null}
       </Bar>
-      {shown(children) ? <Body>{children}</Body> : null}
+      {shown(children) ? <Body data-figma={figma?.body}>{children}</Body> : null}
       {shown(foot) ? (
-        <Foot>
+        <Foot data-figma={figma?.foot}>
           {shown(footIcon) ? <FootIcon>{footIcon}</FootIcon> : null}
           {foot}
         </Foot>

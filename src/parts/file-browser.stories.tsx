@@ -32,7 +32,10 @@ function Browsers() {
   return (
     <main className={page}>
       <div className={desktop} data-testid="split">
-        <FileBrowser tree={<FileTree nodes={nodes} selected="scripts/check" defaultExpanded={['scripts/']} />}>
+        <FileBrowser
+          tree={<FileTree nodes={nodes} selected="scripts/check" defaultExpanded={['scripts/']} />}
+          figma={{ root: 'file browser', tree: 'tree', viewer: 'viewer column' }}
+        >
           <FileFrame
             name="scripts/check"
             icon="code"
@@ -142,10 +145,16 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect([rect(bar).top - rect(box).top, rect(bar).height]).toEqual([1, 37])
   await expect(rect(el(bar, '.file-frame__icon')).left - rect(tree).right).toBe(12)
   await expect(rect(el(viewer, '.file-frame__foot')).bottom).toBe(rect(box).bottom - 1)
+  // `figma` writes each named part's data-figma (D6 432:2141, 432:2142); a browser with no `figma` has none.
+  await expect(box.getAttribute('data-figma')).toBe('file browser')
+  await expect(tree.getAttribute('data-figma')).toBe('tree')
+  await expect(el(box, '.file-browser__viewer').getAttribute('data-figma')).toBe('viewer column')
 
   const stacked = canvas.getByTestId('stacked')
   const root = el(stacked, '.file-browser__root')
   await expect(border(root)[0]).toBe('0px')
+  await expect(root.hasAttribute('data-figma')).toBe(false)
+  await expect(root.querySelector('[data-figma]')).toBeNull()
   const treeBox = el(root, '.file-browser__tree')
   await expect(border(treeBox)).toEqual(['1px', 'solid', swatch('border'), '12px'])
   await expect(rect(treeBox).width).toBe(rect(stacked).width)

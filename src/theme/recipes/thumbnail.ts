@@ -55,7 +55,7 @@ export const thumbnail = defineSlotRecipe({
   className: 'thumbnail',
   jsx: ['Thumbnail'],
   staticCss: ['*'],
-  slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'amberTint', 'greenTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge', 'reference', 'referenceBox', 'referenceLabel', 'referenceLine'],
+  slots: ['root', 'svg', 'dots', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'amberTint', 'greenTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge', 'reference', 'referenceBox', 'referenceLabel', 'referenceLine'],
   base: {
     root: {
       position: 'relative',
@@ -67,6 +67,12 @@ export const thumbnail = defineSlotRecipe({
       gradientTo: 'surface.overlay',
     },
     svg: { display: 'block', w: '100%', h: 'auto' },
+    // The window dots of the card drawings (fill and lg): an SVG with no
+    // viewBox over the drawing, so the dots keep Figma's 5 px, 9 apart, at x
+    // 8, 17 and 26 at any width (D2 403:485 to 403:487, T2 405:453 to
+    // 405:455, M2 406:393 to 406:395, D1 402:15437); the bar under them
+    // scales with the drawing.
+    dots: { position: 'absolute', inset: '0', w: '100%', h: '100%', pointerEvents: 'none' },
     chrome: { fill: 'surface.well' },
     dot: { fill: 'status.idle.border' },
     muted: { fill: 'status.idle.border' },

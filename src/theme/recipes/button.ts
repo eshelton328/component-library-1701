@@ -165,9 +165,9 @@ export const button = defineRecipe({
     // bg.canvas, surface.pane and surface.raised (WCAG 1.4.11). The solid
     // one reaches 5.6:1 or more on all three in both themes. On a
     // `secondary` button `discuss` also fills the pressed button with
-    // surface.discuss, Figma's violet at 30 % (452:2341 and 452:2951 draw
-    // #34335a over the #070b14 page, which is #9e8fff at 0.30; light takes
-    // #5b4bd6 at the same 0.30, as border.discuss keeps its alpha). Over it
+    // surface.discuss, Figma's fill (#9e8fff at 0.3 in 452:2341, 452:2951
+    // and 403:943, no variable; light takes #5b4bd6 at the same 0.3, as
+    // border.discuss keeps its alpha). Over it
     // the fg.default label keeps 7.9:1 or more and the accent.discuss border
     // 3.4:1 or more on bg.canvas, surface.pane and surface.raised in both
     // themes. Figma's label is violet too (#9e8fff); that gives under 4.5:1

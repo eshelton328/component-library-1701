@@ -6,6 +6,7 @@ import { editable } from '../controls/editable'
 import { useInputModality } from '../controls/input-modality'
 import type { Scalar } from '../controls/scalar'
 import { Backdrop } from './backdrop'
+import { keyboardMeasures } from './keyboard-measures'
 import { shown } from './shown'
 
 const { withProvider, withContext } = createSlotRecipeContext(appShell)
@@ -116,7 +117,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // cover the visible area (`offsetTop` to `offsetTop + height`).
     let top = 0
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
-    let typing = editable(document.activeElement)
+    // A field focused before this effect ran (a page that focuses its composer as it mounts, R23) is taken by the
+    // focus path below, as if its focus came now.
+    let typing = false
     // A field in a ScrollFrame footer docks only where that ScrollFrame is the detail's direct child: the recipes read
     // the keyboard there and reset it deeper down. A page that nests the frame deeper loses the dock with no other
     // sign, so the first such field that a keyboard covers is named once in the console (screen reviews R20, R21).
@@ -178,6 +181,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         if (motion === undefined) paint(inset)
         return
       }
+      const previous = target
       target = inset
       if (media('(prefers-reduced-motion: reduce)')) {
         if (motion !== undefined) cancelAnimationFrame(motion)
@@ -186,8 +190,20 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         paint(inset)
         return
       }
+      // A new target during a move keeps that move's end and curve: the rest of the curve takes the dock from where it
+      // is to the new target, so a keyboard reported in the move makes one motion, not two (screen review R22). Late in
+      // a move (the curve past nine tenths) the rest is too short for a change, so a new move starts.
+      // A target back past where the move began (a reopen while the dock comes down) starts a new move; a target on the
+      // same side is a correction of this move.
+      const now = performance.now()
+      const done = ease(Math.min(1, Math.max(0, (now - start) / keyboardMotion)))
+      const ahead = Math.sign(inset - from) === Math.sign(previous - from)
+      if (motion !== undefined && done < 0.9 && ahead) {
+        from = (shown - inset * done) / (1 - done)
+        return
+      }
       from = shown
-      start = performance.now()
+      start = now
       motion ??= requestAnimationFrame(step)
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
@@ -195,10 +211,13 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // keyboard's rise. It takes the measure as it is `blurEndDelay` after the last resize (or `keyboardWait` after the
     // focus with none), and keeps it for the next open. A layout that shrinks meanwhile is a browser that resizes it
     // for the keyboard: nothing is expected there again.
-    const measured = new Map<string, number>()
+    const measured = keyboardMeasures
     const orientation = () => (document.documentElement.clientWidth > document.documentElement.clientHeight ? 'landscape' : 'portrait')
     let opening = false
     let openLayout = 0
+    // The keyboard the current opening expects, and whether it was measured (or is Figma's guess).
+    let expectedInset = 0
+    let expectedMeasured = false
     let settleTimer: ReturnType<typeof setTimeout> | undefined
     const settle = () => {
       settleTimer = undefined
@@ -234,7 +253,15 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         measured.set(orientation(), 0)
         opening = false
       }
-      show(opening && typing ? Math.max(target, inset) : inset)
+      // During the opening, a report under the expected keyboard is an early step of its rise and holds the dock up,
+      // when the expected keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at
+      // least three quarters of it is the whole keyboard and is taken at once, so the dock does not wait for the
+      // settle to come down (screen review R22). The settle then only stores the measure.
+      const early = opening && typing && inset < target && (expectedMeasured || inset < expectedInset * 0.75)
+      // A report taken as the whole keyboard is kept for the next open at once: a blur before the settle (a press on
+      // Send) would otherwise lose it.
+      if (opening && typing && !early && inset > 1) measured.set(orientation(), inset)
+      show(early ? target : inset)
     }
     // A visualViewport resize during an opening is a step of the keyboard's rise: the measure settles after the last.
     const resize = () => {
@@ -264,7 +291,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       if (!typing) return
       cancelEnd()
       keepTop()
-      const expected = measured.get(orientation()) ?? (orientation() === 'portrait' ? figmaKeyboard : 0)
+      const known = measured.get(orientation())
+      const expected = known ?? (orientation() === 'portrait' ? figmaKeyboard : 0)
+      expectedInset = expected
+      expectedMeasured = known !== undefined
       if (!was && measure() <= 1 && expected > 0 && keyboardExpected()) {
         opening = true
         openLayout = document.documentElement.clientHeight
@@ -377,6 +407,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       fit()
     }
     fit()
+    if (editable(document.activeElement)) focusIn()
     viewport.addEventListener('resize', resize)
     viewport.addEventListener('scroll', scroll)
     window.addEventListener('scroll', keepTop)

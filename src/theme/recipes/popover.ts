@@ -31,6 +31,12 @@ import { scrollArea } from './scroll-area'
 // (2 + a 16 px eyebrow line + 2), with the label 8 in, as at the default.
 // A section with `rule` draws the 1 px line after its label (105:409): 6
 // after the text, to the label's end padding, in border.default.
+// `inset="wide"` is the Artifacts Filter menu (D3 403:6852, T3, M3): its
+// rows (403:6857 to 403:6955) start 13 in from the box edge, so the box pads
+// 12 inside its 1 px border (spacing 12), and a 320 px box (`md`) holds
+// rows 294 wide, as Figma's. The section labels keep their own 8 px inset
+// and their 26 px rows, and the gap stays 2. It is its own variant, not a
+// density, so it sets the box padding over either density.
 // A section with `query` draws the typed text after its label, as the
 // skill list after "/" labels its section "SKILLS MATCHING /wri" (Workbench
 // M10 147:72, the D01 skill list's pattern): `sectionQuery` takes monoSm,
@@ -102,6 +108,11 @@ export const popover = defineSlotRecipe({
       default: {},
       compact: { content: { p: '6' }, sectionLabel: { pt: '2', pb: '2' } },
     },
+    inset: {
+      default: {},
+      wide: { content: { p: '12' } },
+    },
   },
-  defaultVariants: { width: 'md', surface: 'overlay', density: 'default' },
+  compoundVariants: [{ density: 'compact', inset: 'wide', css: { content: { p: '12' } } }],
+  defaultVariants: { width: 'md', surface: 'overlay', density: 'default', inset: 'default' },
 })

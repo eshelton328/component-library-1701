@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { BrainIcon, TerminalIcon } from '../foundations/icons'
 import { Checkbox, CheckboxGroup } from './checkbox'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
@@ -456,3 +457,105 @@ const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const InlineDark: StoryObj<typeof meta> = { render: () => <InlineRows />, globals: { mode: 'dark' }, play: inlinePlay }
 export const InlineLight: StoryObj<typeof meta> = { render: () => <InlineRows />, globals: { mode: 'light' }, play: inlinePlay }
+
+// `density="compact"`: the rows of the Artifacts Filter menu (D3 403:6857 to 403:6955, T3 407:1506): 28 high
+// (`control.sm`) at the `compact` text size and in mono, 30 apart in a group (2 px gap).
+const artifactMenu = css({ bg: 'surface.overlay', p: '12', borderRadius: 'xl', w: 'shell.popover' })
+const artifactProjects = [
+  { value: 'ncc-1701', label: 'ncc-1701', labelStyle: 'mono' },
+  { value: 'pinpoint', label: 'pinpoint', labelStyle: 'mono' },
+] as const
+
+function DenseRows() {
+  return (
+    <main className={page}>
+      <div className={artifactMenu}>
+        <CheckboxGroup label="Project" items={artifactProjects} defaultValue={['ncc-1701']} size="compact" density="compact" />
+      </div>
+      <div className={artifactMenu}>
+        <Checkbox label="Starred" size="compact" density="compact" defaultChecked />
+        <Checkbox label="Also remove this task" size="sm" density="compact" inline />
+        <Checkbox label="Only unread" size="compact" />
+      </div>
+    </main>
+  )
+}
+
+const rowOf = (canvasElement: HTMLElement, name: string) => {
+  const root = within(canvasElement).getByRole('checkbox', { name }).closest('label')
+  if (!(root instanceof HTMLElement)) throw new Error(`no row for ${name}`)
+  return root
+}
+
+/** A compact-density row is 28 high at any text size, its group rows 30 apart; the default row keeps 32. */
+const densePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  for (const name of ['ncc-1701', 'pinpoint', 'Starred']) await expect(rowOf(canvasElement, name).getBoundingClientRect().height).toBe(28)
+  await expect(Math.round(rowOf(canvasElement, 'pinpoint').getBoundingClientRect().top - rowOf(canvasElement, 'ncc-1701').getBoundingClientRect().top)).toBe(30)
+  // The text keeps its size: `compact` is bodySm (13/20), a mono label mono (12).
+  const label = (name: string) => {
+    const el = rowOf(canvasElement, name).querySelector('.checkbox__label')
+    if (!(el instanceof HTMLElement)) throw new Error(`no label for ${name}`)
+    return getComputedStyle(el)
+  }
+  await expect([label('Starred').fontSize, Math.round(Number.parseFloat(label('Starred').lineHeight))]).toEqual(['13px', 20])
+  await expect(label('ncc-1701').fontFamily).toMatch(/Mono/)
+  // An inline row keeps no minimum; the default density keeps control.md (32).
+  await expect(rowOf(canvasElement, 'Also remove this task').getBoundingClientRect().height).toBe(16)
+  await expect(rowOf(canvasElement, 'Only unread').getBoundingClientRect().height).toBe(32)
+  await userEvent.click(canvas.getByText('pinpoint'))
+  await expect(canvas.getByRole('checkbox', { name: 'pinpoint' })).toBeChecked()
+}
+
+export const DenseDark: StoryObj<typeof meta> = { render: () => <DenseRows />, globals: { mode: 'dark' }, play: densePlay }
+export const DenseLight: StoryObj<typeof meta> = { render: () => <DenseRows />, globals: { mode: 'light' }, play: densePlay }
+
+// `leading`: the Claude and Codex marks of the Artifacts Filter menu's Source rows (D3 403:6855, 403:6865), which the
+// caller passes as `KindMark size="12"`. A story in this tier cannot import parts, so 12 px icons stand in for them.
+const sources = [
+  { value: 'claude', label: 'Claude', leading: <BrainIcon size="12" /> },
+  { value: 'codex', label: 'Codex', leading: <TerminalIcon size="12" /> },
+] as const
+
+function LeadingMarks() {
+  return (
+    <main className={page}>
+      <div className={artifactMenu}>
+        <CheckboxGroup label="Source" items={sources} defaultValue={['claude']} size="compact" density="compact" />
+      </div>
+      <div className={artifactMenu}>
+        <Checkbox label="Only mine" size="compact" density="compact" />
+      </div>
+    </main>
+  )
+}
+
+/** A leading mark sits 6 after the box, the label 6 after the mark (24 after the box); a row with no mark keeps 10. */
+const leadingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const slot = (name: string, part: 'control' | 'leading' | 'label') => {
+    const el = rowOf(canvasElement, name).querySelector(`.checkbox__${part}`)
+    if (!(el instanceof HTMLElement)) throw new Error(`no ${part} for ${name}`)
+    return el.getBoundingClientRect()
+  }
+  for (const name of ['Claude', 'Codex']) {
+    const box = slot(name, 'control')
+    const mark = slot(name, 'leading')
+    const label = slot(name, 'label')
+    await expect([mark.width, mark.height]).toEqual([12, 12])
+    await expect(Math.round(mark.left - box.right)).toBe(6)
+    await expect(Math.round(label.left - mark.right)).toBe(6)
+    await expect(Math.round(label.left - box.right)).toBe(24)
+    // Centred on the row with the box.
+    await expect(Math.round(mark.top + mark.height / 2)).toBe(Math.round(box.top + box.height / 2))
+    // The mark is decoration: the box's name is the label alone.
+    await expect(canvas.getByRole('checkbox', { name })).toBeInTheDocument()
+  }
+  await expect(rowOf(canvasElement, 'Only mine').querySelector('.checkbox__leading')).toBeNull()
+  await expect(Math.round(slot('Only mine', 'label').left - slot('Only mine', 'control').right)).toBe(10)
+  await userEvent.click(canvas.getByText('Codex'))
+  await expect(canvas.getByRole('checkbox', { name: 'Codex' })).toBeChecked()
+}
+
+export const LeadingDark: StoryObj<typeof meta> = { render: () => <LeadingMarks />, globals: { mode: 'dark' }, play: leadingPlay }
+export const LeadingLight: StoryObj<typeof meta> = { render: () => <LeadingMarks />, globals: { mode: 'light' }, play: leadingPlay }

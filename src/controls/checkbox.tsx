@@ -13,6 +13,7 @@ const GroupLabel = withContext('span', 'groupLabel')
 const Trailing = withContext('span', 'trailing')
 const TextColumn = withContext('span', 'text')
 const Description = withContext('span', 'description')
+const Leading = withContext('span', 'leading')
 
 // A slot given as `false`, `null` or an empty string is left out, as React leaves it out; `0` shows.
 const shown = (node: ReactNode) => node !== undefined && node !== null && typeof node !== 'boolean' && node !== ''
@@ -79,15 +80,28 @@ export type CheckboxProps = {
    * default) keeps the 32 px row.
    */
   inline?: boolean | undefined
+  /**
+   * The row height: `default` keeps the 32 px `control.md` minimum (28 px, `control.sm`, at `size="sm"`);
+   * `compact` makes the row at least 28 px high (`control.sm`) at every size, as the Artifacts Filter menu draws its
+   * rows (D3 403:6857), so rows in a `PopoverSection` are 30 apart. An `inline` row keeps no minimum.
+   */
+  density?: 'default' | 'compact' | undefined
+  /**
+   * A mark between the box and the label, such as `<KindMark kind="claude" size="12" />` on a Source row of the
+   * Artifacts Filter menu (D3 403:6855). It is decoration; the label names the box. With a mark the box, the mark and
+   * the label are 6 apart (the label 24 after the box), not 10. No mark when not set.
+   */
+  leading?: ReactNode
 }
 
 /**
  * A checkbox with a label, such as one filter in a filter popover, an optional `description` line under the label and
  * an optional `trailing` count at the end.
  */
-export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, description, labelStyle, size, tone, labelTone, inline }: CheckboxProps) {
+export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disabled, value, name, trailing, description, labelStyle, size, tone, labelTone, inline, density, leading }: CheckboxProps) {
   const descriptionId = useId()
   const described = shown(description)
+  const led = shown(leading)
   return (
     <Root
       labelStyle={labelStyle}
@@ -95,6 +109,8 @@ export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disa
       tone={tone}
       labelTone={labelTone}
       inline={inline}
+      density={density}
+      {...(led ? { 'data-leading': '' } : {})}
       disabled={disabled}
       {...(checked === undefined ? {} : { checked })}
       {...(defaultChecked === undefined ? {} : { defaultChecked })}
@@ -112,6 +128,7 @@ export function Checkbox({ label, checked, defaultChecked, onCheckedChange, disa
           <Dash />
         </Indicator>
       </Control>
+      {led ? <Leading aria-hidden="true">{leading}</Leading> : null}
       <TextColumn>
         <Label>{label}</Label>
         {described ? <Description id={descriptionId}>{description}</Description> : null}
@@ -131,6 +148,8 @@ export type CheckboxGroupItem = {
   trailing?: ReactNode
   /** `mono` draws the label in `mono`, as a project or tag name is; `text` (the default) in `body`. */
   labelStyle?: 'text' | 'mono' | undefined
+  /** A mark between the box and the label, such as `<KindMark kind="codex" size="12" />`. See `CheckboxProps`. */
+  leading?: ReactNode
 }
 
 export type CheckboxGroupProps = {
@@ -146,10 +165,12 @@ export type CheckboxGroupProps = {
   name?: string | undefined
   /** The text size of every box: `md` (the default), `compact` or `sm`, as the Inbox Filter menu draws it. See `CheckboxProps`. */
   size?: 'md' | 'compact' | 'sm' | undefined
+  /** The row height of every box: `default` or `compact` (28 px rows, as the Artifacts Filter menu). See `CheckboxProps`. */
+  density?: 'default' | 'compact' | undefined
 }
 
 /** A labelled group of checkboxes that gives the list of checked values. */
-export function CheckboxGroup({ label, items, value, defaultValue, onValueChange, disabled, name, size }: CheckboxGroupProps) {
+export function CheckboxGroup({ label, items, value, defaultValue, onValueChange, disabled, name, size, density }: CheckboxGroupProps) {
   const labelId = useId()
   return (
     <Group
@@ -166,7 +187,7 @@ export function CheckboxGroup({ label, items, value, defaultValue, onValueChange
       <GroupLabel id={labelId}>{label}</GroupLabel>
       {items.map((item) => (
         // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} labelStyle={item.labelStyle} size={size} />
+        <Checkbox key={item.value} label={item.label} value={item.value} disabled={item.disabled === true ? true : undefined} trailing={item.trailing} labelStyle={item.labelStyle} size={size} density={density} leading={item.leading} />
       ))}
     </Group>
   )

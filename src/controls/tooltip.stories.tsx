@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Button } from './button'
 import { Dialog } from './dialog'
 import { Stack } from './layout'
+import { ScrollFrame } from './scroll-frame'
 import { Tooltip, TruncatedText } from './tooltip'
 import { expectCutText } from './tooltip.testing'
 
@@ -353,6 +354,37 @@ export const TruncatedTextInDialog: StoryObj<typeof meta> = {
     await expect(cut).toHaveFocus()
     await waitFor(() => expect(tooltipOf()).toHaveTextContent(long))
     await userEvent.keyboard('{Escape}')
+  },
+}
+
+// A bounded flex column, so the ScrollFrame body scrolls.
+const pane = css({ display: 'flex', flexDirection: 'column', h: 'shell.listPane', bg: 'surface.pane' })
+
+/**
+ * Cut text in a scrolling pane (a ScrollFrame body; the AppShell detail is the same) is a tab stop of its own. The
+ * pane takes the focus only so the keys scroll it, so it is not the text's focus owner: a pointer that rests in the
+ * pane, away from the text, opens no tooltip.
+ */
+export const TruncatedTextInScrollPane: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <div className={pane}>
+        <ScrollFrame>
+          <p>Outside</p>
+          <div className={narrow} data-testid="cut">
+            <TruncatedText>{long}</TruncatedText>
+          </div>
+        </ScrollFrame>
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await userEvent.hover(canvas.getByText('Outside'))
+    await wait(600)
+    await expect(tooltipOf()).toBeNull()
+    await userEvent.unhover(canvas.getByText('Outside'))
+    await expectCutText(canvas.getByTestId('cut'), long)
   },
 }
 

@@ -34,6 +34,9 @@ const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
 const keepEndUntil = 0.7
 // The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame (three frames at 60 Hz).
 const keyboardStepGap = 50
+// One frame at 60 Hz, and the time after a move's start past which its first frame is late (two frames), in ms.
+const keyboardFrame = 1000 / 60
+const keyboardFrameLate = 2 * keyboardFrame
 // The frames a layout must stay short during an opening before the shell takes it as a browser that resizes it.
 const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
@@ -187,9 +190,23 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     let lastQuick = false
     let start = 0
     let motion: number | undefined
+    // Whether the move's next frame is its first, for `keyboardFrameLate`.
+    let firstFrame = false
     // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
     // frame already moves.
     const step = () => {
+      // iOS draws no frame of the page for 100 ms or more after a field's focus (the iPhone traces of screen review
+      // R26: the first frame at +97 ms, at 30 fps). A move whose clock started at the focus was then 79 % done in its
+      // first drawn frame, a jump. When the first frame of a move comes more than `keyboardFrameLate` after its start,
+      // the move starts there, one 60 Hz frame back, so that frame shows the curve's first step.
+      if (firstFrame) {
+        firstFrame = false
+        const at = performance.now()
+        if (at - start > keyboardFrameLate) {
+          start = at - keyboardFrame
+          root.dataset.keyboardEnd = String(start + keyboardMotion)
+        }
+      }
       const t = Math.min(1, Math.max(0, (performance.now() - start) / keyboardMotion))
       shown = t === 1 ? target : from + (target - from) * ease(t)
       paint(shown)
@@ -258,9 +275,13 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       from = shown
       origin = shown
       start = now
-      // The time the move ends, for a test or a trace to read: a correction keeps it, a new move sets it.
+      // The time the move ends, for a test or a trace to read: a correction keeps it, a new move sets it, and a late
+      // first frame moves it (see `step`).
       root.dataset.keyboardEnd = String(start + keyboardMotion)
-      motion ??= requestAnimationFrame(step)
+      if (motion === undefined) {
+        firstFrame = true
+        motion = requestAnimationFrame(step)
+      }
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
     // measure settles, the dock rises at once to the expected inset and does not come down for a smaller step of the

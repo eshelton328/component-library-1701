@@ -1778,6 +1778,54 @@ const frameSteps = (delay: number): StoryObj<typeof meta> => ({
     }
   },
 })
+// iOS draws no frame of the page for about 100 ms after the focus (the iPhone traces of screen review R26), at 60 or
+// 30 fps. The story holds the main thread for 100 ms after the focus, and with `frameMs` 33 holds each frame to 33 ms.
+const busy = (ms: number) => {
+  const until = performance.now() + ms
+  let spins = 0
+  while (performance.now() < until) spins++
+  return spins
+}
+const lateFirstFrame = (frameMs: number): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    let throttling = frameMs > 17
+    const throttle = () => {
+      if (!throttling) return
+      busy(frameMs - 4)
+      requestAnimationFrame(throttle)
+    }
+    requestAnimationFrame(throttle)
+    const timed = recordRise(footer, root)
+    await userEvent.click(field)
+    const focused = performance.now()
+    busy(100)
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
+    await settled(footer, 346)
+    throttling = false
+    timed.stop()
+    // The move's clock starts at its first frame after the hold, one 60 Hz frame back, not at the focus.
+    const moveStart = Number(root.dataset.keyboardEnd) - 250
+    await expect(moveStart).toBeGreaterThanOrEqual(focused + 100 - 17)
+    // So the first frame with the dock up shows the curve's first steps, not 79 % of it: at most the curve one 60 Hz
+    // frame and one of the runner's frames in (the recorder can read a frame late).
+    const first = timed.frames.find((f) => f.at > focused && f.rise > 0)
+    if (first === undefined) throw new Error('no frame with the dock up')
+    await expect(first.rise).toBeLessThanOrEqual(Math.ceil(curveAt(17 + frameMs) * 346))
+  },
+})
+/**
+ * Phone chat at 30 fps (an iPhone in Low Power Mode, the case of screen review R26) where the page draws no frame for
+ * 100 ms after the focus: the dock starts at its first frame.
+ */
+export const LateFirstFrame30Dark: StoryObj<typeof meta> = { ...lateFirstFrame(33), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrame30Light: StoryObj<typeof meta> = { ...lateFirstFrame(33), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** The same at 60 fps. */
+export const LateFirstFrameDark: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrameLight: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 /** Phone chat with a keyboard that reports its height in every frame, a frame after the focus. */
 export const FrameStepsSoonDark: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FrameStepsSoonLight: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'light', viewport: { value: 'm390' } } }

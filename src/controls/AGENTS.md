@@ -147,6 +147,10 @@ under their purpose group, never under "Controls" (d-065).
   Reset pane sizes). The caller passes the buttons; the slots only place
   them, and an absent slot draws no element. With many tabs the list
   scrolls and the slots stay in view.
+- `FilterChips` has three sizes: `md` (the default, the Toolkit's
+  chips), `compact` (the Inbox list pane: 30 high, 8 px sides) and
+  `phone` (the Inbox phone list: `compact` with 12 px sides). A page
+  picks the size for its layout; the chips set no width of their own.
 - `Glyph` (`glyph.tsx`) is a symbol character inside a line of text that
   the text fonts lack, such as ✗ (U+2717) and ✓ (U+2713). The character
   stays in the inline text flow, in no colour and at no width, so a screen

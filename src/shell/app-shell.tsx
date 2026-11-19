@@ -32,6 +32,8 @@ const blurEndDelay = 300
 const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
 // The time fraction of a move up to which a new target keeps the move's end.
 const keepEndUntil = 0.7
+// The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame (three frames at 60 Hz).
+const keyboardStepGap = 50
 // The frames a layout must stay short during an opening before the shell takes it as a browser that resizes it.
 const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
@@ -179,6 +181,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     let target = 0
     let from = 0
     let origin = 0
+    // When the last target came, and the direction of its step, for `keyboardStepGap`.
+    let lastTargetAt = Number.NEGATIVE_INFINITY
+    let lastDirection = 0
+    let lastQuick = false
     let start = 0
     let motion: number | undefined
     // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
@@ -220,20 +226,33 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // it: the rest of the curve still takes the dock onto the keyboard by that end (the-bridge keyboard:served on
       // Workspaces, beta.80).
       const small = Math.abs(inset - previous) <= keyboardFollow
+      // A keyboard that reports its height in each frame as it moves (the-bridge keyboard:served): a target less than
+      // `keyboardStepGap` after the last one, in the same direction as that one's step, which also came less than
+      // `keyboardStepGap` after the one before (so a report soon after the focus's move is not one). Each report is where the
+      // keyboard is in that frame, so the dock follows it at once, in a move or after it, and the composer moves with
+      // the keyboard. A single late report (iOS) or a turn (a close after a 1 px step) is not one.
+      const direction = Math.sign(inset - previous)
+      const quick = now - lastTargetAt < keyboardStepGap
+      const stepping = quick && lastQuick && direction === lastDirection
+      lastTargetAt = now
+      lastDirection = direction
+      lastQuick = quick
       // "Late" is by time, not by the curve: the keyboard's curve is nine tenths done at 43 % of its time, and a report
       // at 152 ms (the Workbench trace of screen review R25) made a second 250 ms move. Up to `keepEndUntil` of the
       // time, the rest of the curve still has room for the correction; later, a correction would jump within a frame.
-      if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
-        from = (shown - inset * done) / (1 - done)
-        return
-      }
-      // After the move, a small step is followed at once: a new 250 ms move for it would leave the dock a pixel off the
-      // keyboard for most of its curve.
-      if (motion === undefined && small && Math.abs(inset - shown) <= keyboardFollow) {
+      // A frame step of the keyboard, in a move or after it, and after the move a small step, are followed at once: a
+      // new 250 ms move for them would leave the dock off the keyboard for most of its curve.
+      if (stepping || (motion === undefined && small && Math.abs(inset - shown) <= keyboardFollow)) {
+        if (motion !== undefined) cancelAnimationFrame(motion)
+        motion = undefined
         shown = inset
         origin = inset
         root.dataset.keyboardEnd = String(now)
         paint(inset)
+        return
+      }
+      if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
+        from = (shown - inset * done) / (1 - done)
         return
       }
       from = shown
@@ -365,7 +384,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         opening = true
         openLayout = document.documentElement.clientHeight
         scheduleSettle(keyboardWait)
-        show(expected)
+        // With reduced motion the dock jumps, so a guess would make two jumps (to Figma's 346, then to the real 369: the
+        // iPhone recording of screen review R26). It waits for the keyboard's report instead, unless the keyboard
+        // was measured, and jumps once.
+        if (expectedMeasured || !media('(prefers-reduced-motion: reduce)')) show(expected)
       } else fit()
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.

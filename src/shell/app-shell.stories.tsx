@@ -1549,6 +1549,29 @@ export const FocusScrollLight: StoryObj<typeof meta> = { ...focusScroll, globals
 export const KeyboardRiseDark: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardRiseLight: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+const pressAcrossSettle: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    // The first open starts the dock at once toward 346, and with no keyboard reported its measure settles 1 s after
+    // the focus.
+    await userEvent.click(field)
+    await settled(footer, 346)
+    // A press on Send blurs the field and is held across that settle: the dock stays where the finger pressed.
+    document.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    field.blur()
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    await expect(riseOf(footer)).toBe(346)
+    // The press's release: the dock comes down after it.
+    document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+    await settled(footer, 0)
+  },
+}
+/** Phone chat: a press on Send held across the keyboard's settle keeps the composer under the finger until its release. */
+export const PressAcrossSettleDark: StoryObj<typeof meta> = { ...pressAcrossSettle, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const PressAcrossSettleLight: StoryObj<typeof meta> = { ...pressAcrossSettle, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const keyboardFall: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,

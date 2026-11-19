@@ -165,6 +165,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const settle = () => {
       settleTimer = undefined
       opening = false
+      // The focus left the fields during the opening (a press on Send): the end of the fit brings the dock down after
+      // the press's release, so the settle moves nothing (Codex review of #202).
+      if (!typing || !editable(document.activeElement)) return
       const inset = measure()
       if (inset > 1) measured.set(orientation(), inset)
       show(inset)

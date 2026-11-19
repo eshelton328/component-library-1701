@@ -33,6 +33,10 @@ const fade =
 // Medium 12 (d-050): the label takes `small` (Regular 12, the same size and
 // line), and the count keeps `mono` (12).
 //
+// `phone` is the Inbox phone chip row (M1 346:9014, `chip · All` 51 wide): `compact`'s height and text, with the
+// label 12 from the chip's edge where the tablet's is 9 (T1 346:5421). 11 inside the border is no spacing token, so the
+// sides take 12 (d-100): the label is 13 in, and each chip is 2 px wider than Figma's.
+//
 // `md` is the Toolkit chip row: 32 high with the label 11 px from the chip's
 // edge (T1 428:25, M1 429:62, D3 427:65), which the 1 px border and 10 px
 // sides give. D1's chips (425:33) are 34 high with 12 px insets; 34 lies
@@ -107,6 +111,7 @@ export const filterChips = defineSlotRecipe({
     size: {
       md: {},
       compact: { item: { h: 'auto', py: '6', px: '8', textStyle: 'small' } },
+      phone: { item: { h: 'auto', py: '6', px: '12', textStyle: 'small' } },
     },
     padding: {
       default: {},

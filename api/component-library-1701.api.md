@@ -601,7 +601,7 @@ export type FilterChipsProps = {
     onValueChange?: ((value: string[]) => void) | undefined;
     multiple?: boolean | undefined;
     disabled?: boolean | undefined;
-    size?: 'md' | 'compact' | undefined;
+    size?: 'md' | 'compact' | 'phone' | undefined;
     padding?: 'default' | 'none' | undefined;
     fade?: 'edges' | 'none' | undefined;
 };

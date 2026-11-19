@@ -180,6 +180,31 @@ const compactPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 export const CompactDark: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'dark' }, play: compactPlay }
 export const CompactLight: StoryObj<typeof meta> = { render: () => <Compact />, globals: { mode: 'light' }, play: compactPlay }
 
+function Phone() {
+  return (
+    <main className={page}>
+      <FilterChips label="Inbox phone filter" items={inbox} defaultValue={['all']} multiple={false} size="phone" />
+      <FilterChips label="Compact" items={inbox} defaultValue={['all']} multiple={false} size="compact" />
+    </main>
+  )
+}
+
+/** The phone size (Inbox M1 346:9014): compact's 30 px height and 12 px label, with 12 px sides. */
+const phonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const chip = (label: string) => within(canvas.getByLabelText(label)).getByRole('radio', { name: /^All/ })
+  const phone = chip('Inbox phone filter')
+  const compact = chip('Compact')
+  const style = getComputedStyle(phone)
+  await expect(phone.getBoundingClientRect().height).toBe(30)
+  await expect([style.paddingLeft, style.paddingRight, style.fontSize]).toEqual(['12px', '12px', '12px'])
+  // 4 px wider at each side than the compact chip, the only difference.
+  await expect(phone.getBoundingClientRect().width - compact.getBoundingClientRect().width).toBe(8)
+}
+
+export const PhoneDark: StoryObj<typeof meta> = { render: () => <Phone />, globals: { mode: 'dark' }, play: phonePlay }
+export const PhoneLight: StoryObj<typeof meta> = { render: () => <Phone />, globals: { mode: 'light' }, play: phonePlay }
+
 // Hidden swatches of the count colours.
 const subtle = css({ color: 'fg.subtle' })
 const muted = css({ color: 'fg.muted' })

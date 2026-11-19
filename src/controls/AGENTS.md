@@ -133,7 +133,11 @@ under their purpose group, never under "Controls" (d-065).
   down from the finger. With prefers-reduced-motion it only fades. Ark
   unmounts it when the close motion ends, so a play function that
   measures an open sheet first awaits `motionDone` from
-  `bottom-sheet.testing.ts`.
+  `bottom-sheet.testing.ts`. A play function that reads an idle fill in
+  a sheet first calls `restPointerOn` from the same file with a part
+  that has no hover style (the title row): the runner's real pointer
+  keeps its place from the story before. It does nothing in the
+  Storybook UI.
 - `BottomSheet scrim={false}` draws no scrim (the tablet side chat) and
   changes nothing else: the focus stays inside, the page stays hidden from
   assistive technology, and a press outside closes the sheet without

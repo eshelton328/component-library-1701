@@ -1,0 +1,22 @@
+name: nightly
+
+# check:worktree on main once a day. ci.yml skips it on a PR that changes
+# only src/, api/ or Markdown files, so this run finds a break of that kind
+# within a day. GitHub sends a failed scheduled run to the repository owner.
+on:
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  worktree:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup
+        with:
+          browser: 'true'
+      - run: pnpm check:worktree

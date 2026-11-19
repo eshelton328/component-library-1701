@@ -149,7 +149,8 @@ Agents often work in a git worktree, and every check must pass there.
   `pnpm verify` at the same time. `pnpm storybook` uses port 6006.
 - `pnpm check:worktree` adds a fresh worktree of `HEAD`, runs
   `pnpm install` and `pnpm verify` in it, and removes it. CI runs it on
-  every PR.
+  every PR that changes a file outside `src/` and `api/` (Markdown
+  aside), before each release, and nightly on main (`nightly.yml`).
 
 ## Hooks
 

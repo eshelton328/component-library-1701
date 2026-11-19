@@ -59,23 +59,57 @@ export async function expectWheelScrollsPast(box: HTMLElement, scroller: HTMLEle
  * test.
  */
 export async function expectScrollsByWheelAndKeys(box: HTMLElement): Promise<void> {
-  const { cdp, userEvent } = await import('vitest/browser')
-  await expect(box.scrollHeight).toBeGreaterThan(box.clientHeight)
-
-  // A wheel turn over the middle of the box, through the test runner's DevTools session.
-  box.scrollTop = 0
-  const r = box.getBoundingClientRect()
-  const at = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }
-  await cdp().send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...at, deltaX: 0, deltaY: 200 })
-  await waitFor(() => expect(box.scrollTop).toBeGreaterThan(0))
-
+  const { userEvent } = await import('vitest/browser')
+  await expectScrollsByWheel(box)
   for (const key of ['{PageDown}', '{ArrowDown}']) {
-    box.scrollTop = 0
     box.focus()
     await expect(box).toHaveFocus()
-    await userEvent.keyboard(key)
-    await waitFor(() => expect(box.scrollTop).toBeGreaterThan(0))
+    await scrolls(box, () => userEvent.keyboard(key))
   }
-  box.scrollTop = 0
   box.blur()
 }
+
+/**
+ * Checks that a mouse wheel over the middle of `box` scrolls it down, with no scroll bar, through the test runner's
+ * DevTools session. A story that calls it carries `tags: ['!dev']`. The AppShell detail uses it alone: in headless
+ * Chromium on Linux a PageDown or ArrowDown on the focused detail sometimes ends a scroll of 0 px, with or without
+ * `scrollArea`, so a key check there fails at random.
+ */
+export async function expectScrollsByWheel(box: HTMLElement): Promise<void> {
+  const { cdp } = await import('vitest/browser')
+  await expect(box.scrollHeight).toBeGreaterThan(box.clientHeight)
+  await scrollBack(box)
+  const r = box.getBoundingClientRect()
+  const at = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }
+  await scrolls(box, () => cdp().send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...at, deltaX: 0, deltaY: 200 }))
+}
+
+// Resolves at the box's next scrollend, or after a second if no scroll ends.
+const scrollEnd = (box: HTMLElement) =>
+  new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    const timer = setTimeout(done, 1000)
+    box.addEventListener('scrollend', done, { once: true })
+  })
+
+// Puts the box back at its top and waits until that scroll ends. A smooth scroll still under way (Chromium on Linux
+// animates wheel and key scrolls) would otherwise go on after the reset, or stop the next key's scroll.
+async function scrollBack(box: HTMLElement): Promise<void> {
+  if (box.scrollTop === 0) return
+  const end = scrollEnd(box)
+  box.scrollTop = 0
+  await end
+}
+
+// Checks that `input` scrolls the box down, waits until that scroll ends, and puts the box back at its top.
+async function scrolls(box: HTMLElement, input: () => Promise<unknown>): Promise<void> {
+  const end = scrollEnd(box)
+  await input()
+  await waitFor(() => expect(box.scrollTop).toBeGreaterThan(0))
+  await end
+  await scrollBack(box)
+}
+

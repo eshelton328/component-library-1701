@@ -502,6 +502,26 @@ void test('the committed recipe types win over styled-system, which counts only 
   }
 })
 
+void test('a stale styled-system/recipes with no file-browser recipe does not hide the committed recipe types (bridge-release, 2026-11-19)', () => {
+  // The release clone had styled-system/recipes from before #261, with no
+  // file-browser or file-frame recipe, because pnpm install skipped prepare.
+  const stale = { 'styled-system/recipes/dialog.d.ts': 'export type DialogVariant = {\n  size?: "md"\n}\n' }
+  const root = tempRoot({ [recipeTypesFile]: recipeTypesReport([fileBrowserRecipe]), ...stale })
+  const staleOnly = tempRoot(stale)
+  try {
+    const types = afterRecipeTypes(root)
+    assert.equal(types, recipeTypesReport([fileBrowserRecipe]))
+    assert.deepEqual(diffApi(fileBrowserBeta83, fileBrowserMain, { before: types, after: types }).narrowed, [])
+    // The stale folder alone does not know FileBrowserVariantProps, so it
+    // gives the false breaking result that the committed file prevents.
+    const staleTypes = afterRecipeTypes(staleOnly)
+    assert.deepEqual(diffApi(fileBrowserBeta83, fileBrowserMain, { before: types, after: staleTypes }).narrowed, ['FileBrowserProps.figma'])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+    rmSync(staleOnly, { recursive: true, force: true })
+  }
+})
+
 void test('check-release-api.ts exits 1 when no recipe types are known, never with a breaking result (lib-api-diff, 2026-11-19)', () => {
   const root = tempRoot({ 'api/component-library-1701.api.md': fileBrowserBeta83 })
   const git = (...args: string[]) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { cwd: root, encoding: 'utf8' })

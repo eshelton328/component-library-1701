@@ -30,6 +30,10 @@ release checks, the component build and their tests.
   and `styled-system/recipes/` only when that file is missing.
 - `secret-scan.test.ts` is not in `pnpm verify`: it needs gitleaks 8.30.1
   on `PATH` or in `GITLEAKS`. The `secrets` job in `ci.yml` runs it.
+- Put no file under a top-level `b/` folder. The gitleaks path
+  exceptions also match `b/<path>`, the name of a merge conflict hunk, so
+  `secret-merge-prefix.ts` (the `secrets` job step "No files under b/")
+  fails a PR with a commit that adds, changes or deletes such a file.
 
 ## Folders
 

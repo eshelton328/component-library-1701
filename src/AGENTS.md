@@ -89,3 +89,4 @@ footer.
 - [shell/AGENTS.md](shell/AGENTS.md): read before changing the page frame.
 - [pages/AGENTS.md](pages/AGENTS.md): read before adding an example page.
 - [theme/AGENTS.md](theme/AGENTS.md): read before writing a recipe.
+

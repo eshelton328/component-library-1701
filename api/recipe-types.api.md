@@ -433,6 +433,7 @@ import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recip
 
 export type FileFrameVariant = {
   variant?: "box" | "flush"
+  barEnd?: "keep" | "cut"
 }
 
 export type FileFrameVariantProps = {

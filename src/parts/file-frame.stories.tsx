@@ -51,6 +51,9 @@ function Frames() {
       <div className={wide} data-testid="flush">
         <FileFrame name="doc.md" variant="flush" readOnly />
       </div>
+      <div className={narrow} data-testid="narrow-cut">
+        <FileFrame name="agents/diagram-reviewer.md" meta="88 lines · the prompt" readOnly barEnd="cut" />
+      </div>
       <div className={narrow} data-testid="narrow">
         <FileFrame name="agents/writing-reviewer.md" meta="96 lines · the prompt" onCopy={() => undefined} readOnly />
       </div>
@@ -207,6 +210,17 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(rect(el(thin, '.file-frame__meta')).width).toBeLessThan(rect(el(thin, '.file-frame__name')).width)
   await expectCutText(el(thin, '.file-frame__name'), 'agents/writing-reviewer.md')
   await expect(getComputedStyle(thin).overflow).toBe('hidden')
+
+  // barEnd="cut" (M20 487:1650): the name and the meta stay whole and Read-only runs past the box's edge, where the
+  // box cuts it.
+  const cut = el(canvas.getByTestId('narrow-cut'), '.file-frame__root')
+  const cutName = el(cut, '.file-frame__name .truncated-text')
+  const cutMeta = el(cut, '.file-frame__meta .truncated-text')
+  await expect(cutName.scrollWidth).toBeLessThanOrEqual(cutName.clientWidth)
+  await expect(cutMeta.scrollWidth).toBeLessThanOrEqual(cutMeta.clientWidth)
+  await expect(rect(el(cut, '.file-frame__readOnly')).right).toBeGreaterThan(rect(cut).right)
+  await expect(rect(el(cut, '.file-frame__bar')).height).toBe(37)
+  await expect(getComputedStyle(cut).overflow).toBe('hidden')
 }
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, play }

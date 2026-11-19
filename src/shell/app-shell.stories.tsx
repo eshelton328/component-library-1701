@@ -1643,12 +1643,17 @@ const reopenFalling: StoryObj<typeof meta> = {
     field.blur()
     fakeViewport.move({ height: 844 })
     // The field takes the focus again while the dock comes down: the rise is a new move on the keyboard's curve, not
-    // the rest of the fall's, so it takes the full 250 ms and does not jump.
-    await wait(100)
+    // the rest of the fall's, so it takes the full 250 ms and does not jump. Wait for the dock to be halfway down, whatever the runner's frame rate.
+    await waitFor(() => expect(riseOf(footer)).toBeLessThan(133), { timeout: 2000 })
     const timed = recordRise(footer, root)
     const start = performance.now()
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
+    const reported = performance.now()
+    // The dock's own end for the rise: a new move of 250 ms from the focus, not the end the fall had.
+    const riseEnd = Number(root.dataset.keyboardEnd)
+    await expect(riseEnd).toBeGreaterThanOrEqual(start + 250)
+    await expect(riseEnd).toBeLessThanOrEqual(reported + 250)
     await settled(footer, 266)
     timed.stop()
     const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
@@ -1670,11 +1675,20 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
     await userEvent.click(field)
     fakeViewport.move({ height: 844 - 430 })
     await wait(60)
+    // And the rise is under way: a loaded runner can draw no frame in those 60 ms, and a fall from no rise has no
+    // curve to check (Close After Correction Light measured 0 for 2.7 ms in a 2-CPU Linux run).
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
     const timed = recordRise(footer, root)
     const start = performance.now()
     const from = riseOf(footer) + 34
     field.blur()
+    const closed = performance.now()
     fakeViewport.move({ height: 844 })
+    const reported = performance.now()
+    // The dock's own end for the fall: a new move of 250 ms from the close, not the end the rise had.
+    const fallEnd = Number(root.dataset.keyboardEnd)
+    await expect(fallEnd).toBeGreaterThanOrEqual(closed + 250)
+    await expect(fallEnd).toBeLessThanOrEqual(reported + 250)
     await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 2000 })
     await nextFrame()
     timed.stop()

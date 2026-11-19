@@ -1750,7 +1750,7 @@ export default definePreset({
           }
         },
         "small": {
-          "description": "Captions, helper text and diff lines, and the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px). Not for the descriptions and note of a RadioMenu with density compact, which use smallXs.",
+          "description": "Captions, helper text and diff lines, the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px), and the meta line of a ListRow with metaStyle small (the time and place in the Toolkit Activity list). Not for the descriptions and note of a RadioMenu with density compact, which use smallXs.",
           "value": {
             "fontFamily": "text.small",
             "fontSize": "text.small",

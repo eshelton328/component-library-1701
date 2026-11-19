@@ -87,6 +87,13 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   below and 10 at the sides, puts the title and meta 2 apart and centres
  *   the leading, body and trailing down the row, so a title and meta row is
  *   52 tall, selected or not (the Toolkit list beside an open item, D03).
+ *   `flush` pads 6 above and below and 0 at the sides inside the clear
+ *   border, with the same centring and 2 px gap, so a title and meta row is
+ *   52 tall and its leading and trailing sit 1 in from the row's edges (the
+ *   Toolkit Activity list, D17).
+ * - `metaStyle="small"` draws the meta line in the `small` sans style
+ *   (12/16, the Activity list's time and place); `mono`, the default, keeps
+ *   the `mono` meta (`monoSm` on a compact row).
  * - `surface="card"` draws the row on `surface.pane` in a `border.default`
  *   border, as a Card; `default` has no fill and a clear border.
  * - `trailingAlign="center"` centres the trailing items down the row (D2's
@@ -111,7 +118,7 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   `column`, the default, keeps `trailing` in its own column after the
  *   body.
  */
-export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
+export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, metaStyle, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText =
@@ -139,7 +146,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
       </TitleButton>
     )
   return (
-    <Root variant={variant} density={density} padding={padding} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} padding={padding} metaStyle={metaStyle} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>

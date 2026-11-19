@@ -45,6 +45,21 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   d-072). The open item's row (427:166, 386 x 55 with the selected fill and
 //   a cyan border) keeps the same 52: the border is there, clear, on every
 //   row, so opening an item does not move the list.
+//   `padding="flush"` is the Toolkit Activity list (D17 474:650, 914 x 51,
+//   59 apart; the rounds of D23 the same row with no icon): Figma's row has
+//   no border and no side padding, the chat icon (474:651) starts at its
+//   left edge and the chevron (474:656) ends at its right edge, both centred
+//   down the row, and the text (474:653) sits 6 under its top, the title
+//   (474:654, label, 20) over the meta line (474:655, small, 17) 2 lower.
+//   So `flush` pads 6 above and below and 0 at the sides, centres the
+//   leading, body and trailing and puts the lines 2 apart, as `pane` does.
+//   The clear 1 px border stays, as on every row, so the row is
+//   1 + 6 + 20 + 2 + 16 + 6 + 1 = 52: Figma's 51 on the 4 px grid (d-100),
+//   the small line 16 (Figma 17), and the icons 1 in from the row's edges
+//   (Figma 0). With the page's 8 between rows they are 60 apart (Figma 59).
+// - `metaStyle="small"` draws the meta line in the `small` sans style
+//   (12/16), as the Activity list's "Nov 13 · 20:44 · omni-brain" (D17
+//   474:655, Inter 12, 17 high); `mono`, the default, keeps the Inbox meta.
 // - `surface="card"` draws the D4 row's box: a 1 px border.default border
 //   on surface.pane, as the Card has, in the row's own lg radius. A
 //   selected or running row keeps the selected colours.
@@ -165,7 +180,12 @@ export const listRow = defineSlotRecipe({
       compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
     // The padding of an `inbox` row; the compound variants below set it, so it wins over the variant's 10.
-    padding: { default: {}, sm: {}, lg: {}, phone: {}, pane: {} },
+    padding: { default: {}, sm: {}, lg: {}, phone: {}, pane: {}, flush: {} },
+    // The meta line's text style: `small` is the Activity list's sans meta (D17 474:655).
+    metaStyle: {
+      mono: {},
+      small: { meta: { textStyle: 'small' } },
+    },
     surface: {
       default: {},
       // The base's selected colours lose to a variant, so the card sets them again.
@@ -216,6 +236,7 @@ export const listRow = defineSlotRecipe({
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
     { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
     { variant: 'inbox', padding: 'pane', css: { root: { alignItems: 'center', px: '10', py: '6' }, body: { gap: '2' } } },
+    { variant: 'inbox', padding: 'flush', css: { root: { alignItems: 'center', px: '0', py: '6' }, body: { gap: '2' } } },
   ],
-  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title', trailingPlacement: 'column' },
+  defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', metaStyle: 'mono', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title', trailingPlacement: 'column' },
 })

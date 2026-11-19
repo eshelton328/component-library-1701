@@ -4,7 +4,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Inline, Stack } from '../controls/layout'
-import { SparkFilledIcon } from '../foundations/icons'
+import { ChatIcon, ChevronRightIcon, SparkFilledIcon } from '../foundations/icons'
 import { Badge } from './badge'
 import { ContextMeter } from './context-meter'
 import { KindMark } from './kind-mark'
@@ -961,3 +961,71 @@ const toolkitPanePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `padding="pane"`: the Toolkit list beside an open item (D03), 52 px rows. */
 export const ToolkitPaneDark: StoryObj<typeof meta> = { render: () => <ToolkitPaneRows />, globals: { mode: 'dark' }, play: toolkitPanePlay }
 export const ToolkitPaneLight: StoryObj<typeof meta> = { render: () => <ToolkitPaneRows />, globals: { mode: 'light' }, play: toolkitPanePlay }
+
+// The Activity panel's body, which has no padding: its rows run edge to edge, 8 apart (59 - 51 in Figma).
+const activityList = css({ bg: 'surface.pane', w: 'shell.listPane', display: 'grid', gap: '8' })
+
+/**
+ * The Toolkit Activity list (D17 474:650; the workflow's rounds, D23, the same
+ * row with no icon): `padding="flush"` and `metaStyle="small"` draw each row
+ * 52 high with no side padding, the chat icon and the chevron centred down
+ * it, and the time and place in the `small` sans style 2 under the title. A
+ * row without the props keeps the 62 px Inbox row and its mono meta.
+ */
+function ActivityRows() {
+  return (
+    <main className={page}>
+      <div className={activityList}>
+        <ListRow padding="flush" metaStyle="small" title="Linear workflow setup for NCC team" meta="Nov 13 · 20:44 · omni-brain" leading={<ChatIcon size="16" />} trailing={<ChevronRightIcon size="16" />} onSelect={() => undefined} />
+        <ListRow padding="flush" metaStyle="small" title="readme · cross-family x1" meta="Nov 12 · 09:10 · the-bridge" trailing={<ChevronRightIcon size="16" />} onSelect={() => undefined} />
+        <ListRow title="Inbox triage" meta="Nov 11 · 18:02 · omni-brain" leading={<ChatIcon size="16" />} trailing={<ChevronRightIcon size="16" />} onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const activityPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const centre = (r: DOMRect) => r.top + r.height / 2
+  const px = (value: string) => Math.round(Number.parseFloat(value))
+  const chat = rowParts(canvasElement, 'Linear workflow setup for NCC team')
+  const icon = chat.slot('leading')
+  const chevron = chat.slot('trailing')
+  const title = chat.slot('title')
+  const time = chat.slot('meta')
+  // 1 + 6 + 20 + 2 + 16 + 6 + 1: Figma's 51 on the 4 px grid.
+  await expect(chat.row.height).toBe(52)
+  // The 15 px chat icon and the 14 px chevron draw at 16, centred down the row.
+  await expect([icon.width, icon.height, chevron.width, chevron.height]).toEqual([16, 16, 16, 16])
+  await expect(centre(icon)).toBe(centre(chat.row))
+  await expect(centre(chevron)).toBe(centre(chat.row))
+  // No side padding: the icon starts and the chevron ends at the clear border (Figma at the row's edges).
+  await expect(icon.left - chat.row.left).toBe(1)
+  await expect(chat.row.right - chevron.right).toBe(1)
+  // The text 6 under the top inside the border, the meta 2 under the title.
+  await expect(title.top - chat.row.top).toBe(7)
+  await expect([title.height, time.height]).toEqual([20, 16])
+  await expect(time.top - title.bottom).toBe(2)
+  // The title in label (14 / 20, medium), the meta in small sans (12 / 16, regular).
+  const titleStyle = getComputedStyle(within(canvasElement).getByRole('button', { name: 'Linear workflow setup for NCC team' }))
+  await expect([px(titleStyle.fontSize), px(titleStyle.lineHeight), titleStyle.fontWeight]).toEqual([14, 20, '500'])
+  const timeStyle = getComputedStyle(within(canvasElement).getByText('Nov 13 · 20:44 · omni-brain'))
+  await expect([px(timeStyle.fontSize), px(timeStyle.lineHeight), timeStyle.fontWeight]).toEqual([12, 16, '400'])
+  await expect(timeStyle.fontFamily).not.toMatch(/mono/i)
+  // A round, the same row with no icon: the same height, the title at the border.
+  const round = rowParts(canvasElement, 'readme · cross-family x1')
+  await expect(round.row.height).toBe(52)
+  await expect(round.slot('body').left - round.row.left).toBe(1)
+  await expect(centre(round.slot('trailing'))).toBe(centre(round.row))
+  // Without the props the row keeps the Inbox look: 1 + 10 + 20 + 4 + 16 + 10 + 1, items at the top, mono meta.
+  const inbox = rowParts(canvasElement, 'Inbox triage')
+  await expect(inbox.row.height).toBe(62)
+  await expect(inbox.slot('leading').top - inbox.row.top).toBe(11)
+  await expect(inbox.slot('leading').left - inbox.row.left).toBe(11)
+  await expect(inbox.slot('trailing').top - inbox.row.top).toBe(11)
+  await expect(inbox.slot('meta').top - inbox.slot('title').bottom).toBe(4)
+  await expect(getComputedStyle(within(canvasElement).getByText('Nov 11 · 18:02 · omni-brain')).fontFamily).toMatch(/mono/i)
+}
+
+/** `padding="flush"` with `metaStyle="small"`: the Toolkit Activity list (D17), 52 px rows edge to edge. */
+export const ActivityDark: StoryObj<typeof meta> = { render: () => <ActivityRows />, globals: { mode: 'dark' }, play: activityPlay }
+export const ActivityLight: StoryObj<typeof meta> = { render: () => <ActivityRows />, globals: { mode: 'light' }, play: activityPlay }

@@ -82,7 +82,9 @@ declares the first stable contract.
 - The public API is `src/index.ts`. `api/component-library-1701.api.md`
   is its report; `pnpm check:api` fails when the API changes and the
   report does not. Run `pnpm api:update` and commit the report with the
-  change.
+  change. `api/recipe-types.api.md` holds the recipe types that the API
+  diffs read; `pnpm check:api` fails when it differs from
+  `styled-system/recipes/`, and `pnpm api:update` writes it too.
 - A removed or changed declaration or member in the report is a
   breaking change, and so is a new member with no `?` (d-063). The
   `api-report` workflow then labels the PR `breaking-change`, comments,

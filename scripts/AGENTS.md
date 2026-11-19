@@ -29,7 +29,11 @@ Repository scripts that are not part of the package.
 
 - `check-api.ts` (`pnpm check:api`, `pnpm api:update`) builds the
   declarations of `src/index.ts` with `tsconfig.api.json` and compares
-  them with `api/` through API Extractor (`api-extractor.json`).
+  them with `api/` through API Extractor (`api-extractor.json`). It also
+  writes (`--update`) or checks `api/recipe-types.api.md`, the
+  `.d.ts` files of `styled-system/recipes/` in one block
+  (`recipeTypesReport` in `release-lib.ts`), so run `pnpm codegen`
+  first.
 - `check-api-diff.ts` compares two API reports by declaration and member,
   and finds removed or changed items and new required members. Members of
   an interface, a class or a type alias that is one plain object literal
@@ -55,18 +59,23 @@ Repository scripts that are not part of the package.
   workflow runs on `pull_request_target`, so GitHub runs the base
   branch's copy of the workflow and of this script, and reads the PR's
   report as data. A change to either takes effect only after it merges.
+  The workflow also reads `api/recipe-types.api.md` from the merge base
+  and the PR head, as data, and passes them as `--before-types` and
+  `--after-types`, so a variant name of `Scalar<DialogVariantProps>`
+  is known on each side. A side with no such file makes every new
+  member of such an alias breaking.
 - `check-commits.ts` checks every commit header since the last release
   tag; the release job runs it before semantic-release.
 - `check-release-api.ts` (`pnpm check:release-api`) compares the API with
   the last release tag. It also reads the recipe types that Panda
   codegen writes to `styled-system/recipes/`, because the report imports
   the variant props (such as `DialogVariantProps`) and does not declare
-  them. When a new member may narrow such a type, it also adds a
-  temporary worktree of the tag, runs `pnpm install` there (which runs
-  codegen) and reads the tag's recipe types, so a variant that the change
-  removes still counts. When either side has no recipe types, every new
-  member of such an alias is breaking. `check-api-diff.ts` reads only the two reports, so the
-  `api-report` workflow counts a new member of such an alias as breaking. When it broke, `@semantic-release/commit-analyzer`
+  them. When a new member may narrow such a type, it also reads the
+  tag's recipe types, so a variant that the change removes still counts:
+  the tag's `api/recipe-types.api.md`, or for a tag from before that
+  file, a temporary worktree of the tag where `pnpm install` runs
+  codegen. When either side has no recipe types, every new member of
+  such an alias is breaking. When it broke, `@semantic-release/commit-analyzer`
   with `release.config.js` must return `major` for the commits in the
   range, so a reverted breaking commit does not count. The release job
   runs it, because a squash message can drop the `!` that the PR title

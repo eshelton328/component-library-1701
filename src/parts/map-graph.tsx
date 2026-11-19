@@ -175,7 +175,9 @@ export type MapSelectionCardProps = {
    * The label of a links button, such as "Show links", drawn first in the
    * action row as a primary button with the links icon (Toolkit M11
    * 461:1268). With it, the open button turns secondary with no chevron and
-   * both buttons take their own width, 8 px apart. No links button when not set.
+   * both buttons take their own width, 8 px apart, on one row. When the row
+   * is too narrow for both, the open button's label is cut with an ellipsis
+   * and shows whole in a tooltip. No links button when not set.
    */
   linksLabel?: string | undefined
   /** Called by the links button. */
@@ -248,7 +250,7 @@ export function MapSelectionCard({
           ) : null}
           {hasAction ? (
             <Button variant={hasLinks ? 'secondary' : 'primary'} onClick={onAction}>
-              {actionLabel}
+              <TruncatedText>{actionLabel}</TruncatedText>
               {hasLinks ? null : <ChevronRightIcon size="12" />}
             </Button>
           ) : null}

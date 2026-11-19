@@ -268,6 +268,12 @@ export const mapLegend = defineSlotRecipe({
 // primary, a 14 px `icon/links` 461:1269, here icon.16 as in every button)
 // and the open button (461:1275), now secondary. Figma's buttons are 34 and
 // 36 high; both are the md button (control.md, 32), as the open button is.
+// Figma keeps both on one row; when a narrow card (a 320 px phone) has no
+// room for both, the open button shrinks and its label is cut with
+// TruncatedText (whole in a tooltip), so the row stays one row and never
+// overflows. A wrap would put the open button on a second row and make the
+// card taller than M11's 90 px; it would also still overflow with a name
+// longer than the card.
 // `density: 'compact'` is the phone's card under the map window (M11
 // `selection · writer` 461:1259, 366 x 90): 13 px from its top and 15 from
 // its side, here 12 and 16 (spacing tokens, the larger on a tie, d-072),
@@ -305,6 +311,8 @@ export const mapSelectionCard = defineSlotRecipe({
       display: 'flex',
       '& > button': { w: '100%' },
       '&[data-links]': { gap: '8', '& > button': { w: 'auto' } },
+      // The open button gives way first: its label (TruncatedText) is cut, so the row never overflows the card.
+      '& > button:last-child': { minW: '0', flexShrink: '1' },
     },
   },
   variants: {

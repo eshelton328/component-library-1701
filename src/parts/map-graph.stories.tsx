@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapNode, MapSelectionCard } from './map-graph'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -1229,6 +1230,74 @@ const phoneCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canva
 
 export const PhoneCardDark: StoryObj<typeof meta> = { render: (args) => <PhoneCard onOpen={args.onOpen} onSelect={args.onSelect} />, play: phoneCardPlay, globals: { mode: 'dark' } }
 export const PhoneCardLight: StoryObj<typeof meta> = { render: (args) => <PhoneCard onOpen={args.onOpen} onSelect={args.onSelect} />, play: phoneCardPlay, globals: { mode: 'light' } }
+
+// The phone card on a 320 px screen with a long name (Codex review of #211): Show links and Open
+// control-in-app-browser do not both fit at their own width, so the open button's label is cut and the row stays
+// one row (M11 461:1268, 461:1275) inside the card. A card whose buttons fit keeps both labels whole.
+const narrow = { w320: { name: 'Phone (320)', styles: { width: '320px', height: '568px' } } }
+const narrowPage = css({ bg: 'bg.canvas', p: '12', display: 'flex', flexDirection: 'column', gap: '24' })
+
+function NarrowPhoneCard() {
+  return (
+    <main className={narrowPage}>
+      <MapSelectionCard
+        name="control-in-app-browser"
+        kind="skill"
+        linksTo={7}
+        linkedFrom={4}
+        density="compact"
+        linksLabel="Show links"
+        actionLabel="Open control-in-app-browser"
+      />
+      <MapSelectionCard name="writer" kind="skill" linksTo={7} linkedFrom={4} density="compact" linksLabel="Show links" actionLabel="Open writer" />
+    </main>
+  )
+}
+
+const narrowCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(320)
+  const card = within(canvasElement).getByRole('region', { name: 'control-in-app-browser' })
+  const box = card.getBoundingClientRect()
+  await expect([box.left >= 0, box.right <= window.innerWidth]).toEqual([true, true])
+  // No part of the card is past its box: every drawn element (the visually hidden counts label aside) is inside it.
+  for (const element of Array.from(card.querySelectorAll('*'))) {
+    if (element.closest('.map-selection-card__countsLabel') !== null) continue
+    const r = element.getBoundingClientRect()
+    await expect([element.className, r.left >= box.left, r.right <= box.right]).toEqual([element.className, true, true])
+  }
+  await expect(card.scrollWidth).toBe(card.clientWidth)
+  // One row: Show links whole at its own width, then the open button, 8 px apart, its label cut and shown whole in a tooltip.
+  const links = within(card).getByRole('button', { name: 'Show links' })
+  const open = within(card).getByRole('button', { name: 'Open control-in-app-browser' })
+  const a = links.getBoundingClientRect()
+  const b = open.getBoundingClientRect()
+  await expect([b.left - a.right, b.top, b.height]).toEqual([8, a.top, 32])
+  await expect(Math.round(b.right)).toBe(Math.round(box.right - 17))
+  const linksText = links.textContent
+  await expect(linksText).toBe('Show links')
+  await expect(links.scrollWidth).toBe(links.clientWidth)
+  await expectCutText(open, 'Open control-in-app-browser', open)
+  // A card whose buttons fit draws both labels whole at their own width, as Figma's M11 card does.
+  const fits = within(canvasElement).getByRole('region', { name: 'writer' })
+  const short = within(fits).getByRole('button', { name: 'Open writer' })
+  const label = short.querySelector('.truncated-text')
+  if (!(label instanceof HTMLElement)) throw new Error('no open label')
+  await expect(label.scrollWidth).toBe(label.clientWidth)
+  await expect(short.getBoundingClientRect().right).toBeLessThan(fits.getBoundingClientRect().right - 17)
+}
+
+export const NarrowPhoneCardDark: StoryObj<typeof meta> = {
+  render: () => <NarrowPhoneCard />,
+  play: narrowCardPlay,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'dark', viewport: { value: 'w320' } },
+}
+export const NarrowPhoneCardLight: StoryObj<typeof meta> = {
+  render: () => <NarrowPhoneCard />,
+  play: narrowCardPlay,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'light', viewport: { value: 'w320' } },
+}
 
 // The phone's minimap (Toolkit M11 `minimap bg` 461:1255) on the zoom window over the 1384 × 460 map, and on a map
 // with no zoom that scrolls.

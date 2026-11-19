@@ -7,6 +7,8 @@
 // the next run from the ledger, and the three fixes from the PR #215
 // review: a re-run is counted until a day is final, a recent day not
 // counted again is missing, and a workflow name with " / " stays whole.
+// The workflow now counts the month to date in USD, so the tests pass it a
+// fixed --today and use its monthly issue title.
 // Run with `pnpm test:release`; it needs bash and python3.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -20,7 +22,11 @@ const root = new URL('..', import.meta.url).pathname
 const workflowPath = join(root, '.github/workflows/actions-minutes.yml')
 const stepName = 'Count the minutes and update the alert issue'
 const repo = 'owner/repo'
-const title = 'Actions minutes at the weekly alert level'
+const title = 'Actions spend at a monthly alert level'
+// The workflow counts the month to date, so the tests run it on a fixed
+// day in the middle of a month: on the 1st to the 3rd, day(3) would fall in
+// the month before and no test would count it.
+const today = '2026-11-19'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -111,10 +117,9 @@ interface Data {
   fail_days: string[]
 }
 
-// The UTC day n days before today, as YYYY-MM-DD.
+// The UTC day n days before the fixed today, as YYYY-MM-DD.
 function day(n: number): string {
-  const d = new Date()
-  d.setUTCHours(0, 0, 0, 0)
+  const d = new Date(`${today}T00:00:00Z`)
   d.setUTCDate(d.getUTCDate() - n)
   return d.toISOString().slice(0, 10)
 }
@@ -137,7 +142,9 @@ function sandbox(data: Data, issues: Issue[]) {
   mkdirSync(bin)
   writeFileSync(join(bin, 'gh'), fakeGh)
   chmodSync(join(bin, 'gh'), 0o755)
-  writeFileSync(join(dir, 'step.sh'), stepScript())
+  const script = stepScript()
+  if (!script.includes(' --month-to-date ')) throw new Error('the counting step does not pass --month-to-date')
+  writeFileSync(join(dir, 'step.sh'), script.replace(' --month-to-date ', ` --month-to-date --today ${today} `))
   const write = (d: Data) => { writeFileSync(join(dir, 'data.json'), JSON.stringify(d)) }
   write(data)
   writeFileSync(join(dir, 'state.json'), JSON.stringify({ issues }))

@@ -874,7 +874,7 @@ export default definePreset({
                 "base": "rgba(255, 255, 255, 0.98)",
                 "_dark": "rgba(15, 22, 38, 0.98)"
               },
-              "description": "Menus, popovers, pickers, sheets, dialogs and the drawer."
+              "description": "Menus, popovers, pickers, sheets, dialogs and the drawer, and the minimap that floats over a MapGraph's drawing (Toolkit M11 461:1255)."
             },
             "pane": {
               "value": {
@@ -1063,7 +1063,7 @@ export default definePreset({
           },
           "xs": {
             "value": "4px",
-            "description": "Checkboxes."
+            "description": "Checkboxes, and the box of a MapGraph minimap that shows the window's part of the drawing (Toolkit M11 461:1256)."
           }
         },
         "shadows": {

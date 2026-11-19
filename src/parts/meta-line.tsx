@@ -1,4 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
+import type { ComponentProps } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import {
   kindBadge,
@@ -12,6 +13,8 @@ import {
   type TagsLineVariantProps,
 } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
+import { useInputModality } from '../controls/input-modality'
+import { ChevronDownIcon } from '../foundations/icons'
 import { TruncatedText } from '../controls/tooltip'
 
 // React renders nothing for null, undefined, booleans and the empty string,
@@ -61,6 +64,8 @@ const chip = createSlotRecipeContext(metaChip)
 const ChipRoot = chip.withProvider('span', 'root')
 const ChipIcon = chip.withContext('span', 'icon')
 const ChipLabel = chip.withContext('span', 'label')
+const ChipButtonRoot = chip.withProvider('button', 'root')
+const ChipChevron = chip.withContext('span', 'chevron')
 
 export type MetaChipProps = Scalar<MetaChipVariantProps> & {
   /** The chip text, such as a project, a feature or an age. */
@@ -84,6 +89,38 @@ export function MetaChip({ label, icon, size, tone, surface }: MetaChipProps) {
         <TruncatedText>{label}</TruncatedText>
       </ChipLabel>
     </ChipRoot>
+  )
+}
+
+export type MetaChipButtonProps = Omit<ComponentProps<'button'>, 'children'> &
+  Scalar<MetaChipVariantProps> & {
+    /** The chip text, such as the project of the open artifact. */
+    label: string
+    /** A 12 px icon before the label, such as a folder. */
+    icon?: ReactNode
+  }
+
+/**
+ * A `MetaChip` that is a button: the same chip (`size`, `tone` and `surface`
+ * as on `MetaChip`) with a 12 px down chevron after the label, such as the
+ * project chip of an open artifact that opens the project menu. Pass it as
+ * the `trigger` of a `Menu`; it passes its props and ref to the `<button>`.
+ * It is `type="button"` unless you set `type`. It tints on hover
+ * (`accent.faint`), draws the focus ring on keyboard focus and the
+ * `border.active` border while its menu is open (`aria-expanded`).
+ */
+export function MetaChipButton({ label, icon, size, tone, surface, type = 'button', ...props }: MetaChipButtonProps) {
+  useInputModality()
+  return (
+    <ChipButtonRoot type={type} size={size} tone={tone} surface={surface} {...props}>
+      {present(icon) ? <ChipIcon aria-hidden="true">{icon}</ChipIcon> : null}
+      <ChipLabel>
+        <TruncatedText>{label}</TruncatedText>
+      </ChipLabel>
+      <ChipChevron aria-hidden="true">
+        <ChevronDownIcon size="12" />
+      </ChipChevron>
+    </ChipButtonRoot>
   )
 }
 

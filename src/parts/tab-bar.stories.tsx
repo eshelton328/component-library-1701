@@ -128,6 +128,22 @@ export default meta
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
+const homeIndicator: StoryObj<typeof meta> = {
+  play: async ({ canvasElement }) => {
+    const nav = within(canvasElement).getByRole('navigation', { name: 'Main' })
+    // A home-indicator inset of 34 or less keeps the bar at 77 (every iPhone and iPad); a 48 px inset grows it by the
+    // 14 over 34. Chromium gives env() 0, so the play function sets the shell's --app-shell-safe-bottom.
+    canvasElement.style.setProperty('--app-shell-safe-bottom', '34px')
+    await expect(nav.getBoundingClientRect().height).toBe(77)
+    canvasElement.style.setProperty('--app-shell-safe-bottom', '48px')
+    await expect(nav.getBoundingClientRect().height).toBe(91)
+    canvasElement.style.removeProperty('--app-shell-safe-bottom')
+  },
+}
+/** The bar over a home-indicator inset: 77 up to 34, and taller by the rest of a larger inset. */
+export const HomeIndicatorDark: StoryObj<typeof meta> = { ...homeIndicator, globals: { mode: 'dark' } }
+export const HomeIndicatorLight: StoryObj<typeof meta> = { ...homeIndicator, globals: { mode: 'light' } }
+
 const onSelect = fn()
 
 function Selectable() {

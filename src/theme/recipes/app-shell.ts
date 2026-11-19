@@ -1,6 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
-import { tabBarHeight } from './tab-bar-height'
+import { safeInset, tabBarHeight } from './tab-bar-height'
 import { scrollArea } from './scroll-area'
 
 // The frame that pages sit in, on the backdrop. It only places the slots;
@@ -71,6 +71,13 @@ export const appShell = defineSlotRecipe({
       minW: '0',
       minH: '0',
       h: '100%',
+      // The device's safe area (status bar, notch, rounded corners), where the app's page has viewport-fit=cover:
+      // the backdrop fills it and the panes start inside it. The bottom is the tab bar's or the safeArea slot's. Each
+      // reads its --app-shell-safe-* property first, so a story or the design canvas can give a phone's inset where
+      // env() is 0 (Chromium, or a page with no viewport-fit=cover).
+      pt: safeInset('top'),
+      pl: safeInset('left'),
+      pr: safeInset('right'),
     },
     rail: { display: 'flex', flexDirection: 'column', flexShrink: '0', w: 'shell.rail', minH: '0' },
     // A list or side pane beside the detail ends above the keyboard too (an iPad at 1232 px and wider, the-bridge #151
@@ -100,7 +107,8 @@ export const appShell = defineSlotRecipe({
     },
     side: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0', ...paneEnd },
     tabBar: { display: 'flex', flexDirection: 'column', flexShrink: '0' },
-    safeArea: { flexShrink: '0', h: 'shell.safeAreaBottom' },
+    // The home indicator's area: shell.safeAreaBottom (34), or the device's bottom inset where that is more.
+    safeArea: { flexShrink: '0', h: `max(token(sizes.shell.safeAreaBottom), ${safeInset('bottom')})` },
   },
   variants: {
     size: {

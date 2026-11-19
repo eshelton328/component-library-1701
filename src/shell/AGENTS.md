@@ -161,8 +161,16 @@ Layout, Navigation or Overlays (d-065, d-066).
   both use it, so the shell keeps the bar's full height. The shell is
   always as tall as its parent, so a gap under the bar is the parent being shorter than the screen.
 - With no tab bar (inside a chat), a tablet or phone `AppShell` keeps
-  `shell.safeAreaBottom` clear under the pane for the home indicator.
-  Pages set no padding for it.
+  `shell.safeAreaBottom` clear under the pane for the home indicator, or
+  the device's bottom inset where that is more. Pages set no padding for
+  it.
+- The app's page has `viewport-fit=cover`, so the app draws under the
+  status bar and the home indicator. The `AppShell` root pads its top,
+  left and right by the device's `env(safe-area-inset-*)`, and the
+  backdrop fills that area. Each side reads `--app-shell-safe-<side>`
+  first (`safeInset` in `../theme/recipes/tab-bar-height.ts`): a story
+  or the design canvas sets it, as `env()` is 0 in Chromium. The app
+  draws no status bar or home indicator itself (d-089).
 - `ListPaneToggle` is the one open and close button of a list pane, such
   as the Workbench sidebar: a `sm` icon-only `Button` with the panel
   icon, pressed and `border.selected` while open. It is controlled

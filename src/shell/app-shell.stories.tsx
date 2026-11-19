@@ -208,6 +208,54 @@ export const PhoneNoTabBar: StoryObj<typeof meta> = {
   },
 }
 
+// A phone's safe area as the shell gets it with viewport-fit=cover: a 47 px status bar and a 34 px home indicator
+// (iPhone 14). Chromium gives env() 0, so the play function sets the shell's own properties on the frame.
+const setInsets = (frame: HTMLElement, insets: { top: number; bottom: number }) => {
+  frame.style.setProperty('--app-shell-safe-top', `${String(insets.top)}px`)
+  frame.style.setProperty('--app-shell-safe-bottom', `${String(insets.bottom)}px`)
+}
+
+const phoneSafeArea: StoryObj<typeof meta> = {
+  render: () => <Narrow size="phone" view="detail" withTabBar />,
+  play: async ({ canvasElement }) => {
+    const frame = box(canvasElement)
+    setInsets(frame, { top: 47, bottom: 34 })
+    const canvas = within(canvasElement)
+    const outer = rect(frame)
+    // The pane starts under the status bar; the backdrop fills the 47 above it.
+    await expect(Math.round(rect(canvas.getByRole('main')).top - outer.top)).toBe(47)
+    await expect(Math.round(rect(canvas.getByRole('main')).width)).toBe(Math.round(outer.width))
+    // The tab bar ends at the screen's end; it holds the home indicator's area itself (the TabBar's HomeIndicator
+    // story), so the shell adds no safe area under it.
+    const bar = rect(canvas.getByRole('navigation', { name: 'Tabs' }))
+    await expect(Math.round(bar.bottom)).toBe(Math.round(outer.bottom))
+    await expect(canvasElement.querySelector('.app-shell__safeArea')).toBeNull()
+  },
+}
+/** Phone with a 47 px status bar and a 34 px home indicator: the pane starts under the bar, the tab bar at the end. */
+export const PhoneSafeAreaDark: StoryObj<typeof meta> = { ...phoneSafeArea, globals: { mode: 'dark' } }
+export const PhoneSafeAreaLight: StoryObj<typeof meta> = { ...phoneSafeArea, globals: { mode: 'light' } }
+
+const phoneSafeAreaNoTabBar: StoryObj<typeof meta> = {
+  render: () => <Narrow size="phone" view="detail" withTabBar={false} />,
+  play: async ({ canvasElement }) => {
+    const frame = box(canvasElement)
+    setInsets(frame, { top: 47, bottom: 34 })
+    const outer = rect(frame)
+    const main = rect(within(canvasElement).getByRole('main'))
+    const safe = slot(canvasElement, 'safeArea')
+    await expect(Math.round(main.top - outer.top)).toBe(47)
+    // The home indicator's 34 stays clear under the pane, and a taller inset takes its place.
+    await expect(Math.round(rect(safe).height)).toBe(34)
+    await expect(Math.round(rect(safe).bottom)).toBe(Math.round(outer.bottom))
+    setInsets(frame, { top: 47, bottom: 48 })
+    await expect(Math.round(rect(slot(canvasElement, 'safeArea')).height)).toBe(48)
+  },
+}
+/** Phone chat with a 47 px status bar: the pane starts under the bar and the home indicator's area stays clear. */
+export const PhoneSafeAreaNoTabBarDark: StoryObj<typeof meta> = { ...phoneSafeAreaNoTabBar, globals: { mode: 'dark' } }
+export const PhoneSafeAreaNoTabBarLight: StoryObj<typeof meta> = { ...phoneSafeAreaNoTabBar, globals: { mode: 'light' } }
+
 // The iPad screen of Workbench T2b (744 x 1133). The frame fills the viewport, so the shell is the screen.
 const tabletScreen = { t02b: { name: 'Tablet (T2b)', styles: { width: '744px', height: '1133px' } } }
 const screenFrame = css({ display: 'flex', flexDirection: 'column', h: 'dvh' })

@@ -410,13 +410,36 @@ export function SnoozeIcon(props: IconProps) {
   )
 }
 
-/** A link: two chain links. Figma node 346:412, drawn at 13 px and scaled to 24. */
+/**
+ * A link: two chain links. Figma node 346:412, drawn at 13 px and scaled to
+ * 24. The links take the middle 15 of the grid; `LinkMarkIcon` draws them
+ * across the whole box.
+ */
 export function LinkIcon(props: IconProps) {
   return (
     <Svg {...props} strokeWidth="2">
       <path d="M10 14L14 10" />
       <path d="M8.5 11.5L6.5 13.5C5.837 14.163 5.464 15.062 5.464 16C5.464 16.938 5.837 17.837 6.5 18.5C7.163 19.163 8.062 19.535 9 19.535C9.938 19.535 10.837 19.163 11.5 18.5L13.5 16.5" />
       <path d="M15.5 12.5L17.5 10.5C18.163 9.837 18.536 8.938 18.536 8C18.536 7.062 18.163 6.163 17.5 5.5C16.837 4.837 15.938 4.464 15 4.464C14.062 4.464 13.163 4.837 12.5 5.5L10.5 7.5" />
+    </Svg>
+  )
+}
+
+/**
+ * The link mark before an artifact's link: `LinkIcon`'s two chain links
+ * drawn across the whole box, as Figma's "icon/link" fills its 13 px frame
+ * (Artifacts D2 403:500, T2 405:472). The links touch the top and bottom of
+ * the 24 grid (the 2 stroke included) and leave 1.46 at each side, so at
+ * `size="12"` (13 px on the 4 px grid) the mark is 12 high and 10.5 wide.
+ * `LinkIcon` keeps its 15 px drawing in the middle of the grid, for a link
+ * icon beside other icons of its size.
+ */
+export function LinkMarkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M9.08 14.92L14.92 9.08" />
+      <path d="M6.891 11.271L3.971 14.19C3.004 15.158 2.459 16.471 2.459 17.84C2.459 19.209 3.004 20.521 3.971 21.489C4.939 22.457 6.251 23 7.621 23C8.99 23 10.302 22.457 11.27 21.489L14.19 18.57" />
+      <path d="M17.109 12.731L20.029 9.811C20.996 8.843 21.541 7.531 21.541 6.162C21.541 4.792 20.996 3.48 20.029 2.512C19.061 1.544 17.749 1 16.379 1C15.01 1 13.698 1.544 12.73 2.512L9.81 5.432" />
     </Svg>
   )
 }

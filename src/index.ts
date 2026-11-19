@@ -129,6 +129,7 @@ export {
   InboxIcon,
   LinearIcon,
   LinkIcon,
+  LinkMarkIcon,
   ListIcon,
   LockIcon,
   LoopIcon,

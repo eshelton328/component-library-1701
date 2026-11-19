@@ -273,3 +273,67 @@ const newPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `size="xs"` with `SparkFilledIcon` at 8 px: the 48 x 16 New pill of the phone's artifact rows. */
 export const NewDark: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'dark' } }
 export const NewLight: StoryObj<typeof meta> = { render: () => <NewPills />, play: newPlay, globals: { mode: 'light' } }
+
+// Where a search matched (Artifacts D4 403:8241 "in title", 403:8273, 403:8302): a round mono pill, 20 high.
+const matchSwatch = { muted: css({ color: 'fg.muted' }), inset: css({ bg: 'surface.inset' }) }
+
+function MatchPills() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <Inline wrap gap="8">
+          <span data-testid="match">
+            <Badge label="in title" variant="monoPill" />
+          </span>
+          <span data-testid="match-tone">
+            <Badge label="in body" variant="monoPill" tone="working" size="xs" />
+          </span>
+          <span data-testid="tag">
+            <Badge label="in title" variant="tag" />
+          </span>
+          <span data-testid="pill">
+            <Badge label="New" />
+          </span>
+        </Inline>
+      </div>
+      {Object.entries(matchSwatch).map(([name, className]) => (
+        <span key={name} hidden className={className} data-testid={`match-swatch-${name}`} />
+      ))}
+    </main>
+  )
+}
+
+const matchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const badgeIn = (id: string) => {
+    const el = canvas.getByTestId(id).firstElementChild
+    if (!(el instanceof HTMLElement)) throw new Error(`no badge in ${id}`)
+    return el
+  }
+  const sw = (name: string) => getComputedStyle(canvas.getByTestId(`match-swatch-${name}`))
+  // variant="monoPill": 8 / 2 padding around the 16 px mono line, 20 high, fully round, no border,
+  // fg.muted on surface.inset whatever the tone or size.
+  for (const id of ['match', 'match-tone']) {
+    const s = getComputedStyle(badgeIn(id))
+    await expect([s.paddingLeft, s.paddingRight, s.paddingTop, s.paddingBottom]).toEqual(['8px', '8px', '2px', '2px'])
+    await expect(parseFloat(s.lineHeight)).toBeCloseTo(16, 0)
+    await expect(s.fontFamily).toBe(getComputedStyle(badgeIn('tag')).fontFamily)
+    await expect(s.fontFamily).toMatch(/mono/i)
+    await expect(s.fontSize).toBe(getComputedStyle(badgeIn('tag')).fontSize)
+    await expect(s.borderTopWidth).toBe('0px')
+    await expect(parseFloat(s.borderTopLeftRadius)).toBeGreaterThanOrEqual(10)
+    await expect(s.color).toBe(sw('muted').color)
+    await expect(s.backgroundColor).toBe(sw('inset').backgroundColor)
+    await expect(badgeIn(id).getBoundingClientRect().height).toBeCloseTo(20, 0)
+  }
+  // The tag keeps its 6 px sides and small radius, and the default pill its 8 / 4 padding, 24 high.
+  const tag = getComputedStyle(badgeIn('tag'))
+  await expect([tag.paddingLeft, tag.paddingTop]).toEqual(['6px', '2px'])
+  await expect(parseFloat(tag.borderTopLeftRadius)).toBeLessThan(10)
+  await expect(getComputedStyle(badgeIn('pill')).paddingTop).toBe('4px')
+  await expect(badgeIn('pill').getBoundingClientRect().height).toBeCloseTo(24, 0)
+}
+
+/** `variant="monoPill"`: the round mono pill that says where a search matched (Artifacts D4). */
+export const MatchPlaceDark: StoryObj<typeof meta> = { render: () => <MatchPills />, play: matchPlay, globals: { mode: 'dark' } }
+export const MatchPlaceLight: StoryObj<typeof meta> = { render: () => <MatchPills />, play: matchPlay, globals: { mode: 'light' } }

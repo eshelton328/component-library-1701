@@ -867,7 +867,7 @@ export default definePreset({
                 "base": "rgba(230, 235, 245, 0.7)",
                 "_dark": "rgba(23, 33, 58, 0.7)"
               },
-              "description": "Fields and chips set into a pane: search, filter chips, meta chips, the prompt box."
+              "description": "Fields and chips set into a pane: search, filter chips, meta chips, the prompt box, and the fill of a Badge with variant monoPill (where a search matched, Artifacts D4 403:8241)."
             },
             "overlay": {
               "value": {

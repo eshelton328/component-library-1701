@@ -27,6 +27,12 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - `quiet`: a bordered surface.overlay pill with fg.muted text in the
 //   small text style, whatever the tone. The read-only pill 425:12; Figma
 //   padding 10 / 5 takes 10 / 6 (d-072).
+// - `monoPill`: a round pill with no border, fg.muted mono text on
+//   surface.inset, whatever the tone: where a search matched (Artifacts D4
+//   403:8241 "in title", 403:8273, 403:8302). Figma's 21 px pill pads 8 at
+//   the sides; it takes padding 8 / 2 around the 16 px mono line, so it is
+//   20 high on the 4 px grid (d-100). Figma's faint fill takes surface.inset,
+//   the fill of chips set into a pane. Gap 4, as `tag`.
 export const badge = defineSlotRecipe({
   className: 'badge',
   jsx: ['Badge'],
@@ -53,6 +59,7 @@ export const badge = defineSlotRecipe({
       tag: { root: { gap: '4', px: '6', py: '2', borderWidth: '0', borderRadius: 'sm', textStyle: 'mono' } },
       outline: { root: { gap: '6', px: '6', py: '2', borderColor: 'border.default', borderRadius: 'sm', textStyle: 'mono' } },
       quiet: { root: { gap: '6', px: '10', py: '6', borderColor: 'border.default', borderRadius: 'full', textStyle: 'small' } },
+      monoPill: { root: { gap: '4', px: '8', py: '2', borderWidth: '0', borderRadius: 'full', textStyle: 'mono' } },
     },
     tone: {
       working: { root: { color: 'status.working.fg', bg: 'status.working.bg' } },
@@ -77,6 +84,7 @@ export const badge = defineSlotRecipe({
     },
     { variant: ['outline', 'quiet'], css: { root: { bg: 'surface.overlay' } } },
     { variant: 'quiet', css: { root: { color: 'fg.muted' } } },
+    { variant: 'monoPill', css: { root: { color: 'fg.muted', bg: 'surface.inset' } } },
   ],
   defaultVariants: { variant: 'pill', tone: 'idle', size: 'md' },
 })

@@ -21,15 +21,19 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
 /**
  * A small badge of the Toolkit and Artifacts pages. `variant` picks the
  * build: `pill` (a tinted pill, the default), `tag` (a tinted box in mono),
- * `outline` (a bordered box in mono) or `quiet` (a bordered muted pill, as
- * Read-only). `tone` picks the status colour: `working`, `running`,
- * `needsYou`, `idle` (the default), `done` or `danger`; `quiet` ignores it.
+ * `outline` (a bordered box in mono), `quiet` (a bordered muted pill, as
+ * Read-only) or `monoPill` (a round mono pill in `fg.muted` on
+ * `surface.inset`, no border, 20 high, as the place a search matched, such
+ * as "in title"). `tone` picks the status colour: `working`, `running`,
+ * `needsYou`, `idle` (the default), `done` or `danger`; `quiet` and
+ * `monoPill` ignore it.
  * `size` sets a pill's height: `md` (the default) pads it 4 above and below,
  * 24 high; `sm` pads it 2, 20 high, as the Inbox draws its pills; `xs` pads
  * it 0 above and below and 6 at the sides with a 4 px gap, 16 high, as the
  * New pill of the phone's artifact rows, and draws its icon (`SparkFilledIcon`)
  * at 8 px, about 48 × 16 in all. `md` and `sm` draw the icon at its own size.
- * The `tag`, `outline` and `quiet` badges have one size and ignore it.
+ * The `tag`, `outline`, `quiet` and `monoPill` badges have one size and
+ * ignore it.
  */
 export function Badge({ label, icon, variant, tone, size }: BadgeProps) {
   return (

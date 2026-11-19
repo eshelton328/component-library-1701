@@ -167,3 +167,55 @@ export const LongLabel: StoryObj<typeof meta> = {
     await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set', back)
   },
 }
+
+// size="sm" beside the default: the phone back row over the subagents (Workspaces M6 105:3177).
+function Sizes() {
+  return (
+    <main className={page}>
+      <Stack gap="24">
+        <div className={phone} data-testid="md">
+          <BackRow label="Chats" />
+        </div>
+        <div className={phone} data-testid="sm">
+          <BackRow size="sm" label="Chats" backLabel="Back to the chats" />
+        </div>
+      </Stack>
+      <div hidden>
+        <span data-swatch="accent" className={swatches.accent} />
+      </div>
+    </main>
+  )
+}
+
+const sizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const accent = canvasElement.querySelector('[data-swatch="accent"]')
+  const part = (id: string, slot: string) => {
+    const el = canvas.getByTestId(id).querySelector(`.back-row__${slot}`)
+    if (!(el instanceof Element)) throw new Error(`no ${slot} in ${id}`)
+    return el
+  }
+  // The default stays: a 20 px chevron and labelLg (Medium 16/24).
+  const mdIcon = part('md', 'icon').getBoundingClientRect()
+  await expect([mdIcon.width, mdIcon.height]).toEqual([20, 20])
+  const mdText = getComputedStyle(part('md', 'label'))
+  await expect([mdText.fontSize, mdText.fontWeight]).toEqual(['16px', '500'])
+  // sm: a 16 px chevron (105:3178) 4 before the label in body, Regular 14/20 (105:3180), both in fg.accent.
+  const icon = part('sm', 'icon')
+  const box = icon.getBoundingClientRect()
+  await expect([box.width, box.height]).toEqual([16, 16])
+  const label = part('sm', 'label')
+  await expect(label.getBoundingClientRect().left - box.right).toBe(4)
+  const text = getComputedStyle(label)
+  await expect([text.fontSize, text.fontWeight, text.fontFamily]).toEqual(['14px', '400', mdText.fontFamily])
+  await expect(parseFloat(text.lineHeight)).toBeCloseTo(20, 0)
+  await expect(getComputedStyle(icon).stroke).toBe(accent === null ? '' : getComputedStyle(accent).color)
+  // The button keeps its 28 px tap target and its 6 px end padding.
+  const back = canvas.getByRole('button', { name: 'Back to the chats' })
+  await expect(back.getBoundingClientRect().height).toBeGreaterThanOrEqual(28)
+  await expect(getComputedStyle(back).paddingRight).toBe('6px')
+}
+
+/** `size="sm"`: a 16 px chevron and the label in body, as the phone back row over the subagents (Workspaces M6). */
+export const SmallDark: StoryObj<typeof meta> = { render: () => <Sizes />, globals: { mode: 'dark' }, play: sizesPlay }
+export const SmallLight: StoryObj<typeof meta> = { render: () => <Sizes />, globals: { mode: 'light' }, play: sizesPlay }

@@ -13,6 +13,12 @@ import { focusRing } from './focus'
 // chevron's path starts 6.67 px inside its 20 px box, so with no padding the
 // ring sat about 9 px from the chevron but 2 px from the end of the label.
 // `pe: '6'` (6.67 rounds to the `6` token, d-072) evens the two sides.
+//
+// `size="sm"` is the phone back row over the subagents (Workspaces M6
+// 105:3177): a 16 px chevron (105:3178) and the name in Regular 14
+// (105:3180), 4 apart, so the label takes `body` (14/20). The button keeps
+// its control.sm minimum height (Figma's row is 17 high), so the tap target
+// stays 28.
 export const backRow = defineSlotRecipe({
   className: 'back-row',
   jsx: ['BackRow'],
@@ -43,4 +49,16 @@ export const backRow = defineSlotRecipe({
     // Conditional actions that render nothing leave no slot, so no gap.
     actions: { display: 'flex', alignItems: 'center', gap: '8', flexShrink: '0', ms: 'auto', _empty: { display: 'none' } },
   },
+  variants: {
+    // `md` (the default) is the 20 px chevron and labelLg; `sm` the 16 px
+    // chevron and body (M6 105:3178, 105:3180).
+    size: {
+      md: {},
+      sm: {
+        back: { textStyle: 'body' },
+        icon: { w: 'icon.16', h: 'icon.16' },
+      },
+    },
+  },
+  defaultVariants: { size: 'md' },
 })

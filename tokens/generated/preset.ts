@@ -1518,7 +1518,7 @@ export default definePreset({
           }
         },
         "body": {
-          "description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg. Not for the Artifacts page count, which uses pageCount.",
+          "description": "Descriptions, messages and the prompt, and the label of a BackRow with size sm (the phone back row over the subagents, Workspaces M6 105:3180). The Inbox dialog prompt and large menu rows use bodyLg. Not for the Artifacts page count, which uses pageCount.",
           "value": {
             "fontFamily": "text.body",
             "fontSize": "text.body",

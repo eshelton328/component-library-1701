@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { thumbnail, type ThumbnailVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -37,7 +37,8 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
    * With `kind="chart"`, a dashed line across the plot at `value` with its
    * label in mono above the line's end, both in the needs-you colour (the
    * Artifacts page's D9 median line, 452:3705 and 452:3706). The label is
-   * text, unscaled, so it keeps the mono size at any width. Other kinds and
+   * text, unscaled, so it keeps the mono size at any width; when there is
+   * no room above the line, it is drawn under it. Other kinds and
    * the row sizes (`sm`, `md`) ignore it; without it nothing is drawn.
    */
   reference?: ThumbnailReference | undefined
@@ -181,21 +182,50 @@ const percent = (n: number) => `${String(n * 100)}%`
 
 // The line and label are drawn in an SVG with no viewBox over the drawing,
 // placed in percentages of the box, so the label's text and the dash are
-// not scaled with the drawing.
+// not scaled with the drawing. The label sits above the line's end; when
+// the box above the line is shorter than the label and its gap (a small
+// thumbnail with a value near 100), it moves under the line, so it stays
+// inside the thumbnail while the line stays at the value.
 function ChartReference({ width, reference }: { width: number; reference: ThumbnailReference }) {
   const value = Math.min(100, Math.max(0, reference.value))
   const offset = (width - 334) / 2
   const y = (plot.base - (plot.span * value) / 100) / height
   const x = (offset + plot.start) / width
   const w = (plot.end - plot.start) / width
+  const above = useRef<HTMLDivElement>(null)
+  const label = useRef<HTMLSpanElement>(null)
+  const [below, setBelow] = useState(false)
+  useLayoutEffect(() => {
+    const box = above.current
+    if (box === null) return
+    const place = () => {
+      const text = label.current
+      if (text === null) return
+      const style = getComputedStyle(text)
+      const gap = Math.max(parseFloat(style.marginTop), parseFloat(style.marginBottom))
+      setBelow(box.clientHeight < text.offsetHeight + gap)
+    }
+    place()
+    const observer = new ResizeObserver(place)
+    observer.observe(box)
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+  const text = <ReferenceLabel ref={label}>{reference.label}</ReferenceLabel>
   return (
     <Reference data-reference="">
       <foreignObject x={percent(x)} y="0" width={percent(w)} height={percent(y)}>
-        <ReferenceBox>
-          <ReferenceLabel>{reference.label}</ReferenceLabel>
+        <ReferenceBox ref={above}>
+          {below ? null : text}
           <ReferenceLine aria-hidden />
         </ReferenceBox>
       </foreignObject>
+      {below ? (
+        <foreignObject x={percent(x)} y={percent(y)} width={percent(w)} height={percent(1 - y)}>
+          <ReferenceBox data-placement="below">{text}</ReferenceBox>
+        </foreignObject>
+      ) : null}
     </Reference>
   )
 }

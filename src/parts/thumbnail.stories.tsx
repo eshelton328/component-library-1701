@@ -260,6 +260,14 @@ const refSwatches = {
   amber: css({ color: 'status.needsYou.fg' }),
   mono: css({ textStyle: 'mono' }),
 }
+// The label stays inside the thumbnail at the axis' ends, in every shape,
+// with the line at the value: the 128-wide lg size leaves no room above
+// the line at 100.
+const edgeSizes = ['lg', 'fill'] as const
+const edgeShapes = ['wide', 'compact', 'banner'] as const
+const edgeValues = [0, 100] as const
+const edgeWidths = { wide: (188 * 16) / 9, compact: (188 * 8) / 5, banner: 376 } as const
+
 function References() {
   return (
     <main className={page}>
@@ -269,6 +277,17 @@ function References() {
       <div className={css({ w: 'shell.dialogLg' })} data-testid="no-reference">
         <Thumbnail kind="chart" shape="banner" />
       </div>
+      {edgeSizes.map((size) => (
+        <div key={size} className={row}>
+          {edgeShapes.flatMap((shape) =>
+            edgeValues.map((value) => (
+              <div key={`${shape}-${String(value)}`} className={size === 'fill' ? w334 : undefined} data-testid={`edge-${size}-${shape}-${String(value)}`}>
+                <Thumbnail kind="chart" shape={shape} size={size} reference={{ value, label: `median ${String(value)}%` }} />
+              </div>
+            )),
+          )}
+        </div>
+      ))}
       <div hidden>
         {Object.entries(refSwatches).map(([name, className]) => (
           <span key={name} data-swatch={name} className={className} />
@@ -343,6 +362,27 @@ const referenceMeta = {
     await expect(plain.querySelector('.thumbnail__referenceLine')).toBeNull()
     await expect(plain.querySelector('[data-reference]')).toBeNull()
     await expect(plain.textContent).toBe('')
+    // At 0 and 100, in each shape and at lg and fill, the label is inside
+    // the thumbnail and the line still sits at the value.
+    for (const size of edgeSizes) {
+      for (const shape of edgeShapes) {
+        for (const value of edgeValues) {
+          const edge = thumb(canvas.getByTestId(`edge-${size}-${shape}-${String(value)}`)).root
+          const r = edge.getBoundingClientRect()
+          const text = within(edge).getByText(`median ${String(value)}%`).getBoundingClientRect()
+          await expect(text.top).toBeGreaterThanOrEqual(r.top)
+          await expect(text.bottom).toBeLessThanOrEqual(r.bottom)
+          await expect(text.left).toBeGreaterThanOrEqual(r.left)
+          await expect(text.right).toBeLessThanOrEqual(r.right)
+          const edgeLine = edge.querySelector('.thumbnail__referenceLine')
+          if (!(edgeLine instanceof HTMLElement)) throw new Error('no line')
+          const el = edgeLine.getBoundingClientRect()
+          const u = r.height / 188
+          await expect(el.top + el.height / 2).toBeCloseTo(r.top + (169 - 124 * (value / 100)) * u, 0)
+          await expect(el.right).toBeCloseTo(r.left + ((edgeWidths[shape] - 334) / 2 + 307) * (r.width / edgeWidths[shape]), 0)
+        }
+      }
+    }
   },
 } satisfies StoryObj<typeof meta>
 

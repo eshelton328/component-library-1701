@@ -32,6 +32,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // an SVG with no viewBox over the drawing; the component places a
 // foreignObject from the plot's start to its end and from the top down to
 // the value, and `referenceBox` puts the label and line at its bottom end.
+// When the label does not fit above the line, the component draws it in a
+// second foreignObject from the value down, marked data-placement below,
+// 4 (spacing.4) under the line.
 export const thumbnail = defineSlotRecipe({
   className: 'thumbnail',
   jsx: ['Thumbnail'],
@@ -65,8 +68,24 @@ export const thumbnail = defineSlotRecipe({
     amberEdge: { fill: 'surface.well', stroke: 'status.needsYou.border' },
     greenEdge: { fill: 'surface.well', stroke: 'status.done.border' },
     reference: { position: 'absolute', inset: '0', w: '100%', h: '100%', overflow: 'visible', pointerEvents: 'none', '& foreignObject': { overflow: 'visible' } },
-    referenceBox: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-end', h: '100%' },
-    referenceLabel: { textStyle: 'mono', color: 'status.needsYou.fg', whiteSpace: 'nowrap', mb: '4', px: '4', bg: 'surface.raised', borderRadius: 'xs' },
+    referenceBox: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+      h: '100%',
+      '&[data-placement=below]': { justifyContent: 'flex-start' },
+    },
+    referenceLabel: {
+      textStyle: 'mono',
+      color: 'status.needsYou.fg',
+      whiteSpace: 'nowrap',
+      mb: '4',
+      px: '4',
+      bg: 'surface.raised',
+      borderRadius: 'xs',
+      '[data-placement=below] > &': { mt: '4', mb: '0' },
+    },
     referenceLine: {
       display: 'block',
       w: '100%',

@@ -279,6 +279,9 @@ export type CheckboxProps = {
 export function CheckIcon(props: IconProps): JSX.Element;
 
 // @public
+export function CheckMarkIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ChevronDownIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -388,6 +391,9 @@ export function CpuIcon(props: IconProps): JSX.Element;
 
 // @public
 export function createToaster(input?: ToasterOptions): ToasterStore;
+
+// @public
+export function CrossMarkIcon(props: IconProps): JSX.Element;
 
 // @public
 export type DailyAxisLabels = 'ends' | 'endsAndMiddle' | 'none';
@@ -639,6 +645,18 @@ export const focusRing = "&:is(:focus-visible, [data-focus-visible]):not([data-f
 
 // @public
 export function FolderIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Glyph(input: GlyphProps): JSX.Element;
+
+// @public (undocumented)
+export type GlyphProps = {
+    symbol: GlyphSymbol;
+    size?: IconSize | undefined;
+};
+
+// @public
+export type GlyphSymbol = 'check' | 'cross';
 
 // @public
 export function Grid(props: GridProps): JSX.Element;

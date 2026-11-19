@@ -9,6 +9,7 @@ import { Menu } from './menu'
 import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
+import { motionDone } from './bottom-sheet.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 // Swatches of the expected tokens, so the play functions compare resolved colours.
@@ -76,6 +77,7 @@ const meta = {
     // The sheet renders in a portal, outside the story's canvas.
     const body = within(document.body)
     const sheet = await body.findByRole('dialog', { name: 'Sort by' })
+    await motionDone(sheet)
     const box = sheet.getBoundingClientRect()
     // Full width, flush with the bottom of the window.
     await expect(box.width).toBe(window.innerWidth)
@@ -427,6 +429,32 @@ function SwipeSheet() {
   )
 }
 
+// A sheet whose owner opens it again 150 ms after a swipe closes it, while the close motion still runs.
+function ReopenSheet() {
+  const [open, setOpen] = useState(false)
+  const [bounced, setBounced] = useState(false)
+  const change = (next: boolean) => {
+    setOpen(next)
+    if (!next && !bounced) {
+      setBounced(true)
+      setTimeout(() => {
+        setOpen(true)
+      }, 150)
+    }
+  }
+  return (
+    <main className={page}>
+      <BottomSheet title="Snooze" trigger={<Button>Snooze</Button>} open={open} onOpenChange={change}>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <Button key={row} size="xl">{row}</Button>
+          ))}
+        </Stack>
+      </BottomSheet>
+    </main>
+  )
+}
+
 // A synthetic touch pointer, as a finger on a phone sends it. Returns false when a handler prevented its default.
 function touch(type: 'pointerdown' | 'pointermove' | 'pointerup', target: Element, y: number) {
   const box = target.getBoundingClientRect()
@@ -465,6 +493,7 @@ const swipePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const open = async () => {
     await userEvent.click(trigger)
     const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+    await motionDone(sheet)
     return { sheet, top: sheet.getBoundingClientRect().top }
   }
   const closed = () => waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
@@ -594,6 +623,7 @@ const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
   const open = async () => {
     await userEvent.click(trigger)
     const sheet = await body.findByRole('dialog', { name: 'Prompt' })
+    await motionDone(sheet)
     return { sheet, top: sheet.getBoundingClientRect().top }
   }
   // From a point in `from` to the foot of the sheet: further down than 30% of the sheet's height.
@@ -809,3 +839,114 @@ const overlayFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 /** A dialog, a menu and a popover give the focus back to their trigger with no ring after a pointer, and with the ring after the keyboard. */
 export const OverlayFocusReturnDark: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'dark' } }
 export const OverlayFocusReturnLight: StoryObj<typeof meta> = { render: () => <Overlays />, play: overlayFocusPlay, globals: { mode: 'light' } }
+
+// The open and close motion (screen review R13): the sheet slides up as its scrim fades in, and the close
+// reverses both, with the motion tokens. Chromium's media emulation, through the test runner's DevTools session,
+// makes the CSS `(prefers-reduced-motion: reduce)` true for the reduced-motion story.
+const emulateReducedMotion = async (reduce: boolean) => {
+  const { cdp } = await import('vitest/browser')
+  await cdp().send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduce ? 'reduce' : '' }] })
+}
+const sheetCurve = 'cubic-bezier(0.38, 0.7, 0.125, 1)'
+
+function scrimOf() {
+  const scrim = document.querySelector('.bottom-sheet__backdrop')
+  if (!(scrim instanceof HTMLElement)) throw new Error('no scrim')
+  return scrim
+}
+
+// The animation each part runs, as the computed style gives it.
+function motionOf(el: HTMLElement) {
+  const s = getComputedStyle(el)
+  return { name: s.animationName, duration: s.animationDuration, curve: s.animationTimingFunction }
+}
+
+const motionPlay = (reduced: boolean): NonNullable<StoryObj<typeof meta>['play']> => async ({ canvasElement }) => {
+  await expect(window.matchMedia('(prefers-reduced-motion: reduce)').matches).toBe(reduced)
+  const body = within(document.body)
+  const trigger = within(canvasElement).getByRole('button', { name: 'Snooze' })
+  await userEvent.click(trigger)
+  const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+  // Open: 300 ms on the sheet curve. The sheet slides up, or only fades with reduced motion; the scrim fades in.
+  await expect(motionOf(sheet)).toEqual({ name: reduced ? 'fadeIn' : 'sheetIn', duration: '0.3s', curve: sheetCurve })
+  await expect(motionOf(scrimOf())).toEqual({ name: 'fadeIn', duration: '0.3s', curve: sheetCurve })
+  await motionDone(sheet)
+  const rest = sheet.getBoundingClientRect().top
+  await expect(Math.round(sheet.getBoundingClientRect().bottom)).toBe(window.innerHeight)
+
+  // Close: the motion reverses in 250 ms, and the sheet unmounts only when it ends.
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'closed'))
+  await expect(sheet.isConnected).toBe(true)
+  await expect(motionOf(sheet)).toEqual({ name: reduced ? 'fadeOut' : 'sheetOut', duration: '0.25s', curve: sheetCurve })
+  await expect(motionOf(scrimOf())).toEqual({ name: 'fadeOut', duration: '0.25s', curve: sheetCurve })
+  // The slide moves the sheet down from where it rests; the fade leaves it in place.
+  await waitFor(() => expect(sheet.getAnimations()[0]?.currentTime ?? 0).toBeGreaterThan(50))
+  const top = sheet.getBoundingClientRect().top
+  if (reduced) await expect(top).toBe(rest)
+  else await expect(top).toBeGreaterThan(rest)
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+}
+
+/** The sheet slides up as its scrim fades in (durations.sheetOpen), and slides down as the scrim fades out (durations.sheetClose), on easings.sheet. */
+export const MotionDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: motionPlay(false), globals: { mode: 'dark' } }
+export const MotionLight: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: motionPlay(false), globals: { mode: 'light' } }
+
+/** With prefers-reduced-motion the sheet only fades in and out, with the same durations; the scrim fades as before. */
+export const ReducedMotionDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the DevTools session that emulates the media, so the Storybook UI leaves this
+  // story out; the test runner still runs it.
+  tags: ['!dev'],
+  render: () => <SwipeSheet />,
+  globals: { mode: 'dark' },
+  beforeEach: async () => {
+    await emulateReducedMotion(true)
+    return async () => {
+      await emulateReducedMotion(false)
+    }
+  },
+  play: motionPlay(true),
+}
+
+// A swipe that closes the sheet slides it down from where the finger let it go, not from its rest.
+const swipeClosePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Snooze' }))
+  const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+  await motionDone(sheet)
+  const rest = sheet.getBoundingClientRect().top
+  const grabber = grabberOf(sheet)
+  const from = middleY(grabber)
+  const far = Math.ceil(sheet.getBoundingClientRect().height * 0.3 / 20) * 20 + 20
+  await slowDrag(grabber, from, far, sheet, rest)
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'closed'))
+  await expect(motionOf(sheet).name).toBe('sheetOut')
+  // The first frame of the close is at the drag offset or lower, never back at the rest.
+  await expect(sheet.getBoundingClientRect().top - rest).toBeGreaterThanOrEqual(far)
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+}
+
+// A sheet that opens again during its swipe close drops the drag offset and rests flush with the bottom (PR #186 review).
+const reopenPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Snooze' }))
+  const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+  await motionDone(sheet)
+  const rest = sheet.getBoundingClientRect().top
+  const grabber = grabberOf(sheet)
+  const far = Math.ceil(sheet.getBoundingClientRect().height * 0.3 / 20) * 20 + 20
+  await slowDrag(grabber, middleY(grabber), far, sheet, rest)
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'closed'))
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'open'))
+  // The same element opens again: the close had not ended.
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await motionDone(sheet)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(sheet.getBoundingClientRect().top).toBe(rest)
+}
+
+/** A sheet opened again during its swipe close opens at its rest, not at the drag offset. */
+export const ReopenDuringClose: StoryObj<typeof meta> = { render: () => <ReopenSheet />, play: reopenPlay }
+
+/** A swipe past 30% closes the sheet, and it slides down from the finger. */
+export const SwipeCloseMotion: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipeClosePlay }

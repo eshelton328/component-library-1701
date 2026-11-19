@@ -67,6 +67,11 @@ type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
  * `onOpenChange(false)`, as the scrim does; a shorter slow drag puts it back.
  * A drag inside content that is scrolled down scrolls the content and leaves
  * the sheet in place, and a drag in a text field never moves the sheet.
+ *
+ * Motion: the sheet slides up as its scrim fades in (`durations.sheetOpen`),
+ * and the close reverses both (`durations.sheetClose`), on `easings.sheet`.
+ * A swiped sheet slides down from where the finger let it go. With
+ * prefers-reduced-motion the sheet only fades.
  */
 export function BottomSheet(input: BottomSheetProps) {
   return <SizedBottomSheet {...input} />
@@ -157,6 +162,8 @@ const closeShare = 0.3
 const flickSpeed = 0.5
 /** Milliseconds of the last moves that set the release speed. */
 const flickWindow = 100
+/** Milliseconds a swiped sheet waits for its close to start; after that its owner kept it open, and it springs back. */
+const refuseWait = 100
 /** The offset of a dragged sheet; the recipe moves the content by it while `data-dragging` is set. */
 const dragOffset = '--bottom-sheet-drag'
 
@@ -183,11 +190,24 @@ function releaseSpeed(samples: Sample[], now: number) {
   return (last.y - first.y) / Math.max(1, last.t - first.t)
 }
 
+// Puts a dragged sheet back at its rest.
+function reset(sheet: HTMLElement) {
+  sheet.removeAttribute('data-dragging')
+  sheet.style.removeProperty(dragOffset)
+}
+
 // The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
 function DraggableContent({ children, ...props }: ComponentProps<typeof Content>) {
   const dialog = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
+
+  // A sheet that opens again while its swipe close still runs keeps its element, so it drops the drag offset
+  // that the close slid down from, and opens at its rest.
+  useEffect(() => {
+    const sheet = ref.current
+    if (dialog.open && sheet !== null && drag.current === null) reset(sheet)
+  }, [dialog.open])
 
   useEffect(() => {
     const sheet = ref.current
@@ -202,11 +222,6 @@ function DraggableContent({ children, ...props }: ComponentProps<typeof Content>
       drag.current?.stop()
     }
   }, [])
-
-  const reset = (sheet: HTMLElement) => {
-    sheet.removeAttribute('data-dragging')
-    sheet.style.removeProperty(dragOffset)
-  }
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     props.onPointerDown?.(event)
@@ -253,9 +268,17 @@ function DraggableContent({ children, ...props }: ComponentProps<typeof Content>
       const offset = Math.max(0, e.clientY - d.startY)
       const far = offset > sheet.getBoundingClientRect().height * closeShare
       const fast = releaseSpeed(d.samples, performance.now()) > flickSpeed
-      // Back in place; a closing sheet unmounts before the next frame, an open one springs back.
-      reset(sheet)
-      if (far || fast) dialog.setOpen(false)
+      if (!(far || fast)) {
+        // Too short and too slow: the sheet springs back.
+        reset(sheet)
+        return
+      }
+      // The close slides the sheet down from the drag offset, so it keeps the offset until it unmounts. A
+      // controlled sheet whose owner keeps it open springs back.
+      dialog.setOpen(false)
+      win.setTimeout(() => {
+        if (sheet.getAttribute('data-state') !== 'closed') reset(sheet)
+      }, refuseWait)
     }
     const cancel = (e: PointerEvent) => {
       const d = drag.current

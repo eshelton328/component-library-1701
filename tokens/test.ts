@@ -105,6 +105,14 @@ const cases: [string, Mutate, (r: Result) => boolean][] = [
     set(d, 'radius.value', { sm: { $type: 'dimension', $value: { value: 3, unit: 'px' }, $description: 'Test radius inside a group named value.' } })
   }) }, ok((r) => /"value": \{\s*"sm": \{\s*"value": "3px"/.test(r.preset))],
   ['a missing light token fails', (e) => { e(theme, (d) => { remove(d, 'light.color.kind.hook') }) }, has('complete', 'color.kind.hook')],
+  ['durations and easings are emitted as CSS values', () => {},
+    ok((r) => /"durations": \{[\s\S]*"sheetOpen": \{\s*"value": "300ms"/.test(r.preset) && /"easings": \{[\s\S]*"sheet": \{\s*"value": "cubic-bezier\(0\.38, 0\.7, 0\.125, 1\)"/.test(r.preset))],
+  ['a duration in seconds keeps its unit', (e) => { e('motion.json', (d) => { set(d, 'duration.keyboard.$value', { value: 0.25, unit: 's' }) }) },
+    ok((r) => /"keyboard": \{\s*"value": "0\.25s"/.test(r.preset))],
+  ['a mode cannot change a duration', (e) => { e('modes/light.json', (d) => { set(d, 'duration', { keyboard: { $type: 'duration', $value: { value: 999, unit: 'ms' } } }) }) },
+    has('layout', 'duration.keyboard')],
+  ['a mode cannot change an easing', (e) => { e('modes/light.json', (d) => { set(d, 'easing', { sheet: { $type: 'cubicBezier', $value: [0, 0, 1, 1] } }) }) },
+    has('layout', 'easing.sheet')],
   ['a missing description fails', (e) => { e(theme, (d) => { remove(d, 'radius.md.$description') }) }, has('described', 'radius.md')],
 ]
 

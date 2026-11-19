@@ -4,7 +4,9 @@ The design tokens, as DTCG JSON, and the build that checks them and writes
 the Panda preset.
 
 - `resolver.json` lists the themes and the modes. `layout.json` holds
-  spacing and sizes, which no theme or mode can change (d-035).
+  spacing and sizes, and `motion.json` the durations and easings
+  (`duration` and `cubicBezier` types). No theme or mode can change
+  them (d-035).
 - One file per theme in `themes/`. It holds a `dark` and a `light` group
   (colours and shadows), plus type, radii, border widths, blur and opacity.
   A token in one group must also be in the other. `modes/` picks a group

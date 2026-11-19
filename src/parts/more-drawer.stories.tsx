@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
+import { motionDone } from '../controls/bottom-sheet.testing'
 import { MoreDrawer, type MoreDrawerGroup } from './more-drawer'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -68,6 +69,7 @@ const meta = {
     // The drawer renders in a portal, outside the story's canvas.
     const body = within(document.body)
     const drawer = await body.findByRole('dialog', { name: 'More' })
+    await motionDone(drawer)
     const box = drawer.getBoundingClientRect()
     await expect(box.width).toBe(window.innerWidth)
     await expect(Math.round(box.bottom)).toBe(window.innerHeight)

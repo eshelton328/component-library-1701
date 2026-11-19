@@ -40,3 +40,8 @@ from `../../tokens/`.
   tokens, never variant names; a removed or renamed variant is a breaking
   change.
 - Components never import this folder; they import the generated recipe.
+- `keyframes.ts` holds the keyframes, which `../../panda.config.ts` adds
+  to the theme. A recipe names one in `animationName` and takes
+  `animationDuration` and `animationTimingFunction` from the motion
+  tokens (`durations`, `easings`), never a raw time or curve. Give the
+  same part a `_motionReduce` style that only fades.

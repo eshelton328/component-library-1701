@@ -109,6 +109,20 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     let top = 0
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
     let typing = editable(document.activeElement)
+    // A field in a ScrollFrame footer docks only where that ScrollFrame is the detail's direct child: the recipes read
+    // the keyboard there and reset it deeper down. A page that nests the frame deeper loses the dock with no other
+    // sign, so the first such field that a keyboard covers is named once in the console (screen reviews R20, R21).
+    let warned = false
+    const warnUndocked = (detail: Element) => {
+      const field = document.activeElement
+      const frame = field?.closest('.scroll-frame__footer')?.closest('.scroll-frame__root')
+      if (warned || !frame || frame.parentElement === detail || !detail.contains(frame)) return
+      warned = true
+      console.warn(
+        'AppShell: the focused field is in the footer of a ScrollFrame that is not the detail\'s direct child, so it does not dock on the keyboard. Render that ScrollFrame as the detail.',
+        frame,
+      )
+    }
     // Paints a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
     const paint = (inset: number) => {
       const detail = root.querySelector(':scope > .app-shell__detail')
@@ -118,6 +132,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // screen).
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
+      if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
     }
     // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is; a new target
     // during a move starts a new move from there. With reduced motion it is there at once.

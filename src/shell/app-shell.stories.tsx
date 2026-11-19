@@ -1476,6 +1476,66 @@ const keyboardRise: StoryObj<typeof meta> = {
 // A block under the screen lets the document scroll, as iOS scrolls it for a focused field.
 const belowScreen = css({ h: 'shell.tabBar' })
 const keyboardInsetOf = (root: HTMLElement) => root.style.getPropertyValue('--app-shell-keyboard')
+
+// The chat ScrollFrame two levels below the detail, as the-bridge's Workspaces PhoneChat had it: its footer does not
+// dock, and AppShell names the frame once in the console.
+function NestedThreadChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <section className={nestedColumn}>
+            <div className={nestedColumn}>
+              <ScrollFrame
+                bodyClassName={frameBody}
+                footer={
+                  <div role="group" aria-label="Composer" className={composerBox}>
+                    <textarea aria-label="Message" rows={1} className={messageField} />
+                  </div>
+                }
+              >
+                {messages.map((m) => (
+                  <p key={m} className={text}>
+                    {m}
+                  </p>
+                ))}
+              </ScrollFrame>
+            </div>
+          </section>
+        }
+      />
+    </div>
+  )
+}
+// A flex column that may shrink below its content: with overflow hidden its automatic minimum height is 0.
+const nestedColumn = css({ display: 'flex', flexDirection: 'column', flex: '1', overflow: 'hidden' })
+const undockedWarning = (warn: { mock: { calls: unknown[][] } }) =>
+  warn.mock.calls.filter((call) => typeof call[0] === 'string' && call[0].startsWith('AppShell: the focused field')).length
+const nestedFooter: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <NestedThreadChat />,
+  play: async ({ canvasElement }) => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      const nested = within(canvasElement).getByRole('textbox', { name: 'Message' })
+      // The nested chat's field takes the focus and the keyboard covers it: one warning, however often it fits.
+      await userEvent.click(nested)
+      fakeViewport.move({ height: 544 })
+      await waitFor(() => expect(undockedWarning(warn)).toBe(1))
+      fakeViewport.move({ height: 545 })
+      fakeViewport.move({ height: 544 })
+      await expect(undockedWarning(warn)).toBe(1)
+    } finally {
+      warn.mockRestore()
+    }
+  },
+}
+/** A chat ScrollFrame nested below the detail does not dock; AppShell warns once in the console. */
+export const NestedFooterDark: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const NestedFooterLight: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const focusScroll: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => (
@@ -1486,6 +1546,7 @@ const focusScroll: StoryObj<typeof meta> = {
   ),
   play: async ({ canvasElement }) => {
     const { root, field } = threadParts(canvasElement)
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
       // With no field focused, a document scroll is the page's own, and it stays.
       window.scrollTo(0, 25)
@@ -1533,7 +1594,10 @@ const focusScroll: StoryObj<typeof meta> = {
       await nextFrame()
       await nextFrame()
       await expect(window.scrollY).toBe(25)
+      // This chat's ScrollFrame is the detail's child: it docked, and AppShell warned nothing.
+      await expect(undockedWarning(warn)).toBe(0)
     } finally {
+      warn.mockRestore()
       window.scrollTo(0, 0)
     }
   },

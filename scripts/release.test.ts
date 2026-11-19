@@ -3,9 +3,14 @@
 // check-release-api.ts reads from the analyzer. Run with `pnpm test:release`.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
 import config from '../release.config.js'
-import { apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader, recipeTypesReport, registryState } from './release-lib.ts'
+import { afterRecipeTypes, apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader, recipeTypesFile, recipeTypesMissing, recipeTypesReport, registryState } from './release-lib.ts'
 
 const report = (body: string) => `## API Report File\n\n\`\`\`ts\n\n// comment\nimport { X } from 'y';\n${body}\n\n\`\`\`\n`
 
@@ -432,6 +437,106 @@ void test('any change to the generic references before the object is breaking', 
   for (const head of ['Scalar<OtherVariantProps> & ', 'ComponentProps<"div"> & Scalar<DialogVariantProps> & ', '']) {
     const after = dialogProps.replace('Scalar<DialogVariantProps> & {', `${head}{`)
     assert.equal(diffApi(dialogProps, after, bothTypes).breaking, true, head)
+  }
+})
+
+// FileBrowserProps as the v1.0.0-beta.83 report and the main report of
+// 2026-11-19 (after #261 added the figma prop) have it, shortened.
+const fileBrowserBeta83 = report(scalarDecl + `// @public (undocumented)
+export type FileBrowserProps = Scalar<FileBrowserVariantProps> & {
+    tree: ReactNode;
+    children?: ReactNode;
+};`)
+const fileBrowserMain = fileBrowserBeta83.replace('    tree: ReactNode;\n', '    tree: ReactNode;\n    figma?: FileBrowserLayers | undefined;\n')
+// styled-system/recipes/file-browser.d.ts as Panda codegen writes it.
+const fileBrowserRecipe = {
+  name: 'file-browser.d.ts',
+  text: `import type { ConditionalValue } from '../types/system.js';
+
+export type FileBrowserVariant = {
+  layout?: "split" | "stacked"
+}
+
+export type FileBrowserVariantProps = {
+  [K in keyof FileBrowserVariant]?: ConditionalValue<FileBrowserVariant[K]>
+}
+`,
+}
+const tempRoot = (files: Record<string, string>) => {
+  const root = mkdtempSync(join(tmpdir(), 'release-api-test-'))
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(join(root, path, '..'), { recursive: true })
+    writeFileSync(join(root, path), text)
+  }
+  return root
+}
+
+void test('the after recipe types come from the committed file when styled-system is missing (lib-api-diff, 2026-11-19)', () => {
+  const root = tempRoot({ [recipeTypesFile]: recipeTypesReport([fileBrowserRecipe]) })
+  try {
+    const types = afterRecipeTypes(root)
+    assert.equal(types, recipeTypesReport([fileBrowserRecipe]))
+    // check-release-api.ts reads the tag's committed file for the before side.
+    const d = diffApi(fileBrowserBeta83, fileBrowserMain, { before: types, after: types })
+    assert.deepEqual(d.narrowed, [])
+    assert.equal(d.breaking, false)
+    // A new prop with the name of a variant still narrows it.
+    const layout = fileBrowserBeta83.replace('    tree: ReactNode;\n', '    tree: ReactNode;\n    layout?: string;\n')
+    assert.deepEqual(diffApi(fileBrowserBeta83, layout, { before: types, after: types }).narrowed, ['FileBrowserProps.layout'])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+  }
+})
+
+void test('the committed recipe types win over styled-system, which counts only when the file is missing', () => {
+  const recipe = (text: string) => ({ [`styled-system/recipes/${fileBrowserRecipe.name}`]: text, 'styled-system/recipes/index.mjs': '' })
+  const stale = fileBrowserRecipe.text.replace('"split" | "stacked"', '"split"')
+  const both = tempRoot({ [recipeTypesFile]: recipeTypesReport([fileBrowserRecipe]), ...recipe(stale) })
+  const codegen = tempRoot(recipe(fileBrowserRecipe.text))
+  try {
+    assert.equal(afterRecipeTypes(both), recipeTypesReport([fileBrowserRecipe]))
+    assert.equal(afterRecipeTypes(codegen), recipeTypesReport([fileBrowserRecipe]))
+  } finally {
+    rmSync(both, { recursive: true, force: true })
+    rmSync(codegen, { recursive: true, force: true })
+  }
+})
+
+void test('a stale styled-system/recipes with no file-browser recipe does not hide the committed recipe types (bridge-release, 2026-11-19)', () => {
+  // The release clone had styled-system/recipes from before #261, with no
+  // file-browser or file-frame recipe, because pnpm install skipped prepare.
+  const stale = { 'styled-system/recipes/dialog.d.ts': 'export type DialogVariant = {\n  size?: "md"\n}\n' }
+  const root = tempRoot({ [recipeTypesFile]: recipeTypesReport([fileBrowserRecipe]), ...stale })
+  const staleOnly = tempRoot(stale)
+  try {
+    const types = afterRecipeTypes(root)
+    assert.equal(types, recipeTypesReport([fileBrowserRecipe]))
+    assert.deepEqual(diffApi(fileBrowserBeta83, fileBrowserMain, { before: types, after: types }).narrowed, [])
+    // The stale folder alone does not know FileBrowserVariantProps, so it
+    // gives the false breaking result that the committed file prevents.
+    const staleTypes = afterRecipeTypes(staleOnly)
+    assert.deepEqual(diffApi(fileBrowserBeta83, fileBrowserMain, { before: types, after: staleTypes }).narrowed, ['FileBrowserProps.figma'])
+  } finally {
+    rmSync(root, { recursive: true, force: true })
+    rmSync(staleOnly, { recursive: true, force: true })
+  }
+})
+
+void test('check-release-api.ts exits 1 when no recipe types are known, never with a breaking result (lib-api-diff, 2026-11-19)', () => {
+  const root = tempRoot({ 'api/component-library-1701.api.md': fileBrowserBeta83 })
+  const git = (...args: string[]) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', '-c', 'tag.gpgsign=false', ...args], { cwd: root, encoding: 'utf8' })
+  try {
+    assert.equal(afterRecipeTypes(root), undefined)
+    for (const args of [['init', '-q'], ['add', '.'], ['commit', '-q', '-m', 'feat: first'], ['tag', 'v1.0.0-beta.83']]) assert.equal(git(...args).status, 0, args.join(' '))
+    writeFileSync(join(root, 'api/component-library-1701.api.md'), fileBrowserMain)
+    const script = fileURLToPath(new URL('check-release-api.ts', import.meta.url))
+    const run = spawnSync(process.execPath, [script], { cwd: root, encoding: 'utf8' })
+    assert.equal(run.status, 1, run.stdout + run.stderr)
+    assert.equal(recipeTypesMissing, 'recipe types missing: run pnpm install')
+    assert.match(run.stderr, /recipe types missing: run pnpm install/)
+    assert.doesNotMatch(run.stdout, /breaking/)
+  } finally {
+    rmSync(root, { recursive: true, force: true })
   }
 })
 

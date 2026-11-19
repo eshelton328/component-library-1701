@@ -72,14 +72,17 @@ Repository scripts that are not part of the package.
 - `check-commits.ts` checks every commit header since the last release
   tag; the release job runs it before semantic-release.
 - `check-release-api.ts` (`pnpm check:release-api`) compares the API with
-  the last release tag. It also reads the recipe types that Panda
-  codegen writes to `styled-system/recipes/`, because the report imports
-  the variant props (such as `DialogVariantProps`) and does not declare
-  them. When a new member may narrow such a type, it also reads the
+  the last release tag. It also reads the recipe types of the work
+  tree, because the report imports the variant props (such as
+  `DialogVariantProps`) and does not declare them: the committed
+  `api/recipe-types.api.md`, or `styled-system/recipes/` from Panda
+  codegen only when that file is missing (`afterRecipeTypes` in
+  `release-lib.ts`). When both are missing, it exits 1 with
+  `recipe types missing: run pnpm install` and gives no diff. When a new member may narrow such a type, it also reads the
   tag's recipe types, so a variant that the change removes still counts:
   the tag's `api/recipe-types.api.md`, or for a tag from before that
   file, a temporary worktree of the tag where `pnpm install` runs
-  codegen. When either side has no recipe types, every new member of
+  codegen. When the tag has no recipe types, every new member of
   such an alias is breaking. When it broke, `@semantic-release/commit-analyzer`
   with `release.config.js` must return `major` for the commits in the
   range, so a reverted breaking commit does not count. The release job

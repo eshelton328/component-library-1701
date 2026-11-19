@@ -8,11 +8,11 @@
 // reverted breaking commit does not count. With no release tag there is no
 // published API to break, so it passes.
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
-import { diffApi, recipeTypesFile, recipeTypesReport } from './release-lib.ts'
+import { afterRecipeTypes, codegenRecipeTypes, diffApi, recipeTypesFile, recipeTypesMissing } from './release-lib.ts'
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const report = 'api/component-library-1701.api.md'
@@ -26,16 +26,16 @@ if (tag.status !== 0) {
 const from = tag.stdout.trim()
 const old = git(['show', `${from}:${report}`])
 // The report imports the recipe variant types (such as DialogVariantProps)
-// from styled-system, so it does not declare them. Panda codegen (the
-// `prepare` script) writes them, and the diff reads their declarations to
-// find the names that `Scalar<DialogVariantProps>` allows, on both sides:
-// a variant that the release had and this change removes still counts.
-// Without them, every new optional member of such an alias is breaking.
-const recipeTypes = (root: string): string | undefined => {
-  const recipes = join(root, 'styled-system/recipes')
-  if (!existsSync(recipes)) return undefined
-  const files = readdirSync(recipes).filter((f) => f.endsWith('.d.ts'))
-  return recipeTypesReport(files.map((name) => ({ name, text: readFileSync(join(recipes, name), 'utf8') })))
+// from styled-system, so it does not declare them. The diff reads their
+// declarations to find the names that `Scalar<DialogVariantProps>`
+// allows, on both sides: a variant that the release had and this change
+// removes still counts. Without them, every new optional member of such
+// an alias would count as breaking, so the check stops before the diff
+// when the work tree has none (see afterRecipeTypes).
+const afterTypes = afterRecipeTypes('.')
+if (afterTypes === undefined) {
+  console.error(recipeTypesMissing)
+  process.exit(1)
 }
 
 // The recipe types of the release tag: its committed recipeTypesFile, or
@@ -54,7 +54,7 @@ const tagRecipeTypes = (ref: string): string | undefined => {
       console.error(`pnpm install in a worktree of ${ref} failed, so its recipe types are not known:\n${install.stderr.slice(-2000)}`)
       return undefined
     }
-    return recipeTypes(dir)
+    return codegenRecipeTypes(dir)
   } finally {
     git(['worktree', 'remove', '--force', dir])
     rmSync(parent, { recursive: true, force: true })
@@ -64,10 +64,9 @@ const tagRecipeTypes = (ref: string): string | undefined => {
 
 const before = old.status === 0 ? old.stdout : ''
 const after = readFileSync(report, 'utf8')
-const afterTypes = recipeTypes('.')
 // Build the tag's types only when a narrowed member needs them.
 const first = diffApi(before, after, { after: afterTypes })
-const diff = first.narrowed.length > 0 && afterTypes !== undefined ? diffApi(before, after, { before: tagRecipeTypes(from), after: afterTypes }) : first
+const diff = first.narrowed.length > 0 ? diffApi(before, after, { before: tagRecipeTypes(from), after: afterTypes }) : first
 
 const log = git(['log', '--no-merges', '--format=%H%x1f%B%x00', `${from}..HEAD`])
 if (log.status !== 0) {

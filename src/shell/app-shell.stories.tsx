@@ -1729,6 +1729,65 @@ const reopenFalling: StoryObj<typeof meta> = {
 export const ReopenFallingDark: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ReopenFallingLight: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// The keyboard of the-bridge's keyboard:served check: it reports its height in every frame, on the keyboard's own
+// curve, from a few frames after the focus. Once it is all the way open, the composer must sit on its top in every
+// frame.
+const curveAt = (ms: number) => {
+  const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = (token('easings.keyboard').match(/-?\d*\.?\d+/g) ?? []).map(Number)
+  const bezier = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3
+  const x = Math.min(1, Math.max(0, ms / Number.parseFloat(token('durations.keyboard'))))
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 30; i++) {
+    const mid = (low + high) / 2
+    if (bezier(x1, x2, mid) < x) low = mid
+    else high = mid
+  }
+  return bezier(y1, y2, high)
+}
+const frameKeyboard = async (keyboard: number, direction: 'open' | 'close') => {
+  const from = performance.now()
+  const duration = Number.parseFloat(token('durations.keyboard'))
+  for (;;) {
+    const ms = performance.now() - from
+    const p = curveAt(ms)
+    fakeViewport.move({ height: 844 - Math.round(keyboard * (direction === 'open' ? p : 1 - p)) })
+    if (ms >= duration) return
+    await nextFrame()
+  }
+}
+const frameSteps = (delay: number): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { field, composer } = threadParts(canvasElement)
+    for (let open = 0; open < 2; open++) {
+      await userEvent.click(field)
+      for (let i = 0; i < delay; i++) await nextFrame()
+      await frameKeyboard(336, 'open')
+      const off: number[] = []
+      const until = performance.now() + 400
+      while (performance.now() < until) {
+        off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+        await nextFrame()
+      }
+      await expect(off.filter((v) => v > 0.5)).toEqual([])
+      field.blur()
+      await frameKeyboard(336, 'close')
+      await wait(400)
+    }
+  },
+})
+/** Phone chat with a keyboard that reports its height in every frame, a frame after the focus. */
+export const FrameStepsSoonDark: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FrameStepsSoonLight: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat with a keyboard that reports its height in every frame, from four frames after the focus. */
+export const FrameStepsLateDark: StoryObj<typeof meta> = { ...frameSteps(4), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FrameStepsLateLight: StoryObj<typeof meta> = { ...frameSteps(4), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat with a keyboard that reports its height in every frame, from eight frames after the focus. */
+export const FrameStepsLaterDark: StoryObj<typeof meta> = { ...frameSteps(8), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FrameStepsLaterLight: StoryObj<typeof meta> = { ...frameSteps(8), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const reopenAboveOrigin: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
@@ -1756,6 +1815,29 @@ const reopenAboveOrigin: StoryObj<typeof meta> = {
 /** Phone chat: the field takes the focus again while the composer comes down from 1 px above the measured keyboard. */
 export const ReopenAboveOriginDark: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ReopenAboveOriginLight: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const quickClose: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The focus starts the dock toward the 380 guess, the keyboard reports 330 a frame later, and the field loses the
+    // focus as the keyboard closes a frame after that: three targets less than 50 ms apart. The close is a new move,
+    // not a frame step of the keyboard, so the composer comes down on the curve (Codex review of #274).
+    await userEvent.click(field)
+    await nextFrame()
+    fakeViewport.move({ height: 844 - 330 })
+    await nextFrame()
+    const closed = performance.now()
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await expect(Number(root.dataset.keyboardEnd)).toBeGreaterThanOrEqual(closed + 250)
+    await settled(footer, 0)
+  },
+}
+/** Phone chat whose keyboard closes a frame after its report: the composer comes down on the curve. */
+export const QuickCloseDark: StoryObj<typeof meta> = { ...quickClose, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const QuickCloseLight: StoryObj<typeof meta> = { ...quickClose, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const closeAfterCorrection: StoryObj<typeof meta> = {
   ...withMotion,
@@ -2481,17 +2563,31 @@ const keyboardReducedMotion: StoryObj<typeof meta> = {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field } = threadParts(canvasElement)
     // With reduced motion the dock has no transition: each change is there in the same task, and no frame shows a
-    // step between.
+    // step between. iOS draws frames between the focus and the keyboard's report; with no measured keyboard the dock
+    // waits there for the report, as a jump to Figma's guess and then to the real keyboard would be two jumps (the
+    // iPhone recording of screen review R26).
     const record = recordFrames(root, footer)
     field.focus()
-    await expect(riseOf(footer)).toBe(346)
-    // The real keyboard is 80 px under the guess: the dock takes it at once, with no wait for the settle (R22).
+    await nextFrame()
+    await nextFrame()
+    await expect(riseOf(footer)).toBe(0)
     fakeViewport.move({ height: 544 })
     await expect(riseOf(footer)).toBe(266)
     await nextFrame()
     field.blur()
     fakeViewport.move({ height: 844 })
     await expect(riseOf(footer)).toBe(0)
+    await nextFrame()
+    // The next open expects the measured keyboard: one jump at the focus, and the report moves nothing.
+    field.focus()
+    await expect(riseOf(footer)).toBe(266)
+    await nextFrame()
+    await nextFrame()
+    fakeViewport.move({ height: 544 })
+    await expect(riseOf(footer)).toBe(266)
+    await nextFrame()
+    field.blur()
+    fakeViewport.move({ height: 844 })
     await nextFrame()
     record.stop()
     await expect([...new Set(record.frames.map((f) => f.rise))].sort((x, y) => x - y)).toEqual([0, 266])

@@ -1326,3 +1326,173 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
     await expect(canvasElement.querySelector('.app-shell__root')).toBeNull()
   },
 }
+
+// A chat thread long enough to scroll, with the composer docked as the ScrollFrame's footer, as the-bridge's Inbox
+// chat on the phone.
+const messages = Array.from({ length: 40 }, (_, i) => `Message ${String(i + 1)} of the thread`)
+function ThreadChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+
+type Frame = { shell: number; rise: number }
+// How far the dock (the ScrollFrame footer) is moved up from its place, read from its transform as the browser paints
+// it, so a transition shows each step.
+const riseOf = (footer: HTMLElement) => Math.round(0 - new DOMMatrixReadOnly(getComputedStyle(footer).transform).m42)
+// Records the shell's height and the dock's rise at every frame until `stop`.
+const recordFrames = (root: HTMLElement, footer: HTMLElement) => {
+  const frames: Frame[] = []
+  let id = 0
+  const tick = () => {
+    frames.push({ shell: Math.round(rect(root).height), rise: riseOf(footer) })
+    id = requestAnimationFrame(tick)
+  }
+  tick()
+  return {
+    frames,
+    stop: () => {
+      cancelAnimationFrame(id)
+      tick()
+      cancelAnimationFrame(id)
+    },
+  }
+}
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+// Moves the visual viewport's height through `heights`, one resize a frame, as iOS reports a keyboard in steps.
+const stepViewport = async (heights: number[]) => {
+  for (const height of heights) {
+    fakeViewport.move({ height })
+    await nextFrame()
+  }
+}
+const rising = [794, 744, 694, 644, 594, 544]
+const falling = [594, 644, 694, 744, 794, 844]
+// Each frame's rise against the one before: 1 up, -1 down, 0 still.
+const directions = (frames: Frame[]) => frames.slice(1).map((f, i) => Math.sign(f.rise - (frames[i]?.rise ?? f.rise)))
+const threadParts = (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement)
+  return {
+    canvas,
+    root: shellRoot(canvasElement),
+    footer: slotOf(canvasElement, 'scroll-frame__footer'),
+    field: canvas.getByRole('textbox', { name: 'Message' }),
+    composer: () => rect(canvas.getByRole('group', { name: 'Composer' })),
+  }
+}
+
+const keyboardRise: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const { root, footer, field, composer } = threadParts(canvasElement)
+    const record = recordFrames(root, footer)
+    await userEvent.click(field)
+    // The keyboard rises in steps of 50 to 544: the dock rides up with it and never moves down.
+    await stepViewport([844, ...rising])
+    record.stop()
+    await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
+    await expect(directions(record.frames)).not.toContain(-1)
+    await expect(record.frames.at(-1)?.rise).toBe(266)
+    await expect(Math.round(composer().bottom)).toBe(544)
+  },
+}
+
+/** Phone chat: the keyboard rises in steps; the shell keeps its height and the composer rides up with the keyboard, never back down. */
+export const KeyboardRiseDark: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardRiseLight: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const keyboardFall: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const { root, footer, field, composer } = threadParts(canvasElement)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await expect(riseOf(footer)).toBe(266)
+    // The keyboard's Done blurs the field, and the keyboard falls in steps: the dock comes down with it and never
+    // back up, and the shell keeps its height.
+    const record = recordFrames(root, footer)
+    field.blur()
+    await stepViewport(falling)
+    record.stop()
+    await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
+    await expect(directions(record.frames)).not.toContain(1)
+    await expect(record.frames.at(-1)?.rise).toBe(0)
+    await expect(Math.round(composer().bottom)).toBe(844 - 34)
+  },
+}
+
+/** Phone chat: the keyboard falls in steps after a blur; the shell keeps its height and the composer comes down with it, never back up. */
+export const KeyboardFallDark: StoryObj<typeof meta> = { ...keyboardFall, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardFallLight: StoryObj<typeof meta> = { ...keyboardFall, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const keyboardAndroid: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <ThreadChat />,
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    const restore = replaceVisualViewport(fakeViewport)
+    return async () => {
+      // The real visual viewport comes back first, so a failed resize cannot leave the fake one in place.
+      restore()
+      const { page } = await import('vitest/browser')
+      await page.viewport(390, 844)
+    }
+  },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const { root, footer, field, composer } = threadParts(canvasElement)
+    const record = recordFrames(root, footer)
+    await userEvent.click(field)
+    // Chrome on Android with interactive-widget=resizes-content: the keyboard shrinks the layout viewport itself, and
+    // the visual viewport with it, to 544. The shell follows its parent to 544 and nothing docks.
+    const { page } = await import('vitest/browser')
+    await page.viewport(390, 544)
+    await waitFor(() => expect(document.documentElement.clientHeight).toBe(544))
+    fakeViewport.move({ height: 544 })
+    await nextFrame()
+    record.stop()
+    await expect(Math.round(rect(root).height)).toBe(544)
+    await expect(keyboardInset(root)).toBe('')
+    await expect(record.frames.every((f) => f.rise === 0)).toBe(true)
+    await expect(Math.round(composer().bottom)).toBe(544 - 34)
+  },
+}
+
+/** Phone chat where the browser resizes the layout for the keyboard (Chrome on Android): the shell shrinks with its parent and the dock stays at 0. */
+// Only the story test runner can resize the page (vitest/browser), so the Storybook UI leaves these out; the test
+// runner still runs them (Codex review of #199). Storybook reads the tags from each export itself, not from a spread.
+export const KeyboardAndroidDark: StoryObj<typeof meta> = {
+  ...keyboardAndroid,
+  tags: ['!dev'],
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+}
+export const KeyboardAndroidLight: StoryObj<typeof meta> = {
+  ...keyboardAndroid,
+  tags: ['!dev'],
+  globals: { mode: 'light', viewport: { value: 'm390' } },
+}

@@ -93,8 +93,9 @@ Repository scripts that are not part of the package.
 - `actions-minutes.test.ts` (also in `pnpm test:release`) runs the
   counting step of `.github/workflows/actions-minutes.yml` with bash and
   python3 against a fake `gh`. It checks that a re-run of a recent day is
-  counted, that a partial count keeps the alert issue open, and that the
-  issue is found past the first page of open issues.
+  counted, that a partial count keeps the alert issue open, that the
+  issue is found past the first page of open issues, and that a day over
+  the per-run call limit is finished by the next run from the ledger.
 
 ## Folders
 

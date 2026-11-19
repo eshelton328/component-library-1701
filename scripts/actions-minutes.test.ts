@@ -3,6 +3,8 @@
 // `gh` in a temporary folder, and checks one fix from the PR #203 review:
 // a re-run of a recent day is counted, a partial count keeps the alert
 // issue open, and the issue is found past the first page of open issues.
+// One more test checks that a day over the per-run call limit is finished
+// by the next run from the ledger.
 // Run with `pnpm test:release`; it needs bash and python3.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -175,6 +177,23 @@ void test('a re-run of a day 2 days back is counted after the ledger saved that 
   assert.equal(dayMinutes(box.run(), d), 10)
   box.write({ ...data, jobs: { '1': [job(d, 1, 10), job(d, 2, 20)] } })
   assert.equal(dayMinutes(box.run(), d), 30)
+})
+
+void test('a day over the per-run call limit is finished by the next run from the ledger', () => {
+  // 900 runs need about 909 calls, more than the step's --max-calls 800.
+  const d = day(3)
+  const runs: Data['runs'] = []
+  const jobs: Data['jobs'] = {}
+  for (let id = 1; id <= 900; id++) {
+    runs.push({ id, name: 'ci', status: 'completed', created_at: `${d}T10:00:00Z` })
+    jobs[String(id)] = [job(d, 1, 1)]
+  }
+  const box = sandbox({ runs, jobs, fail_days: [] }, [])
+  const first = box.run()
+  assert.equal(first['partial'], true)
+  const second = box.run()
+  assert.equal(second['partial'], false)
+  assert.equal(dayMinutes(second, d), 900)
 })
 
 void test('a partial count below the alert level keeps the alert issue open', () => {

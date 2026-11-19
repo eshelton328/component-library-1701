@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { GroupedBarChart, HorizontalBarChart } from './bar-chart'
@@ -385,15 +385,19 @@ const narrowKeysMeta: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Tab}')
     await expect(chart).toHaveFocus()
     await expect(getComputedStyle(chart).outlineStyle).toBe('solid')
+    // Each key scroll ends with the chart's own scrollend event, however long a loaded runner takes for it.
+    const scrollEnd = () =>
+      new Promise((resolve) => {
+        chart.addEventListener('scrollend', resolve, { once: true })
+      })
+    let ended = scrollEnd()
     await userEvent.keyboard('{ArrowRight}')
-    await waitFor(() => expect(chart.scrollLeft).toBeGreaterThan(0))
-    await waitFor(async () => {
-      const at = chart.scrollLeft
-      await new Promise((resolve) => requestAnimationFrame(resolve))
-      await expect(chart.scrollLeft).toBe(at)
-    })
+    await ended
+    await expect(chart.scrollLeft).toBeGreaterThan(0)
+    ended = scrollEnd()
     await userEvent.keyboard('{ArrowLeft}')
-    await waitFor(() => expect(chart.scrollLeft).toBe(0))
+    await ended
+    await expect(chart.scrollLeft).toBe(0)
   },
 }
 // Only the story test runner has a real keyboard, so the Storybook UI leaves these out; the test runner runs them.

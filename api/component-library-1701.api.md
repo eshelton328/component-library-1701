@@ -110,6 +110,15 @@ export type BadgeProps = Scalar<BadgeVariantProps> & {
     icon?: ReactNode;
 };
 
+// @public
+export function BareIconButton(input: BareIconButtonProps): JSX.Element;
+
+// @public
+export type BareIconButtonProps = Omit<ComponentProps<'button'>, 'children' | 'aria-label'> & {
+    label: string;
+    icon: ReactNode;
+};
+
 // @public (undocumented)
 export type BarGroup = {
     label: string;
@@ -1283,6 +1292,8 @@ export type PathBadgeProps = {
     icon?: ReactNode;
     iconSize?: 'sm' | 'md' | undefined;
     trailing?: ReactNode;
+    onCopy?: ((path: string) => void) | undefined;
+    copyLabel?: string | undefined;
 };
 
 // @public

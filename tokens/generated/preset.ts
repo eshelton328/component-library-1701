@@ -1067,7 +1067,7 @@ export default definePreset({
           },
           "xs": {
             "value": "4px",
-            "description": "Checkboxes, and the box of a MapGraph minimap that shows the window's part of the drawing (Toolkit M11 461:1256)."
+            "description": "Checkboxes, the box of a MapGraph minimap that shows the window's part of the drawing (Toolkit M11 461:1256), and the focus ring of a BareIconButton (the 12 px copy icon of a path badge or a viewer bar)."
           }
         },
         "shadows": {

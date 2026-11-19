@@ -31,7 +31,12 @@ Layout, Navigation or Overlays (d-065, d-066).
   far up (`--app-shell-detail-end`), as do a list or side pane beside
   it (a tablet's search results, `ListKeyboard`), and a `ScrollFrame` that is the
   detail's child moves its footer (the composer) up onto the keyboard
-  with `translateY` and ends its body's view above it. A `ScrollFrame`
+  with `translateY` and ends its body's view above it. Through the move,
+  the line above the composer stays in place (R22): a body at its end
+  stays at its end, and any other body scrolls by as much as its view
+  shrinks or grows, except a body that holds the focused field. The body
+  is the containing block of an absolute child, so that child never
+  makes the `Backdrop` scroll. A `ScrollFrame`
   nested deeper does not dock; when the keyboard covers a field in its
   footer, AppShell warns once in the console (`NestedFooter`). The tab bar and
   the safe area stay under the keyboard; hiding them would move the

@@ -1345,7 +1345,9 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
 // A chat thread long enough to scroll, with the composer docked as the ScrollFrame's footer, as the-bridge's Inbox
 // chat on the phone.
 const messages = Array.from({ length: 40 }, (_, i) => `Message ${String(i + 1)} of the thread`)
-function ThreadChat() {
+// A line only screen readers read, positioned absolutely as Message's `message__srName` is.
+const srOnlyLine = css({ srOnly: true })
+function ThreadChat({ srLine = false }: { srLine?: boolean }) {
   return (
     <div className={screenFrame}>
       <AppShell
@@ -1365,6 +1367,12 @@ function ThreadChat() {
                 {m}
               </p>
             ))}
+            {srLine ? (
+              <p className={text}>
+                <span className={srOnlyLine}>Claude said:</span>
+                The last line of the thread.
+              </p>
+            ) : null}
           </ScrollFrame>
         }
       />
@@ -1481,20 +1489,43 @@ const threadEnd: StoryObj<typeof meta> = {
     end.stop()
     await expect(end.frames.filter((f) => f.fromEnd > 1)).toEqual([])
     await expect(end.frames.filter((f) => f.room < -1)).toEqual([])
-    // Scrolled up, away from its end, the thread keeps its scroll position through the rise and the fall.
+    // Scrolled up, away from its end, the line just above the composer stays just above it at every frame of the rise
+    // and the fall: the body scrolls by as much as its view shrinks or grows, so its distance from the end stays the
+    // same (bridge-workbench's R22 frames).
     const up = recordThread(canvasElement)
     up.body.scrollTop = 200
     await nextFrame()
+    const fromEnd = Math.round(up.body.scrollHeight - 200 - up.body.clientHeight)
     await userEvent.click(field)
-    fakeViewport.move({ height: 544 })
+    await stepViewport(rising)
     await settled(footer, 266)
     field.blur()
     await stepViewport(falling)
     await settled(footer, 0)
     up.stop()
-    await expect(up.frames.slice(1).filter((f) => f.scrollTop !== 200)).toEqual([])
+    // The first frame comes before the scroll to 200.
+    await expect(up.frames.slice(1).filter((f) => Math.abs(f.fromEnd - fromEnd) > 1)).toEqual([])
+    await expect(Math.round(up.body.scrollTop)).toBe(200)
   },
 }
+const backdropOf = (canvasElement: HTMLElement) => {
+  const backdrop = canvasElement.querySelector('.app-shell__root')?.parentElement
+  if (!(backdrop instanceof HTMLElement)) throw new Error('no backdrop')
+  return backdrop
+}
+const srLineStory: StoryObj<typeof meta> = {
+  render: () => <ThreadChat srLine />,
+  play: async ({ canvasElement }) => {
+    // An absolutely positioned line at the end of a long thread is placed in the ScrollFrame body, so it does not make
+    // the Backdrop scroll, which iOS would scroll at a field's focus (bridge-workbench's R22 probe: 1117 against 844).
+    const backdrop = backdropOf(canvasElement)
+    await expect(backdrop.scrollHeight - backdrop.clientHeight).toBeLessThanOrEqual(0)
+  },
+}
+/** Phone chat: a screen-reader-only line at the thread's end stays inside the ScrollFrame body; the Backdrop does not scroll. */
+export const SrLineInBodyDark: StoryObj<typeof meta> = { ...srLineStory, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SrLineInBodyLight: StoryObj<typeof meta> = { ...srLineStory, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 // A form in the ScrollFrame body that fits the screen: its first field takes the focus, and the keyboard makes the body
 // scroll. The focused field stays in view; the body is not pinned to its end (Codex review of #210).
 function BodyForm() {

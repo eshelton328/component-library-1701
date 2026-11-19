@@ -1656,7 +1656,10 @@ const reopenFalling: StoryObj<typeof meta> = {
     await expect(riseEnd).toBeLessThanOrEqual(reported + 250)
     await settled(footer, 266)
     timed.stop()
-    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    // The first frame at the end: the dock's own inset, which has full precision, not the computed transform, which
+    // has six digits and reads 266 a fraction of a millisecond before the end.
+    const last = root.style.getPropertyValue('--app-shell-keyboard')
+    const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
     await expect(up - start).toBeGreaterThanOrEqual(250)
     await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
   },
@@ -1699,6 +1702,40 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
 /** Phone chat: the keyboard closes during a corrected rise; the composer comes down on a full keyboard move. */
 export const CloseAfterCorrectionDark: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const CloseAfterCorrectionLight: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const lateStep: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The keyboard reports its last small steps late in the dock's move and after it, as a keyboard that rises frame
+    // by frame does (the-bridge keyboard:served on Workspaces, beta.80). A step late in the move keeps the move's end,
+    // and the dock is on the keyboard at that end; a step after the move is followed at the next frame. Neither starts
+    // a new 250 ms move that leaves the dock a pixel off the keyboard.
+    const record = recordRise(footer, root)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    const end = Number(root.dataset.keyboardEnd)
+    await waitFor(() => expect(performance.now()).toBeGreaterThan(end - 20), { timeout: 2000, interval: 5 })
+    const late = performance.now()
+    fakeViewport.move({ height: 543 })
+    if (late < end) await expect(Number(root.dataset.keyboardEnd)).toBe(end)
+    await settled(footer, 267)
+    const atEnd = Number(root.dataset.keyboardEnd)
+    fakeViewport.move({ height: 542 })
+    await nextFrame()
+    await expect(riseOf(footer)).toBe(268)
+    record.stop()
+    // From one frame after the move's end (the recorder can run before the hook in a frame), every frame shows the
+    // dock on the keyboard.
+    const after = record.frames.filter((f) => f.at >= atEnd).slice(1)
+    await expect(after.length).toBeGreaterThan(0)
+    await expect(after.filter((f) => f.inset !== '267px' && f.inset !== '268px')).toEqual([])
+  },
+}
+/** Phone chat: the keyboard's last 1 px steps come late in the rise and after it; the composer stays on the keyboard. */
+export const LateStepDark: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateStepLight: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.
@@ -1898,7 +1935,9 @@ const keyboardRise: StoryObj<typeof meta> = {
     await expect(directions(record.frames)).not.toContain(-1)
     await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
     // The dock rises on the curve for the keyboard's 250 ms, not at once, whatever the runner's frame rate.
-    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    // The first frame at the end, from the dock's own inset (full precision), as in Reopen Falling.
+    const last = root.style.getPropertyValue('--app-shell-keyboard')
+    const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
     await expect(up - start).toBeGreaterThanOrEqual(250)
     await expect(Math.round(composer().bottom)).toBe(544)
   },

@@ -30,6 +30,8 @@ const blurEndDelay = 300
 // UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
 // tokens as numbers.
 const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
+// The frames a layout must stay short during an opening before the shell takes it as a browser that resizes it.
+const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
 // keyboard near its end.
 const keyboardFollow = 2
@@ -141,7 +143,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const paint = (inset: number) => {
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
-      const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom - keyboardTop)
+      // The detail's foot where it is with the document at its top: iOS scrolls the document as it reports the
+      // keyboard, and `keepTop` takes it back, so a paint between the two must not read the scrolled place (the 9 px
+      // step in the iPhone trace of screen review R25).
+      const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom + window.scrollY - keyboardTop)
       // A docked thread (the ScrollFrame body that is the detail's child) keeps the line above the composer where it
       // is through the whole move, as in the Claude iOS app (screen review R22): a body at its end before this frame
       // stays at its end, and any other body scrolls by as much as its view shrinks or grows.
@@ -261,7 +266,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       if (!editable(document.activeElement)) typing = false
       const layout = document.documentElement.clientHeight
       const visible = viewport.height * viewport.scale
-      if (viewport.scale === 1) top = viewport.offsetTop
+      // At scale 1 the visible area's top, less the document scroll iOS adds as it reports the keyboard: that scroll is
+      // taken back by `keepTop`, and iOS may count it in `offsetTop` for that event too (the iPhone trace of screen review R25).
+      if (viewport.scale === 1) top = Math.max(0, viewport.offsetTop - window.scrollY)
       // A field has the focus and the visible area is more than a pixel of rounding smaller: a keyboard covers the
       // layout. With no focused field it is the browser's bars, which the shell does not follow.
       if (!typing || layout - visible <= 1) return 0
@@ -270,10 +277,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     }
     const fit = () => {
       const inset = measure()
-      if (opening && typing && document.documentElement.clientHeight < openLayout - 1) {
-        measured.set(orientation(), 0)
-        opening = false
-      }
+      if (opening && typing && document.documentElement.clientHeight < openLayout - 1 && layoutCheck === undefined) checkLayout(layoutFrames)
       // During the opening, a report under the expected keyboard is an early step of its rise and holds the dock up,
       // when the expected keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at
       // least three quarters of it is the whole keyboard and is taken at once, so the dock does not wait for the
@@ -283,6 +287,28 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // Send) would otherwise lose it.
       if (opening && typing && !early && inset > 1) measured.set(orientation(), inset)
       show(early ? target : inset)
+    }
+    // A layout that is shorter than at the focus during an opening: a browser that resizes the layout for the keyboard
+    // (Firefox on Android) expects nothing again, but only when the layout is still short `layoutFrames` frames later.
+    // iOS 18 shortens it for about one frame as it reports the keyboard and restores it with no event, so each frame
+    // until then fits again, and the measure is kept for the next open.
+    let layoutCheck: number | undefined
+    const checkLayout = (frames: number) => {
+      layoutCheck = requestAnimationFrame(() => {
+        layoutCheck = undefined
+        if (!opening || !typing) return
+        if (document.documentElement.clientHeight >= openLayout - 1) {
+          fit()
+          return
+        }
+        if (frames > 1) {
+          checkLayout(frames - 1)
+          return
+        }
+        measured.set(orientation(), 0)
+        opening = false
+        fit()
+      })
     }
     // A visualViewport resize during an opening is a step of the keyboard's rise: the measure settles after the last.
     const resize = () => {
@@ -329,6 +355,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // that takes the focus from the field (Send) lands where it started, and a move to another field never drops
     // the fit.
     const focusOut = (event: FocusEvent) => {
+      // Only a field that leaves the focus changes the fit. An element that is not a field (the thread's body, a keep
+      // element) and hands the focus to a field leaves `typing` false, so `focusIn` starts the rise to the expected
+      // keyboard (the iPhone trace of screen review R25: a focusout of a div, then the focusin of the textarea, and no dock).
+      if (!editable(event.target instanceof Element ? event.target : null)) return
       typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
       if (!typing) scheduleEnd()
     }
@@ -456,6 +486,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       document.removeEventListener('visibilitychange', refit)
       cancelEnd()
       if (settleTimer !== undefined) clearTimeout(settleTimer)
+      if (layoutCheck !== undefined) cancelAnimationFrame(layoutCheck)
       if (motion !== undefined) cancelAnimationFrame(motion)
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)

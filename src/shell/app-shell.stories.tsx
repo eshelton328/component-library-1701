@@ -1660,7 +1660,10 @@ const reopenFalling: StoryObj<typeof meta> = {
     // has six digits and reads 266 a fraction of a millisecond before the end.
     const last = root.style.getPropertyValue('--app-shell-keyboard')
     const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
-    await expect(up - start).toBeGreaterThanOrEqual(250)
+    // The layout rounds the inset to 1/64 px, so the drawn inset is the last one once the curve is within 1/64 px of
+    // its end: no frame shows it before then.
+    const distance = 266 - (timed.frames[0]?.rise ?? 0)
+    await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / distance))
     await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
   },
 }
@@ -1736,6 +1739,118 @@ const lateStep: StoryObj<typeof meta> = {
 /** Phone chat: the keyboard's last 1 px steps come late in the rise and after it; the composer stays on the keyboard. */
 export const LateStepDark: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const LateStepLight: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// A block under the screen lets the document scroll, as iOS scrolls it for a focused field.
+const belowScreen = css({ h: 'shell.tabBar' })
+
+// Gives the document a layout `height` px tall, as iOS 18 does for about one frame when it reports the keyboard;
+// the returned function gives the real height back, with no event, as iOS does.
+const shortenLayout = (height: number) => {
+  Object.defineProperty(document.documentElement, 'clientHeight', { configurable: true, get: () => height })
+  return () => {
+    Reflect.deleteProperty(document.documentElement, 'clientHeight')
+  }
+}
+// iOS reports the keyboard with the layout short for one frame.
+const shortReport = async () => {
+  const restore = shortenLayout(544)
+  try {
+    fakeViewport.move({ height: 544 })
+    await nextFrame()
+  } finally {
+    restore()
+  }
+}
+const shortLayoutFrame: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    // iOS 18 shortens the layout viewport to the visible area for about one frame as it reports the keyboard, and
+    // restores it with no event (the iPhone trace of screen review R25). The dock ends on the keyboard, and the measure is kept.
+    await userEvent.click(field)
+    await shortReport()
+    await settled(footer, 266)
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await settled(footer, 0)
+    // The focus goes to the thread's body, then back to the field, as in the trace: the dock rises at the focus to the
+    // kept measure, before iOS reports the keyboard, and ends on the keyboard after a short report again.
+    slotOf(canvasElement, 'scroll-frame__body').focus()
+    await userEvent.click(field)
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
+    await expect(fakeViewport.height).toBe(844)
+    await shortReport()
+    await settled(footer, 266)
+  },
+}
+/** Phone chat on iOS 18: the layout is short for one frame as the keyboard opens; the composer docks and docks again on the next open. */
+export const ShortLayoutFrameDark: StoryObj<typeof meta> = { ...shortLayoutFrame, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ShortLayoutFrameLight: StoryObj<typeof meta> = { ...shortLayoutFrame, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const shortLayoutStays: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // A browser that resizes the layout for the keyboard with no VirtualKeyboard API (Firefox on Android): the layout
+    // stays short, so after its frames of grace the shell docks nothing, and the next focus expects no keyboard.
+    await userEvent.click(field)
+    const restore = shortenLayout(544)
+    try {
+      fakeViewport.move({ height: 544 })
+      // The layout is still short after its frames of grace: the dock comes down and the property goes.
+      for (let i = 0; i < 3; i++) await nextFrame()
+      await settled(footer, 0)
+      await expect(keyboardInset(root)).toBe('')
+      field.blur()
+    } finally {
+      restore()
+    }
+    fakeViewport.move({ height: 844 })
+    await settled(footer, 0)
+    await userEvent.click(field)
+    for (let i = 0; i < 3; i++) await nextFrame()
+    await expect(riseOf(footer)).toBe(0)
+  },
+}
+/** Phone chat where the layout stays short for the keyboard: nothing docks, and the next open expects nothing. */
+export const ShortLayoutStaysDark: StoryObj<typeof meta> = { ...shortLayoutStays, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ShortLayoutStaysLight: StoryObj<typeof meta> = { ...shortLayoutStays, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const scrolledReport: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => (
+    <>
+      <ThreadChat />
+      <div className={belowScreen} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    // iOS scrolls the document as it reports the keyboard and counts that scroll in the visual viewport's offsetTop
+    // until the scroll is taken back (the iPhone trace of screen review R25). The report is read with the document at its top, so the
+    // dock stays on the keyboard in every frame.
+    const record = recordRise(footer)
+    Object.defineProperty(fakeViewport, 'offsetTop', { configurable: true, get: () => window.scrollY })
+    try {
+      window.scrollTo(0, 77)
+      await expect(window.scrollY).toBe(77)
+      fakeViewport.dispatchEvent(new Event('resize'))
+      await waitFor(() => expect(window.scrollY).toBe(0))
+      for (let i = 0; i < 3; i++) await nextFrame()
+    } finally {
+      Object.defineProperty(fakeViewport, 'offsetTop', { configurable: true, writable: true, value: 0 })
+    }
+    record.stop()
+    await expect(record.frames.filter((f) => f.rise !== 266)).toEqual([])
+  },
+}
+/** Phone chat on iOS: the keyboard is reported while iOS has scrolled the document; the composer stays on the keyboard. */
+export const ScrolledReportDark: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ScrolledReportLight: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.
@@ -1938,13 +2053,13 @@ const keyboardRise: StoryObj<typeof meta> = {
     // The first frame at the end, from the dock's own inset (full precision), as in Reopen Falling.
     const last = root.style.getPropertyValue('--app-shell-keyboard')
     const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
-    await expect(up - start).toBeGreaterThanOrEqual(250)
+    // The layout rounds the inset to 1/64 px, as in Reopen Falling: no frame shows the last one before the curve is
+    // within 1/64 px of the end of its 266 px.
+    await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / 266))
     await expect(Math.round(composer().bottom)).toBe(544)
   },
 }
 
-// A block under the screen lets the document scroll, as iOS scrolls it for a focused field.
-const belowScreen = css({ h: 'shell.tabBar' })
 const keyboardInsetOf = (root: HTMLElement) => root.style.getPropertyValue('--app-shell-keyboard')
 
 // The chat ScrollFrame two levels below the detail, as the-bridge's Workspaces PhoneChat had it: its footer does not

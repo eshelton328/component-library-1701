@@ -100,11 +100,27 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         root.style.removeProperty(keyboardInset)
       }
     }
+    // iOS scrolls the document to bring a focused field above the keyboard, so the whole shell, its top bar too,
+    // slides up, and it comes back down when the keyboard closes (screen reviews R20 and R21). The dock keeps the
+    // field above the keyboard, so while a field has the focus or the dock is set, the document goes back to its top
+    // at once. Under a zoom the user pans the page, and nothing is reset.
+    const keepTop = () => {
+      // A field removed while it had the focus fires no focusout in WebKit, so the focus is read again here, as in
+      // `fit` (Codex review of #200).
+      if (!editable(document.activeElement)) typing = false
+      if (viewport.scale !== 1 || window.scrollY === 0) return
+      if (typing || root.style.getPropertyValue(keyboardInset) !== '') window.scrollTo(0, 0)
+    }
+    const scroll = () => {
+      keepTop()
+      fit()
+    }
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
     const focusIn = () => {
       typing = editable(document.activeElement)
       if (!typing) return
       cancelEnd()
+      keepTop()
       fit()
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
@@ -173,7 +189,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     }
     fit()
     viewport.addEventListener('resize', fit)
-    viewport.addEventListener('scroll', fit)
+    viewport.addEventListener('scroll', scroll)
+    window.addEventListener('scroll', keepTop)
     document.addEventListener('focusin', focusIn)
     document.addEventListener('focusout', focusOut)
     document.addEventListener('pointerdown', press, true)
@@ -185,7 +202,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     window.addEventListener('pageshow', refit)
     return () => {
       viewport.removeEventListener('resize', fit)
-      viewport.removeEventListener('scroll', fit)
+      viewport.removeEventListener('scroll', scroll)
+      window.removeEventListener('scroll', keepTop)
       document.removeEventListener('focusin', focusIn)
       document.removeEventListener('focusout', focusOut)
       document.removeEventListener('pointerdown', press, true)

@@ -25,6 +25,14 @@ import { focusRing } from './focus'
 // and the switch Figma's 68 (1 + 2 + 30 + 2 + 30 + 2 + 1). With `tone`
 // `accent` the item keeps that border, transparent also when selected.
 // Every size draws 16 px icons (`sm` 30 x 22 items, `lg` 30 x 30).
+//
+// `fullWidth` is the Artifacts Source choice (D5 403:7557, M6 408:722): the
+// switch fills its parent, 491 wide in D5 and 359 in M6, and its two items
+// (403:7558 and 403:7562, 240 wide; 408:723 and 408:727, 174 wide) share the
+// width equally, each with its mark and label centred. Figma's marks are 14,
+// which ties 12 and 16; the larger wins (d-072), so every size draws its
+// icons at icon.16. Figma's switch is 40 high in D5 and 42 in M6; no control
+// token is 40 or 42 here, so the height stays the size's.
 export const viewSwitch = defineSlotRecipe({
   className: 'view-switch',
   jsx: ['ViewSwitch'],
@@ -85,9 +93,14 @@ export const viewSwitch = defineSlotRecipe({
       true: { item: { px: '6', gap: '0', '& span svg': { width: 'icon.16!', height: 'icon.16!' } } },
       false: {},
     },
+    fullWidth: {
+      // The icon sits in a span, as for `iconOnly`, so this beats the size's own important icon size.
+      true: { root: { display: 'flex', w: '100%' }, item: { flex: '1', minW: '0', '& span svg': { width: 'icon.16!', height: 'icon.16!' } } },
+      false: {},
+    },
   },
   compoundVariants: [
     { iconOnly: true, tone: 'accent', css: { item: { borderWidth: 'default', _checked: { borderColor: 'transparent' } } } },
   ],
-  defaultVariants: { size: 'md', tone: 'default', iconOnly: false },
+  defaultVariants: { size: 'md', tone: 'default', iconOnly: false, fullWidth: false },
 })

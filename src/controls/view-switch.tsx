@@ -46,13 +46,18 @@ export type ViewSwitchProps = Scalar<ViewSwitchVariantProps> & {
  * switch (402:15419): 16 px icons at every size, and at `md` 30 x 26 items, so
  * two items make a 68 px switch. Each item's `label` stays its accessible name;
  * give every item an `icon`. When not set, the items show their labels.
+ * `fullWidth` makes the switch as wide as its parent, with its items sharing
+ * that width equally, each icon and label centred, and draws every icon at 16
+ * px at every size, as the Artifacts Source choice (D5 403:7557, Claude or
+ * Codex). When not set, the switch is as wide as its items.
  */
-export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size, tone, iconOnly = false }: ViewSwitchProps) {
+export function ViewSwitch({ label, items, value, defaultValue, onValueChange, disabled, size, tone, iconOnly = false, fullWidth = false }: ViewSwitchProps) {
   return (
     <Root
       size={size}
       tone={tone}
       iconOnly={iconOnly}
+      fullWidth={fullWidth}
       aria-label={label}
       orientation="horizontal"
       disabled={disabled}

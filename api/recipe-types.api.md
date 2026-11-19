@@ -1742,6 +1742,7 @@ export type ViewSwitchVariant = {
   size?: "sm" | "md" | "lg"
   tone?: "default" | "accent"
   iconOnly?: boolean
+  fullWidth?: boolean
 }
 
 export type ViewSwitchVariantProps = {

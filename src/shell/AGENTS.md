@@ -56,9 +56,10 @@ Layout, Navigation or Overlays (d-065, d-066).
   portrait open. A field that already has the focus when the shell
   mounts (a page that focuses its composer) starts the dock the same way.
   The measures live in `keyboard-measures.ts` for the page's life, so a
-  shell that mounts on a new page expects the last measured keyboard. A
-  new target during a move keeps the move's end and curve, so a keyboard
-  reported in the move makes one motion (R22). A keyboard step of 2
+  shell that mounts on a new page expects the last measured keyboard. A new target in the first 70 % of a move's time keeps the move's end
+  and curve, so a keyboard reported in the move makes one motion (R22);
+  the limit is on the time, as the keyboard's curve is nine tenths done
+  at 43 % of it. A keyboard step of 2
   px or less (a keyboard that rises frame by frame) keeps the move's end
   even late in it, and after the move it is followed at once, so the
   composer stays on the keyboard. Until the keyboard's
@@ -76,7 +77,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   the keyboard, which the shell takes back, does not move the dock. A
   focus that moves to a field from an element that is not a field (the
   thread's body, a `data-keyboard-keep` control) starts the dock as a
-  first focus does. Where the browser resizes the
+  first focus does. At the focus, the shortfall the visible area had with
+  no field focused (iOS's standalone app keeps it 68 px short after the
+  first close) does not count as an open keyboard. Where the browser resizes the
   layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
   nothing is set. The fit applies only while a field that opens the
   keyboard has the focus (`editable` in `../controls/editable.ts`, shared

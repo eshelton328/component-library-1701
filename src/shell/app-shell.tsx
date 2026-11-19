@@ -30,6 +30,8 @@ const blurEndDelay = 300
 // UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
 // tokens as numbers.
 const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
+// The time fraction of a move up to which a new target keeps the move's end.
+const keepEndUntil = 0.7
 // The frames a layout must stay short during an opening before the shell takes it as a browser that resizes it.
 const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
@@ -201,18 +203,22 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       }
       // A new target during a move keeps that move's end and curve: the rest of the curve takes the dock from where it
       // is to the new target, so a keyboard reported in the move makes one motion, not two (screen review R22). Late in
-      // a move (the curve past nine tenths) the rest is too short for a change, so a new move starts.
+      // a move (past `keepEndUntil` of its time) the rest is too short for a change, so a new move starts.
       // A target back past where the move began (a reopen while the dock comes down, or a close after a correction)
       // starts a new move; a target on the same side of that place is a correction of this move. The place is kept in
       // `origin`: `from` is recomputed by a correction and can lie anywhere (Codex review of #236).
       const now = performance.now()
-      const done = ease(Math.min(1, Math.max(0, (now - start) / keyboardMotion)))
+      const elapsed = Math.min(1, Math.max(0, (now - start) / keyboardMotion))
+      const done = ease(elapsed)
       const ahead = Math.sign(inset - origin) === Math.sign(previous - origin)
       // A small step of the keyboard (at most `keyboardFollow` from the last target) keeps the move's end even late in
       // it: the rest of the curve still takes the dock onto the keyboard by that end (the-bridge keyboard:served on
       // Workspaces, beta.80).
       const small = Math.abs(inset - previous) <= keyboardFollow
-      if (motion !== undefined && done < 1 && ahead && (done < 0.9 || small)) {
+      // "Late" is by time, not by the curve: the keyboard's curve is nine tenths done at 43 % of its time, and a report
+      // at 152 ms (the Workbench trace of screen review R25) made a second 250 ms move. Up to `keepEndUntil` of the
+      // time, the rest of the curve still has room for the correction; later, a correction would jump within a frame.
+      if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
         from = (shown - inset * done) / (1 - done)
         return
       }
@@ -239,6 +245,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // for the keyboard: nothing is expected there again.
     const measured = keyboardMeasures
     const orientation = () => (document.documentElement.clientWidth > document.documentElement.clientHeight ? 'landscape' : 'portrait')
+    // The visible area's shortfall with no field focused (see `measure`).
+    let rest = 0
     let opening = false
     let openLayout = 0
     // The keyboard the current opening expects, and whether it was measured (or is Figma's guess).
@@ -271,7 +279,13 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       if (viewport.scale === 1) top = Math.max(0, viewport.offsetTop - window.scrollY)
       // A field has the focus and the visible area is more than a pixel of rounding smaller: a keyboard covers the
       // layout. With no focused field it is the browser's bars, which the shell does not follow.
-      if (!typing || layout - visible <= 1) return 0
+      if (!typing || layout - visible <= 1) {
+        // With no field focused, the visible area's shortfall is the rest one: iOS's standalone app keeps the visual
+        // viewport 68 px short after the first close (the Workbench trace of screen review R25), and its bars do in
+        // Safari. A focus counts no keyboard as open until a report goes past it.
+        if (!typing && viewport.scale === 1) rest = Math.max(0, layout - visible)
+        return 0
+      }
       top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
       return layout - top - visible
     }
@@ -342,7 +356,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const expected = known ?? (orientation() === 'portrait' ? figmaKeyboard : 0)
       expectedInset = expected
       expectedMeasured = known !== undefined
-      if (!was && measure() <= 1 && expected > 0 && keyboardExpected()) {
+      if (!was && measure() <= rest + 1 && expected > 0 && keyboardExpected()) {
         opening = true
         openLayout = document.documentElement.clientHeight
         scheduleSettle(keyboardWait)

@@ -1536,6 +1536,9 @@ export const GuessHighDuringLight = { ...guessOff(330, 0, 1), globals: { mode: '
 /** First open, the real keyboard 50 px higher than the guess, reported during the move: one rise, on time. */
 export const GuessLowDuringDark = { ...guessOff(430, 0, 1), globals: { mode: 'dark', ...phone } }
 export const GuessLowDuringLight = { ...guessOff(430, 0, 1), globals: { mode: 'light', ...phone } }
+/** First open in the Home Screen app (the Workbench trace of screen review R25): the 403 px keyboard reported 150 ms after the focus, against Figma's 380: one rise, on time. */
+export const GuessTraceDark = { ...guessOff(403, 150), globals: { mode: 'dark', ...phone } }
+export const GuessTraceLight = { ...guessOff(403, 150), globals: { mode: 'light', ...phone } }
 /** First open, the real keyboard 50 px lower than the guess, reported after the move: the correction starts at once. */
 export const GuessHighAfterDark = { ...guessOff(330, 400), globals: { mode: 'dark', ...phone } }
 export const GuessHighAfterLight = { ...guessOff(330, 400), globals: { mode: 'light', ...phone } }
@@ -1851,6 +1854,37 @@ const scrolledReport: StoryObj<typeof meta> = {
 /** Phone chat on iOS: the keyboard is reported while iOS has scrolled the document; the composer stays on the keyboard. */
 export const ScrolledReportDark: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ScrolledReportLight: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const restReopen: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The Workbench trace of screen review R25 (the Home Screen app): the keyboard is 403 px, and after each close the
+    // visual viewport rests 68 px short. On the reopen the dock rises at once toward the 403 measured last, in one
+    // move, and does not first take the 68 px rest for an open keyboard.
+    await userEvent.click(field)
+    fakeViewport.move({ height: 844 - 403 })
+    await settled(footer, 403 - 34)
+    field.blur()
+    fakeViewport.move({ height: 844 - 68 })
+    await settled(footer, 0)
+    const record = recordRise(footer, root)
+    await userEvent.click(field)
+    const end = root.dataset.keyboardEnd
+    // Before iOS reports the keyboard, the dock is on its way to the 369 rise, past the 34 the rest would give.
+    for (let i = 0; i < 6; i++) await nextFrame()
+    await expect(riseOf(footer)).toBeGreaterThan(34)
+    fakeViewport.move({ height: 844 - 403 })
+    await expect(root.dataset.keyboardEnd).toBe(end)
+    await settled(footer, 403 - 34)
+    record.stop()
+    await expect(directions(record.frames.map((f) => ({ shell: 844, rise: f.rise })))).not.toContain(-1)
+  },
+}
+/** Phone chat in the Home Screen app: the visual viewport rests 68 px short after a close; the reopen docks in one move. */
+export const RestReopenDark: StoryObj<typeof meta> = { ...restReopen, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const RestReopenLight: StoryObj<typeof meta> = { ...restReopen, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.

@@ -114,6 +114,12 @@ Repository scripts that are not part of the package.
   the step runs only on an `edited`, `labeled` or `unlabeled` event
   (never on a push, open or reopen) and counts only the ci runs
   whose `pull_requests` include this PR.
+- `secret-scan.test.ts` runs gitleaks with `../.gitleaks.toml` on planted
+  lines: a secret-named key with or without a prefix, an email address
+  in any case and its exceptions, and a `gitleaks:allow` comment, which
+  both CI scans must ignore. The `secrets` job in `ci.yml` runs it; it is
+  not in `pnpm verify`, because it needs gitleaks 8.30.1 (on `PATH` or in
+  `GITLEAKS`).
 
 ## Folders
 

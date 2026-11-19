@@ -196,7 +196,7 @@
       "thread": {
         "$type": "dimension",
         "$value": { "value": 768, "unit": "px" },
-        "$description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is Erik's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. Not for a pane or a dialog."
+        "$description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is the owner's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. Not for a pane or a dialog."
       },
       "discussionPane": {
         "$type": "dimension",

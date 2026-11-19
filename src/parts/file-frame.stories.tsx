@@ -35,7 +35,7 @@ function Frames() {
         >
           <MarkdownView>
             <h1>writer</h1>
-            <p>Draft prose in Erik&apos;s voice.</p>
+            <p>Draft prose in the owner&apos;s voice.</p>
           </MarkdownView>
         </FileFrame>
       </div>

@@ -1,7 +1,7 @@
 import { defineStyles } from '@pandacss/dev'
 
 // The styles of every box in the library that scrolls its own content
-// (overflow auto on either axis). Erik's decision for the installed app
+// (overflow auto on either axis). The owner's decision for the installed app
 // (2026-11-18): the document never scrolls, only these boxes do, and they
 // draw no scroll bar and never bounce the page, on every platform, desktop
 // too.

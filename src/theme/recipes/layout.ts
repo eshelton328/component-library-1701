@@ -133,7 +133,7 @@ export const layoutContainer = defineRecipe({
 
 /**
  * A chat's column: its messages, its empty state or its reply box. It
- * fills its parent up to `shell.thread` (768, Erik's choice; the Figma
+ * fills its parent up to `shell.thread` (768, the owner's choice; the Figma
  * frames draw 1074) and sits in the middle of a wider one, so on a wide
  * screen the lines stay short enough to read and the reply box lines up
  * with the messages. Children stack, `gap` apart.

@@ -12,7 +12,7 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   438:29), so it takes 16. The body (105:879)
 //   is Geist Regular 13/19 #e6ecff (`body`).
 // `size="sm"` sets the body in `bodySm` (13/20, d-090): the Inbox
-// discussion draws Erik's message and the reply in Geist Regular 13/19
+// discussion draws the owner's message and the reply in Geist Regular 13/19
 // (D15 403:1442 and 403:1444), and a 14 px body wraps where Figma's does
 // not.
 // Figma draws no time on a message; the time here is `mono` in fg.subtle on

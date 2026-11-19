@@ -1,6 +1,6 @@
 # component-library-1701
 
-The React component library for the-bridge, the interface to Erik's
+The React component library for the-bridge, the interface to the owner's
 NCC-1701 workspace. It uses Ark UI for behaviour, Panda CSS for styles and
 Storybook for docs and tests.
 

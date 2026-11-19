@@ -211,7 +211,7 @@ export default definePreset({
             },
             "thread": {
               "value": "768px",
-              "description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is Erik's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. Not for a pane or a dialog."
+              "description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is the owner's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. Not for a pane or a dialog."
             },
             "widePane": {
               "value": "420px",
@@ -783,28 +783,28 @@ export default definePreset({
                   "base": "rgba(154, 74, 6, 0.12)",
                   "_dark": "rgba(255, 184, 107, 0.14)"
                 },
-                "description": "Tint behind this status, as on a pill. Something waits for Erik: an approval, a question."
+                "description": "Tint behind this status, as on a pill. Something waits for the owner: an approval, a question."
               },
               "border": {
                 "value": {
                   "base": "rgba(154, 74, 6, 0.5)",
                   "_dark": "rgba(255, 184, 107, 0.5)"
                 },
-                "description": "Border for this status. Something waits for Erik: an approval, a question."
+                "description": "Border for this status. Something waits for the owner: an approval, a question."
               },
               "faint": {
                 "value": {
                   "base": "rgba(154, 74, 6, 0.06)",
                   "_dark": "rgba(255, 184, 107, 0.08)"
                 },
-                "description": "A faint tint over a whole box that waits for Erik: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
+                "description": "A faint tint over a whole box that waits for the owner: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
               },
               "fg": {
                 "value": {
                   "base": "#9a4a06",
                   "_dark": "#ffb86b"
                 },
-                "description": "Text, icons and solid fills for this status. Something waits for Erik: an approval, a question."
+                "description": "Text, icons and solid fills for this status. Something waits for the owner: an approval, a question."
               }
             },
             "running": {

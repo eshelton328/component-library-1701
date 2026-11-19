@@ -80,7 +80,7 @@ export default meta
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
-// The viewports of the stories: the 1440 px of the review frames, a 1920 px screen and Erik's 3540 px screen.
+// The viewports of the stories: the 1440 px of the review frames, a 1920 px screen and the owner's 3540 px screen.
 const vp1440 = { w1440: { name: 'Desktop (1440)', styles: { width: '1440px', height: '900px' } } }
 const vp1920 = { w1920: { name: 'Wide (1920)', styles: { width: '1920px', height: '1080px' } } }
 const vp3540 = { w3540: { name: 'Ultra-wide (3540)', styles: { width: '3540px', height: '1440px' } } }
@@ -259,7 +259,7 @@ export const ToolkitAt1920Dark: StoryObj<typeof meta> = {
   play: toolkitWide,
 }
 export const ToolkitAt1920Light: StoryObj<typeof meta> = { ...ToolkitAt1920Dark, globals: { mode: 'light', viewport: { value: 'w1920' } } }
-/** At 3540 px, Erik's screen, they stay 1028 and 1448, in the middle. */
+/** At 3540 px, the owner's screen, they stay 1028 and 1448, in the middle. */
 export const ToolkitAt3540Dark: StoryObj<typeof meta> = {
   render: () => <ToolkitSpaces wide />,
   parameters: { viewport: { options: vp3540 } },

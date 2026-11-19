@@ -369,7 +369,7 @@
               "alpha": 1,
               "hex": "#ffb86b"
             },
-            "$description": "Text, icons and solid fills for this status. Something waits for Erik: an approval, a question."
+            "$description": "Text, icons and solid fills for this status. Something waits for the owner: an approval, a question."
           },
           "bg": {
             "$type": "color",
@@ -379,7 +379,7 @@
               "alpha": 0.14,
               "hex": "#ffb86b"
             },
-            "$description": "Tint behind this status, as on a pill. Something waits for Erik: an approval, a question."
+            "$description": "Tint behind this status, as on a pill. Something waits for the owner: an approval, a question."
           },
           "faint": {
             "$type": "color",
@@ -389,7 +389,7 @@
               "alpha": 0.08,
               "hex": "#ffb86b"
             },
-            "$description": "A faint tint over a whole box that waits for Erik: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
+            "$description": "A faint tint over a whole box that waits for the owner: Panel with tone needsYou (Inbox D2 346:772, 0.08 in Figma). Not for pills, tiles or rows, which use bg."
           },
           "border": {
             "$type": "color",
@@ -399,7 +399,7 @@
               "alpha": 0.5,
               "hex": "#ffb86b"
             },
-            "$description": "Border for this status. Something waits for Erik: an approval, a question."
+            "$description": "Border for this status. Something waits for the owner: an approval, a question."
           }
         },
         "idle": {

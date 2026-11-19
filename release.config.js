@@ -11,7 +11,7 @@ const conventional = { preset: 'conventionalcommits', presetConfig: {} }
 
 export default {
   // `beta` releases 1.0.0-beta.N until the first stable contract. The
-  // release workflow runs on `main` only when Erik sets RELEASE_MAIN.
+  // release workflow runs on `main` only when the owner sets RELEASE_MAIN.
   branches: ['main', { name: 'beta', channel: 'beta', prerelease: 'beta' }],
   tagFormat: 'v${version}',
   plugins: [

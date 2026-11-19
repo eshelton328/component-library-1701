@@ -14,7 +14,7 @@ the Panda preset.
 - Write colours in object form (`colorSpace: "srgb"`, `components`,
   `alpha`, `hex`), with `hex` matching `components`.
 - Every token needs a `$description` that says where to use it and where
-  not to (d-050). A new token or a changed value needs Erik's approval.
+  not to (d-050). A new token or a changed value needs the owner's approval.
 - Run `pnpm tokens` after a change. It writes `generated/preset.ts` and
   `../src/foundations/colours.mdx`; never edit those by hand.
 - `build.ts` holds the checks, `test.ts` the cases that prove them, and

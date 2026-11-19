@@ -23,7 +23,7 @@ const swatches = {
   ring: css({ bg: 'surface.overlay' }),
 }
 
-// The phone tab bar of Workbench (252:2): Workspaces selected, 3 on Inbox that need Erik.
+// The phone tab bar of Workbench (252:2): Workspaces selected, 3 on Inbox that need the owner.
 const items: readonly NavItem[] = [
   { value: 'home', label: 'Home', icon: <HomeIcon /> },
   { value: 'inbox', label: 'Inbox', icon: <InboxIcon />, badge: 3 },

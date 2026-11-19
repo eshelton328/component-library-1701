@@ -1087,6 +1087,7 @@ export type MessageFrom = NonNullable<MessageProps['from']>;
 export type MessageProps = Scalar<MessageVariantProps> & {
     name?: string | undefined;
     kind?: KindMarkKind | undefined;
+    markSize?: KindMarkSize | undefined;
     time?: string | undefined;
     dateTime?: string | undefined;
     children: ReactNode;

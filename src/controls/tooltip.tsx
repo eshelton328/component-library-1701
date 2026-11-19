@@ -24,12 +24,14 @@ export type TooltipProps = {
   disabled?: boolean | undefined
 }
 
-// `cutText` marks the tooltip of TruncatedText, which only shows a cut text (see the tooltip recipe's comment).
+// `cutText` marks the tooltip of TruncatedText, which only shows a cut text (see the tooltip recipe's comment). It
+// is fixed to the window (Ark's `fixed` strategy), so near the window's foot, or with its text past the foot in a
+// pane that clips it, it never makes the document taller; it flips and slides to stay in the window.
 function TooltipBase({ children, content, open, onOpenChange, placement = 'top', disabled, cutText = false }: TooltipProps & { cutText?: boolean | undefined }) {
   return (
     <Root
       cutText={cutText}
-      positioning={{ placement, gutter: 6 }}
+      positioning={cutText ? { placement, gutter: 6, strategy: 'fixed', flip: true, slide: true } : { placement, gutter: 6 }}
       lazyMount
       unmountOnExit
       // The pointer can move onto a plain tooltip, and it stays open there (WCAG 1.4.13). The tooltip of cut text
@@ -84,7 +86,10 @@ function focusOwner(node: HTMLElement): HTMLElement | null {
 export type TruncatedTextProps = {
   /** The text. It shows on one line and ends with an ellipsis when it does not fit. */
   children: string
-  /** Where the tooltip opens; `top` when not set. */
+  /**
+   * Where the tooltip opens; `bottom` when not set, below the text and away from a card's title above it. Where the
+   * window has no room there, it flips to the other side, and it slides along the text to stay in the window.
+   */
   placement?: TooltipProps['placement']
   /** A search query, or several, whose matches in the text are marked as `Highlight` marks them. The tooltip shows the plain text. */
   highlight?: string | readonly string[] | undefined
@@ -112,7 +117,7 @@ const CLOSE_DELAY = 150
  * covers a card's title or a row reaches that element, and the pointer
  * cannot rest on it. Escape closes it.
  */
-export function TruncatedText({ children, placement, highlight }: TruncatedTextProps) {
+export function TruncatedText({ children, placement = 'bottom', highlight }: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)

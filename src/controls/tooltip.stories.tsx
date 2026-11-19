@@ -268,7 +268,8 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
  * so a click where it covers an element reaches that element, and the
  * pointer cannot rest on it (the WCAG 1.4.13 "hoverable" deviation in the
  * tooltip recipe). Escape closes it ("dismissible"). This holds for text
- * with its own tab stop and for a cut label inside a button. The pointer can
+ * with its own tab stop and for a cut label inside a button. It opens below
+ * the text where there is room. The pointer can
  * still move onto a plain Tooltip, and it stays open there.
  */
 export const TruncatedTextPassThrough: StoryObj<typeof meta> = {
@@ -300,6 +301,12 @@ export const TruncatedTextPassThrough: StoryObj<typeof meta> = {
       const tip = tooltipOf()
       if (tip === null) throw new Error('no tooltip')
       await expect(getComputedStyle(tip).pointerEvents).toBe('none')
+      // With room below, it opens 6 px below the cut text, fixed to the window.
+      const cut = trigger.matches('.truncated-text') ? trigger : trigger.querySelector('.truncated-text')
+      if (cut === null) throw new Error('no cut text')
+      await waitFor(() => expect(tip.getAttribute('data-placement')).toBe('bottom'))
+      await waitFor(() => expect(Math.round(tip.getBoundingClientRect().top - cut.getBoundingClientRect().bottom)).toBe(6))
+      await expect(tip.parentElement === null ? '' : getComputedStyle(tip.parentElement).position).toBe('fixed')
       // Escape closes it while the pointer still rests on the text.
       await userEvent.keyboard('{Escape}')
       await waitFor(() => expect(tooltipOf()).toBeNull())

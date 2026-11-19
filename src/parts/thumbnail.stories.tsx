@@ -278,6 +278,27 @@ function References() {
   )
 }
 
+// A computed colour as sRGB channels 0 to 255 and alpha 0 to 1, read
+// back from a canvas so any CSS colour syntax works.
+const rgba = (colour: string): [number, number, number, number] => {
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+  if (ctx === null) throw new Error('no canvas')
+  ctx.clearRect(0, 0, 1, 1)
+  ctx.fillStyle = colour
+  ctx.fillRect(0, 0, 1, 1)
+  const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data
+  return [r, g, b, a / 255]
+}
+const luminance = ([r, g, b]: readonly number[]) =>
+  [r, g, b].map((c = 0) => {
+    const v = c / 255
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }).reduce((sum, v, i) => sum + v * ([0.2126, 0.7152, 0.0722][i] ?? 0), 0)
+const contrast = (a: readonly number[], b: readonly number[]) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05)
+}
+
 const referenceMeta = {
   render: () => <References />,
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
@@ -294,6 +315,11 @@ const referenceMeta = {
     await expect(ls.fontSize).toBe('12px')
     await expect(ls.lineHeight).toBe(getComputedStyle(mono).lineHeight)
     await expect(ls.color).toBe(swatch(canvasElement, 'amber'))
+    // The label sits over the bars, so it has its own opaque fill that the
+    // amber text reads on at WCAG AA (4.5:1 for 12 px text).
+    const fill = rgba(ls.backgroundColor)
+    await expect(fill[3]).toBe(1)
+    await expect(contrast(rgba(ls.color), fill)).toBeGreaterThanOrEqual(4.5)
     // The line is dashed and amber, across the plot (27 to 307 of the
     // 334-wide drawing, centred in the banner's 376), at 71 on the axis:
     // 169 - 124 × 0.71 of 188.

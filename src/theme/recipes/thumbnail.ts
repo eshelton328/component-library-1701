@@ -24,7 +24,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // label 452:3706): a dashed line across the plot in amber, the needs-you
 // colour (status.needsYou.fg, as the grid's amber cells and the dashed
 // FlowLoop), with its label in mono (12/16) at the plot's end, 4 (spacing.4)
-// above the line (Figma: 16 high, its top 20 above the line). The line is a
+// above the line (Figma: 16 high, its top 20 above the line). The label
+// can sit over a bar, so it has its own surface.raised fill, padded 4 at
+// the sides with radius xs: status.needsYou.fg on surface.raised is a
+// checked contrast pair (tokens/contrast.json, 4.5:1) in both modes. The line is a
 // dashed border (borderWidths.default), centred on the value. `reference` is
 // an SVG with no viewBox over the drawing; the component places a
 // foreignObject from the plot's start to its end and from the top down to
@@ -63,7 +66,7 @@ export const thumbnail = defineSlotRecipe({
     greenEdge: { fill: 'surface.well', stroke: 'status.done.border' },
     reference: { position: 'absolute', inset: '0', w: '100%', h: '100%', overflow: 'visible', pointerEvents: 'none', '& foreignObject': { overflow: 'visible' } },
     referenceBox: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'flex-end', h: '100%' },
-    referenceLabel: { textStyle: 'mono', color: 'status.needsYou.fg', whiteSpace: 'nowrap', mb: '4' },
+    referenceLabel: { textStyle: 'mono', color: 'status.needsYou.fg', whiteSpace: 'nowrap', mb: '4', px: '4', bg: 'surface.raised', borderRadius: 'xs' },
     referenceLine: {
       display: 'block',
       w: '100%',

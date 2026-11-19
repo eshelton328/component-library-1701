@@ -224,6 +224,59 @@ const narrowBox = css({ w: 'shell.popoverSm' })
 const longFile = 'skill-eval-round-with-held-out-cases-and-a-trigger-set-notes-from-the-review.md'
 
 /** A long attachment name is cut to one line and shows in full in a tooltip, on hover and on keyboard focus. */
+// A send that can fail (the audit's L-3): the caller's onSend answers later. Each call takes the next answer.
+type Answer = { resolve: (ok: boolean) => void; reject: (error: Error) => void }
+const answers: Answer[] = []
+const onSend = fn<(text: string) => Promise<boolean>>(
+  () =>
+    new Promise<boolean>((resolve, reject) => {
+      answers.push({ resolve, reject })
+    }),
+)
+const nextAnswer = () => {
+  const answer = answers.shift()
+  if (answer === undefined) throw new Error('onSend was not called')
+  return answer
+}
+const sendResult: StoryObj<typeof meta> = {
+  render: () => <Composer label="Message" onSend={onSend} />,
+  play: async ({ canvasElement }) => {
+    onSend.mockClear()
+    answers.length = 0
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const send = canvas.getByRole('button', { name: 'Send' })
+    // A failed send keeps the long prompt, and Send is disabled only while the send is pending.
+    await userEvent.type(field, 'A long prompt typed on the phone')
+    await userEvent.click(send)
+    await expect(onSend).toHaveBeenLastCalledWith('A long prompt typed on the phone')
+    await expect(send).toBeDisabled()
+    nextAnswer().reject(new Error('herdr is down'))
+    await waitFor(() => expect(send).toBeEnabled())
+    await expect(field).toHaveValue('A long prompt typed on the phone')
+    // An answer of false keeps it too.
+    await userEvent.click(field)
+    await userEvent.keyboard('{Enter}')
+    nextAnswer().resolve(false)
+    await waitFor(() => expect(send).toBeEnabled())
+    await expect(field).toHaveValue('A long prompt typed on the phone')
+    // A sent message clears the text, unless the user typed on while it was pending.
+    await userEvent.click(field)
+    await userEvent.keyboard('{Enter}')
+    await userEvent.type(field, ' and more')
+    nextAnswer().resolve(true)
+    await waitFor(() => expect(send).toBeEnabled())
+    await expect(field).toHaveValue('A long prompt typed on the phone and more')
+    await userEvent.keyboard('{Enter}')
+    nextAnswer().resolve(true)
+    await waitFor(() => expect(field).toHaveValue(''))
+    await expect(onSend).toHaveBeenCalledTimes(4)
+  },
+}
+/** A send that can fail: the composer keeps the draft until `onSend` answers true. */
+export const SendResultDark: StoryObj<typeof meta> = { ...sendResult, globals: { mode: 'dark' } }
+export const SendResultLight: StoryObj<typeof meta> = { ...sendResult, globals: { mode: 'light' } }
+
 export const LongAttachment: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
   render: () => (

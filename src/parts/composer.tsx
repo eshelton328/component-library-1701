@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { composer } from '../../styled-system/recipes'
 import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon } from '../foundations/icons'
@@ -42,6 +42,17 @@ export type ComposerProps = {
    * its text after the call.
    */
   onSubmit?: ((text: string) => void) | undefined
+  /**
+   * Called with the text when the user presses Enter or the send button,
+   * in place of `onSubmit`, for a send that can fail. Return `true` when
+   * the message was sent, or a promise of it. Without `value`, the
+   * composer clears its text only on `true`, and only when the text has
+   * not changed meanwhile; `false` or a rejected promise keeps the draft,
+   * so a failed send never loses it. Send is disabled while the promise
+   * is pending. The composer does not report a rejection: catch and
+   * report it in `onSend`.
+   */
+  onSend?: ((text: string) => boolean | Promise<boolean>) | undefined
   /** The chat is working: the composer shows Stop. Sending while it works queues the message. */
   running?: boolean | undefined
   /** Called when the user presses Stop. */
@@ -116,6 +127,7 @@ export function Composer({
   defaultValue,
   onValueChange,
   onSubmit,
+  onSend,
   running = false,
   onStop,
   attachments = [],
@@ -131,15 +143,41 @@ export function Composer({
   layout = 'stacked',
 }: ComposerProps) {
   const [draft, setDraft] = useState(defaultValue ?? '')
+  const [sending, setSending] = useState(false)
   const text = value ?? draft
+  // The draft as typed now, for a send that ends after the user typed on.
+  const latest = useRef(defaultValue ?? '')
   const change = (next: string) => {
+    latest.current = next
     if (value === undefined) setDraft(next)
     onValueChange?.(next)
   }
+  const sent = (submitted: string) => {
+    if (value === undefined && latest.current === submitted) change('')
+  }
   const submit = () => {
-    if (disabled || text.trim() === '') return
-    onSubmit?.(text)
-    if (value === undefined) change('')
+    if (disabled || sending || text.trim() === '') return
+    if (onSend === undefined) {
+      onSubmit?.(text)
+      if (value === undefined) change('')
+      return
+    }
+    const submitted = text
+    const result = onSend(submitted)
+    if (typeof result === 'boolean') {
+      if (result) sent(submitted)
+      return
+    }
+    setSending(true)
+    result.then(
+      (ok) => {
+        setSending(false)
+        if (ok) sent(submitted)
+      },
+      () => {
+        setSending(false)
+      },
+    )
   }
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     // Enter while an input method composes a character confirms the character.
@@ -206,7 +244,7 @@ export function Composer({
     </Button>
   ) : null
   const send = (
-    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" keepIconSize disabled={disabled} onClick={submit}>
+    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" keepIconSize disabled={disabled || sending} onClick={submit}>
       <ArrowUpIcon size={sendIconSize} />
     </Button>
   )

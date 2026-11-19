@@ -6,6 +6,8 @@ under their purpose group, never under "Parts" (d-065).
 - Import only from `foundations/`, `controls/` and other parts. Never
   import `@ark-ui/react`; use the control that wraps the Ark part.
 - A part shows the data it gets as props and reports through callbacks;
-  the composer calls `onSubmit` and sends nothing (d-068, d-069).
+  the composer calls `onSubmit` or `onSend` and sends nothing (d-068, d-069).
+- With `onSend`, the composer keeps the draft until the send succeeds
+  (`SendResult` stories in `composer.stories.tsx`).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.

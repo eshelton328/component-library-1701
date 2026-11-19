@@ -278,3 +278,66 @@ const iconOnlyPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** `iconOnly` with `tone="accent"`: the Artifacts Grid or List switch, its items named by their labels. */
 export const IconOnlyDark: StoryObj<typeof meta> = { render: () => <IconOnly />, play: iconOnlyPlay, globals: { mode: 'dark' } }
 export const IconOnlyLight: StoryObj<typeof meta> = { render: () => <IconOnly />, play: iconOnlyPlay, globals: { mode: 'light' } }
+
+// The Artifacts Source choice (D5 403:7557, M6 408:722): `fullWidth` fills its parent, and its two items (403:7558,
+// 403:7562) share the width equally, with Figma's 14 px marks at 16 (d-072) centred with the label. The library's
+// own icons come in at 24 and with a 12 px `size`; both draw at 16. A plain switch beside it keeps its width and its
+// 12 px icons.
+const frame = css({ w: 'shell.dialog' })
+const sources = [
+  { value: 'claude', label: 'Claude', icon: <LibraryGridIcon /> },
+  { value: 'codex', label: 'Codex', icon: <LibraryListIcon size="12" /> },
+] as const
+
+function FullWidth() {
+  return (
+    <main className={page}>
+      <div className={frame} data-testid="frame">
+        <ViewSwitch label="Source" fullWidth size="lg" items={sources} defaultValue="claude" />
+      </div>
+      <div className={frame}>
+        <ViewSwitch label="Source, md" fullWidth items={sources} defaultValue="codex" />
+      </div>
+      <div className={frame}>
+        <ViewSwitch label="Source, plain" items={sources} defaultValue="claude" />
+      </div>
+    </main>
+  )
+}
+
+const fullWidthPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const frameWidth = canvas.getByTestId('frame').getBoundingClientRect().width
+  for (const [name, height] of [['Source', 36], ['Source, md', 32]] as const) {
+    const group = canvas.getByRole('radiogroup', { name })
+    const box = group.getBoundingClientRect()
+    // The switch is as wide as its parent and keeps its size's height.
+    await expect([box.width, box.height]).toEqual([frameWidth, height])
+    const claude = itemOf(group, 'Claude').getBoundingClientRect()
+    const codex = itemOf(group, 'Codex').getBoundingClientRect()
+    // The items share the width inside the 1 px border, the 2 px padding and the 2 px gap equally.
+    await expect(claude.width).toBeCloseTo(codex.width, 1)
+    await expect(claude.width + codex.width).toBeCloseTo(frameWidth - 2 - 4 - 2, 1)
+    for (const itemName of ['Claude', 'Codex']) {
+      const item = itemOf(group, itemName)
+      const icon = item.querySelector('svg')
+      if (icon === null) throw new Error('no icon')
+      const i = icon.getBoundingClientRect()
+      await expect([i.width, i.height]).toEqual([16, 16])
+      // The icon and the label sit in the middle of the item.
+      const r = item.getBoundingClientRect()
+      const label = within(item).getByText(itemName).getBoundingClientRect()
+      await expect(i.left - r.left).toBeCloseTo(r.right - label.right, 0)
+    }
+  }
+  // Without `fullWidth`, the switch is as wide as its items and draws `md`'s 12 px icons.
+  const plain = canvas.getByRole('radiogroup', { name: 'Source, plain' })
+  await expect(plain.getBoundingClientRect().width).toBeLessThan(frameWidth / 2)
+  await expect(getComputedStyle(plain).display).toBe('inline-flex')
+  await expect(itemOf(plain, 'Claude').querySelector('svg')?.getBoundingClientRect().width).toBe(12)
+  await expect(itemOf(plain, 'Codex').querySelector('svg')?.getBoundingClientRect().width).toBe(12)
+}
+
+/** `fullWidth`: the Artifacts Source choice, two items that share the switch's width, with 16 px icons. */
+export const FullWidthDark: StoryObj<typeof meta> = { render: () => <FullWidth />, play: fullWidthPlay, globals: { mode: 'dark' } }
+export const FullWidthLight: StoryObj<typeof meta> = { render: () => <FullWidth />, play: fullWidthPlay, globals: { mode: 'light' } }

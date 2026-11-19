@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 import { scrollAreaX } from './scroll-area'
 
 // The bar colours, one per tone. Figma draws the eval chart in cyan (with
@@ -14,22 +15,46 @@ const tones = {
 }
 
 // Grouped vertical bars: Toolkit D20 chart 482:1932 and axis 482:1947. The
-// geometry (16 px bars, a 4 px gap in a group, a 56 px group pitch and a
-// 110 px plot) lives in the component as SVG coordinates; the colours,
-// radius and type come from here.
+// geometry (a 110 px plot, bars 4 px apart in a group; 16 px bars and a
+// 56 px group pitch at size md, 12 px bars and a 44 px pitch at size sm,
+// M18 482:2602) lives in the component as SVG coordinates; the colours,
+// radius, type and width come from here. Each group is a nested SVG at the
+// centre of its slot, so its bars and label can stand on either side.
 export const groupedBarChart = defineSlotRecipe({
   className: 'grouped-bar-chart',
   jsx: ['GroupedBarChart'],
   staticCss: ['*'],
-  slots: ['root', 'svg', 'bar', 'axisLabel', 'data'],
+  slots: ['root', 'svg', 'group', 'bar', 'axisLabel', 'data'],
   base: {
-    root: { display: 'block', maxW: '100%', overflowX: 'auto', ...scrollAreaX },
+    root: {
+      display: 'block',
+      maxW: '100%',
+      overflowX: 'auto',
+      ...scrollAreaX,
+      // The chart is a tab stop only while it scrolls sideways, so the keyboard can scroll it; the ring is drawn
+      // inside, as CodeLines draws it, so a parent's overflow cannot cut it.
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+    },
     svg: { display: 'block', overflow: 'visible' },
+    group: { overflow: 'visible' },
     bar: { rx: 'token(radii.hair)', ...tones },
     axisLabel: { textStyle: 'mono', fill: 'fg.muted' },
     // The data table, read by assistive technology and hidden from view.
     data: { srOnly: true },
   },
+  variants: {
+    width: {
+      // As wide as the groups at the size's pitch (D20: 392 px).
+      content: {},
+      // Spread over the box: Toolkit T16 chart 482:2288 and axis 482:2303,
+      // 7 groups over 630 px, a group every 90. The SVG's width attribute
+      // is the content width, so a narrower box scrolls instead of
+      // crowding the groups.
+      fill: { svg: { minW: '100%' } },
+    },
+  },
+  defaultVariants: { width: 'content' },
 })
 
 // Horizontal bars: Toolkit D17 "calls per day" 474:602 and "where it ran"

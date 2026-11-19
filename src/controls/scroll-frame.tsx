@@ -119,7 +119,7 @@ export function ScrollFrame({ header, footer, children, className, bodyClassName
   return (
     <Root gap={gap} footerShrink={footerShrink} className={className}>
       {header === undefined ? null : <Header>{header}</Header>}
-      <Body tabIndex={0} data-scroll-pane="" className={bodyClassName} {...keyboardClose}>
+      <Body tabIndex={0} className={bodyClassName} {...keyboardClose}>
         {children}
       </Body>
       {footer === undefined ? null : <Footer>{footer}</Footer>}

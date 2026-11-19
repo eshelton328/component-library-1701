@@ -1,6 +1,6 @@
 import { Portal } from '@ark-ui/react/portal'
 import { Tooltip as ArkTooltip } from '@ark-ui/react/tooltip'
-import { type ReactElement, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { type ReactElement, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createSlotRecipeContext, styled } from '../../styled-system/jsx'
 import { tooltip, truncatedText } from '../../styled-system/recipes'
 import { Highlight } from './highlight'
@@ -70,24 +70,21 @@ const Text = styled('span', truncatedText)
 // The recipe's variant names for each line count.
 const lineVariants = { 1: '1', 2: '2', 3: '3' } as const
 
-// Elements that can take the focus.
-const focusable = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"], [contenteditable=""]'
-// Roles whose items take the focus by arrow keys (a roving tab index), so an item with tabindex -1 is still reached.
-const rovingRoles = new Set(['treeitem', 'tab', 'option', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'gridcell', 'row', 'radio'])
+// Controls that own the text inside them: a link, a button, or an element with the role of one.
+const controls = 'a[href], button, summary, [role]'
+// Roles of a control, and of items that take the focus by arrow keys (a roving tab index), so an item with
+// tabindex -1 is still reached.
+const ownerRoles = new Set(['button', 'link', 'treeitem', 'tab', 'option', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'gridcell', 'row', 'radio'])
 
-// The nearest element around `node` that the keyboard reaches, so the text inside it needs no tab stop of its own.
-// A container with tabindex -1, such as a dialog, is skipped: the keyboard never lands on it. So is a pane that takes
-// the focus only so the keys scroll it (`data-scroll-pane`: the AppShell detail, a ScrollFrame body): as the owner, a
-// pointer anywhere in the pane would open the tooltip of every cut text in it.
+// The nearest control around `node`, so the text inside it needs no tab stop of its own. A box that only has a
+// tabindex is never one: the AppShell detail and a ScrollFrame body take the focus only so the keys scroll them, and
+// as the owner a pointer anywhere in the pane would open the tooltip of every cut text in it. A dialog (tabindex -1)
+// is no control either.
 function focusOwner(node: HTMLElement): HTMLElement | null {
-  let candidate = node.parentElement?.closest<HTMLElement>(focusable) ?? null
+  let candidate = node.parentElement?.closest<HTMLElement>(controls) ?? null
   while (candidate !== null) {
-    if (candidate.hasAttribute('data-scroll-pane')) {
-      candidate = candidate.parentElement?.closest<HTMLElement>(focusable) ?? null
-      continue
-    }
-    if (candidate.tabIndex >= 0 || rovingRoles.has(candidate.getAttribute('role') ?? '')) return candidate
-    candidate = candidate.parentElement?.closest<HTMLElement>(focusable) ?? null
+    if (candidate.matches('a[href], button, summary') || ownerRoles.has(candidate.getAttribute('role') ?? '')) return candidate
+    candidate = candidate.parentElement?.closest<HTMLElement>(controls) ?? null
   }
   return null
 }
@@ -108,6 +105,13 @@ export type TruncatedTextProps = {
   placement?: TooltipProps['placement']
   /** A search query, or several, whose matches in the text are marked as `Highlight` marks them. The tooltip shows the plain text. */
   highlight?: string | readonly string[] | undefined
+  /**
+   * The element that owns the text when no link or button is around it, such as a clickable card whose description
+   * sits beside its title button: the pointer resting on it, or the keyboard focus on a control inside it, opens the
+   * tooltip, and the text takes no tab stop of its own. Without it, the nearest link, button or element with such a
+   * role around the text owns it, and cut text with none is a tab stop of its own.
+   */
+  owner?: RefObject<HTMLElement | null> | undefined
 }
 
 // How long the pointer rests on an element before its tooltip opens, and how long the tooltip waits after the
@@ -123,16 +127,18 @@ const CLOSE_DELAY = 150
  * When the text fits there is no tooltip. The element always holds the whole
  * text, so assistive technology reads all of it; the tooltip only shows it.
  *
- * Inside a button, link or other element that takes the focus, such as a map
- * node or a card's title button, the tooltip opens while the pointer rests
- * anywhere on that element or it has the keyboard focus. Anywhere else, cut
- * text becomes a tab stop of its own; text that fits never does.
+ * Inside a button, a link or an element with the role of a control or a
+ * roving item, such as a map node or a card's title button, the tooltip opens
+ * while the pointer rests anywhere on that element or it has the keyboard
+ * focus; so it does inside an `owner`, such as a clickable card. A box that
+ * only has a tabindex, such as a scrolling pane, owns no text. Anywhere else,
+ * cut text becomes a tab stop of its own; text that fits never does.
  *
  * The tooltip only shows: it takes no pointer events, so a click where it
  * covers a card's title or a row reaches that element, and the pointer
  * cannot rest on it. Escape closes it.
  */
-export function TruncatedText({ children, placement = 'bottom', highlight, lines = 1 }: TruncatedTextProps) {
+export function TruncatedText({ children, placement = 'bottom', highlight, lines = 1, owner: ownerRef }: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)
@@ -142,8 +148,11 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
 
   const ref = useCallback((node: HTMLSpanElement | null) => {
     setElement(node)
-    setOwner(node === null ? null : focusOwner(node))
   }, [])
+  // The given owner, read once the parent has drawn it, or else the nearest control around the text.
+  useLayoutEffect(() => {
+    setOwner(element === null ? null : (ownerRef?.current ?? focusOwner(element)))
+  }, [element, ownerRef])
 
   // A new highlight can change the text's width without a change of its box, so it measures again then too. The
   // queries are joined into one string, so a new array with the same queries does not measure again.
@@ -193,10 +202,12 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
       setOwnerHover(false)
       setOwnerFocus(false)
     }
+    // The focus on the owner or on a control inside it (a card's title button), from the keyboard.
     const onFocus = () => {
-      if (owner.matches(':focus-visible')) setOwnerFocus(true)
+      if (owner.matches(':focus-visible') || owner.querySelector(':focus-visible') !== null) setOwnerFocus(true)
     }
-    const onBlur = () => {
+    const onBlur = (event: FocusEvent) => {
+      if (event.relatedTarget instanceof Node && owner.contains(event.relatedTarget)) return
       setOwnerFocus(false)
     }
     const onKey = (event: KeyboardEvent) => {
@@ -205,17 +216,17 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
     owner.addEventListener('pointerenter', onEnter)
     owner.addEventListener('pointerleave', closeLater)
     owner.addEventListener('pointerdown', onDown)
-    owner.addEventListener('focus', onFocus)
-    owner.addEventListener('blur', onBlur)
+    owner.addEventListener('focusin', onFocus)
+    owner.addEventListener('focusout', onBlur)
     // On the window, in the capture phase, so Ark's own Escape handler cannot stop it first.
     window.addEventListener('keydown', onKey, true)
-    if (document.activeElement === owner) onFocus()
+    if (document.activeElement !== null && owner.contains(document.activeElement)) onFocus()
     return () => {
       owner.removeEventListener('pointerenter', onEnter)
       owner.removeEventListener('pointerleave', closeLater)
       owner.removeEventListener('pointerdown', onDown)
-      owner.removeEventListener('focus', onFocus)
-      owner.removeEventListener('blur', onBlur)
+      owner.removeEventListener('focusin', onFocus)
+      owner.removeEventListener('focusout', onBlur)
       window.removeEventListener('keydown', onKey, true)
       // The listeners that would close it are gone, so it starts closed when the text is cut again.
       clearTimers()

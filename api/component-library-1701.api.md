@@ -36,6 +36,7 @@ import { ProposalBlockVariantProps } from '../../styled-system/recipes';
 import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { Ref } from 'react';
+import { RefObject } from 'react';
 import { ScrollFrameVariantProps } from '../../styled-system/recipes';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
@@ -1808,6 +1809,7 @@ export type TruncatedTextProps = {
     lines?: 1 | 2 | 3 | undefined;
     placement?: TooltipProps['placement'];
     highlight?: string | readonly string[] | undefined;
+    owner?: RefObject<HTMLElement | null> | undefined;
 };
 
 // @public

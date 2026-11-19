@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import { type MouseEvent, type ReactNode, useRef } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { card } from '../../styled-system/recipes'
 import { TruncatedText } from '../controls/tooltip'
@@ -85,6 +85,10 @@ export type CardProps = {
  */
 export function Card({ title, media, leading, badge, badgePosition = 'title', subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
+  // A card with onSelect owns its cut description: a hover on the card, or the keyboard focus on its title button,
+  // opens its tooltip, and it takes no tab stop of its own. The subtitle keeps its own, so one hover opens one tip.
+  const rootRef = useRef<HTMLElement>(null)
+  const owner = onSelect === undefined ? undefined : rootRef
   // The card handles the click, so a click on any part of it selects it, even on a positioned child that paints
   // over the title button's hit area. Enter or Space on the title button fires a click that bubbles here too. A
   // click on another control inside the card is left to that control.
@@ -97,7 +101,7 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
     onSelect()
   }
   return (
-    <Root media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined ? undefined : select}>
+    <Root ref={rootRef} media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined ? undefined : select}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>
@@ -125,7 +129,7 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
         </Header>
         {description === undefined || description === '' ? null : (
           <Description>
-            <TruncatedText>{description}</TruncatedText>
+            <TruncatedText owner={owner}>{description}</TruncatedText>
           </Description>
         )}
         {shown(meta) ? <Meta>{meta}</Meta> : null}

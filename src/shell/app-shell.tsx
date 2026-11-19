@@ -481,9 +481,7 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
         <Root ref={fit} size="desktop" listWidth={listWidth} sideWidth={sideWidth}>
           {shown(rail) ? <Rail>{rail}</Rail> : null}
           {shown(list) ? <List>{list}</List> : null}
-          <Detail tabIndex={0} data-scroll-pane="">
-            {detail}
-          </Detail>
+          <Detail tabIndex={0}>{detail}</Detail>
           {shown(side) ? <Side>{side}</Side> : null}
         </Root>
       </Backdrop>
@@ -495,7 +493,7 @@ export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side,
     <Backdrop size={size}>
       <Root ref={fit} size={size} listWidth={listWidth} sideWidth={sideWidth} tabBarOverlay={tabBarOverlay && hasTabBar}>
         {/* Keyed, so the list's state never carries over into the detail. */}
-        <Detail key={showDetail ? 'detail' : 'list'} tabIndex={0} data-scroll-pane="">
+        <Detail key={showDetail ? 'detail' : 'list'} tabIndex={0}>
           {showDetail ? detail : list}
         </Detail>
         {hasTabBar ? <TabBar>{tabBar}</TabBar> : null}

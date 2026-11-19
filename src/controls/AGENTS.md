@@ -57,10 +57,13 @@ under their purpose group, never under "Controls" (d-065).
   its footer rides up onto the keyboard with `translateY` and its body
   gets an equal clear bottom border, so its view ends at the raised
   footer; the frame's layout does not change.
-- A box that takes the focus only so the keys scroll it (the `ScrollFrame`
-  body, the `AppShell` detail) has `data-scroll-pane`. `TruncatedText`
-  never takes such a pane as the focus owner of its text, so a pointer in
-  the pane opens no tooltip; cut text there is a tab stop of its own.
+- `TruncatedText`'s owner, whose hover and focus open its tooltip, is the
+  nearest link, button or element with a control's or roving item's role,
+  or the `owner` it is given (a `Card` with `onSelect` gives its root, so
+  a hover on the card or the focus on its title button opens its cut
+  description's tip). A box that only has a tabindex (the `ScrollFrame`
+  body, the `AppShell` detail) owns no text, so a pointer in the pane
+  opens no tooltip; cut text with no owner is a tab stop of its own.
 - The `ScrollFrame` body and footer, like every library box that scrolls,
   draw no scroll bar and stop a scroll at their end, so the page never
   bounces (`scrollArea`, `../theme/AGENTS.md`). A wheel, a trackpad, a

@@ -793,6 +793,7 @@ export type KpiTileProps = {
     label: string;
     value: string;
     caption?: string | undefined;
+    captionLines?: ClampProps['lines'];
 };
 
 // @public

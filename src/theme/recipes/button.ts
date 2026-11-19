@@ -5,8 +5,8 @@ import { focusRing } from './focus'
 // with 8 padding sets and three label sizes; this recipe merges them into
 // the `label` style (with `textSize` for the 12 and 13 px labels of Inbox), the
 // five control heights and the variants below. The discuss toggle is a
-// pressed button with `pressedBorder: 'discuss'`; the text link with a
-// chevron comes later.
+// pressed button with `pressedBorder: 'discuss'` (a violet border and
+// fill); the text link with a chevron comes later.
 export const button = defineRecipe({
   className: 'button',
   jsx: ['Button'],
@@ -163,12 +163,19 @@ export const button = defineRecipe({
     // (the same violet at 50%): over the pressed fill that one reaches only
     // 2.3:1 on light bg.canvas, and the pressed state needs 3:1 against
     // bg.canvas, surface.pane and surface.raised (WCAG 1.4.11). The solid
-    // one reaches 5.6:1 or more on all three in both themes. Figma also
-    // tints that button violet; the library has no discuss fill token, so
-    // the pressed fill and label stay. A compound variant below sets it,
-    // because base `_pressed` and the secondary variant's own `_pressed`
-    // would win over a variant here. `_expanded` is not changed;
-    // `expandedBorder` sets that.
+    // one reaches 5.6:1 or more on all three in both themes. On a
+    // `secondary` button `discuss` also fills the pressed button with
+    // surface.discuss, Figma's fill (#9e8fff at 0.3 in 452:2341, 452:2951
+    // and 403:943, no variable; light takes #5b4bd6 at the same 0.3, as
+    // border.discuss keeps its alpha). Over it
+    // the fg.default label keeps 7.9:1 or more and the accent.discuss border
+    // 3.4:1 or more on bg.canvas, surface.pane and surface.raised in both
+    // themes. Figma's label is violet too (#9e8fff); that gives under 4.5:1
+    // over the fill, so the label stays fg.default. Primary and the danger
+    // variants keep their own fill. Compound variants below set it, because
+    // base `_pressed` and the secondary variant's own `_pressed` would win
+    // over a variant here. `_expanded` is not changed; `expandedBorder` sets
+    // that.
     // `selected` draws border.selected, for a selected toggle chip that is not
     // a menu trigger: Workspaces M07's own folder chip (128:30, #5ee1ff at
     // 0.6) and M08's chosen recent folder (128:766, at 0.5). Figma's cyan at
@@ -244,6 +251,7 @@ export const button = defineRecipe({
       css: { _expanded: { borderColor: 'transparent' } },
     },
     { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
+    { variant: 'secondary', pressedBorder: 'discuss', css: { _pressed: { bg: 'surface.discuss' } } },
     { pressedBorder: 'selected', css: { _pressed: { borderColor: 'border.selected' } } },
   ],
   defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, iconOnlyWidth: 'square', padding: 'default', keepIconSize: false },

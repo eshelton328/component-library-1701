@@ -323,7 +323,7 @@ export default definePreset({
                 "base": "#5b4bd6",
                 "_dark": "#9e8fff"
               },
-              "description": "The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341)."
+              "description": "The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341), drawn over its surface.discuss fill."
             },
             "faint": {
               "value": {
@@ -865,6 +865,13 @@ export default definePreset({
                 "_dark": "rgba(15, 22, 38, 0.96)"
               },
               "description": "The nav rail and the tab bar."
+            },
+            "discuss": {
+              "value": {
+                "base": "rgba(91, 75, 214, 0.3)",
+                "_dark": "rgba(158, 143, 255, 0.3)"
+              },
+              "description": "The fill of a pressed Button with pressedBorder discuss: the Discuss toggle while its discussion is open (Inbox 403:943, Artifacts 452:2341 in D7 and 452:2951 in D8), Figma's violet at 30 %. Its label stays fg.default (7.9:1 or more over it on bg.canvas, surface.pane and surface.raised in both themes) and its border accent.discuss (3.4:1 or more). Not for text, a selected row or chip (surface.selected), or a primary Button, which keeps its own fill; not for a violet label, since accent.discuss over it gives under 4.5:1."
             },
             "inset": {
               "value": {

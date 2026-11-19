@@ -646,6 +646,10 @@ function DiscussButtons() {
         <span data-swatch="selectedBorder" className={css({ color: 'border.selected' })} />
         <span data-swatch="default" className={css({ color: 'border.default' })} />
         <span data-swatch="selected" className={css({ color: 'surface.selected' })} />
+        <span data-swatch="discussFill" className={css({ color: 'surface.discuss' })} />
+        <span data-swatch="raised" className={css({ color: 'surface.raised' })} />
+        <span data-swatch="accent" className={css({ color: 'accent.default' })} />
+        <span data-swatch="label" className={css({ color: 'fg.default' })} />
       </div>
     </main>
   )
@@ -724,8 +728,8 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
   await expect(style('Sort').borderTopColor).toBe(swatch('active'))
   await expect(style('Discuss').borderTopColor).toBe(swatch('discuss'))
   await expect(style('Discuss').borderBottomColor).toBe(swatch('discuss'))
-  // The pressed fill stays, and a closed Discuss keeps the secondary border.
-  await expect(style('Discuss').backgroundColor).toBe(swatch('selected'))
+  // A pressed Discuss fills with surface.discuss (PressedFill stories), and a closed Discuss keeps the secondary border.
+  await expect(style('Discuss').backgroundColor).toBe(swatch('discussFill'))
   await expect(style('Discuss closed').borderTopColor).toBe(swatch('default'))
   await expect(style('Discuss primary').borderTopColor).toBe(swatch('discuss'))
 }
@@ -736,6 +740,46 @@ const pressedBorderPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
  */
 export const PressedBorderDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedBorderPlay }
 export const PressedBorderLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedBorderPlay }
+
+// Inbox Discuss 403:943 and Artifacts Discuss 452:2341 (D7) and 452:2951 (D8): Figma fills the
+// pressed Discuss with its violet at 30 %. pressedBorder="discuss" draws surface.discuss on a
+// secondary button; a button without it keeps surface.selected, a closed Discuss keeps
+// surface.raised and a pressed primary keeps accent.default.
+const pressedFillPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el).color
+  }
+  const style = (name: string) => getComputedStyle(canvas.getByRole('button', { name }))
+  await expect(swatch('discussFill')).not.toBe(swatch('selected'))
+  await expect(style('Discuss').backgroundColor).toBe(swatch('discussFill'))
+  await expect(style('Discuss').color).toBe(swatch('label'))
+  await expect(style('Sort').backgroundColor).toBe(swatch('selected'))
+  await expect(style('Discuss closed').backgroundColor).toBe(swatch('raised'))
+  await expect(style('Discuss primary').backgroundColor).toBe(swatch('accent'))
+  // On each surface: the fill is surface.discuss, the label keeps 4.5:1 over it (WCAG 1.4.3)
+  // and the accent.discuss border 3:1 over it, both laid over the painted fill.
+  for (const name of Object.keys(discussSurfaces)) {
+    const button = canvas.getByRole('button', { name: `Discuss on ${name}` })
+    const own = getComputedStyle(button)
+    await expect(own.backgroundColor, `pressed Discuss fill on ${name}`).toBe(swatch('discussFill'))
+    await expect(getComputedStyle(canvas.getByRole('button', { name: `Sort on ${name}` })).backgroundColor).toBe(swatch('selected'))
+    const fill = paintedBackground(button)
+    const text = over(parseRgba(own.color), fill)
+    const border = over(parseRgba(own.borderTopColor), fill)
+    await expect(contrast(text, fill), `pressed Discuss label on ${name}`).toBeGreaterThanOrEqual(4.5)
+    await expect(contrast(border, fill), `pressed Discuss border over its fill on ${name}`).toBeGreaterThanOrEqual(3)
+  }
+}
+
+/**
+ * `pressedBorder="discuss"` also fills a pressed secondary Discuss with surface.discuss, Figma's
+ * violet at 30 %; its label stays fg.default. Sort, a closed Discuss and a primary Discuss keep their fill.
+ */
+export const PressedFillDark: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'dark' }, play: pressedFillPlay }
+export const PressedFillLight: StoryObj<typeof meta> = { render: () => <DiscussButtons />, globals: { mode: 'light' }, play: pressedFillPlay }
 
 // Toolkit's Sort button (D1 425:62): a 36 px secondary button with the sort icon, the label and a chevron, 13 px
 // sides in Figma. `padding="compact"` pads it 12 (nearest token); the default `lg` keeps 16, a compact `md`

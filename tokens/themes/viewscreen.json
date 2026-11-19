@@ -83,6 +83,16 @@
             "hex": "#14263f"
           },
           "$description": "The selected rail item, row, chip, tab, segment or menu item. Text on it uses fg.default, fg.muted or fg.accent, never fg.subtle."
+        },
+        "discuss": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.6196, 0.5608, 1.0],
+            "alpha": 0.3,
+            "hex": "#9e8fff"
+          },
+          "$description": "The fill of a pressed Button with pressedBorder discuss: the Discuss toggle while its discussion is open (Inbox 403:943, Artifacts 452:2341 in D7 and 452:2951 in D8), Figma's violet at 30 %. Its label stays fg.default (7.9:1 or more over it on bg.canvas, surface.pane and surface.raised in both themes) and its border accent.discuss (3.4:1 or more). Not for text, a selected row or chip (surface.selected), or a primary Button, which keeps its own fill; not for a violet label, since accent.discuss over it gives under 4.5:1."
         }
       },
       "fg": {
@@ -248,7 +258,7 @@
             "alpha": 1,
             "hex": "#9e8fff"
           },
-          "$description": "The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341)."
+          "$description": "The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341), drawn over its surface.discuss fill."
         }
       },
       "overlay": {
@@ -964,6 +974,15 @@
             "components": [0.8627, 0.9529, 0.9804],
             "alpha": 1,
             "hex": "#dcf3fa"
+          }
+        },
+        "discuss": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [0.3569, 0.2941, 0.8392],
+            "alpha": 0.3,
+            "hex": "#5b4bd6"
           }
         }
       },

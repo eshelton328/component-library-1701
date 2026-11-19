@@ -92,8 +92,8 @@ under their purpose group, never under "Controls" (d-065).
   `TextField` (the Artifacts Project field). Use it for a form value; a
   `Button` trigger stays for a menu of actions or a sort.
 - A pressed `Button` draws `border.active`. The Discuss toggle sets
-  `pressedBorder="discuss"` and draws `accent.discuss` while its
-  discussion is open; a selected toggle chip (a chosen folder) sets
+  `pressedBorder="discuss"` and draws `accent.discuss` over a
+  `surface.discuss` fill while its discussion is open; a selected toggle chip (a chosen folder) sets
   `pressedBorder="selected"` and draws `border.selected`. A page never
   overrides `_pressed` itself.
 - A `PopoverSection` label is in capitals (`eyebrow`). Text the user

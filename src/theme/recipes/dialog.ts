@@ -14,6 +14,12 @@ import { scrollArea } from './scroll-area'
 // title and it share one frame (403:3915), 4 apart, so they sit in a
 // `heading` column with gap 4 in place of the box's gap. Figma sets it in
 // Mono 11 in #8a97b8: `monoSm` (11/16, d-090) and `fg.muted`.
+// `padding="form"` is the Artifacts Add a link dialog (D5 403:7542, at x 543
+// in a dialog at 518): it pads 24 inside the 1 px border, Figma's, so a `lg`
+// dialog's fields are 490 wide. The default stays 20. `closeSize="20"` draws
+// its close x (403:7545) at 20: Figma's 18 has no icon token, 16 and 20 tie
+// and d-072 takes the larger. The component passes the size to the icon, so
+// the variants set no style; the default stays 16.
 export const dialog = defineSlotRecipe({
   className: 'dialog',
   jsx: ['Dialog'],
@@ -45,7 +51,7 @@ export const dialog = defineSlotRecipe({
     heading: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
     meta: { textStyle: 'monoSm', color: 'fg.muted', m: '0' },
     description: { textStyle: 'body', color: 'fg.muted' },
-    // The close button of the New chat dialog: a 16 px icon with no box (Figma draws 18).
+    // The close button of the New chat dialog: a 16 px icon with no box (Figma draws 18); `closeSize="20"` draws 20.
     closeTrigger: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -75,6 +81,12 @@ export const dialog = defineSlotRecipe({
         title: { textStyle: 'subtitle' },
       },
     },
+    // After `size`, so it wins over a size's own padding.
+    padding: {
+      default: {},
+      form: { content: { p: '24' } },
+    },
+    closeSize: { '16': {}, '20': {} },
   },
-  defaultVariants: { size: 'md' },
+  defaultVariants: { size: 'md', padding: 'default', closeSize: '16' },
 })

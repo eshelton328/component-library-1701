@@ -67,12 +67,17 @@ export type DialogProps = Scalar<DialogVariantProps> & {
  * form of Workbench (`lg`) and the Inbox suggested prompt (`wide`). It keeps the focus inside while it is open;
  * Escape and a click on the scrim close it, and the focus goes back to the
  * trigger.
+ *
+ * `padding="form"` pads the box 24, not 20, as the Artifacts Add a link dialog (`size="lg"`) does. `closeSize="20"`
+ * draws the close button's icon at 20 px, not 16, as the same dialog does.
  */
-export function Dialog({ title, meta, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, headerAction, className, ...rest }: DialogProps) {
+export function Dialog({ title, meta, description, children, actions, trigger, open, defaultOpen, onOpenChange, role = 'dialog', closeButton = false, initialFocus, size, padding, closeSize, headerAction, className, ...rest }: DialogProps) {
   useInputModality()
   return (
     <Root
       size={size}
+      padding={padding}
+      closeSize={closeSize}
       role={role}
       lazyMount
       unmountOnExit
@@ -100,7 +105,7 @@ export function Dialog({ title, meta, description, children, actions, trigger, o
               {headerAction === undefined || headerAction === null || typeof headerAction === 'boolean' ? null : <HeaderAction>{headerAction}</HeaderAction>}
               {closeButton ? (
                 <CloseTrigger aria-label="Close">
-                  <CloseIcon size="16" />
+                  <CloseIcon size={closeSize ?? '16'} />
                 </CloseTrigger>
               ) : null}
             </Header>

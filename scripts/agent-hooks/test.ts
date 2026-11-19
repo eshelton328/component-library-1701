@@ -26,9 +26,13 @@ const parseOutput = (raw: string): HookOutput => {
   return out
 }
 
+// The environment of each hook run, without LIB_ALLOW_CHECK_EDITS: a
+// session started with it (to change a check) must still see the guard
+// block, so only a case that sets it passes it to the hook.
+const baseEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'LIB_ALLOW_CHECK_EDITS'))
 const hook = (name: string, input: unknown, env: Record<string, string> = {}): HookOutput | null => {
   const r = spawnSync('node', [join(root, 'scripts/agent-hooks', name)], {
-    input: JSON.stringify(input), encoding: 'utf8', env: { ...process.env, CLAUDE_PROJECT_DIR: root, ...env },
+    input: JSON.stringify(input), encoding: 'utf8', env: { ...baseEnv, CLAUDE_PROJECT_DIR: root, ...env },
   })
   return r.stdout.trim() ? parseOutput(r.stdout) : null
 }

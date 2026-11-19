@@ -1280,6 +1280,7 @@ export function PathBadge(input: PathBadgeProps): JSX.Element;
 export type PathBadgeProps = {
     path: string;
     icon?: ReactNode;
+    iconSize?: 'sm' | 'md' | undefined;
     trailing?: ReactNode;
 };
 

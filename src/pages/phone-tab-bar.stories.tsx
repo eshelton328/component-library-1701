@@ -645,7 +645,19 @@ const tapScrollDrag: StoryObj<typeof meta> = {
     // keyboard closes, and no click opens a row.
     const box = row(4).getBoundingClientRect()
     const { cdp } = await import('vitest/browser')
-    await cdp().send('Input.synthesizeScrollGesture', { x: Math.round(box.left + 20), y: Math.round(box.top), yDistance: -200, gestureSourceType: 'touch', speed: 2000 })
+    // Touch emulation makes Chromium scroll for the touch events on every platform (headless Linux in CI as well).
+    await cdp().send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
+    try {
+      const x = Math.round(box.left + 20)
+      const y = Math.round(box.top)
+      await cdp().send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+      for (let step = 1; step <= 10; step++) {
+        await cdp().send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - step * 20 }] })
+      }
+      await cdp().send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    } finally {
+      await cdp().send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    }
     await waitFor(() => expect(list.scrollTop).toBeGreaterThan(100))
     await expect(search).not.toHaveFocus()
     await expect(opened()).toBe('Opened 0')

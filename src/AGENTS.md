@@ -35,6 +35,9 @@ you add a file. `theme/` is not a tier.
   key in the default export.
 - A story that shows colours or text exports a `Dark` and a `Light`
   story (`globals: { mode: 'dark' }`), so the axe test checks both.
+- A story that changes a DevTools emulation or puts its own `window` or
+  `navigator` property adds it to `.storybook/story-reset.ts`, which puts
+  it back before each story test, also after a timeout.
 
 ## Folders
 

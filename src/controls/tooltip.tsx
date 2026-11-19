@@ -70,7 +70,7 @@ const Text = styled('span', truncatedText)
 // The recipe's variant names for each line count.
 const lineVariants = { 1: '1', 2: '2', 3: '3' } as const
 
-// Controls that own the text inside them: a link, a button, or an element with the role of one.
+// Controls that own the text inside them: a link, a button, or a focusable element with the role of one.
 const controls = 'a[href], button, summary, [role]'
 // Roles of a control, and of items that take the focus by arrow keys (a roving tab index), so an item with
 // tabindex -1 is still reached.
@@ -83,7 +83,9 @@ const ownerRoles = new Set(['button', 'link', 'treeitem', 'tab', 'option', 'menu
 function focusOwner(node: HTMLElement): HTMLElement | null {
   let candidate = node.parentElement?.closest<HTMLElement>(controls) ?? null
   while (candidate !== null) {
-    if (candidate.matches('a[href], button, summary') || ownerRoles.has(candidate.getAttribute('role') ?? '')) return candidate
+    // An element with one of those roles takes the focus only with a tabindex (-1 for a roving item).
+    const role = candidate.getAttribute('role') ?? ''
+    if (candidate.matches('a[href], button, summary') || (ownerRoles.has(role) && candidate.hasAttribute('tabindex'))) return candidate
     candidate = candidate.parentElement?.closest<HTMLElement>(controls) ?? null
   }
   return null
@@ -179,21 +181,32 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
   const clearTimers = () => {
     clearTimeout(openTimer.current)
     clearTimeout(closeTimer.current)
+    openTimer.current = undefined
   }
   const closeLater = () => {
     clearTimeout(openTimer.current)
     clearTimeout(closeTimer.current)
+    openTimer.current = undefined
     closeTimer.current = setTimeout(() => {
       setOwnerHover(false)
     }, CLOSE_DELAY)
   }
   useEffect(() => {
     if (owner === null || !cut) return
-    const onEnter = (event: PointerEvent) => {
+    // The pointer over the owner or a child of it. Over another cut text that shows its own tip (one with a tab stop,
+    // such as a card's subtitle), this one stays closed, as Ark shows one tooltip at a time.
+    const onOver = (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
       clearTimeout(closeTimer.current)
-      clearTimeout(openTimer.current)
+      if (event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) {
+        clearTimeout(openTimer.current)
+        openTimer.current = undefined
+        setOwnerHover(false)
+        return
+      }
+      if (openTimer.current !== undefined) return
       openTimer.current = setTimeout(() => {
+        openTimer.current = undefined
         setOwnerHover(true)
       }, OPEN_DELAY)
     }
@@ -213,7 +226,7 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onDown()
     }
-    owner.addEventListener('pointerenter', onEnter)
+    owner.addEventListener('pointerover', onOver)
     owner.addEventListener('pointerleave', closeLater)
     owner.addEventListener('pointerdown', onDown)
     owner.addEventListener('focusin', onFocus)
@@ -222,7 +235,7 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
     window.addEventListener('keydown', onKey, true)
     if (document.activeElement !== null && owner.contains(document.activeElement)) onFocus()
     return () => {
-      owner.removeEventListener('pointerenter', onEnter)
+      owner.removeEventListener('pointerover', onOver)
       owner.removeEventListener('pointerleave', closeLater)
       owner.removeEventListener('pointerdown', onDown)
       owner.removeEventListener('focusin', onFocus)

@@ -401,6 +401,55 @@ const cardOwnerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 export const CardOwnsDescriptionDark: StoryObj<typeof meta> = { render: () => <CardPair />, globals: { mode: 'dark' }, play: cardOwnerPlay }
 export const CardOwnsDescriptionLight: StoryObj<typeof meta> = { render: () => <CardPair />, globals: { mode: 'light' }, play: cardOwnerPlay }
 
+const cutTitle = 'Skill eval pass rates for every round, with and without each skill'
+// A preview above the title, as an artifact card has, so the title's tip has room above the title.
+const preview = css({ h: 'shell.tabBar', bg: 'surface.raised' })
+
+function CardAllCut() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <Card media={<div className={preview} />} title={cutTitle} subtitle={longSubtitle} description={honoDescription} onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+/**
+ * A clickable card whose title, subtitle and description are all cut. A
+ * hover on the title button opens the title's tip above the title and the
+ * description's tip below the description, so neither covers the other. A
+ * hover on the subtitle, which keeps its own tab stop, opens only its tip.
+ */
+const allCutPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const tips = () => within(document.body).queryAllByRole('tooltip')
+  const tipWith = (text: string) => tips().find((tip) => tip.textContent.includes(text)) ?? null
+  const action = find(canvasElement, '.card__action')
+  await userEvent.hover(action)
+  await waitFor(async () => {
+    const title = tipWith(cutTitle)
+    const description = tipWith(honoDescription)
+    await expect(title).not.toBeNull()
+    await expect(description).not.toBeNull()
+    if (title === null || description === null) return
+    await expect(title.getAttribute('data-placement')).toBe('top')
+    await expect(title.getBoundingClientRect().bottom).toBeLessThanOrEqual(description.getBoundingClientRect().top)
+  })
+  await userEvent.unhover(action)
+  await waitFor(() => expect(tips()).toHaveLength(0))
+  const subtitle = find(canvasElement, '.card__subtitle .truncated-text')
+  await expect(subtitle).toHaveAttribute('tabindex', '0')
+  await userEvent.hover(subtitle)
+  await waitFor(() => expect(tipWith(longSubtitle)).not.toBeNull())
+  await pause(600)
+  await expect(tips()).toHaveLength(1)
+  await expect(tipWith(longSubtitle)).not.toBeNull()
+  await userEvent.unhover(subtitle)
+  await waitFor(() => expect(tips()).toHaveLength(0))
+}
+export const AllTextCutDark: StoryObj<typeof meta> = { render: () => <CardAllCut />, globals: { mode: 'dark' }, play: allCutPlay }
+export const AllTextCutLight: StoryObj<typeof meta> = { render: () => <CardAllCut />, globals: { mode: 'light' }, play: allCutPlay }
+
 // A pane that clips what is past the window's foot, as a scrolled pane of the-bridge does, with a card whose cut
 // description lies below the foot.
 const clipPane = css({ position: 'fixed', top: '0', bottom: '0', right: '0', w: 'shell.sidebar', overflow: 'hidden', display: 'flex', flexDirection: 'column' })

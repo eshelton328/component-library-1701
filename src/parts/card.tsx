@@ -113,7 +113,8 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
                   <TruncatedText>{title}</TruncatedText>
                 ) : (
                   <Action type="button">
-                    <TruncatedText>{title}</TruncatedText>
+                    {/* Above the title, so its tip never covers the description's tip below the description. */}
+                    <TruncatedText placement={description === undefined || description === '' ? 'bottom' : 'top'}>{title}</TruncatedText>
                   </Action>
                 )}
               </Title>

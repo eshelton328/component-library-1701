@@ -3,7 +3,9 @@
 # Personal values (names, machine and tailnet names) are never in this
 # file: the hook reads them from a local file and CI from the secret
 # PRIVACY_TERMS, and both add them as the rule "personal-term".
-# An exception is one fixed path and one rule, never a broad regex.
+# An exception is one fixed path and one rule, never a broad regex. Both
+# CI scans pass --ignore-gitleaks-allow, so a "gitleaks:allow" comment on
+# a line is not an exception. scripts/secret-scan.test.ts checks the rules.
 
 title = "secrets and privacy"
 
@@ -29,15 +31,15 @@ keywords = [".ts.net"]
 [[rules]]
 id = "email"
 description = "An email address; use a users.noreply.github.com or bot address"
-regex = '''\b[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+(?:com|net|org|io|dev|app|ai|co|me|edu|gov|mil|us|uk|de|fr|es|it|nl|se|no|dk|fi|ch|at|be|ca|au|nz|jp|in|br|info|biz|xyz|tech|email|mail|cloud|so|sh|gg|tv|ly|site|online)\b'''
+regex = '''(?i)\b[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+(?:com|net|org|io|dev|app|ai|co|me|edu|gov|mil|us|uk|de|fr|es|it|nl|se|no|dk|fi|ch|at|be|ca|au|nz|jp|in|br|info|biz|xyz|tech|email|mail|cloud|so|sh|gg|tv|ly|site|online)\b'''
 keywords = ["@"]
 [[rules.allowlists]]
 regexTarget = "match"
 regexes = [
-  '''@users\.noreply\.github\.com$''',
-  '''^(?:noreply|no-reply)@''',
-  '''\[bot\]@''',
-  '''@example\.(?:com|org|net)$''',
+  '''(?i)@users\.noreply\.github\.com$''',
+  '''(?i)^(?:noreply|no-reply)@''',
+  '''(?i)\[bot\]@''',
+  '''(?i)@example\.(?:com|org|net)$''',
 ]
 
 [[rules]]
@@ -53,7 +55,7 @@ regex = '''(?:\+\d{1,3}[ .-]?)?\(?\b\d{3}\)?[ .-]\d{3}[.-]\d{4}\b|\+\d{1,3}[ -]\
 [[rules]]
 id = "env-assignment"
 description = "A KEY=value line of a .env file, or a secret-named key with a literal value"
-regex = '''(?m)^\s*(?:export\s+)?[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|CREDENTIALS?)\s*=\s*["']?[^\s"'$<{][^\s"']{7,}'''
+regex = '''(?m)^\s*(?:export\s+)?(?:[A-Z][A-Z0-9_]*)?(?:TOKEN|SECRET|PASSWORD|PASSWD|API_KEY|APIKEY|PRIVATE_KEY|CREDENTIALS?)\s*=\s*["']?[^\s"'$<{][^\s"']{7,}'''
 keywords = ["token", "secret", "passw", "api_key", "apikey", "private_key", "credential"]
 
 [[rules]]

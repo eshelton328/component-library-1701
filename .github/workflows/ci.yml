@@ -159,6 +159,14 @@ jobs:
             https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
           echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $RUNNER_TEMP/gitleaks.tgz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+      # The rule tests run gitleaks on planted lines; they need no packages.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Test the scan rules
+        env:
+          GITLEAKS: ${{ runner.temp }}/gitleaks
+        run: node --test scripts/secret-scan.test.ts
       - name: Scan the commits of this PR
         env:
           PRIVACY_TERMS: ${{ secrets.PRIVACY_TERMS }}
@@ -173,4 +181,4 @@ jobs:
           cat .gitleaks.toml > "$cfg"
           printf '\n[[rules]]\nid = "personal-term"\ndescription = "A value from the secret PRIVACY_TERMS"\n' >> "$cfg"
           printf "regex = '''(?i)\\\\b(?:%s)\\\\b'''\n" "$alt" >> "$cfg"
-          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --config "$cfg" --log-opts="$BASE..$HEAD" .
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --ignore-gitleaks-allow --config "$cfg" --log-opts="$BASE..$HEAD" .

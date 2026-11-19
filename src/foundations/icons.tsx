@@ -444,6 +444,22 @@ export function LinkMarkIcon(props: IconProps) {
   )
 }
 
+/**
+ * Links: a graph of three linked nodes, one on the left joined to two on the
+ * right. Figma `icon/links` (Toolkit M11 461:1269, T5 464:401, M7 464:236),
+ * drawn at 14 px and scaled to 24.
+ */
+export function LinksIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="5.5" r="3" />
+      <circle cx="18" cy="18.5" r="3" />
+      <path d="M8.6 10.5L15.4 7M8.6 13.5L15.4 17" />
+    </Svg>
+  )
+}
+
 /** A folder with a rounded tab. Figma node 128:332, drawn at 18 px and scaled to 24. */
 export function FolderIcon(props: IconProps) {
   return (

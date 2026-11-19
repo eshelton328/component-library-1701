@@ -11,6 +11,10 @@ purpose group, never under "Parts" (d-065).
   never with Panda patterns.
 - A part shows the data it gets as props and reports through callbacks.
   The composer calls `onSubmit`; it does not send a message (d-068, d-069).
+- A part whose inner layers an app's check must find takes an optional
+  `figma` prop that writes their `data-figma` names, such as `NavItem.figma`,
+  `FileFrame` (`root`, `bar`, `body`, `foot`) and `FileBrowser` (`root`,
+  `tree`, `viewer`). It changes nothing on screen.
 - A part may keep pure geometry in its own `.ts` file beside it, such as
   `map-graph-route.ts`, the routes of the `MapGraph` lines. The part
   imports it, `index.ts` does not export it, and the part's stories test

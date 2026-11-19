@@ -1457,9 +1457,10 @@ const keyboardAndroid: StoryObj<typeof meta> = {
     fakeViewport = new FakeViewport()
     const restore = replaceVisualViewport(fakeViewport)
     return async () => {
+      // The real visual viewport comes back first, so a failed resize cannot leave the fake one in place.
+      restore()
       const { page } = await import('vitest/browser')
       await page.viewport(390, 844)
-      restore()
     }
   },
   play: async ({ canvasElement }) => {
@@ -1483,5 +1484,15 @@ const keyboardAndroid: StoryObj<typeof meta> = {
 }
 
 /** Phone chat where the browser resizes the layout for the keyboard (Chrome on Android): the shell shrinks with its parent and the dock stays at 0. */
-export const KeyboardAndroidDark: StoryObj<typeof meta> = { ...keyboardAndroid, globals: { mode: 'dark', viewport: { value: 'm390' } } }
-export const KeyboardAndroidLight: StoryObj<typeof meta> = { ...keyboardAndroid, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// Only the story test runner can resize the page (vitest/browser), so the Storybook UI leaves these out; the test
+// runner still runs them (Codex review of #199). Storybook reads the tags from each export itself, not from a spread.
+export const KeyboardAndroidDark: StoryObj<typeof meta> = {
+  ...keyboardAndroid,
+  tags: ['!dev'],
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+}
+export const KeyboardAndroidLight: StoryObj<typeof meta> = {
+  ...keyboardAndroid,
+  tags: ['!dev'],
+  globals: { mode: 'light', viewport: { value: 'm390' } },
+}

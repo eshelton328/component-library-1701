@@ -90,7 +90,8 @@ export function SearchField({
               aria-label={clearLabel}
               onClick={() => {
                 change('')
-                input.current?.focus()
+                // The field is in view by its Clear button; iOS would still scroll the document for the keyboard.
+                input.current?.focus({ preventScroll: true })
               }}
             >
               {clearIcon ?? '×'}

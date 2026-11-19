@@ -1420,6 +1420,61 @@ const keyboardRise: StoryObj<typeof meta> = {
   },
 }
 
+// A block under the screen lets the document scroll, as iOS scrolls it for a focused field.
+const belowScreen = css({ h: 'shell.tabBar' })
+const keyboardInsetOf = (root: HTMLElement) => root.style.getPropertyValue('--app-shell-keyboard')
+const focusScroll: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => (
+    <>
+      <ThreadChat />
+      <div className={belowScreen} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const { root, field } = threadParts(canvasElement)
+    try {
+      // With no field focused, a document scroll is the page's own, and it stays.
+      window.scrollTo(0, 25)
+      await nextFrame()
+      await nextFrame()
+      await expect(window.scrollY).toBe(25)
+      window.scrollTo(0, 0)
+      // A field takes the focus, and iOS scrolls the document for it (the window's scroll event): the document goes
+      // back to its top at once, so the shell and its top bar do not move.
+      await userEvent.click(field)
+      window.scrollTo(0, 25)
+      await waitFor(() => expect(window.scrollY).toBe(0))
+      // With the keyboard open, iOS scrolls the document and reports a visualViewport scroll: reset in that event.
+      fakeViewport.move({ height: 544 })
+      await waitFor(() => expect(keyboardInsetOf(root)).not.toBe(''))
+      window.scrollTo(0, 25)
+      fakeViewport.dispatchEvent(new Event('scroll'))
+      await expect(window.scrollY).toBe(0)
+      // The field loses the focus and the dock is still set while the keyboard closes: a document scroll then is
+      // reset too, so the page does not jump on the close.
+      field.blur()
+      window.scrollTo(0, 25)
+      await waitFor(() => expect(window.scrollY).toBe(0))
+      // The keyboard is closed and the dock is gone: a document scroll is the page's own again.
+      fakeViewport.move({ height: 844 })
+      await waitFor(() => expect(keyboardInsetOf(root)).toBe(''))
+      window.scrollTo(0, 25)
+      await nextFrame()
+      await nextFrame()
+      await expect(window.scrollY).toBe(25)
+    } finally {
+      window.scrollTo(0, 0)
+    }
+  },
+}
+/**
+ * Phone chat: iOS scrolls the document for a focused field. While a field has the focus or the dock is set, the
+ * document goes back to its top at once, so the shell's top bar never moves (screen reviews R20, R21).
+ */
+export const FocusScrollDark: StoryObj<typeof meta> = { ...focusScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FocusScrollLight: StoryObj<typeof meta> = { ...focusScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 /** Phone chat: the keyboard rises in steps; the shell keeps its height and the composer rides up with the keyboard, never back down. */
 export const KeyboardRiseDark: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardRiseLight: StoryObj<typeof meta> = { ...keyboardRise, globals: { mode: 'light', viewport: { value: 'm390' } } }

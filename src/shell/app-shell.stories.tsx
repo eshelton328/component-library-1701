@@ -1478,6 +1478,12 @@ const curveTime = (progress: number) => {
   }
   return bezier(x1, x2, high) * Number.parseFloat(token('durations.keyboard'))
 }
+// The rise one frame after the first frame drawn at `at` or later: the recorder can run before the hook in a frame,
+// and then reads the frame before.
+const riseAfter = (frames: { at: number; rise: number }[], at: number) => {
+  const index = frames.findIndex((f) => f.at >= at)
+  return Math.round(frames[index + 1]?.rise ?? frames[index]?.rise ?? 0)
+}
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // A first open where the real keyboard is 50 px off the 380 guess, reported `delay` ms after the focus: during the
 // dock's 250 ms move, or after it. The composer must make one move that ends on the real keyboard, as the Claude iOS
@@ -1518,6 +1524,8 @@ const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta
       await expect(endAfterReport).toBeGreaterThanOrEqual(reported + 250)
       await expect(endAfterReport).toBeLessThanOrEqual(reportDone + 250)
     }
+    // The drawn dock is on the keyboard by that end, with one frame of slack (Codex review of #242).
+    await expect(riseAfter(moved, endAfterReport)).toBe(rise)
     await expect(moved.filter((f) => f.rise > Math.max(rise, 346) + 1)).toEqual([])
   },
 })

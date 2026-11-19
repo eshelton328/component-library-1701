@@ -533,14 +533,30 @@ export function FeatureIcon(props: IconProps): JSX.Element;
 // @public
 export function FileBrowser(input: FileBrowserProps): JSX.Element;
 
+// @public
+export type FileBrowserLayers = {
+    root?: string | undefined;
+    tree?: string | undefined;
+    viewer?: string | undefined;
+};
+
 // @public (undocumented)
 export type FileBrowserProps = Scalar<FileBrowserVariantProps> & {
     tree: ReactNode;
+    figma?: FileBrowserLayers | undefined;
     children?: ReactNode;
 };
 
 // @public
 export function FileFrame(input: FileFrameProps): JSX.Element;
+
+// @public
+export type FileFrameLayers = {
+    root?: string | undefined;
+    bar?: string | undefined;
+    body?: string | undefined;
+    foot?: string | undefined;
+};
 
 // @public (undocumented)
 export type FileFrameProps = Scalar<FileFrameVariantProps> & {
@@ -553,6 +569,7 @@ export type FileFrameProps = Scalar<FileFrameVariantProps> & {
     readOnly?: boolean | undefined;
     foot?: ReactNode;
     footIcon?: ReactNode;
+    figma?: FileFrameLayers | undefined;
     children?: ReactNode;
 };
 

@@ -823,11 +823,10 @@ export function LinearIcon(props: IconProps): JSX.Element;
 export function LinkIcon(props: IconProps): JSX.Element;
 
 // @public
-<<<<<<< HEAD
 export function LinkMarkIcon(props: IconProps): JSX.Element;
-=======
+
+// @public
 export function LinksIcon(props: IconProps): JSX.Element;
->>>>>>> 8e768c1 (feat(icons): add LinksIcon, a graph of three linked nodes)
 
 // @public
 export function ListIcon(props: IconProps): JSX.Element;

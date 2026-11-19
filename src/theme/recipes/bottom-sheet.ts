@@ -2,6 +2,7 @@ import { dialogAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
 import { scrollArea } from './scroll-area'
+import { safeInset } from './tab-bar-height'
 
 // The phone bottom sheets: Inbox M6 snooze (346:10207), Artifacts M4 sort
 // (407:814) and Workbench M9 chat actions (146:273). A full-width box on a
@@ -40,8 +41,11 @@ export const bottomSheet = defineSlotRecipe({
       maxH: '100%',
       overflowY: 'auto',
       ...scrollArea,
-      px: '12',
-      pb: 'token(sizes.shell.safeAreaBottom)',
+      // The sides pad by the device's side insets too, so in landscape no content sits under the cutout, and the end
+      // keeps the home indicator's area or the device's bottom inset, the larger (the shell's own rule, d-089).
+      pl: `calc(token(spacing.12) + ${safeInset('left')})`,
+      pr: `calc(token(spacing.12) + ${safeInset('right')})`,
+      pb: `max(token(sizes.shell.safeAreaBottom), ${safeInset('bottom')})`,
       bg: 'surface.overlay',
       color: 'fg.default',
       borderTopLeftRadius: '2xl',

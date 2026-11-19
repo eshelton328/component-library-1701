@@ -124,6 +124,31 @@ export default meta
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
+// An iPhone in landscape: 47 px insets at the sides (the cutout and its mirror) and 21 at the bottom. The sheet pads
+// its sides by 12 more than the insets, so no option sits under the cutout, and keeps 34 at its end. A story sets the
+// insets with --app-shell-safe-*, as env() is 0 in Chromium.
+const landscapeInsets = () => {
+  const root = document.documentElement.style
+  root.setProperty('--app-shell-safe-left', '47px')
+  root.setProperty('--app-shell-safe-right', '47px')
+  root.setProperty('--app-shell-safe-bottom', '21px')
+  return () => {
+    for (const side of ['left', 'right', 'bottom']) root.removeProperty(`--app-shell-safe-${side}`)
+  }
+}
+const landscapePlay = async () => {
+  const sheet = await within(document.body).findByRole('dialog', { name: 'Sort by' })
+  await motionDone(sheet)
+  const style = getComputedStyle(sheet)
+  await expect([style.paddingLeft, style.paddingRight, style.paddingBottom]).toEqual(['59px', '59px', '34px'])
+  const option = within(sheet).getByText('Newest first').getBoundingClientRect()
+  await expect(option.left).toBeGreaterThanOrEqual(59)
+  await expect(option.right).toBeLessThanOrEqual(window.innerWidth - 59)
+}
+/** The sort sheet on an iPhone in landscape: its options clear the side insets. */
+export const LandscapeSafeAreaDark: StoryObj<typeof meta> = { beforeEach: landscapeInsets, play: landscapePlay, globals: { mode: 'dark' } }
+export const LandscapeSafeAreaLight: StoryObj<typeof meta> = { beforeEach: landscapeInsets, play: landscapePlay, globals: { mode: 'light' } }
+
 const untitledPlay = async () => {
   const body = within(document.body)
   const sheet = await body.findByRole('dialog', { name: 'Chat actions' })

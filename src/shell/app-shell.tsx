@@ -128,10 +128,17 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
       const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom - keyboardTop)
+      // A docked thread (the ScrollFrame body that is the detail's child) at its end before this frame stays at its
+      // end after it, so its latest message stays just above the composer through the whole move, as in the Claude iOS
+      // app (screen review R22). A thread scrolled up keeps its scroll position.
+      const atEnd = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')].filter(
+        (body) => body.scrollHeight - body.scrollTop - body.clientHeight <= 1,
+      )
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
+      for (const body of atEnd) body.scrollTop = body.scrollHeight
       if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
     }
     // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is; a new target

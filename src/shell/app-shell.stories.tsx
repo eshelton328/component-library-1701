@@ -1435,6 +1435,69 @@ const withMotion = {
 }
 const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
 
+// At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
+// bottom and the composer's top.
+const recordThread = (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement)
+  const body = slotOf(canvasElement, 'scroll-frame__body')
+  const latest = canvas.getByText('Message 40 of the thread')
+  const composer = canvas.getByRole('group', { name: 'Composer' })
+  const frames: { fromEnd: number; scrollTop: number; room: number }[] = []
+  let id = 0
+  const tick = () => {
+    frames.push({
+      fromEnd: Math.round(body.scrollHeight - body.scrollTop - body.clientHeight),
+      scrollTop: Math.round(body.scrollTop),
+      room: Math.round(rect(composer).top - rect(latest).bottom),
+    })
+    id = requestAnimationFrame(tick)
+  }
+  tick()
+  return {
+    body,
+    frames,
+    stop: () => {
+      cancelAnimationFrame(id)
+      tick()
+    },
+  }
+}
+const threadEnd: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    // At its end, the thread stays at its end at every frame of the rise and the fall, so its latest message stays
+    // above the composer (screen review R22: the Claude iOS app).
+    scrollToEnd(slotOf(canvasElement, 'scroll-frame__body'))
+    const end = recordThread(canvasElement)
+    await userEvent.click(field)
+    await stepViewport(rising)
+    await settled(footer, 266)
+    field.blur()
+    await stepViewport(falling)
+    await settled(footer, 0)
+    end.stop()
+    await expect(end.frames.filter((f) => f.fromEnd > 1)).toEqual([])
+    await expect(end.frames.filter((f) => f.room < -1)).toEqual([])
+    // Scrolled up, away from its end, the thread keeps its scroll position through the rise and the fall.
+    const up = recordThread(canvasElement)
+    up.body.scrollTop = 200
+    await nextFrame()
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    field.blur()
+    await stepViewport(falling)
+    await settled(footer, 0)
+    up.stop()
+    await expect(up.frames.slice(1).filter((f) => f.scrollTop !== 200)).toEqual([])
+  },
+}
+/** Phone chat: a thread at its end stays at its end as the composer rides the keyboard; one scrolled up keeps its place. */
+export const ThreadEndDark: StoryObj<typeof meta> = { ...threadEnd, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ThreadEndLight: StoryObj<typeof meta> = { ...threadEnd, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const keyboardRise: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,

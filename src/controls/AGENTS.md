@@ -136,8 +136,11 @@ under their purpose group, never under "Controls" (d-065).
   scrolls and the slots stay in view.
 - `Glyph` (`glyph.tsx`) is a symbol character inside a line of text that
   the text fonts lack, such as ✗ (U+2717) and ✓ (U+2713). The character
-  stays in the text, in no colour, so a screen reader reads it and a copy
-  or a text search finds it; the mark icon from `foundations/icons.tsx`
-  draws over it in the text's colour, at the text's size (`size`). A page
-  puts the character in a `Glyph`, never an icon in its place and never
-  the bare character, which the browser draws in a fallback font.
+  stays in the inline text flow, in no colour and at no width, so a screen
+  reader reads it, a copy gives it and a find in page matches across it;
+  the mark icon from `foundations/icons.tsx` draws in its place in the
+  text's colour, at the text's size (`size`). Never take the character out
+  of the inline flow (absolute, inline-block or flex): Chromium's find then
+  stops at it. A page puts the character in a `Glyph`, never an icon in
+  its place and never the bare character, which the browser draws in a
+  fallback font.

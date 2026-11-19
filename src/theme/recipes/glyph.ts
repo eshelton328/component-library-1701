@@ -8,13 +8,20 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // the sign ×. The glyph keeps the character in the text, so the line reads,
 // copies and finds as Figma's string, and draws it as a mark icon:
 //
-// - `root` is an inline box the size of the icon, in the line's colour,
-//   centred on the line as an icon in text is.
-// - `char` holds the character over the icon, in the line's font, with no
-//   colour (`transparent`), so it is text that assistive technology reads
-//   and a selection copies, but never paints. It does not clip, so its
-//   whole glyph stays in view.
-// - The icon (`CrossMarkIcon`, `CheckMarkIcon`) paints in currentColor.
+// - `root` is a plain inline box, so the character stays in the line's inline
+//   text flow: a find in page (Ctrl+F, `window.find`) matches across it, such
+//   as "✗ and ✓", and a copy and `innerText` give Figma's string. An
+//   inline-block, inline-flex, inline-grid or absolutely placed character
+//   breaks the match in Chromium (Codex review, PR #209). `nowrap` keeps the
+//   icon and its character on one line.
+// - The icon (`CrossMarkIcon`, `CheckMarkIcon`) is in the flow beside the
+//   character, centred on the line by the `icon` recipe (`verticalAlign:
+//   middle`), and paints in currentColor. Its width is the glyph's width, the
+//   icon size, as the text around it has no character of that width.
+// - `char` holds the character at font size 0 and line height 0, with no
+//   colour (`transparent`): it is text that assistive technology reads once
+//   (the icon is `aria-hidden`), a selection copies and a find matches, but it
+//   takes no width, paints nothing and does not make the line taller.
 export const glyph = defineSlotRecipe({
   className: 'glyph',
   jsx: ['Glyph'],
@@ -22,19 +29,13 @@ export const glyph = defineSlotRecipe({
   slots: ['root', 'char'],
   base: {
     root: {
-      position: 'relative',
-      display: 'inline-flex',
-      verticalAlign: 'middle',
-      flexShrink: '0',
+      display: 'inline',
+      whiteSpace: 'nowrap',
     },
     char: {
-      position: 'absolute',
-      inset: '0',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      overflow: 'visible',
-      whiteSpace: 'nowrap',
+      display: 'inline',
+      fontSize: '0',
+      lineHeight: '0',
       color: 'transparent',
     },
   },

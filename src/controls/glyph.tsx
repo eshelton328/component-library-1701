@@ -29,8 +29,9 @@ export type GlyphProps = {
  * A symbol character inside a line of text, such as the ✗ and ✓ of "the
  * rule’s ✗ and ✓ examples". The text fonts have neither character, so the
  * glyph keeps the character in the text (a screen reader reads it, a copy
- * and a text search find it) and draws the library's mark over it in the
- * colour of the text. Place it inline in the text; it sets no text style.
+ * and a find in page matches across it, as it stays in the inline text flow)
+ * and draws the library's mark in its place, in the colour of the text.
+ * Place it inline in the text; it sets no text style.
  */
 export function Glyph({ symbol, size = '12' }: GlyphProps) {
   const { char, Icon } = symbols[symbol]

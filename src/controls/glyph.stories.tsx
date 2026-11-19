@@ -43,6 +43,25 @@ const strokes = (svg: SVGSVGElement) =>
     return a.y < b.y ? { top: a, bottom: b } : { top: b, bottom: a }
   })
 
+/**
+ * Whether the browser's find in page (Ctrl+F, `window.find`) finds `text` inside `el`, as one match that does not
+ * stop at a glyph. Leaves no selection behind.
+ */
+const findsIn = (el: HTMLElement, text: string) => {
+  const selection = window.getSelection()
+  if (selection === null) throw new Error('no selection')
+  selection.removeAllRanges()
+  // `window.find` is not in the DOM types; Chromium and Firefox have it.
+  const find: unknown = Reflect.get(window, 'find')
+  if (typeof find !== 'function') throw new Error('no window.find')
+  const found = find.call(window, text, true, false, true) === true
+  const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null
+  const inEl = range !== null && el.contains(range.commonAncestorContainer)
+  const selected = selection.toString()
+  selection.removeAllRanges()
+  return found && inEl && selected === text
+}
+
 const meta = {
   title: 'Data display/Glyph',
   component: Glyphs,
@@ -51,6 +70,11 @@ const meta = {
     const line = canvas.getByTestId('line')
     // The characters stay in the text, so the line reads, copies and finds as Figma's string (492:2185).
     await expect(line.textContent).toBe('the rule’s ✗ and ✓ examples')
+    // Find in page matches across the glyphs, and the rendered text is Figma's string with no line break: the
+    // characters stay in the line's inline text flow, not out of it.
+    await expect(line.innerText).toBe('the rule’s ✗ and ✓ examples')
+    await expect(findsIn(line, '✗ and ✓')).toBe(true)
+    await expect(findsIn(line, 'the rule’s ✗ and ✓ examples')).toBe(true)
     const lineStyle = getComputedStyle(line)
     const textSize = Number.parseFloat(lineStyle.fontSize)
     await expect(textSize).toBe(12)
@@ -76,6 +100,8 @@ const meta = {
       await expect(getComputedStyle(charEl).color).toBe('rgba(0, 0, 0, 0)')
       await expect(getComputedStyle(charEl).fontFamily).toBe(lineStyle.fontFamily)
       await expect(getComputedStyle(charEl).overflow).toBe('visible')
+      // The character takes no width beside the mark, so the glyph is as wide as the mark.
+      await expect(charEl.getBoundingClientRect().width).toBe(0)
     }
     // Figma's ✗ leans right, as a hand-drawn cross: the middle of its top ends is right of the middle of its
     // bottom ends (an upright x, CloseIcon, has them level).
@@ -95,6 +121,7 @@ const meta = {
       await expect(el.getBoundingClientRect().width).toBe(16)
     }
     await expect(canvas.getByTestId('large').textContent).toBe('✗ fails, ✓ passes')
+    await expect(findsIn(canvas.getByTestId('large'), '✗ fails, ✓ passes')).toBe(true)
   },
 } satisfies Meta<typeof Glyphs>
 export default meta

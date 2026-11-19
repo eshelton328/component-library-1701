@@ -44,7 +44,9 @@ export const button = defineRecipe({
     // button never looks like primary. `secondary` sets it again, because its
     // own fill and border would win over base.
     _pressed: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.active' },
-    '& svg': { width: 'icon.16!', height: 'icon.16!', flexShrink: '0' },
+    // The icon size is set by `keepIconSize` below: an important size in
+    // base would win over the variant's.
+    '& svg': { flexShrink: '0' },
     // The active dot (`indicator`): a 6 px ellipse in #5ee1ff (accent.default)
     // after the label, 6 apart (403:6841). The button is the dot's anchor when
     // it holds only an icon.
@@ -172,15 +174,26 @@ export const button = defineRecipe({
       discuss: {},
       selected: {},
     },
-    // The sides of a `lg` button. `default` keeps the size's padding.
+    // The sides of a `md` or `lg` button. `default` keeps the size's padding.
     // `compact` pads a `lg` button 12 at the sides, as Toolkit's Sort
     // (D1 `button · Sort` 425:62, 105 x 36) draws 13 (nearest token 12,
-    // d-072), so its sort icon starts 13 in with the border. A compound
-    // variant below sets it; other sizes and an icon-only button keep their
-    // own padding.
+    // d-072), so its sort icon starts 13 in with the border. It pads a `md`
+    // button 10, as Artifacts' Sort and Filter (D1 402:15404 108 x 32,
+    // 402:15413 75 wide) do, so the icon starts 11 in with the border and
+    // the chevron ends 11 from the end. Compound variants below set it;
+    // other sizes and an icon-only button keep their own padding.
     padding: {
       default: {},
       compact: {},
+    },
+    // The size of the icons inside. `false` draws every icon at 16
+    // (icon.16), whatever its `size`. `true` draws an icon without a `size`
+    // at 16 and keeps the size of an icon given one (`data-icon-size`, set
+    // by the icon set), as the 12 px chevron of Artifacts' Sort (402:15410)
+    // after its label.
+    keepIconSize: {
+      false: { '& svg': { width: 'icon.16!', height: 'icon.16!' } },
+      true: { '& svg:not([data-icon-size])': { width: 'icon.16!', height: 'icon.16!' } },
     },
     // A square button that holds only an icon; give it an aria-label. Its
     // active dot sits in the top end corner: M15 346:12159 draws it at x 25,
@@ -196,6 +209,7 @@ export const button = defineRecipe({
     { iconOnly: true, size: 'md', css: { w: 'control.md' } },
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
+    { size: 'md', padding: 'compact', iconOnly: false, css: { px: '10' } },
     { size: 'lg', padding: 'compact', iconOnly: false, css: { px: '12' } },
     { variant: 'secondary', pressedTone: 'accent', css: { _pressed: { color: 'fg.accent' } } },
     {
@@ -212,5 +226,5 @@ export const button = defineRecipe({
     { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
     { pressedBorder: 'selected', css: { _pressed: { borderColor: 'border.selected' } } },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, padding: 'default' },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, padding: 'default', keepIconSize: false },
 })

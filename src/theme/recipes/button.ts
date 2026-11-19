@@ -209,13 +209,26 @@ export const button = defineRecipe({
       true: { px: '0', '& > .button__indicator': { position: 'absolute', top: '2', insetEnd: '4' } },
       false: {},
     },
+    // The width of an icon-only button. `square` (the default) makes it as
+    // wide as it is high. `lg` makes it 36 wide (control.lg) at any height,
+    // as the phone's Discuss button on an open Toolkit item: `button ·
+    // Discuss` 496:2 in M2 (also 496:5 M19, 496:8 M20, 496:11 M21, 496:14
+    // M22, 461:557 M12, 448:480 M09, 496:82 M05) is 36 x 28, primary, beside
+    // the 36 x 36 Show on map (429:291). With `size="sm"` it draws 36 x 28.
+    // Figma's 14 px icon/chat takes icon.16, as every button icon does. It
+    // changes only an `iconOnly` button; a `lg` or `xl` one keeps its square.
+    iconOnlyWidth: {
+      square: {},
+      lg: {},
+    },
   },
   compoundVariants: [
-    { iconOnly: true, size: 'xs', css: { w: 'control.xs' } },
-    { iconOnly: true, size: 'sm', css: { w: 'control.sm' } },
-    { iconOnly: true, size: 'md', css: { w: 'control.md' } },
+    { iconOnly: true, iconOnlyWidth: 'square', size: 'xs', css: { w: 'control.xs' } },
+    { iconOnly: true, iconOnlyWidth: 'square', size: 'sm', css: { w: 'control.sm' } },
+    { iconOnly: true, iconOnlyWidth: 'square', size: 'md', css: { w: 'control.md' } },
     { iconOnly: true, size: 'lg', css: { w: 'control.lg' } },
     { iconOnly: true, size: 'xl', css: { w: 'control.xl' } },
+    { iconOnly: true, iconOnlyWidth: 'lg', size: ['xs', 'sm', 'md'], css: { w: 'control.lg' } },
     { size: 'md', padding: 'compact', iconOnly: false, css: { px: '10' } },
     { size: 'lg', padding: 'compact', iconOnly: false, css: { px: '12' } },
     { variant: 'secondary', pressedTone: 'accent', css: { _pressed: { color: 'fg.accent' } } },
@@ -233,5 +246,5 @@ export const button = defineRecipe({
     { pressedBorder: 'discuss', css: { _pressed: { borderColor: 'accent.discuss' } } },
     { pressedBorder: 'selected', css: { _pressed: { borderColor: 'border.selected' } } },
   ],
-  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, padding: 'default', keepIconSize: false },
+  defaultVariants: { variant: 'secondary', size: 'md', textSize: 'md', pressedTone: 'default', expandedBorder: 'active', pressedBorder: 'active', iconOnly: false, iconOnlyWidth: 'square', padding: 'default', keepIconSize: false },
 })

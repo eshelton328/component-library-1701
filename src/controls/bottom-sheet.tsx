@@ -190,11 +190,24 @@ function releaseSpeed(samples: Sample[], now: number) {
   return (last.y - first.y) / Math.max(1, last.t - first.t)
 }
 
+// Puts a dragged sheet back at its rest.
+function reset(sheet: HTMLElement) {
+  sheet.removeAttribute('data-dragging')
+  sheet.style.removeProperty(dragOffset)
+}
+
 // The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
 function DraggableContent({ children, ...props }: ComponentProps<typeof Content>) {
   const dialog = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
+
+  // A sheet that opens again while its swipe close still runs keeps its element, so it drops the drag offset
+  // that the close slid down from, and opens at its rest.
+  useEffect(() => {
+    const sheet = ref.current
+    if (dialog.open && sheet !== null && drag.current === null) reset(sheet)
+  }, [dialog.open])
 
   useEffect(() => {
     const sheet = ref.current
@@ -209,11 +222,6 @@ function DraggableContent({ children, ...props }: ComponentProps<typeof Content>
       drag.current?.stop()
     }
   }, [])
-
-  const reset = (sheet: HTMLElement) => {
-    sheet.removeAttribute('data-dragging')
-    sheet.style.removeProperty(dragOffset)
-  }
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     props.onPointerDown?.(event)

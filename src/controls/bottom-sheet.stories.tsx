@@ -429,6 +429,32 @@ function SwipeSheet() {
   )
 }
 
+// A sheet whose owner opens it again 150 ms after a swipe closes it, while the close motion still runs.
+function ReopenSheet() {
+  const [open, setOpen] = useState(false)
+  const [bounced, setBounced] = useState(false)
+  const change = (next: boolean) => {
+    setOpen(next)
+    if (!next && !bounced) {
+      setBounced(true)
+      setTimeout(() => {
+        setOpen(true)
+      }, 150)
+    }
+  }
+  return (
+    <main className={page}>
+      <BottomSheet title="Snooze" trigger={<Button>Snooze</Button>} open={open} onOpenChange={change}>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <Button key={row} size="xl">{row}</Button>
+          ))}
+        </Stack>
+      </BottomSheet>
+    </main>
+  )
+}
+
 // A synthetic touch pointer, as a finger on a phone sends it. Returns false when a handler prevented its default.
 function touch(type: 'pointerdown' | 'pointermove' | 'pointerup', target: Element, y: number) {
   const box = target.getBoundingClientRect()
@@ -898,6 +924,28 @@ const swipeClosePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
   await expect(sheet.getBoundingClientRect().top - rest).toBeGreaterThanOrEqual(far)
   await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
 }
+
+// A sheet that opens again during its swipe close drops the drag offset and rests flush with the bottom (PR #186 review).
+const reopenPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const body = within(document.body)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Snooze' }))
+  const sheet = await body.findByRole('dialog', { name: 'Snooze' })
+  await motionDone(sheet)
+  const rest = sheet.getBoundingClientRect().top
+  const grabber = grabberOf(sheet)
+  const far = Math.ceil(sheet.getBoundingClientRect().height * 0.3 / 20) * 20 + 20
+  await slowDrag(grabber, middleY(grabber), far, sheet, rest)
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'closed'))
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'open'))
+  // The same element opens again: the close had not ended.
+  await expect(body.getByRole('dialog', { name: 'Snooze' })).toBe(sheet)
+  await motionDone(sheet)
+  await expect(sheet).not.toHaveAttribute('data-dragging')
+  await expect(sheet.getBoundingClientRect().top).toBe(rest)
+}
+
+/** A sheet opened again during its swipe close opens at its rest, not at the drag offset. */
+export const ReopenDuringClose: StoryObj<typeof meta> = { render: () => <ReopenSheet />, play: reopenPlay }
 
 /** A swipe past 30% closes the sheet, and it slides down from the finger. */
 export const SwipeCloseMotion: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipeClosePlay }

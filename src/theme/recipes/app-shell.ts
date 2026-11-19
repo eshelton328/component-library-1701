@@ -52,6 +52,13 @@ import { scrollArea } from './scroll-area'
 //   the browser does not resize the layout for the keyboard (iOS Safari);
 //   the root keeps its full height, and the tab bar and the safe area stay
 //   under the keyboard. Unset, nothing moves.
+// The keyboard's reach over a pane's bottom, as its end padding; its direct child reads it, deeper it is 0.
+const paneEnd = {
+  '--app-shell-detail-end': 'var(--app-shell-keyboard, 0px)',
+  pb: 'var(--app-shell-detail-end)',
+  '& > * *': { '--app-shell-keyboard': '0px', '--app-shell-detail-end': '0px' },
+} as const
+
 export const appShell = defineSlotRecipe({
   className: 'app-shell',
   jsx: ['AppShell'],
@@ -66,7 +73,10 @@ export const appShell = defineSlotRecipe({
       h: '100%',
     },
     rail: { display: 'flex', flexDirection: 'column', flexShrink: '0', w: 'shell.rail', minH: '0' },
-    list: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
+    // A list or side pane beside the detail ends above the keyboard too (an iPad at 1232 px and wider, the-bridge #151
+    // review): its end padding is the keyboard's reach, so a scroller in it ends its view above the keyboard, and a
+    // ScrollFrame that is its child reaches through the padding and docks, as in the detail.
+    list: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0', ...paneEnd },
     detail: {
       display: 'flex',
       flexDirection: 'column',
@@ -88,7 +98,7 @@ export const appShell = defineSlotRecipe({
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
-    side: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0' },
+    side: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0', minH: '0', ...paneEnd },
     tabBar: { display: 'flex', flexDirection: 'column', flexShrink: '0' },
     safeArea: { flexShrink: '0', h: 'shell.safeAreaBottom' },
   },

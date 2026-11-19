@@ -95,8 +95,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   and `stopPropagation`), so the tap opens nothing; the swallow ends at
   that click, 100 ms after the release, at a `pointercancel` (a drag that
   scrolls) or 1 s after the press, so a later tap is never eaten. A tap
-  on another field moves the focus as always, and a mouse or a hardware
-  keyboard changes nothing. Put `data-keyboard-keep` on a control that
+  on another field or its label moves the focus as always. A mouse
+  changes nothing, and neither does a tap while no keyboard is docked
+  (`--app-shell-keyboard` not set, as with a hardware keyboard). Put `data-keyboard-keep` on a control that
   acts on the field and must keep the keyboard: the `Composer` puts it on
   Send, Stop and Attach, and `SearchField` on Clear; a page puts it on a
   search's sort or filter. The blur comes while the press is down, so the

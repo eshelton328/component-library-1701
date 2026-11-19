@@ -500,7 +500,10 @@ function TapInbox() {
           <Container>
             <Stack>
               <input type="search" aria-label="Search tasks" className={searchField} />
-              <input type="text" aria-label="Filter by owner" className={searchField} />
+              <label className={row}>
+                Owner
+                <input type="text" aria-label="Filter by owner" className={searchField} />
+              </label>
               <p className={row}>Opened {opened.length}</p>
               {tasks.map((t) => (
                 <Button
@@ -670,6 +673,43 @@ const tapScrollDrag: StoryObj<typeof meta> = {
 /** The phone Inbox list with the keyboard open: a touch drag over the rows still scrolls the list and closes the keyboard, and the next tap opens a row. */
 export const TapScrollDragDark: StoryObj<typeof meta> = { ...tapScrollDrag, tags: ['!dev'], globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const TapScrollDragLight: StoryObj<typeof meta> = { ...tapScrollDrag, tags: ['!dev'], globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapLabel: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { canvas, search, opened } = tapParts(canvasElement)
+    const owner = canvas.getByRole('textbox', { name: 'Filter by owner' })
+    const label = owner.closest('label')
+    if (label === null) throw new Error('no label')
+    await touchTap(search)
+    fakeViewport.move(544)
+    // A tap on another field's label moves the focus to that field, as a tap on the field does (Codex review of #213).
+    await touchTap(label)
+    await expect(owner).toHaveFocus()
+    await expect(opened()).toBe('Opened 0')
+  },
+}
+
+/** The phone Inbox list with the keyboard open: a tap on another field's label moves the focus to that field. */
+export const TapLabelDark: StoryObj<typeof meta> = { ...tapLabel, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapLabelLight: StoryObj<typeof meta> = { ...tapLabel, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapNoKeyboard: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { search, row, opened } = tapParts(canvasElement)
+    // A field focused with a hardware keyboard: no on-screen keyboard covers the screen, so the shell docks nothing.
+    await touchTap(search)
+    await expect(search).toHaveFocus()
+    // A tap on a row opens the row at once, as with no field focused (Codex review of #213).
+    await touchTap(row(5))
+    await expect(opened()).toBe('Opened 1')
+  },
+}
+
+/** The phone Inbox list with a field focused and no on-screen keyboard (a hardware keyboard): a tap on a row opens it. */
+export const TapNoKeyboardDark: StoryObj<typeof meta> = { ...tapNoKeyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapNoKeyboardLight: StoryObj<typeof meta> = { ...tapNoKeyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const mouseClickRow: StoryObj<typeof meta> = {
   ...withTapDevice,

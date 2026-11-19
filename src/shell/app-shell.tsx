@@ -321,6 +321,11 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
       if (!editable(focused) || target === null || !root.contains(target)) return
       if (editable(target.closest(fieldSelector)) || target.closest(keyboardKeep) !== null) return
+      // A field's label moves the focus to its field, as a tap on the field does (Codex review of #213).
+      const label = target.closest('label')
+      if (label !== null && editable(label.control)) return
+      // With no on-screen keyboard docked (a hardware keyboard), the tap acts at once (Codex review of #213).
+      if (root.style.getPropertyValue(keyboardInset) === '') return
       stopSwallow()
       focused.blur()
       document.addEventListener('click', swallow, true)

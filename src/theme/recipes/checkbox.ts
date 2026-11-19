@@ -42,11 +42,23 @@ import { focusRing } from './focus'
 // box (35 to 59, less the 16 px box). `inline` drops the `control.md`
 // minimum and sets that gap; a `::before` reaches 4 above and below the row,
 // so the press area stays 24 high (WCAG 2.5.8) with no layout height.
+// `density="compact"` is the row of the Artifacts Filter menu (D3 403:6857
+// to 403:6955, T3 407:1506 to 407:1615, M3 the same): Figma's rows are 29
+// high (28 for a mono label) at any text size, so the row takes control.sm
+// (28, on the 4 px grid) as its minimum height, not control.md. In a
+// `PopoverSection` (gap 2) the rows are then 30 apart, Figma's 30 and 31,
+// with no new gap token. An `inline` row keeps no minimum.
+// `leading` is a mark between the box and the label, such as the Claude and
+// Codex marks of the Source rows of that menu (403:6855, 403:6865, 13 px;
+// the caller passes `KindMark size="12"`). Figma puts the label 23 after the
+// box, Figma's 13 px mark with 5 on each side; the row's gap drops to 6
+// with a leading mark (spacing 6, d-072: the nearest token), so the label
+// is 6 + 12 + 6 = 24 after the box. The mark is centred on the row.
 export const checkbox = defineSlotRecipe({
   className: 'checkbox',
   jsx: ['Checkbox', 'CheckboxGroup'],
   staticCss: ['*'],
-  slots: [...checkboxAnatomy.keys(), 'groupLabel', 'trailing', 'text', 'description'],
+  slots: [...checkboxAnatomy.keys(), 'groupLabel', 'trailing', 'text', 'description', 'leading'],
   base: {
     root: {
       display: 'flex',
@@ -56,6 +68,8 @@ export const checkbox = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
+      // A row with a `leading` mark sets the box, the mark and the label 6 apart.
+      '&[data-leading]': { gap: '6' },
     },
     control: {
       display: 'inline-flex',
@@ -76,6 +90,7 @@ export const checkbox = defineSlotRecipe({
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     indicator: { display: 'inline-flex' },
+    leading: { display: 'inline-flex', alignItems: 'center', flexShrink: '0' },
     text: { display: 'flex', flexDirection: 'column', gap: '2', minW: '0' },
     label: { textStyle: 'body', color: 'fg.default' },
     description: { textStyle: 'mono', color: 'fg.muted' },
@@ -103,6 +118,10 @@ export const checkbox = defineSlotRecipe({
       },
       false: {},
     },
+    density: {
+      default: {},
+      compact: { root: { minH: 'control.sm' } },
+    },
     tone: {
       accent: {},
       discuss: {
@@ -128,6 +147,7 @@ export const checkbox = defineSlotRecipe({
     { size: 'sm', labelStyle: 'mono', css: { label: { textStyle: 'mono' } } },
     // An inline row keeps no minimum height at the small size too.
     { size: 'sm', inline: true, css: { root: { minH: 'auto' } } },
+    { density: 'compact', inline: true, css: { root: { minH: 'auto' } } },
   ],
-  defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent', labelTone: 'default', inline: false },
+  defaultVariants: { labelStyle: 'text', size: 'md', tone: 'accent', labelTone: 'default', inline: false, density: 'default' },
 })

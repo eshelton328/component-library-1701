@@ -245,6 +245,7 @@ export type CheckboxGroupItem = {
     disabled?: boolean | undefined;
     trailing?: ReactNode;
     labelStyle?: 'text' | 'mono' | undefined;
+    leading?: ReactNode;
 };
 
 // @public (undocumented)
@@ -257,6 +258,7 @@ export type CheckboxGroupProps = {
     disabled?: boolean | undefined;
     name?: string | undefined;
     size?: 'md' | 'compact' | 'sm' | undefined;
+    density?: 'default' | 'compact' | undefined;
 };
 
 // @public (undocumented)
@@ -275,6 +277,8 @@ export type CheckboxProps = {
     tone?: 'accent' | 'discuss' | undefined;
     labelTone?: 'default' | 'muted' | undefined;
     inline?: boolean | undefined;
+    density?: 'default' | 'compact' | undefined;
+    leading?: ReactNode;
 };
 
 // @public

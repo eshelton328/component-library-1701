@@ -213,7 +213,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const now = performance.now()
       const elapsed = Math.min(1, Math.max(0, (now - start) / keyboardMotion))
       const done = ease(elapsed)
-      const ahead = Math.sign(inset - origin) === Math.sign(previous - origin)
+      // The target must be past that place by more than a small step: a target back at it, within a float error or a
+      // keyboard's 1 px step, is a reopen or a close, and a correction would rise or fall in the rest of the curve.
+      const ahead = Math.sign(previous - origin) * (inset - origin) > keyboardFollow
       // A small step of the keyboard (at most `keyboardFollow` from the last target) keeps the move's end even late in
       // it: the rest of the curve still takes the dock onto the keyboard by that end (the-bridge keyboard:served on
       // Workspaces, beta.80).

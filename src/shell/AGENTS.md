@@ -23,6 +23,8 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   when the focused field is removed.
 - A control that acts on the focused field and must keep the keyboard
   open carries `data-keyboard-keep` (R19).
+- Read a token as a number only through `css-values.ts`, which throws
+  on a form it does not know (audit L-2, `MotionTokens` story).
 - The tab bar stays in the shell's flow, never `position: fixed`. Its
   height is defined once, as `tabBarHeight` in
   `../theme/recipes/tab-bar-height.ts`.

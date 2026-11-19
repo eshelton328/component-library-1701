@@ -8,6 +8,7 @@ import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { AppShell } from './app-shell'
+import { cssCubicBezier, cssDuration, cssPx } from './css-values'
 import { keyboardMeasures } from './keyboard-measures'
 
 // Stand-ins for the nav rail, panels and tab bar, which are Parts or not merged yet.
@@ -2751,4 +2752,24 @@ export const KeyboardAndroidLight: StoryObj<typeof meta> = {
   ...keyboardAndroid,
   tags: ['!dev'],
   globals: { mode: 'light', viewport: { value: 'm390' } },
+}
+
+// The dock reads its motion and the Figma keyboard from tokens as numbers, through strict readers (audit L-2). The
+// tokens give the literals the dock is built for, and a value in another form throws at load, where `parseFloat` read
+// `0.25s` as 0.25 ms and a regex read `ease` as a straight line.
+export const MotionTokens: StoryObj<typeof meta> = {
+  render: () => <Desktop />,
+  play: async () => {
+    await expect(cssDuration(token('durations.keyboard'))).toBe(250)
+    await expect(cssCubicBezier(token('easings.keyboard'))).toEqual([0.38, 0.7, 0.125, 1])
+    await expect(cssPx(token('sizes.shell.keyboard'))).toBe(380)
+    await expect(cssDuration('0.25s')).toBe(250)
+    await expect(cssDuration('250ms')).toBe(250)
+    await expect(cssPx(' 380px ')).toBe(380)
+    await expect(cssCubicBezier('cubic-bezier(.4, -0.5, 0.2, 1.5)')).toEqual([0.4, -0.5, 0.2, 1.5])
+    for (const bad of ['0.25 s', '250', '', 'calc(250ms)', '-ms']) await expect(() => cssDuration(bad)).toThrow(`"${bad}"`)
+    for (const bad of ['380', '380rem', '380 px']) await expect(() => cssPx(bad)).toThrow(`"${bad}"`)
+    for (const bad of ['ease', 'linear(0, 1)', 'steps(4)', 'cubic-bezier(0.38, 0.7, 0.125)', 'cubic-bezier(1.2, 0, 0, 1)', 'cubic-bezier(0, 0, -0.1, 1)'])
+      await expect(() => cssCubicBezier(bad)).toThrow(`"${bad}"`)
+  },
 }

@@ -6,6 +6,7 @@ import { editable } from '../controls/editable'
 import { useInputModality } from '../controls/input-modality'
 import type { Scalar } from '../controls/scalar'
 import { Backdrop } from './backdrop'
+import { cssCubicBezier, cssDuration, cssPx } from './css-values'
 import { keyboardMeasures } from './keyboard-measures'
 import { shown } from './shown'
 
@@ -28,8 +29,8 @@ const keyboardInset = '--app-shell-keyboard'
 const blurEndDelay = 300
 // The dock moves as the iOS keyboard does: `durations.keyboard` (250ms) on `easings.keyboard`, a curve close to
 // UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
-// tokens as numbers.
-const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
+// tokens as numbers, through strict readers that throw on a form they do not know (audit L-2).
+const keyboardMotion = cssDuration(token('durations.keyboard'))
 // The time fraction of a move up to which a new target keeps the move's end.
 const keepEndUntil = 0.7
 // The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame (three frames at 60 Hz).
@@ -42,14 +43,12 @@ const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
 // keyboard near its end.
 const keyboardFollow = 2
-const curvePoints = (token('easings.keyboard').match(/-?\d*\.?\d+/g) ?? []).map(Number)
-const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = curvePoints
-const keyboardCurve = [x1, y1, x2, y2] as const
+const keyboardCurve = cssCubicBezier(token('easings.keyboard'))
 // The keyboard a field is expected to open before the browser reports it: the last one measured in that
 // orientation, and on a first portrait open the iOS keyboard with Safari's form bar that Figma draws,
 // `sizes.shell.keyboard` (380 on the 844 screen, Workbench M10 147:97). A landscape keyboard has no Figma frame, so
 // the dock waits for its measure.
-const figmaKeyboard = Number.parseFloat(token('sizes.shell.keyboard'))
+const figmaKeyboard = cssPx(token('sizes.shell.keyboard'))
 // How long after a field takes the focus the dock waits for the keyboard's measure; with none by then, no on-screen
 // keyboard opened (a hardware keyboard), and the dock follows the visual viewport as it is.
 const keyboardWait = 1000

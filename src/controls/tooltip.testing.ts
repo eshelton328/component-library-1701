@@ -7,7 +7,8 @@ const tooltipOf = () => within(document.body).queryByRole('tooltip')
 
 /**
  * Checks that the TruncatedText in `slot` (or `slot` itself) is cut with an
- * ellipsis, keeps the whole text, and shows it in a tooltip on hover and on
+ * ellipsis (on its last line, when it has `lines` above 1), keeps the whole
+ * text, and shows it in a tooltip on hover and on
  * keyboard focus. `owner` is the button or link around the text that takes
  * the focus; without it, the cut text must be a tab stop of its own.
  */
@@ -16,7 +17,9 @@ export async function expectCutText(slot: Element, full: string, owner?: HTMLEle
   if (!(text instanceof HTMLElement)) throw new Error(`no truncated text for ${full}`)
   await expect(text.textContent).toBe(full)
   await expect(getComputedStyle(text).textOverflow).toBe('ellipsis')
-  await waitFor(() => expect(text.scrollWidth).toBeGreaterThan(text.clientWidth))
+  // A TruncatedText with `lines` above 1 is clamped and cut by height; one on a single line is cut by width.
+  if (getComputedStyle(text).webkitLineClamp === 'none') await waitFor(() => expect(text.scrollWidth).toBeGreaterThan(text.clientWidth))
+  else await waitFor(() => expect(text.scrollHeight - text.clientHeight).toBeGreaterThan(1))
   if (owner === undefined) await waitFor(() => expect(text).toHaveAttribute('tabindex', '0'))
   else await expect(text).not.toHaveAttribute('tabindex')
   const target = owner ?? text

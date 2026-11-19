@@ -67,6 +67,9 @@ export function Tooltip(input: TooltipProps) {
 
 const Text = styled('span', truncatedText)
 
+// The recipe's variant names for each line count.
+const lineVariants = { 1: '1', 2: '2', 3: '3' } as const
+
 // Elements that can take the focus.
 const focusable = 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"], [contenteditable=""]'
 // Roles whose items take the focus by arrow keys (a roving tab index), so an item with tabindex -1 is still reached.
@@ -84,8 +87,14 @@ function focusOwner(node: HTMLElement): HTMLElement | null {
 }
 
 export type TruncatedTextProps = {
-  /** The text. It shows on one line and ends with an ellipsis when it does not fit. */
+  /** The text. It shows on `lines` lines and ends with an ellipsis when it does not fit. */
   children: string
+  /**
+   * How many lines the text may take. `1` (the default) keeps it on one line. `2` or `3` wraps it onto that many
+   * lines; a text longer than those lines ends with an ellipsis on the last one and shows whole in the tooltip,
+   * as a cut line does.
+   */
+  lines?: 1 | 2 | 3 | undefined
   /**
    * Where the tooltip opens; `bottom` when not set, below the text and away from a card's title above it. Where the
    * window has no room there, it flips to the other side, and it slides along the text to stay in the window.
@@ -102,7 +111,7 @@ const OPEN_DELAY = 400
 const CLOSE_DELAY = 150
 
 /**
- * Text on one line that ends with an ellipsis when it is too long, and then
+ * Text on one line (or on `lines` lines) that ends with an ellipsis when it is too long, and then
  * shows the whole text in a `Tooltip` while the pointer rests on it or it
  * has the keyboard focus. It measures itself again when its size changes.
  * When the text fits there is no tooltip. The element always holds the whole
@@ -117,7 +126,7 @@ const CLOSE_DELAY = 150
  * covers a card's title or a row reaches that element, and the pointer
  * cannot rest on it. Escape closes it.
  */
-export function TruncatedText({ children, placement = 'bottom', highlight }: TruncatedTextProps) {
+export function TruncatedText({ children, placement = 'bottom', highlight, lines = 1 }: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)
@@ -138,7 +147,8 @@ export function TruncatedText({ children, placement = 'bottom', highlight }: Tru
   useLayoutEffect(() => {
     if (element === null) return
     const measure = () => {
-      setCut(element.scrollWidth > element.clientWidth)
+      // On more than one line the text is cut by height; one pixel of slack, as a zoomed page can leave a fractional height.
+      setCut(lines === 1 ? element.scrollWidth > element.clientWidth : element.scrollHeight - element.clientHeight > 1)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -146,7 +156,7 @@ export function TruncatedText({ children, placement = 'bottom', highlight }: Tru
     return () => {
       observer.disconnect()
     }
-  }, [element, children, marks])
+  }, [element, children, marks, lines])
 
   // Inside an element that takes the focus, follow its pointer and keyboard focus.
   const openTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -221,7 +231,7 @@ export function TruncatedText({ children, placement = 'bottom', highlight }: Tru
       }}
       cutText
     >
-      <Text ref={ref} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
+      <Text ref={ref} lines={lineVariants[lines]} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
         {highlight === undefined ? children : <Highlight text={children} query={highlight} />}
       </Text>
     </TooltipBase>

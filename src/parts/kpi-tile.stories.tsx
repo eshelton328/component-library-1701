@@ -120,3 +120,92 @@ export const LongText: StoryObj<typeof meta> = {
     }
   },
 }
+
+// A caption wider than its tile, as Toolkit D12's "claude -p and the SDK, mostly skill evals" (445:227) in the
+// narrower view, and one longer than two lines.
+const wideCaption = 'claude -p and the SDK, mostly skill evals and the review hooks'
+const tooLongCaption = 'counted from the transcripts of every chat, every headless run and every hook that blocked a commit in the last thirty days'
+
+function CaptionLinesTiles() {
+  return (
+    <main className={page}>
+      <div className={narrowBox}>
+        <KpiTile value="2,027" label="from headless runs" caption={wideCaption} captionLines={2} />
+      </div>
+      <div className={narrowBox}>
+        <KpiTile value="9" label="rejected" caption={tooLongCaption} captionLines={2} />
+      </div>
+      <div className={narrowBox}>
+        <KpiTile value="2,052" label="toolkit calls" caption={wideCaption} />
+      </div>
+      <div hidden>
+        <span data-swatch="muted" className={swatches.muted} />
+      </div>
+    </main>
+  )
+}
+
+const captionLinesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const tileOf = (label: string) => {
+    const tile = canvas.getByText(label).closest('dl')
+    if (!(tile instanceof HTMLElement)) throw new Error(`no tile ${label}`)
+    const caption = tile.querySelector('.kpi-tile__caption')
+    if (!(caption instanceof HTMLElement)) throw new Error(`no caption in ${label}`)
+    const text = caption.firstElementChild
+    if (!(text instanceof HTMLElement)) throw new Error(`no caption text in ${label}`)
+    return { tile, caption, text }
+  }
+  // captionLines={2}: the caption wraps onto a second `small` line (12/16, muted) and shows whole, inside the padding.
+  const wrapped = tileOf('from headless runs')
+  const w = getComputedStyle(wrapped.text)
+  await expect([w.fontSize, Math.round(Number.parseFloat(w.lineHeight)), w.whiteSpace, w.webkitLineClamp]).toEqual(['12px', 16, 'normal', '2'])
+  const muted = canvasElement.querySelector('[data-swatch="muted"]')
+  if (muted === null) throw new Error('no muted swatch')
+  await expect(w.color).toBe(getComputedStyle(muted).backgroundColor)
+  await expect(wrapped.text.textContent).toBe(wideCaption)
+  await expect(Math.round(wrapped.text.getBoundingClientRect().height)).toBe(32)
+  await expect(wrapped.text.scrollHeight - wrapped.text.clientHeight).toBeLessThanOrEqual(1)
+  await expect(wrapped.text.getBoundingClientRect().right).toBeLessThanOrEqual(wrapped.caption.getBoundingClientRect().right)
+  // The tile grows by the caption's second line: 86 + 16.
+  await expect(Math.round(wrapped.tile.getBoundingClientRect().height)).toBe(102)
+  // A caption longer than its two lines is cut on the second with an ellipsis.
+  const cut = tileOf('rejected')
+  await expect(Math.round(cut.text.getBoundingClientRect().height)).toBe(32)
+  await expect(cut.text.scrollHeight).toBeGreaterThan(cut.text.clientHeight)
+  await expect(getComputedStyle(cut.text).webkitLineClamp).toBe('2')
+  // Without the prop the caption keeps today's look: one line, cut with an ellipsis, in an 86 px tile.
+  const single = tileOf('toolkit calls')
+  const s = getComputedStyle(single.text)
+  await expect([s.whiteSpace, s.textOverflow, s.overflowX]).toEqual(['nowrap', 'ellipsis', 'hidden'])
+  await expect(single.text.scrollWidth).toBeGreaterThan(single.text.clientWidth)
+  await expect(Math.round(single.text.getBoundingClientRect().height)).toBe(16)
+  await expect(Math.round(single.tile.getBoundingClientRect().height)).toBe(86)
+}
+
+/** `captionLines={2}`: a caption wider than the tile wraps and shows whole; one longer than two lines is cut on the second. */
+export const CaptionLinesDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <CaptionLinesTiles />, play: captionLinesPlay }
+/** The same tiles in the light mode. */
+export const CaptionLinesLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <CaptionLinesTiles />, play: captionLinesPlay }
+
+// captionLines={2} with a caption longer than its two lines: the second line ends with an ellipsis, and hover and
+// keyboard focus show the whole caption in the cut-text tooltip, as on a cut one-line caption. A caption that fits
+// on its two lines is no tab stop and opens no tooltip.
+const captionCutPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const captionOf = (label: string) => {
+    const caption = canvas.getByText(label).closest('dl')?.querySelector('.kpi-tile__caption')
+    if (!(caption instanceof HTMLElement)) throw new Error(`no caption in ${label}`)
+    return caption
+  }
+  const fits = captionOf('from headless runs').querySelector('.truncated-text')
+  if (!(fits instanceof HTMLElement)) throw new Error('no caption text in from headless runs')
+  await expect(getComputedStyle(fits).webkitLineClamp).toBe('2')
+  await expect(fits).not.toHaveAttribute('tabindex')
+  await expectCutText(captionOf('rejected'), tooLongCaption)
+}
+
+/** `captionLines={2}` with a caption longer than two lines: the whole caption shows in a tooltip on hover and keyboard focus. */
+export const CaptionCutDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <CaptionLinesTiles />, play: captionCutPlay }
+/** The same tiles in the light mode. */
+export const CaptionCutLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <CaptionLinesTiles />, play: captionCutPlay }

@@ -95,7 +95,9 @@ under their purpose group, never under "Controls" (d-065).
   ring on it; a text field keeps its focus border. A key press never sets
   it, so the keyboard always shows the ring (WCAG 2.4.7). Ark returns the
   focus with `preventScroll`. A control that takes or returns the focus
-  calls `useInputModality()` (Button, BottomSheet, Dialog, Menu, Popover).
+  calls `useInputModality()` (Button, BottomSheet, Dialog, Menu, Popover),
+  and so does `AppShell`, so a page's own block under `focusRing` gets the
+  mark with no control on the page.
 - `BottomSheet` closes on a touch or pen swipe down from the grabber or
   the title row, or from its content when that is scrolled to the top: a
   release past 30% of the sheet's height or a flick faster than 0.5 px/ms

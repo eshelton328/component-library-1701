@@ -1,12 +1,29 @@
-// The condition of the library's own focus ring (screen review R16). A recipe
-// writes its ring under `[focusRing]`, never under `_focusVisible`, and sets
-// `outline: 'none'` on the same slot, so no state draws the browser's
-// default outline: not `:focus:not(:focus-visible)`, not a quiet focus.
-//
-// The ring shows on `:focus-visible` (or Ark's `data-focus-visible`), but not
-// on an element that carries `data-focus-quiet`. `controls/input-modality.ts`
-// sets that attribute when an element takes the focus after a mouse, pen or
-// touch press, such as the trigger that gets the focus back when a sheet,
-// dialog, menu or popover closes by pointer. After a key press the attribute
-// is not set, so keyboard users always see the ring (WCAG 2.4.7).
+/**
+ * The condition of the library's own focus ring (screen review R16). A recipe
+ * writes its ring under `[focusRing]`, never under `_focusVisible`, and sets
+ * `outline: 'none'` on the same slot, so no state draws the browser's
+ * default outline: not `:focus:not(:focus-visible)`, not a quiet focus.
+ *
+ * The ring shows on `:focus-visible` (or Ark's `data-focus-visible`), but not
+ * on an element that carries `data-focus-quiet`. `controls/input-modality.ts`
+ * sets that attribute when an element takes the focus after a mouse, pen or
+ * touch press, such as the trigger that gets the focus back when a sheet,
+ * dialog, menu or popover closes by pointer. After a key press the attribute
+ * is not set, so keyboard users always see the ring (WCAG 2.4.7).
+ *
+ * The package exports this constant, so a page's own block draws the same
+ * ring. Panda's `_focusVisible` does not read `data-focus-quiet`, so a page
+ * never uses it:
+ *
+ * ```ts
+ * css({
+ *   outline: 'none',
+ *   [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
+ * })
+ * ```
+ *
+ * `AppShell` starts the tracker that sets the mark, and so do Button,
+ * BottomSheet, Dialog, Menu and Popover, so a page in an AppShell gets the
+ * mark with no other library control on it.
+ */
 export const focusRing = '&:is(:focus-visible, [data-focus-visible]):not([data-focus-quiet])'

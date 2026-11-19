@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
 import { editable } from '../controls/editable'
+import { useInputModality } from '../controls/input-modality'
 import type { Scalar } from '../controls/scalar'
 import { Backdrop } from './backdrop'
 import { shown } from './shown'
@@ -211,7 +212,9 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
 }
 
 /**
- * The frame that pages sit in, on the `Backdrop`. `size` picks the layout,
+ * The frame that pages sit in, on the `Backdrop`. It starts the input
+ * tracker (`useInputModality`), so a page's own block under `focusRing`
+ * hides its ring after a pointer press. `size` picks the layout,
  * because the library has no breakpoint tokens: `desktop` (the default)
  * places the rail, the list pane, the detail pane and the side panel side
  * by side; `tablet` and `phone` show one pane at a time above the tab bar.
@@ -245,6 +248,7 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * when it holds only text.
  */
 export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false }: AppShellProps) {
+  useInputModality()
   const fit = useVisualViewportFit()
   const desktop = size === undefined || size === 'desktop'
   if (desktop) {

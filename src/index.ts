@@ -1,4 +1,5 @@
-// The package entry: the icons, Controls, Parts and Shell, with their props types.
+// The package entry: the icons, Controls, Parts and Shell, with their props types, and the focus ring condition.
+export { focusRing } from './theme/recipes/focus'
 export { Button } from './controls/button'
 export type { ButtonProps } from './controls/button'
 export { ItemTabs } from './controls/item-tabs'

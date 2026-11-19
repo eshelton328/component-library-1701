@@ -12,6 +12,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   (d-067).
 - The shell is the same in every theme; a theme changes only its tokens
   and recipe skins (d-035).
+- `AppShell` calls `useInputModality()` from `../controls/input-modality.ts`
+  on mount, so the pages' own blocks under `focusRing` get
+  `data-focus-quiet` after a pointer press (screen review R16).
 - Nav items come in as props; the shell does not read settings (d-038,
   d-068).
 - `AppShell` is the App frame and the Pane layout in one component: it

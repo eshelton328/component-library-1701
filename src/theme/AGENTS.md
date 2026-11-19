@@ -32,8 +32,10 @@ from `../../tokens/`.
   state draws the browser's default outline. The ring shows on
   `:focus-visible` but not on an element marked `data-focus-quiet`, which
   `../controls/input-modality.ts` sets when the focus comes after a mouse,
-  pen or touch press (screen review R16). Panda writes `outline: 'none'` as
-  a transparent outline, so a story checks the colour, not the style.
+  pen or touch press (screen review R16). `../index.ts` exports the same
+  constant for the pages of the-bridge; keep the one definition here.
+  Panda writes `outline: 'none'` as a transparent outline, so a story
+  checks the colour, not the style.
 - Variant values are literals, so Panda can extract them. A theme changes
   tokens, never variant names; a removed or renamed variant is a breaking
   change.

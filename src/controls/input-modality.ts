@@ -68,7 +68,8 @@ function install() {
 
 /**
  * Starts the tracker once for the page. Every control that can take the focus
- * or move it back (Button, BottomSheet, Dialog, Menu, Popover) calls it. The
+ * or move it back (Button, BottomSheet, Dialog, Menu, Popover) calls it, and
+ * so does `AppShell`, for a page whose own blocks use `focusRing`. The
  * listeners stay for the life of the page, as the last modality is the page's.
  */
 export function useInputModality() {

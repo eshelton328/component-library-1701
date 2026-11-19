@@ -474,3 +474,60 @@ const skillQueryPlay: StoryObj<typeof meta>['play'] = async () => {
 
 export const SkillQueryDark: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'dark' }, play: skillQueryPlay }
 export const SkillQueryLight: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'light' }, play: skillQueryPlay }
+
+// The Artifacts Filter menu (D3 403:6852, 320 wide): `inset="wide"` pads the box 12, so its rows (403:6857 to
+// 403:6955) sit 13 in from the box edge and are 294 wide; with `density="compact"` rows they are 30 apart.
+function WideInset() {
+  return (
+    <main className={page}>
+      <Inline justify="between">
+        <Popover trigger={<Button>Wide</Button>} label="Wide" placement="bottom-start" surface="raised" inset="wide" open>
+          <PopoverSection label="Kind">
+            <Checkbox label="Documents" size="compact" density="compact" defaultChecked />
+            <Checkbox label="Charts" size="compact" density="compact" />
+          </PopoverSection>
+        </Popover>
+        <Popover trigger={<Button>Compact</Button>} label="Compact wide" density="compact" inset="wide" open>
+          <Checkbox label="A compact row" />
+        </Popover>
+        <Popover trigger={<Button>Default</Button>} label="Default" open>
+          <PopoverSection label="Kind">
+            <Checkbox label="A row" />
+          </PopoverSection>
+        </Popover>
+      </Inline>
+    </main>
+  )
+}
+
+/** A wide inset pads the box 12 at either density, its rows 13 in from the edge, 294 wide in a 320 box; the default box keeps 8. */
+const insetPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const wide = await body.findByRole('dialog', { name: 'Wide' })
+  const compact = await body.findByRole('dialog', { name: 'Compact wide' })
+  const fallback = await body.findByRole('dialog', { name: 'Default' })
+  const row = (box: HTMLElement, name: string) => {
+    const el = within(box).getByRole('checkbox', { name }).closest('label')
+    if (!(el instanceof HTMLElement)) throw new Error(`no row for ${name}`)
+    return el.getBoundingClientRect()
+  }
+  const edge = wide.getBoundingClientRect()
+  await expect(edge.width).toBe(320)
+  await expect(getComputedStyle(wide).paddingTop).toBe('12px')
+  await expect(getComputedStyle(wide).paddingLeft).toBe('12px')
+  const first = row(wide, 'Documents')
+  await expect(Math.round(first.left - edge.left)).toBe(13)
+  await expect(Math.round(first.width)).toBe(294)
+  await expect(Math.round(row(wide, 'Charts').top - first.top)).toBe(30)
+  // The section label keeps its 8 px inset, from the box's padding.
+  const label = within(wide).getByText('Kind')
+  await expect(getComputedStyle(label).paddingLeft).toBe('8px')
+  // A wide inset wins over the compact density's 6.
+  await expect(getComputedStyle(compact).paddingTop).toBe('12px')
+  // The default box keeps padding 8, rows 9 in.
+  await expect(getComputedStyle(fallback).paddingTop).toBe('8px')
+  await expect(Math.round(row(fallback, 'A row').left - fallback.getBoundingClientRect().left)).toBe(9)
+}
+
+export const WideInsetDark: StoryObj<typeof meta> = { render: () => <WideInset />, globals: { mode: 'dark' }, play: insetPlay }
+export const WideInsetLight: StoryObj<typeof meta> = { render: () => <WideInset />, globals: { mode: 'light' }, play: insetPlay }

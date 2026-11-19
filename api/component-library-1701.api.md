@@ -1311,6 +1311,7 @@ export type PopoverProps = {
     flip?: boolean | undefined;
     surface?: 'overlay' | 'raised' | undefined;
     density?: 'default' | 'compact' | undefined;
+    inset?: 'default' | 'wide' | undefined;
     autoFocus?: boolean | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;

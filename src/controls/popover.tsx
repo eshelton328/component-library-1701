@@ -59,6 +59,12 @@ export type PopoverProps = {
    */
   density?: 'default' | 'compact' | undefined
   /**
+   * The box padding: `default` keeps the padding `density` sets (8, or 6 at `compact`); `wide` pads the box 12 at
+   * either density, as the Artifacts Filter menu draws it (D3 403:6852), so its rows sit 13 in from the box edge and a
+   * `md` box holds rows 294 wide. The section labels keep their own 8 px inset.
+   */
+  inset?: 'default' | 'wide' | undefined
+  /**
    * Whether opening the popover moves the focus to its first control; `true` when not set. With `false` the focus
    * stays where it was, such as in the message box that opened the skill picker with "/", so typing goes on there.
    */
@@ -79,13 +85,14 @@ export type PopoverDataAttributes = { [key: `data-${string}`]: string | number |
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, autoFocus = true, className, ...rest }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, inset, autoFocus = true, className, ...rest }: PopoverProps) {
   useInputModality()
   return (
     <Root
       width={width}
       surface={surface}
       density={density}
+      inset={inset}
       autoFocus={autoFocus}
       positioning={{ placement, gutter: 6, flip }}
       {...(open === undefined ? {} : { open })}

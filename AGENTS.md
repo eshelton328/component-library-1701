@@ -58,7 +58,7 @@ reaches 100 %. The brain's `actions-minutes` skill generates it from the
 project facts; render it again there, never edit it by hand.
 
 The `secrets` job in `ci.yml` runs gitleaks 8.30.1 on the commits of
-each PR, with the rules in `.gitleaks.toml` and the personal terms from
+each PR, merge commits included, with the rules in `.gitleaks.toml` and the personal terms from
 the repository secret `PRIVACY_TERMS`; it fails when the secret is
 missing. `.github/workflows/secret-history.yml` scans the full history
 each Monday and keeps the issue "Secret scan of the full history" up to

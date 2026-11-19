@@ -340,4 +340,4 @@ jobs:
           cat .gitleaks.toml > "$cfg"
           printf '\n[[rules]]\nid = "personal-term"\ndescription = "A value from the secret PRIVACY_TERMS"\n' >> "$cfg"
           printf "regex = '''(?i)\\\\b(?:%s)\\\\b'''\n" "$alt" >> "$cfg"
-          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --ignore-gitleaks-allow --config "$cfg" --log-opts="$BASE..$HEAD" .
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --verbose --ignore-gitleaks-allow --config "$cfg" --log-opts="--diff-merges=remerge $BASE..$HEAD" .

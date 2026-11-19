@@ -41,6 +41,43 @@ function scan(name: string, lines: string[], flags: string[] = []): string[] {
 
 const literal = 'winter' + 'iscoming'
 
+// The rule IDs that gitleaks git finds in a repository whose last commit
+// is a merge that adds a planted line, with these --log-opts ($BASE is the
+// commit before the merge).
+function scanMerge(logOpts: (base: string) => string): string[] {
+  const dir = mkdtempSync(join(tmpdir(), 'secret-scan-git-'))
+  const report = join(dir, 'report.json')
+  const repo = join(dir, 'repo')
+  mkdirSync(repo)
+  const git = (...args: string[]) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t' + '@' + 'users.noreply.github.com', ...args],
+      { cwd: repo, encoding: 'utf8' })
+    assert.equal(r.status, 0, r.stderr)
+    return r.stdout.trim()
+  }
+  git('init', '-q', '-b', 'main')
+  writeFileSync(join(repo, 'a.txt'), 'a\n')
+  git('add', '.')
+  git('commit', '-qm', 'one', '--no-verify')
+  git('checkout', '-q', '-b', 'side')
+  writeFileSync(join(repo, 'b.txt'), 'b\n')
+  git('add', '.')
+  git('commit', '-qm', 'side', '--no-verify')
+  git('checkout', '-q', 'main')
+  const base = git('rev-parse', 'HEAD')
+  git('merge', '-q', '--no-ff', '--no-commit', 'side')
+  writeFileSync(join(repo, 'deploy.sh'), 'PASS' + 'WORD="' + literal + '"\n')
+  git('add', '.')
+  git('commit', '-qm', 'merge', '--no-verify')
+  const run = spawnSync(gitleaks, ['git', '--no-banner', '--redact', '--exit-code', '0', '--config', config,
+    '--report-format', 'json', '--report-path', report, '--log-opts=' + logOpts(base), repo], { encoding: 'utf8' })
+  if (run.error !== undefined) throw new Error(`gitleaks did not start (${run.error.message}); install gitleaks 8.30.1 or set GITLEAKS`)
+  assert.equal(run.status, 0, run.stderr)
+  const found: unknown = JSON.parse(readFileSync(report, 'utf8'))
+  if (!Array.isArray(found)) throw new Error('the gitleaks report is not a list')
+  return found.filter(isFinding).map((f) => f.RuleID).sort()
+}
+
 void test('a bare secret-named key with a literal value is found (Codex review of #252)', () => {
   assert.deepEqual(scan('deploy.sh', ['PASS' + 'WORD="' + literal + '"']), ['env-assignment'])
   assert.deepEqual(scan('deploy.sh', ['export TOK' + 'EN=' + literal]), ['env-assignment'])
@@ -71,4 +108,20 @@ void test('both CI scans ignore gitleaks:allow comments (Codex review of #252)',
   const line = 'API_TOK' + 'EN="' + literal + '" # gitleaks' + ':allow'
   assert.deepEqual(scan('deploy.sh', [line]), [])
   assert.deepEqual(scan('deploy.sh', [line], ['--ignore-gitleaks-allow']), ['env-assignment'])
+})
+
+void test('a single-quoted value with a $ is literal and found (Codex review of the-bridge #215)', () => {
+  assert.deepEqual(scan('deploy.sh', ['PASS' + "WORD='$" + literal + "'"]), ['env-assignment'])
+})
+
+void test('both CI scans pass --diff-merges=remerge, so a merge commit is scanned (Codex review of the-bridge #215)', () => {
+  for (const path of workflows) {
+    const text = readFileSync(join(root, path), 'utf8')
+    const at = text.indexOf('"$RUNNER_TEMP/gitleaks" git ')
+    const call = text.slice(at, text.indexOf('\n', text.indexOf(' .', at)))
+    assert.match(call, /--log-opts="[^"]*--diff-merges=remerge/, `${path} passes --diff-merges=remerge`)
+  }
+  assert.deepEqual(scanMerge((base) => '--diff-merges=remerge ' + base + '..HEAD'), ['env-assignment'])
+  assert.deepEqual(scanMerge(() => '--all --diff-merges=remerge'), ['env-assignment'])
+  assert.deepEqual(scanMerge((base) => base + '..HEAD'), [])
 })

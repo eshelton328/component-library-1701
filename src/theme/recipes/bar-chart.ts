@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 import { scrollAreaX } from './scroll-area'
 
 // The bar colours, one per tone. Figma draws the eval chart in cyan (with
@@ -25,7 +26,16 @@ export const groupedBarChart = defineSlotRecipe({
   staticCss: ['*'],
   slots: ['root', 'svg', 'group', 'bar', 'axisLabel', 'data'],
   base: {
-    root: { display: 'block', maxW: '100%', overflowX: 'auto', ...scrollAreaX },
+    root: {
+      display: 'block',
+      maxW: '100%',
+      overflowX: 'auto',
+      ...scrollAreaX,
+      // The chart is a tab stop only while it scrolls sideways, so the keyboard can scroll it; the ring is drawn
+      // inside, as CodeLines draws it, so a parent's overflow cannot cut it.
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+    },
     svg: { display: 'block', overflow: 'visible' },
     group: { overflow: 'visible' },
     bar: { rx: 'token(radii.hair)', ...tones },

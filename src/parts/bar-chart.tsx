@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { dailyBarChart, groupedBarChart, horizontalBarChart } from '../../styled-system/recipes'
 import { TruncatedText } from '../controls/tooltip'
@@ -28,6 +29,32 @@ function scaleMax(max: number | undefined, values: readonly number[]): number {
   if (max !== undefined && Number.isFinite(max) && max > 0) return max
   const largest = Math.max(0, ...values.map(finite))
   return largest > 0 ? largest : 1
+}
+
+/**
+ * Whether a box scrolls sideways: its content is wider than the box. It
+ * updates when the box or its first child changes size (a resize, a new
+ * frame, new groups). One pixel of slack: a zoomed page can leave a
+ * fractional width.
+ */
+function useScrollsX<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [scrolls, setScrolls] = useState(false)
+  useLayoutEffect(() => {
+    const box = ref.current
+    if (box === null) return
+    const update = () => {
+      setScrolls(box.scrollWidth - box.clientWidth > 1)
+    }
+    update()
+    const sizes = new ResizeObserver(update)
+    sizes.observe(box)
+    if (box.firstElementChild !== null) sizes.observe(box.firstElementChild)
+    return () => {
+      sizes.disconnect()
+    }
+  }, [])
+  return [ref, scrolls] as const
 }
 
 const grouped = createSlotRecipeContext(groupedBarChart)
@@ -85,7 +112,10 @@ export type GroupedBarChartProps = {
 /**
  * Grouped vertical bars, such as the pass rate with and without a skill in
  * each eval round. The chart is drawn in SVG and hidden from assistive
- * technology; a visually hidden table holds the same data.
+ * technology; a visually hidden table holds the same data. In a box
+ * narrower than its content the chart scrolls sideways, and only then is
+ * it a tab stop with a focus ring, named by `label`, so the arrow keys
+ * scroll it.
  */
 export function GroupedBarChart({ label, series, groups, max, formatValue = String, size = 'md', width = 'content' }: GroupedBarChartProps) {
   const top = scaleMax(
@@ -97,8 +127,11 @@ export function GroupedBarChart({ label, series, groups, max, formatValue = Stri
   const pitch = Math.max(step, span + pad)
   const contentWidth = groups.length * pitch
   const height = PLOT + AXIS_GAP + AXIS
+  const [rootRef, scrolls] = useScrollsX<HTMLDivElement>()
   return (
-    <GroupedRoot role="figure" aria-label={label} width={width}>
+    // A chart that scrolls takes the focus, so the keyboard can scroll it (axe scrollable-region-focusable); one
+    // that fits is no tab stop.
+    <GroupedRoot ref={rootRef} role="figure" aria-label={label} width={width} tabIndex={scrolls ? 0 : undefined}>
       {/* No viewBox: one user unit is one CSS px, so with `fill` the SVG grows
           past its content width and each group sits at its share of it. */}
       <GroupedSvg width={contentWidth} height={height} aria-hidden="true" focusable="false">

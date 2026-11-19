@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { mergePrefixPaths } from './secret-merge-prefix.ts'
 
 const root = new URL('..', import.meta.url).pathname
 const config = join(root, '.gitleaks.toml')
@@ -171,4 +172,44 @@ void test('both CI scans pass --diff-merges=remerge, so a merge commit is scanne
   assert.deepEqual(scanMerge((base) => '--diff-merges=remerge ' + base + '..HEAD'), ['env-assignment'])
   assert.deepEqual(scanMerge(() => '--all --diff-merges=remerge'), ['env-assignment'])
   assert.deepEqual(scanMerge((base) => base + '..HEAD'), [])
+})
+
+void test('a single-quoted value from ${ is a literal unless it is a whole expression with no space (Codex review of the-bridge #225)', () => {
+  assert.deepEqual(scan('deploy.sh', ['PASS' + "WORD='$" + '{' + literal + "}'"]), ['env-assignment'])
+  assert.deepEqual(scan('deploy.sh', ['PASS' + "WORD='$" + '{{x}}' + literal + "'"]), ['env-assignment'])
+  assert.deepEqual(scan('deploy.sh', ['PASS' + "WORD='$" + literal + "'"]), ['env-assignment'])
+  assert.deepEqual(scan('ci.yml', ['          PASS' + "WORD='$" + '{{secrets.PASSWORD}}' + "'"]), [])
+})
+
+void test('the job secrets fails a PR that adds, changes or deletes a file under a top-level b/ folder, which would share the exceptions (Codex review of the-bridge #225)', () => {
+  assert.deepEqual(mergePrefixPaths(['b/tokens/x.json', 'src/b/x.ts', 'tokens/b/x.json', 'b.md']), ['b/tokens/x.json'])
+  const job = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8').split('\n  secrets:\n')[1] ?? ''
+  assert.match(job, /run: node scripts\/secret-merge-prefix\.ts "\$BASE" "\$HEAD"/)
+  const repo = mkdtempSync(join(tmpdir(), 'secret-scan-b-'))
+  const git = (...args: string[]) => {
+    const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t' + '@' + 'users.noreply.github.com',
+      '-c', 'core.hooksPath=/dev/null', ...args], { cwd: repo, encoding: 'utf8' })
+    assert.equal(r.status, 0, r.stderr)
+    return r.stdout.trim()
+  }
+  git('init', '-q', '-b', 'main')
+  writeFileSync(join(repo, 'a.txt'), 'a\n')
+  git('add', '.')
+  git('commit', '-qm', 'one')
+  const base = git('rev-parse', 'HEAD')
+  mkdirSync(join(repo, 'b/tokens'), { recursive: true })
+  writeFileSync(join(repo, 'b/tokens/x.json'), '{}\n')
+  git('add', '.')
+  git('commit', '-qm', 'two')
+  const script = join(root, 'scripts/secret-merge-prefix.ts')
+  const run = spawnSync(process.execPath, [script, base, 'HEAD'], { cwd: repo, encoding: 'utf8' })
+  assert.equal(run.status, 1, run.stderr)
+  assert.match(run.stdout, /"found":\["b\/tokens\/x\.json"\]/)
+  // A later commit deletes the file, so a diff of base and head has no b/
+  // path, but gitleaks scans the commit that added it (Codex review of #272).
+  git('rm', '-q', 'b/tokens/x.json')
+  git('commit', '-qm', 'three')
+  const deleted = spawnSync(process.execPath, [script, base, 'HEAD'], { cwd: repo, encoding: 'utf8' })
+  assert.equal(deleted.status, 1, deleted.stdout + deleted.stderr)
+  assert.match(deleted.stdout, /"found":\["b\/tokens\/x\.json"\]/)
 })

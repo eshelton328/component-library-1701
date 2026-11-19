@@ -237,7 +237,7 @@ void test('any change to the named types of an intersection is breaking', () => 
 })
 
 void test('an intersection with a union, a second literal or a non-identifier tail stays one item', () => {
-  for (const tail of [' | A;', ' & {\n    size?: string;\n};', ' & A | B;', ' & Pick<A, "x">;', ' & A.B;', ' & A &', ' & typeof a;']) {
+  for (const tail of [' | A;', ' & {\n    size?: string;\n};', ' & A | B;', ' & A.B;', ' & A &', ' & typeof a;']) {
     assert.deepEqual(apiItems(intersected(tail, 'label: string;')).map((i) => i.key), ['PopoverProps'], tail)
   }
   // Type parameters on the alias keep it one item.
@@ -390,6 +390,29 @@ void test('a new optional member is breaking when the recipe types of the releas
   assert.deepEqual(diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), { after: dialogVariantTypes }).narrowed, ['DialogProps.meta'])
   // With both, a name that neither allows passes.
   assert.deepEqual(diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), { before: dialogVariantTypes, after: withoutSize }).narrowed, [])
+})
+
+void test('an object intersected with a generic reference in its tail splits into members', () => {
+  const tail = (t: string, ...members: string[]) => report(popoverData + scalarDecl + `export type P = {\n${members.map((m) => `    ${m}\n`).join('')}}${t}`)
+  assert.deepEqual(apiItems(tail(' & Pick<A, "x">;', 'label: string;')).filter((i) => i.key === 'P' || i.key.startsWith('P.')).map((i) => [i.key, i.text]), [
+    ['P', 'export type P = {'],
+    ['P.label', 'label: string;'],
+    ['P.&', '& Pick<A, "x">;'],
+  ])
+  // Pick is not in the report, so a new optional member may narrow it.
+  const pick = diffApi(tail(' & Pick<A, "x">;', 'label: string;'), tail(' & Pick<A, "x">;', 'label: string;', 'note?: string;'))
+  assert.deepEqual(pick.narrowed, ['P.note'])
+  // A mapped reference whose argument has no such key passes.
+  const before = tail(' & Scalar<DialogVariantProps>;', 'label: string;')
+  const types = { before: dialogVariantTypes, after: dialogVariantTypes }
+  assert.equal(diffApi(before, tail(' & Scalar<DialogVariantProps>;', 'label: string;', 'note?: string;'), types).breaking, false)
+  // A removed, retyped or shadowed member, or a changed reference, is breaking.
+  for (const after of [
+    tail(' & Scalar<DialogVariantProps>;'),
+    tail(' & Scalar<DialogVariantProps>;', 'label: number;'),
+    tail(' & Scalar<DialogVariantProps>;', 'label: string;', 'size?: "md";'),
+    tail(' & Scalar<OtherVariantProps>;', 'label: string;'),
+  ]) assert.equal(diffApi(before, after, types).breaking, true, after)
 })
 
 void test('any change to the generic references before the object is breaking', () => {

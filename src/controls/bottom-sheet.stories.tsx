@@ -623,6 +623,7 @@ const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
   const open = async () => {
     await userEvent.click(trigger)
     const sheet = await body.findByRole('dialog', { name: 'Prompt' })
+    await motionDone(sheet)
     return { sheet, top: sheet.getBoundingClientRect().top }
   }
   // From a point in `from` to the foot of the sheet: further down than 30% of the sheet's height.

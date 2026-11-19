@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { StrictMode, useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet, BottomSheetClose } from './bottom-sheet'
@@ -1004,4 +1004,17 @@ export const QuickCloseReducedMotionDark: StoryObj<typeof meta> = {
     }
   },
   play: quickClosePlay,
+}
+
+/** In Strict Mode, where React runs each effect cleanup once more at mount, a quick close still gives the focus back. */
+export const QuickCloseStrictDark: StoryObj<typeof meta> = {
+  render: () => (
+    <StrictMode>
+      <main className={page}>
+        <SortSheet />
+      </main>
+    </StrictMode>
+  ),
+  play: quickClosePlay,
+  globals: { mode: 'dark' },
 }

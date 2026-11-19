@@ -119,8 +119,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
         <Backdrop />
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
-          <DraggableContent aria-label={title ?? label}>
-            <FocusReturn returnToRef={returnToRef} />
+          <DraggableContent aria-label={title ?? label} returnToRef={returnToRef}>
             <Grabber aria-hidden="true" data-drag-handle="grabber" />
             {title === undefined ? null : (
               <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="title">
@@ -150,18 +149,6 @@ function FocusOrigin({ returnToRef }: { returnToRef: RefObject<HTMLElement | nul
     const active = document.activeElement
     returnToRef.current = active instanceof HTMLElement && active !== document.body ? active : null
   }, [open, returnToRef])
-  return null
-}
-
-// Renders nothing; when the sheet's content unmounts, its effect cleanup runs after React removed the content, and
-// gives the focus back.
-function FocusReturn({ returnToRef }: { returnToRef: RefObject<HTMLElement | null> }) {
-  useEffect(
-    () => () => {
-      returnFocus(returnToRef)
-    },
-    [returnToRef],
-  )
   return null
 }
 
@@ -235,10 +222,20 @@ function reset(sheet: HTMLElement) {
 }
 
 // The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
-function DraggableContent({ children, ...props }: ComponentProps<typeof Content>) {
+function DraggableContent({ children, returnToRef, ...props }: ComponentProps<typeof Content> & { returnToRef: RefObject<HTMLElement | null> }) {
   const dialog = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
+
+  // When the content unmounts, this cleanup runs after React has removed it, and gives the focus back if it was
+  // lost with the sheet. In Strict Mode, React also runs it once while the sheet stays in the page; the sheet is
+  // still connected then, so it does nothing and keeps the element to return to.
+  useEffect(() => {
+    const sheet = ref.current
+    return () => {
+      if (sheet !== null && !sheet.isConnected) returnFocus(returnToRef)
+    }
+  }, [returnToRef])
 
   // A sheet that opens again while its swipe close still runs keeps its element, so it drops the drag offset
   // that the close slid down from, and opens at its rest.

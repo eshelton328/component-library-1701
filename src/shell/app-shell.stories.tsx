@@ -1545,12 +1545,13 @@ const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta
     const record = recordRise(footer)
     await userEvent.click(field)
     const focused = performance.now()
-    // The end of the move the focus started, as the shell sets it on its root.
-    const endAtFocus = root.dataset.keyboardEnd
-    await expect(endAtFocus).toBeDefined()
+    await expect(root.dataset.keyboardEnd).toBeDefined()
     if (delay > 0) await wait(delay)
     // Or a frame in, counted in frames, so a slow runner still reports early in the move.
     for (let i = 0; i < frames; i++) await nextFrame()
+    // The end of the move the focus started, as the shell sets it on its root, read after the move's first frame: a
+    // late first frame starts the move there (`LateFirstFrame`).
+    const endAtFocus = root.dataset.keyboardEnd
     const reported = performance.now()
     fakeViewport.move({ height: 844 - real })
     const reportDone = performance.now()
@@ -1778,6 +1779,105 @@ const frameSteps = (delay: number): StoryObj<typeof meta> => ({
     }
   },
 })
+// iOS draws no frame of the page for about 100 ms after the focus (the iPhone traces of screen review R26), at 60 or
+// 30 fps. The story holds the main thread for 100 ms after the focus, and with `frameMs` 33 holds each frame to 33 ms.
+const busy = (ms: number) => {
+  const until = performance.now() + ms
+  let spins = 0
+  while (performance.now() < until) spins++
+  return spins
+}
+const lateFirstFrame = (frameMs: number): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    let throttling = frameMs > 17
+    const throttle = () => {
+      if (!throttling) return
+      busy(frameMs - 4)
+      requestAnimationFrame(throttle)
+    }
+    requestAnimationFrame(throttle)
+    const timed = recordRise(footer, root)
+    // The hold starts in the focus event, after the shell's handler, so no frame comes between the move's start and it.
+    let focused = 0
+    document.addEventListener(
+      'focusin',
+      () => {
+        focused = performance.now()
+        busy(100)
+      },
+      { once: true },
+    )
+    await userEvent.click(field)
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
+    await settled(footer, 346)
+    throttling = false
+    timed.stop()
+    // The move's clock starts at its first frame after the hold, one 60 Hz frame back, not at the focus.
+    const moveStart = Number(root.dataset.keyboardEnd) - 250
+    await expect(moveStart).toBeGreaterThanOrEqual(focused + 100 - 17)
+    // So the first frame with the dock up shows the curve's first steps, not 79 % of it: at most the curve one 60 Hz
+    // frame and one of the runner's frames in (the recorder can read a frame late).
+    const first = timed.frames.find((f) => f.at > focused && f.rise > 0)
+    if (first === undefined) throw new Error('no frame with the dock up')
+    await expect(first.rise).toBeLessThanOrEqual(Math.ceil(curveAt(17 + frameMs) * 346))
+  },
+})
+/**
+ * Phone chat at 30 fps (an iPhone in Low Power Mode, the case of screen review R26) where the page draws no frame for
+ * 100 ms after the focus: the dock starts at its first frame.
+ */
+export const LateFirstFrame30Dark: StoryObj<typeof meta> = { ...lateFirstFrame(33), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrame30Light: StoryObj<typeof meta> = { ...lateFirstFrame(33), globals: { mode: 'light', viewport: { value: 'm390' } } }
+// The keyboard's report comes before the move's late first frame: the move still starts where the dock is, and every
+// frame rises toward the keyboard, never below the start (Codex review of #280).
+const lateFirstFrameCorrection: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    const timed = recordRise(footer, root)
+    // The page draws nothing for 100 ms after the focus, and the report comes at the end of that time, before the first
+    // frame: by the focus's clock the move is 79 % done, by the drawn frames it has not started. The hold starts in the
+    // focus event, after the shell's handler, so no frame comes between the move's start and it.
+    let focused = 0
+    let reported = 0
+    document.addEventListener(
+      'focusin',
+      () => {
+        focused = performance.now()
+        busy(100)
+        fakeViewport.move({ height: 844 - 330 })
+        reported = performance.now()
+      },
+      { once: true },
+    )
+    await userEvent.click(field)
+    await settled(footer, 296)
+    await nextFrame()
+    timed.stop()
+    const moved = timed.frames.filter((f) => f.at > focused)
+    await expect(moved.filter((f) => f.rise < 0)).toEqual([])
+    await expect(moved.slice(1).filter((f, i) => f.rise < (moved[i]?.rise ?? f.rise))).toEqual([])
+    // The dock is up from the second frame after the report (the recorder can read a frame before the shell paints
+    // it), not held at the bottom while a curve that starts below the screen comes up.
+    const afterReport = moved.filter((f) => f.at > reported)
+    await expect(afterReport[1]?.rise ?? 0).toBeGreaterThan(0)
+    // The first frame with the dock up shows the curve's first steps, not a jump from a start below the screen.
+    const first = moved.find((f) => f.rise > 0)
+    if (first === undefined) throw new Error('no frame with the dock up')
+    await expect(first.rise).toBeLessThanOrEqual(Math.ceil(curveAt(17 + 17) * 296))
+  },
+}
+/** Phone chat: the keyboard reports before the dock's late first frame; the composer only rises. */
+export const LateFirstFrameCorrectionDark: StoryObj<typeof meta> = { ...lateFirstFrameCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrameCorrectionLight: StoryObj<typeof meta> = { ...lateFirstFrameCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** The same at 60 fps. */
+export const LateFirstFrameDark: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrameLight: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 /** Phone chat with a keyboard that reports its height in every frame, a frame after the focus. */
 export const FrameStepsSoonDark: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FrameStepsSoonLight: StoryObj<typeof meta> = { ...frameSteps(1), globals: { mode: 'light', viewport: { value: 'm390' } } }
@@ -1887,6 +1987,8 @@ const lateStep: StoryObj<typeof meta> = {
     const record = recordRise(footer, root)
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
+    // The move's end, read after its first frame: a late first frame starts the move there (`LateFirstFrame`).
+    await nextFrame()
     const end = Number(root.dataset.keyboardEnd)
     await waitFor(() => expect(performance.now()).toBeGreaterThan(end - 20), { timeout: 2000, interval: 5 })
     const late = performance.now()

@@ -1738,7 +1738,18 @@
         "lineHeight": 1.4286,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
-      "$description": "Page titles on tablet and phone, and the toolkit item title."
+      "$description": "Page titles on tablet and phone, and the toolkit item title. Not for the title of an open artifact on desktop, which uses headingSm."
+    },
+    "headingSm": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 26, "unit": "px" },
+        "fontWeight": 600,
+        "lineHeight": 1.3847,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "SemiBold 26/36, one step under heading, for the title of the object a page shows on desktop, as the title of an open artifact draws it (D2 403:465, D7 452:2354, D8 452:2964, D9 452:3582: Geist SemiBold 26 on an auto line in a 34 px box, 36 on the 4 px grid, d-100; the ratio rounds up to 1.3847 because 1.3846 lays out 35.98 px in Chromium). Not for page titles, which use title on desktop and heading on tablet and phone, or for the tablet and phone artifact title, which uses heading."
     },
     "title": {
       "$type": "typography",

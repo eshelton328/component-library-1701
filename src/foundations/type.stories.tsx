@@ -12,13 +12,17 @@ import { css } from '../../styled-system/css'
 // Figma, 15/24 on the grid). `smallXs` is the Artifacts Sort menu's
 // descriptions and note (D6 403:8884, 403:8907: Regular 11 on 14 px lines,
 // 11/16 on the grid). `pageCount` is the Artifacts page count (D1
-// 402:15373: Regular 16 on 21 px lines, 16/20 on the grid).
+// 402:15373: Regular 16 on 21 px lines, 16/20 on the grid). `headingSm` is
+// the open artifact's title on desktop (D2 403:465, D7 452:2354, D8
+// 452:2964, D9 452:3582: SemiBold 26 on an auto line in a 34 px box, 26/36
+// on the grid), one step under `heading`.
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '12' })
 const row = css({ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'baseline', gap: '16' })
 const name = css({ textStyle: 'mono', color: 'fg.muted' })
 
 const styles = [
   { name: 'heading', className: css({ textStyle: 'heading', color: 'fg.default' }) },
+  { name: 'headingSm', className: css({ textStyle: 'headingSm', color: 'fg.default' }) },
   { name: 'title', className: css({ textStyle: 'title', color: 'fg.default' }) },
   { name: 'subtitle', className: css({ textStyle: 'subtitle', color: 'fg.default' }) },
   { name: 'paneTitle', className: css({ textStyle: 'paneTitle', color: 'fg.default' }) },
@@ -77,6 +81,8 @@ const meta = {
     await expect(sample('smallXs')).toEqual({ family: '"Geist Variable"', size: '11px', weight: '400', lineHeight: 16, tracking: 'normal' })
     await expect(sample('bodyLg')).toEqual({ family: '"Geist Variable"', size: '15px', weight: '400', lineHeight: 24, tracking: 'normal' })
     await expect(sample('pageCount')).toEqual({ family: '"Geist Variable"', size: '16px', weight: '400', lineHeight: 20, tracking: 'normal' })
+    await expect(sample('headingSm')).toEqual({ family: '"Geist Variable"', size: '26px', weight: '600', lineHeight: 36, tracking: 'normal' })
+    await expect(sample('heading')).toMatchObject({ size: '28px', weight: '600' })
   },
 } satisfies Meta<typeof TypeScale>
 export default meta

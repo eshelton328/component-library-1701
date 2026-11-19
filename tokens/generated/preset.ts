@@ -944,6 +944,10 @@ export default definePreset({
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
+            "headingSm": {
+              "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
+              "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
+            },
             "label": {
               "value": "\"Geist Variable\", Geist, ui-sans-serif, system-ui, sans-serif",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
@@ -1119,6 +1123,10 @@ export default definePreset({
               "value": "28px",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
+            "headingSm": {
+              "value": "26px",
+              "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
+            },
             "label": {
               "value": "14px",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
@@ -1222,6 +1230,10 @@ export default definePreset({
             "heading": {
               "value": "1.4286",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "headingSm": {
+              "value": "1.3847",
+              "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
             "label": {
               "value": "1.4286",
@@ -1327,6 +1339,10 @@ export default definePreset({
               "value": "600",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
+            "headingSm": {
+              "value": "600",
+              "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
+            },
             "label": {
               "value": "500",
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
@@ -1430,6 +1446,10 @@ export default definePreset({
             "heading": {
               "value": "0px",
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
+            },
+            "headingSm": {
+              "value": "0px",
+              "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
             "label": {
               "value": "0px",
@@ -1569,13 +1589,23 @@ export default definePreset({
           }
         },
         "heading": {
-          "description": "Page titles on tablet and phone, and the toolkit item title.",
+          "description": "Page titles on tablet and phone, and the toolkit item title. Not for the title of an open artifact on desktop, which uses headingSm.",
           "value": {
             "fontFamily": "text.heading",
             "fontSize": "text.heading",
             "lineHeight": "text.heading",
             "fontWeight": "text.heading",
             "letterSpacing": "text.heading"
+          }
+        },
+        "headingSm": {
+          "description": "SemiBold 26/36, one step under heading, for the title of the object a page shows on desktop, as the title of an open artifact draws it (D2 403:465, D7 452:2354, D8 452:2964, D9 452:3582: Geist SemiBold 26 on an auto line in a 34 px box, 36 on the 4 px grid, d-100; the ratio rounds up to 1.3847 because 1.3846 lays out 35.98 px in Chromium). Not for page titles, which use title on desktop and heading on tablet and phone, or for the tablet and phone artifact title, which uses heading.",
+          "value": {
+            "fontFamily": "text.headingSm",
+            "fontSize": "text.headingSm",
+            "lineHeight": "text.headingSm",
+            "fontWeight": "text.headingSm",
+            "letterSpacing": "text.headingSm"
           }
         },
         "label": {

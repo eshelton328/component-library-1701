@@ -9,7 +9,7 @@ const StyledButton = styled('button', button)
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
  * `textSize`, `padding`, `keepIconSize`, `pressedTone`, `pressedBorder`, `expandedBorder` and
- * `iconOnly`, `pressed` and `indicator`. `size` sets the
+ * `iconOnly`, `iconOnlyWidth`, `pressed` and `indicator`. `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
  * default) draws `label` (Medium 14/20), or `labelLg` on a `text` button;
@@ -24,6 +24,12 @@ const StyledButton = styled('button', button)
  * 10, where `default` pads it 12, as Artifacts' Sort and Filter (D1
  * 402:15404, 402:15413) do. It changes only a `md` or `lg` button that is
  * not `iconOnly`.
+ *
+ * `iconOnly` makes a square button for one icon. `iconOnlyWidth="lg"`
+ * makes an `xs`, `sm` or `md` icon-only button 36 wide (`control.lg`) at its
+ * own height, as the phone's 36 x 28 Discuss button on an open Toolkit item
+ * (M2 496:2) is with `size="sm"`; `square` (the default) keeps it as wide as
+ * it is high. A `lg` or `xl` icon-only button stays square.
  *
  * Every icon in a button draws at 16, whatever its `size`. With
  * `keepIconSize`, an icon given a `size` keeps it, such as the

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { ChartIcon, ChevronDownIcon, CopyIcon, FilterIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortDescIcon, SortIcon } from '../foundations/icons'
+import { ChartIcon, ChatIcon, ChevronDownIcon, CopyIcon, FilterIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortDescIcon, SortIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -863,3 +863,77 @@ const sortFilterPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** Artifacts' Sort and Filter: 10 px sides with `padding="compact"`, and a 12 px chevron kept with `keepIconSize`. */
 export const SortFilterDark: StoryObj<typeof meta> = { render: () => <SortFilterButtons />, globals: { mode: 'dark' }, play: sortFilterPlay }
 export const SortFilterLight: StoryObj<typeof meta> = { render: () => <SortFilterButtons />, globals: { mode: 'light' }, play: sortFilterPlay }
+
+// The open Toolkit item's actions. Desktop D03 and tablet T3 draw Discuss (432:1086, 434:2) 97 x 34, primary, and
+// Show on map (427:258, 428:549) 136 x 36, secondary: a compact `md` and a compact `lg` button draw them within
+// 2 px. The phone (M2 429:285) draws them as icon buttons: Discuss (496:2) 36 x 28, primary, which
+// `iconOnlyWidth="lg"` draws with `size="sm"`, and Show on map (429:291) a 36 x 36 square.
+function ItemActionButtons() {
+  return (
+    <main className={page}>
+      <div className={css({ display: 'flex', alignItems: 'center', gap: '10' })}>
+        <Button variant="primary" padding="compact">
+          <ChatIcon />
+          Discuss
+        </Button>
+        <Button size="lg" padding="compact">
+          <MapIcon />
+          Show on map
+        </Button>
+      </div>
+      <div className={css({ display: 'flex', alignItems: 'center', gap: '8' })}>
+        <Button variant="primary" size="sm" iconOnly iconOnlyWidth="lg" aria-label="Discuss">
+          <ChatIcon />
+        </Button>
+        <Button size="lg" iconOnly aria-label="Show on map">
+          <MapIcon />
+        </Button>
+      </div>
+      <div className={row}>
+        <Button size="sm" iconOnly aria-label="Small square">
+          <ChatIcon />
+        </Button>
+        <Button iconOnly iconOnlyWidth="lg" aria-label="Medium wide">
+          <ChatIcon />
+        </Button>
+        <Button size="xl" iconOnly iconOnlyWidth="lg" aria-label="Extra large wide">
+          <ChatIcon />
+        </Button>
+      </div>
+    </main>
+  )
+}
+
+const itemActionPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const box = (name: string, index = 0) => {
+    const button = canvas.getAllByRole('button', { name })[index]
+    if (button === undefined) throw new Error(`no ${name} button`)
+    const r = button.getBoundingClientRect()
+    return [r.width, r.height]
+  }
+  // Desktop and tablet: Discuss 97 x 34 and Show on map 136 x 36 in Figma, each within 2 px.
+  const [discussW = 0, discussH] = box('Discuss')
+  await expect(discussH).toBe(32)
+  await expect(Math.abs(discussW - 97)).toBeLessThanOrEqual(2)
+  const [mapW = 0, mapH] = box('Show on map')
+  await expect(mapH).toBe(36)
+  await expect(Math.abs(mapW - 136)).toBeLessThanOrEqual(2)
+  // Phone: Discuss 36 x 28 (496:2) with its icon at 16 in the middle, and Show on map a 36 px square (429:291).
+  await expect(box('Discuss', 1)).toEqual([36, 28])
+  const phoneDiscuss = canvas.getAllByRole('button', { name: 'Discuss' })[1]
+  const icon = phoneDiscuss?.querySelector('svg')
+  if (icon == null || phoneDiscuss === undefined) throw new Error('no icon')
+  const iconBox = icon.getBoundingClientRect()
+  await expect([iconBox.width, iconBox.height]).toEqual([16, 16])
+  await expect(iconBox.left - phoneDiscuss.getBoundingClientRect().left).toBe(10)
+  await expect(box('Show on map', 1)).toEqual([36, 36])
+  // The default keeps a square, `md` takes the 36 width, and an `xl` button stays a 44 px square.
+  await expect(box('Small square')).toEqual([28, 28])
+  await expect(box('Medium wide')).toEqual([36, 32])
+  await expect(box('Extra large wide')).toEqual([44, 44])
+}
+
+/** The open Toolkit item's Discuss and Show on map buttons, with `iconOnlyWidth="lg"` for the phone's 36 x 28 Discuss. */
+export const ItemActionsDark: StoryObj<typeof meta> = { render: () => <ItemActionButtons />, globals: { mode: 'dark' }, play: itemActionPlay }
+export const ItemActionsLight: StoryObj<typeof meta> = { render: () => <ItemActionButtons />, globals: { mode: 'light' }, play: itemActionPlay }

@@ -64,52 +64,66 @@ export async function expectScrollsByWheelAndKeys(box: HTMLElement): Promise<voi
   for (const key of ['{PageDown}', '{ArrowDown}']) {
     box.focus()
     await expect(box).toHaveFocus()
-    await scrolls(box, () => userEvent.keyboard(key))
+    await scrolls(box, () => userEvent.keyboard(key), () => userEvent.keyboard('{Home}'))
   }
   box.blur()
 }
 
 /**
  * Checks that a mouse wheel over the middle of `box` scrolls it down, with no scroll bar, through the test runner's
- * DevTools session. A story that calls it carries `tags: ['!dev']`. The AppShell detail uses it alone: in headless
- * Chromium on Linux a PageDown or ArrowDown on the focused detail sometimes ends a scroll of 0 px, with or without
- * `scrollArea`, so a key check there fails at random.
+ * DevTools session. A story that calls it carries `tags: ['!dev']`.
  */
 export async function expectScrollsByWheel(box: HTMLElement): Promise<void> {
   const { cdp } = await import('vitest/browser')
   await expect(box.scrollHeight).toBeGreaterThan(box.clientHeight)
-  await scrollBack(box)
+  await expect(box.scrollTop).toBe(0)
   const r = box.getBoundingClientRect()
   const at = { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }
-  await scrolls(box, () => cdp().send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...at, deltaX: 0, deltaY: 200 }))
+  const wheel = (deltaY: number) => cdp().send('Input.dispatchMouseEvent', { type: 'mouseWheel', ...at, deltaX: 0, deltaY })
+  await scrolls(
+    box,
+    () => wheel(200),
+    () => wheel(-box.scrollHeight),
+  )
 }
 
-// Resolves at the box's next scrollend, or after a second if no scroll ends.
-const scrollEnd = (box: HTMLElement) =>
-  new Promise<void>((resolve) => {
-    const done = () => {
-      clearTimeout(timer)
-      resolve()
-    }
-    const timer = setTimeout(done, 1000)
-    box.addEventListener('scrollend', done, { once: true })
-  })
-
-// Puts the box back at its top and waits until that scroll ends. A smooth scroll still under way (Chromium on Linux
-// animates wheel and key scrolls) would otherwise go on after the reset, or stop the next key's scroll.
-async function scrollBack(box: HTMLElement): Promise<void> {
-  if (box.scrollTop === 0) return
-  const end = scrollEnd(box)
-  box.scrollTop = 0
-  await end
+// Resolves at the first animation frame in which `done` is true, or after `frames` frames. It counts frames, not
+// clock time: a busy CI runner can hold the next frame for seconds, and a scroll moves only in frames.
+async function inFrames(done: () => boolean, frames: number): Promise<void> {
+  for (let i = 0; i < frames && !done(); i++) await new Promise((resolve) => requestAnimationFrame(resolve))
 }
 
-// Checks that `input` scrolls the box down, waits until that scroll ends, and puts the box back at its top.
-async function scrolls(box: HTMLElement, input: () => Promise<unknown>): Promise<void> {
-  const end = scrollEnd(box)
+// The frames a scroll gets to start (Chromium on Linux starts a key scroll after the focus about 270 ms late) and to
+// end (it animates wheel and key scrolls). At 60 frames a second, 60 and 120 frames are one and two seconds.
+const startFrames = 60
+const endFrames = 120
+
+// Checks that `input` scrolls the box down from the top, waits until it stops, and puts it back at its top with
+// `back`, a real input too. A reset from code (scrollTop = 0) reaches Chromium's compositor only in a later frame,
+// and a key scroll that starts before that frame starts from the old place: it then ends at 0 px when the reset
+// lands, which a user who reads and then presses a key never sees.
+async function scrolls(box: HTMLElement, input: () => Promise<unknown>, back: () => Promise<unknown>): Promise<void> {
   await input()
-  await waitFor(() => expect(box.scrollTop).toBeGreaterThan(0))
-  await end
-  await scrollBack(box)
+  await inFrames(() => box.scrollTop > 0, startFrames)
+  await expect(box.scrollTop).toBeGreaterThan(0)
+  await settled(box)
+  await back()
+  await inFrames(() => box.scrollTop === 0, endFrames)
+  await expect(box.scrollTop).toBe(0)
+  await settled(box)
 }
 
+// Resolves when the box's scrollTop has stayed the same for three frames: a smooth scroll still under way would
+// otherwise go on into the next check.
+async function settled(box: HTMLElement): Promise<void> {
+  let last = box.scrollTop
+  let same = 0
+  await inFrames(() => {
+    if (box.scrollTop === last) same++
+    else {
+      same = 0
+      last = box.scrollTop
+    }
+    return same >= 3
+  }, endFrames)
+}

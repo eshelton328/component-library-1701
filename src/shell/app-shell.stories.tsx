@@ -4,7 +4,7 @@ import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
-import { expectScrollAreas, expectScrollsByWheel } from '../controls/scroll-area.testing'
+import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { AppShell } from './app-shell'
 
@@ -104,7 +104,7 @@ const scrolls: StoryObj<typeof meta> = {
   tags: ['!dev'],
   play: async ({ canvasElement }) => {
     await expectScrollAreas(canvasElement, 'both', '.app-shell__detail')
-    await expectScrollsByWheel(within(canvasElement).getByRole('main'))
+    await expectScrollsByWheelAndKeys(within(canvasElement).getByRole('main'))
   },
 }
 export const ScrollsDark: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'dark' } }

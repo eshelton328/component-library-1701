@@ -41,7 +41,7 @@
     "check:pack": "node scripts/check-pack.ts",
     "check:api": "node scripts/check-api.ts",
     "api:update": "node scripts/check-api.ts --update",
-    "test:release": "node --test scripts/release.test.ts scripts/actions-minutes.test.ts scripts/pr-workflow.test.ts",
+    "test:release": "node --test scripts/release.test.ts scripts/actions-minutes.test.ts scripts/pr-workflow.test.ts scripts/ci-reuse.test.ts",
     "check:commits": "node scripts/check-commits.ts",
     "check:release-api": "node scripts/check-release-api.ts",
     "check:release-registry": "node scripts/check-release-registry.ts",

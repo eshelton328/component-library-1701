@@ -27,56 +27,212 @@ concurrency:
 
 jobs:
   # Each check is its own job, so a PR shows which one failed. pnpm verify
-  # runs the same commands in one go on a laptop.
+  # runs the same commands in one go on a laptop. typecheck, lint, tokens,
+  # checks and test wait for the worktree job: when it ran pnpm verify on
+  # this commit, they use its result instead of running the same commands
+  # again (bridge-coord cleared it on 2026-11-19 with these conditions:
+  # scripts/ci-reuse.test.ts proves verify runs each job's commands, a
+  # skipped verify runs the jobs in full, and any other end fails them).
   typecheck:
+    needs: worktree
+    # Runs after any end of the worktree job, except a cancelled run.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-      - run: pnpm codegen
-      - run: pnpm typecheck
+      # pnpm verify in the worktree job runs this job's commands
+      # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
+      # this commit and passed, this job uses its result; when it skipped
+      # verify (a PR that changes only src/, api/ or Markdown), this job
+      # runs in full. Any other end of the worktree job fails this job.
+      - name: Use the worktree result when it ran pnpm verify
+        id: reuse
+        env:
+          RESULT: ${{ needs.worktree.result }}
+          RAN: ${{ needs.worktree.outputs.ran }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != success ]; then
+            echo "::error::The worktree job ended with '$RESULT', so this check fails; see the worktree job."
+            exit 1
+          fi
+          if [ "$RAN" = true ]; then
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The worktree job ran pnpm verify on this commit, which runs this job's commands, and it passed."
+          else
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: ./.github/actions/setup
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm codegen
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm typecheck
 
   lint:
+    needs: worktree
+    # Runs after any end of the worktree job, except a cancelled run.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-      - run: pnpm codegen
-      - run: pnpm lint
+      # pnpm verify in the worktree job runs this job's commands
+      # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
+      # this commit and passed, this job uses its result; when it skipped
+      # verify (a PR that changes only src/, api/ or Markdown), this job
+      # runs in full. Any other end of the worktree job fails this job.
+      - name: Use the worktree result when it ran pnpm verify
+        id: reuse
+        env:
+          RESULT: ${{ needs.worktree.result }}
+          RAN: ${{ needs.worktree.outputs.ran }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != success ]; then
+            echo "::error::The worktree job ended with '$RESULT', so this check fails; see the worktree job."
+            exit 1
+          fi
+          if [ "$RAN" = true ]; then
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The worktree job ran pnpm verify on this commit, which runs this job's commands, and it passed."
+          else
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: ./.github/actions/setup
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm codegen
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm lint
 
   tokens:
+    needs: worktree
+    # Runs after any end of the worktree job, except a cancelled run.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
-      - run: pnpm tokens:check
-      - run: pnpm test:tokens
-      - run: pnpm test:figma
+      # pnpm verify in the worktree job runs this job's commands
+      # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
+      # this commit and passed, this job uses its result; when it skipped
+      # verify (a PR that changes only src/, api/ or Markdown), this job
+      # runs in full. Any other end of the worktree job fails this job.
+      - name: Use the worktree result when it ran pnpm verify
+        id: reuse
+        env:
+          RESULT: ${{ needs.worktree.result }}
+          RAN: ${{ needs.worktree.outputs.ran }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != success ]; then
+            echo "::error::The worktree job ended with '$RESULT', so this check fails; see the worktree job."
+            exit 1
+          fi
+          if [ "$RAN" = true ]; then
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The worktree job ran pnpm verify on this commit, which runs this job's commands, and it passed."
+          else
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: ./.github/actions/setup
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm tokens:check
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test:tokens
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test:figma
 
   checks:
+    needs: worktree
+    # Runs after any end of the worktree job, except a cancelled run.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
+      # pnpm verify in the worktree job runs this job's commands
+      # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
+      # this commit and passed, this job uses its result; when it skipped
+      # verify (a PR that changes only src/, api/ or Markdown), this job
+      # runs in full. Any other end of the worktree job fails this job.
+      - name: Use the worktree result when it ran pnpm verify
+        id: reuse
+        env:
+          RESULT: ${{ needs.worktree.result }}
+          RAN: ${{ needs.worktree.outputs.ran }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != success ]; then
+            echo "::error::The worktree job ended with '$RESULT', so this check fails; see the worktree job."
+            exit 1
+          fi
+          if [ "$RAN" = true ]; then
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The worktree job ran pnpm verify on this commit, which runs this job's commands, and it passed."
+          else
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: ./.github/actions/setup
         with:
           browser: 'true'
-      - run: pnpm codegen
-      - run: pnpm test:hooks
-      - run: pnpm checks
-      - run: pnpm test:cycles
-      - run: pnpm check:cycles
-      - run: pnpm check:agents-md
-      - run: pnpm check:ci
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm codegen
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test:hooks
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm checks
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test:cycles
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm check:cycles
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm check:agents-md
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm check:ci
 
   test:
+    needs: worktree
+    # Runs after any end of the worktree job, except a cancelled run.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: ./.github/actions/setup
+      # pnpm verify in the worktree job runs this job's commands
+      # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
+      # this commit and passed, this job uses its result; when it skipped
+      # verify (a PR that changes only src/, api/ or Markdown), this job
+      # runs in full. Any other end of the worktree job fails this job.
+      - name: Use the worktree result when it ran pnpm verify
+        id: reuse
+        env:
+          RESULT: ${{ needs.worktree.result }}
+          RAN: ${{ needs.worktree.outputs.ran }}
+        run: |
+          set -euo pipefail
+          if [ "$RESULT" != success ]; then
+            echo "::error::The worktree job ended with '$RESULT', so this check fails; see the worktree job."
+            exit 1
+          fi
+          if [ "$RAN" = true ]; then
+            echo "reuse=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::The worktree job ran pnpm verify on this commit, which runs this job's commands, and it passed."
+          else
+            echo "reuse=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.reuse.outputs.reuse != 'true'
+        uses: ./.github/actions/setup
         with:
           browser: 'true'
-      - run: pnpm codegen
-      - run: pnpm test
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm codegen
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test
 
   build:
     runs-on: ubuntu-24.04
@@ -106,6 +262,9 @@ jobs:
   # on main every night.
   worktree:
     runs-on: ubuntu-24.04
+    outputs:
+      # true when this job ran pnpm check:worktree (pnpm verify).
+      ran: ${{ steps.paths.outputs.run }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

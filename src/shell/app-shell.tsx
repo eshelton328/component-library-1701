@@ -269,7 +269,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
         return
       }
       if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
-        from = (shown - inset * done) / (1 - done)
+        // Before the move's first frame nothing is drawn, and a late first frame restarts the clock (see `step`), so
+        // the move still starts where the dock is (Codex review of #280).
+        if (!firstFrame) from = (shown - inset * done) / (1 - done)
         return
       }
       from = shown

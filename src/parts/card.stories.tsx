@@ -241,9 +241,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     // Chromium draws the 1.5 px borderWidths.strong outline at a whole pixel.
     await expect([ring.outlineStyle, ring.outlineColor]).toEqual(['solid', focus])
     await expect(Number.parseFloat(ring.outlineWidth)).toBeGreaterThan(0)
-    // The first card's description is cut, so it is a tab stop of its own (TruncatedText) before the next card.
-    await userEvent.tab()
-    await expect(canvas.getByText('A small Hono server that serves the bridge API to the prototype')).toHaveFocus()
+    // The first card's description is cut, but the card owns it (its title's focus shows the tip), so it is no tab
+    // stop of its own: Tab goes on to the next card's title.
     await userEvent.tab()
     await expect(canvas.getByRole('button', { name: 'agents-md' })).toHaveFocus()
     await expect(getComputedStyle(find(canvasElement, '[data-testid="artifact"] article')).outlineStyle).toBe('none')
@@ -255,8 +254,10 @@ const longDescription = 'Runs one eval round with held-out cases, a trigger set 
 
 /**
  * A long subtitle and description are each cut to one line and show in full
- * in a tooltip, on hover and as their own tab stop, also in a card whose
- * title button covers it. A click on the cut text still selects the card.
+ * in a tooltip, also in a card whose title button covers it: the subtitle on
+ * hover and as its own tab stop, the description on a hover on the card or
+ * the focus on its title button. A click on the cut text still selects the
+ * card.
  */
 const onSelectLong = fn()
 export const LongText: StoryObj<typeof meta> = {
@@ -270,9 +271,9 @@ export const LongText: StoryObj<typeof meta> = {
   ),
   play: async ({ canvasElement }) => {
     onSelectLong.mockClear()
-    for (const [slot, full] of [['subtitle', longSubtitle], ['description', longDescription]] as const) {
-      await expectCutText(find(canvasElement, `.card__${slot}`), full)
-    }
+    await expectCutText(find(canvasElement, '.card__subtitle'), longSubtitle)
+    // The clickable card owns its description: a hover on the card or the focus on its title button opens the tip.
+    await expectCutText(find(canvasElement, '.card__description'), longDescription, find(canvasElement, 'article'), find(canvasElement, '.card__action'))
     await userEvent.click(hit(find(canvasElement, '.card__description .truncated-text')))
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
@@ -309,7 +310,7 @@ const overlap = (a: DOMRect, b: DOMRect) => ({
 const cutTextClickPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   onSelectFoot.mockClear()
   const description = find(canvasElement, '.card__description')
-  await expectCutText(description, footDescription)
+  await expectCutText(description, footDescription, find(canvasElement, 'article'), find(canvasElement, '.card__action'))
   const text = find(description, '.truncated-text')
   await userEvent.hover(text)
   // Wait for Ark to place the open tooltip in the window: it has no room below the text, so it flips above it.
@@ -341,6 +342,113 @@ const cutTextClickPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 }
 export const CutTextClickDark: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'dark' }, play: cutTextClickPlay }
 export const CutTextClickLight: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'light' }, play: cutTextClickPlay }
+
+// Lets the tooltips' open delay (400 ms) pass.
+const pause = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms)
+  })
+
+// Two clickable cards side by side, each with a description too long for its line.
+const pairRow = css({ display: 'flex', gap: '16' })
+const honoDescription = 'Routes, the RPC client and the owner check over the bridge API, with the held-out cases'
+const tailDescription = 'Which devices reach the-bridge, and the owner check on writes from each of them'
+
+function CardPair() {
+  return (
+    <main className={page}>
+      <div className={pairRow}>
+        <div className={column} data-testid="hono">
+          <Card title="Hono server spike" description={honoDescription} onSelect={() => undefined} />
+        </div>
+        <div className={column} data-testid="tailscale">
+          <Card title="Tailscale access check" description={tailDescription} onSelect={() => undefined} />
+        </div>
+      </div>
+      <p>Outside the cards</p>
+    </main>
+  )
+}
+
+/**
+ * A clickable card owns its cut description: a hover on the card, or the
+ * keyboard focus on its title button, opens that card's tip and no other,
+ * and the description is no tab stop of its own. A pointer outside the
+ * cards opens none.
+ */
+const cardOwnerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const hono = canvas.getByTestId('hono')
+  const tail = canvas.getByTestId('tailscale')
+  for (const box of [hono, tail]) await expect(find(box, '.card__description .truncated-text')).not.toHaveAttribute('tabindex')
+  await userEvent.hover(canvas.getByText('Outside the cards'))
+  await pause(600)
+  await expect(within(document.body).queryByRole('tooltip')).toBeNull()
+  // A hover on the Hono card's title button, which covers the card, opens only its description's tip.
+  await userEvent.hover(find(hono, '.card__action'))
+  await waitFor(() => expect(tooltipOf()).toHaveTextContent(honoDescription))
+  await expect(within(document.body).getAllByRole('tooltip')).toHaveLength(1)
+  await userEvent.unhover(find(hono, '.card__action'))
+  await waitFor(() => expect(tooltipOf()).toBeNull())
+  // The keyboard: the focus on the other card's title button opens its tip.
+  await userEvent.keyboard('{Escape}')
+  find(tail, '.card__action').focus()
+  await waitFor(() => expect(tooltipOf()).toHaveTextContent(tailDescription))
+  await expect(within(document.body).getAllByRole('tooltip')).toHaveLength(1)
+  find(tail, '.card__action').blur()
+  await waitFor(() => expect(tooltipOf()).toBeNull())
+}
+export const CardOwnsDescriptionDark: StoryObj<typeof meta> = { render: () => <CardPair />, globals: { mode: 'dark' }, play: cardOwnerPlay }
+export const CardOwnsDescriptionLight: StoryObj<typeof meta> = { render: () => <CardPair />, globals: { mode: 'light' }, play: cardOwnerPlay }
+
+const cutTitle = 'Skill eval pass rates for every round, with and without each skill'
+// A preview above the title, as an artifact card has, so the title's tip has room above the title.
+const preview = css({ h: 'shell.tabBar', bg: 'surface.raised' })
+
+function CardAllCut() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <Card media={<div className={preview} />} title={cutTitle} subtitle={longSubtitle} description={honoDescription} onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+/**
+ * A clickable card whose title, subtitle and description are all cut. A
+ * hover on the title button opens the title's tip above the title and the
+ * description's tip below the description, so neither covers the other. A
+ * hover on the subtitle, which keeps its own tab stop, opens only its tip.
+ */
+const allCutPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const tips = () => within(document.body).queryAllByRole('tooltip')
+  const tipWith = (text: string) => tips().find((tip) => tip.textContent.includes(text)) ?? null
+  const action = find(canvasElement, '.card__action')
+  await userEvent.hover(action)
+  await waitFor(async () => {
+    const title = tipWith(cutTitle)
+    const description = tipWith(honoDescription)
+    await expect(title).not.toBeNull()
+    await expect(description).not.toBeNull()
+    if (title === null || description === null) return
+    await expect(title.getAttribute('data-placement')).toBe('top')
+    await expect(title.getBoundingClientRect().bottom).toBeLessThanOrEqual(description.getBoundingClientRect().top)
+  })
+  await userEvent.unhover(action)
+  await waitFor(() => expect(tips()).toHaveLength(0))
+  const subtitle = find(canvasElement, '.card__subtitle .truncated-text')
+  await expect(subtitle).toHaveAttribute('tabindex', '0')
+  await userEvent.hover(subtitle)
+  await waitFor(() => expect(tipWith(longSubtitle)).not.toBeNull())
+  await pause(600)
+  await expect(tips()).toHaveLength(1)
+  await expect(tipWith(longSubtitle)).not.toBeNull()
+  await userEvent.unhover(subtitle)
+  await waitFor(() => expect(tips()).toHaveLength(0))
+}
+export const AllTextCutDark: StoryObj<typeof meta> = { render: () => <CardAllCut />, globals: { mode: 'dark' }, play: allCutPlay }
+export const AllTextCutLight: StoryObj<typeof meta> = { render: () => <CardAllCut />, globals: { mode: 'light' }, play: allCutPlay }
 
 // A pane that clips what is past the window's foot, as a scrolled pane of the-bridge does, with a card whose cut
 // description lies below the foot.

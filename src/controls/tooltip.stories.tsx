@@ -389,6 +389,27 @@ export const TruncatedTextInScrollPane: StoryObj<typeof meta> = {
 }
 
 /**
+ * Cut text in an element with a row's role but no tabindex is a tab stop of its own: the keyboard never reaches the
+ * row, so it is no owner.
+ */
+export const TruncatedTextInPlainRow: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <div role="table" aria-label="Runs">
+        <div role="row">
+          <div className={narrow} role="cell" data-testid="cut">
+            <TruncatedText>{long}</TruncatedText>
+          </div>
+        </div>
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    await expectCutText(within(canvasElement).getByTestId('cut'), long)
+  },
+}
+
+/**
  * A label in a button that stops being cut while its tooltip is open, and is
  * cut again after the pointer has left, stays closed: no hover and no focus
  * remain from before.

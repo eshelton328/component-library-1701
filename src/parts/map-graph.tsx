@@ -153,6 +153,7 @@ const CardKind = card.withContext('span', 'kind')
 const CardClose = card.withContext('span', 'close')
 const CardDescription = card.withContext('p', 'description')
 const CardCounts = card.withContext('p', 'counts')
+const CardCountsLabel = card.withContext('p', 'countsLabel')
 const CardAction = card.withContext('div', 'action')
 
 export type MapSelectionCardProps = {
@@ -186,7 +187,8 @@ export type MapSelectionCardProps = {
    * (`→ links to 7   ← linked from 4`) with 16 px padding; `compact` is the
    * phone's card (Toolkit M11 461:1259): the counts as arrows and numbers
    * (`→7  ←4`, muted) at the end of the title row, 12 px top and bottom
-   * padding and an 8 px gap.
+   * padding and an 8 px gap. Assistive technology reads the default card's
+   * words for the counts, as visually hidden text.
    */
   density?: 'default' | 'compact' | undefined
 }
@@ -207,10 +209,10 @@ export function MapSelectionCard({
 }: MapSelectionCardProps) {
   const Icon = kindIcons[kind]
   const compact = density === 'compact'
-  const counts = compact
-    ? [linksTo === undefined ? '' : `→${String(linksTo)}`, linkedFrom === undefined ? '' : `←${String(linkedFrom)}`].filter((c) => c !== '')
-    : [linksTo === undefined ? '' : `→ links to ${String(linksTo)}`, linkedFrom === undefined ? '' : `← linked from ${String(linkedFrom)}`].filter((c) => c !== '')
-  const countsText = counts.length > 0 ? counts.join(compact ? '  ' : '   ') : null
+  const words = [linksTo === undefined ? '' : `→ links to ${String(linksTo)}`, linkedFrom === undefined ? '' : `← linked from ${String(linkedFrom)}`].filter((c) => c !== '')
+  const arrows = [linksTo === undefined ? '' : `→${String(linksTo)}`, linkedFrom === undefined ? '' : `←${String(linkedFrom)}`].filter((c) => c !== '')
+  const wordsText = words.length > 0 ? words.join('   ') : null
+  const arrowsText = arrows.length > 0 ? arrows.join('  ') : null
   const hasLinks = linksLabel !== undefined && linksLabel !== ''
   const hasAction = actionLabel !== undefined && actionLabel !== ''
   return (
@@ -223,7 +225,9 @@ export function MapSelectionCard({
           <TruncatedText>{name}</TruncatedText>
         </CardName>
         <CardKind>{kindNames[kind]}</CardKind>
-        {compact && countsText !== null ? <CardCounts>{countsText}</CardCounts> : null}
+        {/* The arrows alone say nothing to a screen reader, so it reads the default card's words, hidden from view. */}
+        {compact && arrowsText !== null ? <CardCounts aria-hidden>{arrowsText}</CardCounts> : null}
+        {compact && wordsText !== null ? <CardCountsLabel>{wordsText}</CardCountsLabel> : null}
         {onClose === undefined ? null : (
           <CardClose>
             <Button variant="secondary" size="sm" iconOnly aria-label={`Close ${name}`} onClick={onClose}>
@@ -233,7 +237,7 @@ export function MapSelectionCard({
         )}
       </CardTitle>
       {description !== undefined && description !== '' ? <CardDescription>{description}</CardDescription> : null}
-      {!compact && countsText !== null ? <CardCounts>{countsText}</CardCounts> : null}
+      {!compact && wordsText !== null ? <CardCounts>{wordsText}</CardCounts> : null}
       {hasLinks || hasAction ? (
         <CardAction data-links={hasLinks ? '' : undefined}>
           {hasLinks ? (

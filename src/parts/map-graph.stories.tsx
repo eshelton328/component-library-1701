@@ -1160,6 +1160,14 @@ function PhoneCard({ onOpen, onSelect }: { onOpen: () => void; onSelect: (id: st
   )
 }
 
+// The text a screen reader reads in an element: every text node outside an aria-hidden subtree.
+function spokenText(element: Element): string {
+  if (element.getAttribute('aria-hidden') === 'true') return ''
+  return Array.from(element.childNodes)
+    .map((node) => (node instanceof Element ? spokenText(node) : node.nodeType === Node.TEXT_NODE ? (node.textContent ?? '') : ''))
+    .join('')
+}
+
 const phoneCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
   const swatch = (name: keyof typeof swatches) => swatchOf(canvasElement, name)
   const card = within(canvasElement).getByRole('region', { name: 'writer' })
@@ -1176,7 +1184,20 @@ const phoneCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canva
   await expect([k.color, k.fontSize, k.whiteSpace]).toEqual([swatch('muted'), '12px', 'pre'])
   await expect(k.fontFamily).toContain('Geist Mono')
   await expect(Math.round(counts.getBoundingClientRect().right)).toBe(Math.round(card.getBoundingClientRect().right - 17))
-  await expect(within(card).queryByText(/links to/)).toBeNull()
+  // The words are not drawn: the only text with them is the visually hidden label, clipped to 1 × 1 px.
+  const said = within(card).getAllByText(/links to/)
+  await expect(said).toHaveLength(1)
+  const label = said[0]
+  if (label === undefined) throw new Error('no counts label')
+  const l = getComputedStyle(label)
+  await expect([l.position, l.width, l.height, l.overflow, l.getPropertyValue('clip')]).toEqual(['absolute', '1px', '1px', 'hidden', 'rect(0px, 0px, 0px, 0px)'])
+  // Assistive technology reads the default card's words for the arrows, which it does not read.
+  await expect(counts.getAttribute('aria-hidden')).toBe('true')
+  await expect(label.textContent).toBe('→ links to 7   ← linked from 4')
+  await expect(label.closest('[aria-hidden="true"]')).toBeNull()
+  await expect(spokenText(card)).toContain('links to 7')
+  await expect(spokenText(card)).toContain('linked from 4')
+  await expect(spokenText(card)).not.toContain('→7')
   // No close button; Show links (primary, with the 16 px links icon) and Open writer (secondary, no chevron).
   await expect(within(card).queryByRole('button', { name: /Close/ })).toBeNull()
   const links = within(card).getByRole('button', { name: 'Show links' })

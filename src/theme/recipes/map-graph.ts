@@ -272,12 +272,13 @@ export const mapLegend = defineSlotRecipe({
 // `selection · writer` 461:1259, 366 x 90): 13 px from its top and 15 from
 // its side, here 12 and 16 (spacing tokens, the larger on a tie, d-072),
 // an 8 px gap, and the counts at the end of the title row (461:1266) as
-// arrows and numbers, `→7  ←4`, in muted mono, keeping their two spaces.
+// arrows and numbers, `→7  ←4`, in muted mono, keeping their two spaces;
+// assistive technology reads the default card's words (`countsLabel`).
 export const mapSelectionCard = defineSlotRecipe({
   className: 'map-selection-card',
   jsx: ['MapSelectionCard'],
   staticCss: ['*'],
-  slots: ['root', 'title', 'icon', 'name', 'kind', 'close', 'description', 'counts', 'action'],
+  slots: ['root', 'title', 'icon', 'name', 'kind', 'close', 'description', 'counts', 'countsLabel', 'action'],
   base: {
     root: {
       display: 'flex',
@@ -298,6 +299,8 @@ export const mapSelectionCard = defineSlotRecipe({
     close: { ms: 'auto', flexShrink: '0' },
     description: { textStyle: 'small', color: 'fg.muted', m: '0' },
     counts: { textStyle: 'mono', color: 'fg.default', m: '0' },
+    // The compact counts in the default card's words, read by assistive technology and hidden from view.
+    countsLabel: { srOnly: true },
     action: {
       display: 'flex',
       '& > button': { w: '100%' },

@@ -68,6 +68,12 @@ export type ComposerProps = {
    * D05 158:549) on the 24 px button of `layout="inline"`.
    */
   sendIconSize?: '12' | '16' | undefined
+  /**
+   * The size of the icon on Stop, in px, while `running`. `16` (the
+   * default) draws it at 16. `12` draws the Inbox reply box's 12 px square
+   * (Inbox D05 346:2285).
+   */
+  stopIconSize?: '12' | '16' | undefined
   /** The model control after the attach button, such as a `ModelChip`. */
   model?: ReactNode
   disabled?: boolean | undefined
@@ -110,6 +116,7 @@ export function Composer({
   attachIcon,
   attachLabel = 'Attach a file',
   sendIconSize = '16',
+  stopIconSize = '16',
   model,
   disabled = false,
   layout = 'stacked',
@@ -184,8 +191,8 @@ export function Composer({
       </Button>
     )
   const stop = running ? (
-    <Button data-keyboard-keep="" size={buttonSize} textSize={inline ? 'xs' : 'md'} disabled={disabled} onClick={onStop}>
-      <StopIcon size="16" />
+    <Button data-keyboard-keep="" size={buttonSize} textSize={inline ? 'xs' : 'md'} keepIconSize disabled={disabled} onClick={onStop}>
+      <StopIcon size={stopIconSize} />
       Stop
     </Button>
   ) : null

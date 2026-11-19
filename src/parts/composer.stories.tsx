@@ -753,6 +753,8 @@ function IconSizes() {
         <Composer label="Add stacked" onAttach={onIconAttach} attachIcon={<PlusIcon size="12" />} attachLabel="Add" />
         <Composer label="Default inline" layout="inline" />
         <Composer label="Small send inline" layout="inline" sendIconSize="12" />
+        <Composer label="Default running" running />
+        <Composer label="Small stop" running stopIconSize="12" />
       </Stack>
       {swatchRow}
     </main>
@@ -789,8 +791,13 @@ const iconSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   const smallSend = box('Small send inline').getByRole('button', { name: 'Send' })
   await expect(svgSize(smallSend)).toEqual([12, 12])
   await expect(smallSend.getBoundingClientRect().height).toBe(24)
+  // Stop draws a 16 px square by default; stopIconSize="12" draws Inbox D05's 12 px square in the same button.
+  const stop = (name: string) => box(name).getByRole('button', { name: 'Stop' })
+  await expect(svgSize(stop('Default running'))).toEqual([16, 16])
+  await expect(svgSize(stop('Small stop'))).toEqual([12, 12])
+  await expect(stop('Small stop').getBoundingClientRect().height).toBe(stop('Default running').getBoundingClientRect().height)
 }
 
-/** `attachIcon`, `attachLabel` and `sendIconSize`: Workspaces D04's 12 px plus and D05's 12 px Send arrow, beside the defaults. */
+/** `attachIcon`, `attachLabel`, `sendIconSize` and `stopIconSize`: Workspaces D04's 12 px plus, D05's 12 px Send arrow and Inbox D05's 12 px Stop square, beside the defaults. */
 export const IconSizesDark: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'dark' }, play: iconSizesPlay }
 export const IconSizesLight: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'light' }, play: iconSizesPlay }

@@ -380,6 +380,7 @@ export type ComposerProps = {
     attachIcon?: ReactNode;
     attachLabel?: string | undefined;
     sendIconSize?: '12' | '16' | undefined;
+    stopIconSize?: '12' | '16' | undefined;
     model?: ReactNode;
     disabled?: boolean | undefined;
     layout?: 'stacked' | 'inline' | undefined;

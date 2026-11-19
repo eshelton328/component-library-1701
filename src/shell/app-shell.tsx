@@ -207,6 +207,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       from = shown
       origin = shown
       start = now
+      // The time the move ends, for a test or a trace to read: a correction keeps it, a new move sets it.
+      root.dataset.keyboardEnd = String(start + keyboardMotion)
       motion ??= requestAnimationFrame(step)
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's

@@ -83,7 +83,10 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  * - `padding`: `default` pads 10 inside the 1 px border; `sm` pads 8, so a
  *   title and meta row is 58 tall (Artifacts D2); `lg` pads 12 (the list
  *   view, D4); `phone` pads 4 at the sides and 8 above and below, so a
- *   row with a 48 px leading is 66 tall (M1).
+ *   row with a 48 px leading is 66 tall (M1); `pane` pads 6 above and
+ *   below and 10 at the sides, puts the title and meta 2 apart and centres
+ *   the leading, body and trailing down the row, so a title and meta row is
+ *   52 tall, selected or not (the Toolkit list beside an open item, D03).
  * - `surface="card"` draws the row on `surface.pane` in a `border.default`
  *   border, as a Card; `default` has no fill and a clear border.
  * - `trailingAlign="center"` centres the trailing items down the row (D2's

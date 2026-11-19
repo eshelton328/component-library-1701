@@ -20,6 +20,10 @@ const fade =
 // mask, which uses only alpha, so it needs no colour token: #000 is opaque.
 // The component sets data-overflow-start and data-overflow-end from the
 // scroll position; a row that fits has neither and no mask.
+// `fade="none"` draws no mask at either edge, so a cut chip shows at full
+// strength up to the row's edge, as Figma draws the Toolkit Activity kind
+// chips (D21 491:4396, 386 wide, cuts the Workflows chip 491:4412 at x 467).
+// The overflow marks stay, so a caller can still tell the row scrolls.
 //
 // `compact` is the Inbox D1 chip row (346:151, chips 346:152 and 346:155):
 // 30 high, 8 sides, 5 between chips and between label and count, a Geist
@@ -108,6 +112,10 @@ export const filterChips = defineSlotRecipe({
       default: {},
       none: { root: { p: '0' }, item: { [focusRing]: { outlineOffset: '-2' } } },
     },
+    fade: {
+      edges: {},
+      none: { root: { '&[data-overflow-start], &[data-overflow-end]': { maskImage: 'none', _rtl: { maskImage: 'none' } } } },
+    },
   },
-  defaultVariants: { size: 'md', padding: 'default' },
+  defaultVariants: { size: 'md', padding: 'default', fade: 'edges' },
 })

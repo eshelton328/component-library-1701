@@ -264,12 +264,31 @@ export const TruncatedTextHighlight: StoryObj<typeof meta> = {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /**
- * The pointer can move from the cut text onto its tooltip, and the tooltip
- * stays open there (WCAG 1.4.13). This holds for text with its own tab stop
- * and for a cut label inside a button.
+ * The tooltip of cut text only shows the text: it takes no pointer events,
+ * so a click where it covers an element reaches that element, and the
+ * pointer cannot rest on it (the WCAG 1.4.13 "hoverable" deviation in the
+ * tooltip recipe). Escape closes it ("dismissible"). This holds for text
+ * with its own tab stop and for a cut label inside a button. The pointer can
+ * still move onto a plain Tooltip, and it stays open there.
  */
-export const TruncatedTextHoverable: StoryObj<typeof meta> = {
-  render: () => <Truncation />,
+export const TruncatedTextPassThrough: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Stack gap="40">
+        <div className={narrow} data-testid="cut">
+          <TruncatedText>{long}</TruncatedText>
+        </div>
+        <div className={`${narrow} ${column}`}>
+          <Button className={fill}>
+            <TruncatedText>{`Open ${long}`}</TruncatedText>
+          </Button>
+        </div>
+        <Tooltip content="Copy the path">
+          <Button>Copy</Button>
+        </Tooltip>
+      </Stack>
+    </main>
+  ),
   play: async ({ canvasElement }) => {
     const button = within(canvasElement).getByRole('button', { name: `Open ${long}` })
     for (const [trigger, full] of [
@@ -280,15 +299,24 @@ export const TruncatedTextHoverable: StoryObj<typeof meta> = {
       await waitFor(() => expect(tooltipOf()).toHaveTextContent(full))
       const tip = tooltipOf()
       if (tip === null) throw new Error('no tooltip')
-      await expect(getComputedStyle(tip).pointerEvents).not.toBe('none')
-      // On the tooltip, past the close delay, it is still open.
-      await userEvent.hover(tip)
-      await wait(500)
-      await expect(tooltipOf()).toHaveTextContent(full)
-      // Leaving the tooltip closes it.
-      await userEvent.unhover(tip)
+      await expect(getComputedStyle(tip).pointerEvents).toBe('none')
+      // Escape closes it while the pointer still rests on the text.
+      await userEvent.keyboard('{Escape}')
       await waitFor(() => expect(tooltipOf()).toBeNull())
+      await userEvent.unhover(trigger)
     }
+    // A plain tooltip: on the tooltip, past the close delay, it is still open; leaving it closes it.
+    const copy = within(canvasElement).getByRole('button', { name: 'Copy' })
+    await userEvent.hover(copy)
+    await waitFor(() => expect(tooltipOf()).toHaveTextContent('Copy the path'))
+    const tip = tooltipOf()
+    if (tip === null) throw new Error('no tooltip')
+    await expect(getComputedStyle(tip).pointerEvents).not.toBe('none')
+    await userEvent.hover(tip)
+    await wait(500)
+    await expect(tooltipOf()).toHaveTextContent('Copy the path')
+    await userEvent.unhover(tip)
+    await waitFor(() => expect(tooltipOf()).toBeNull())
   },
 }
 

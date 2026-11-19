@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Grid, Inline, Stack } from '../controls/layout'
 import { SparkIcon } from '../foundations/icons'
@@ -277,6 +277,63 @@ export const LongText: StoryObj<typeof meta> = {
     await expect(onSelectLong).toHaveBeenCalledTimes(1)
   },
 }
+
+// A card pinned to the window's foot, so its cut description has no room for a tooltip below it.
+const foot = css({ position: 'fixed', bottom: '0', left: '0', w: 'shell.sidebar', p: '24', bg: 'bg.canvas' })
+const footDescription = 'Routes, the RPC client and the owner check over the bridge API, with the held-out cases'
+const onSelectFoot = fn()
+
+function CardAtFoot() {
+  return (
+    <main className={foot}>
+      <Card title="hono-server" description={footDescription} onSelect={onSelectFoot} />
+    </main>
+  )
+}
+
+// The intersection of two boxes, empty when they do not overlap.
+const overlap = (a: DOMRect, b: DOMRect) => ({
+  left: Math.max(a.left, b.left),
+  right: Math.min(a.right, b.right),
+  top: Math.max(a.top, b.top),
+  bottom: Math.min(a.bottom, b.bottom),
+})
+
+/**
+ * A clickable card at the window's foot. Its cut description opens the
+ * tooltip on hover and on focus, and Escape closes it. The tooltip has no
+ * room below the description, so it opens above it, over the title button.
+ * It takes no pointer events, so a click at a point it covers on the title
+ * button still selects the card.
+ */
+const cutTextClickPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onSelectFoot.mockClear()
+  const description = find(canvasElement, '.card__description')
+  await expectCutText(description, footDescription)
+  const text = find(description, '.truncated-text')
+  await userEvent.hover(text)
+  const tip = await within(document.body).findByRole('tooltip')
+  await waitFor(() => expect(tip).toHaveTextContent(footDescription))
+  await expect(tip).toBeVisible()
+  // A point that lies on both the tooltip and the title button.
+  const action = find(canvasElement, '.card__action')
+  const both = overlap(tip.getBoundingClientRect(), action.getBoundingClientRect())
+  await expect(both.right).toBeGreaterThan(both.left)
+  await expect(both.bottom).toBeGreaterThan(both.top)
+  const target = document.elementFromPoint((both.left + both.right) / 2, (both.top + both.bottom) / 2)
+  if (!(target instanceof HTMLElement)) throw new Error('nothing at the point')
+  // A pointer there hits the card, not the tooltip, which takes no pointer events. (React passes a click on the
+  // tooltip up to the card through the portal, so only this hit test shows what a real pointer, or Playwright,
+  // would press.)
+  await expect(tip.contains(target)).toBe(false)
+  await expect(find(canvasElement, 'article').contains(target)).toBe(true)
+  await expect(getComputedStyle(tip).pointerEvents).toBe('none')
+  await userEvent.click(target)
+  await expect(onSelectFoot).toHaveBeenCalledTimes(1)
+  await userEvent.keyboard('{Escape}')
+}
+export const CutTextClickDark: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'dark' }, play: cutTextClickPlay }
+export const CutTextClickLight: StoryObj<typeof meta> = { render: () => <CardAtFoot />, globals: { mode: 'light' }, play: cutTextClickPlay }
 
 /**
  * The Toolkit tablet row (T1 428:59): `padding="compact"` pads 10 above and

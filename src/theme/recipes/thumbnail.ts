@@ -19,11 +19,27 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // 403:8217, with shape wide). The component draws sm and md with each kind's
 // row layers (D2 403:194, 403:220, 403:246, 414:759, 403:274) and sets
 // their box itself, so the height follows from the drawing's ratio.
+//
+// A chart's reference line (D9 after Apply, `median line` 452:3705 and its
+// label 452:3706): a dashed line across the plot in amber, the needs-you
+// colour (status.needsYou.fg, as the grid's amber cells and the dashed
+// FlowLoop), with its label in mono (12/16) at the plot's end, 4 (spacing.4)
+// above the line (Figma: 16 high, its top 20 above the line). The label
+// can sit over a bar, so it has its own surface.raised fill, padded 4 at
+// the sides with radius xs: status.needsYou.fg on surface.raised is a
+// checked contrast pair (tokens/contrast.json, 4.5:1) in both modes. The line is a
+// dashed border (borderWidths.default), centred on the value. `reference` is
+// an SVG with no viewBox over the drawing; the component places a
+// foreignObject from the plot's start to its end and from the top down to
+// the value, and `referenceBox` puts the label and line at its bottom end.
+// When the label does not fit above the line, the component draws it in a
+// second foreignObject from the value down, marked data-placement below,
+// 4 (spacing.4) under the line.
 export const thumbnail = defineSlotRecipe({
   className: 'thumbnail',
   jsx: ['Thumbnail'],
   staticCss: ['*'],
-  slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge'],
+  slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge', 'reference', 'referenceBox', 'referenceLabel', 'referenceLine'],
   base: {
     root: {
       position: 'relative',
@@ -51,6 +67,34 @@ export const thumbnail = defineSlotRecipe({
     violetEdge: { fill: 'surface.well', stroke: 'status.running.border' },
     amberEdge: { fill: 'surface.well', stroke: 'status.needsYou.border' },
     greenEdge: { fill: 'surface.well', stroke: 'status.done.border' },
+    reference: { position: 'absolute', inset: '0', w: '100%', h: '100%', overflow: 'visible', pointerEvents: 'none', '& foreignObject': { overflow: 'visible' } },
+    referenceBox: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+      h: '100%',
+      '&[data-placement=below]': { justifyContent: 'flex-start' },
+    },
+    referenceLabel: {
+      textStyle: 'mono',
+      color: 'status.needsYou.fg',
+      whiteSpace: 'nowrap',
+      mb: '4',
+      px: '4',
+      bg: 'surface.raised',
+      borderRadius: 'xs',
+      '[data-placement=below] > &': { mt: '4', mb: '0' },
+    },
+    referenceLine: {
+      display: 'block',
+      w: '100%',
+      h: '0',
+      borderTopWidth: 'default',
+      borderTopStyle: 'dashed',
+      borderColor: 'status.needsYou.fg',
+      mb: 'calc(token(borderWidths.default) / -2)',
+    },
   },
   variants: {
     framed: {

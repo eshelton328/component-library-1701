@@ -1612,7 +1612,14 @@ export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui';
 export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
     kind?: ThumbnailKind | undefined;
     shape?: ThumbnailShape | undefined;
+    reference?: ThumbnailReference | undefined;
     label?: string | undefined;
+};
+
+// @public
+export type ThumbnailReference = {
+    value: number;
+    label: string;
 };
 
 // @public

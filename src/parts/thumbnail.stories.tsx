@@ -252,3 +252,139 @@ const rowMeta = {
 
 export const RowSizeDark: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'dark' } }
 export const RowSizeLight: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'light' } }
+
+// A chart's reference line (D9 after Apply, 452:3705 and 452:3706): dashed
+// in the needs-you colour across the plot at the value, with its label in
+// mono at the plot's end, 4 above the line. A chart without it draws neither.
+const refSwatches = {
+  amber: css({ color: 'status.needsYou.fg' }),
+  mono: css({ textStyle: 'mono' }),
+}
+// The label stays inside the thumbnail at the axis' ends, in every shape,
+// with the line at the value: the 128-wide lg size leaves no room above
+// the line at 100.
+const edgeSizes = ['lg', 'fill'] as const
+const edgeShapes = ['wide', 'compact', 'banner'] as const
+const edgeValues = [0, 100] as const
+const edgeWidths = { wide: (188 * 16) / 9, compact: (188 * 8) / 5, banner: 376 } as const
+
+function References() {
+  return (
+    <main className={page}>
+      <div className={css({ w: 'shell.dialogLg' })} data-testid="reference">
+        <Thumbnail kind="chart" shape="banner" reference={{ value: 71, label: 'median 71%' }} />
+      </div>
+      <div className={css({ w: 'shell.dialogLg' })} data-testid="no-reference">
+        <Thumbnail kind="chart" shape="banner" />
+      </div>
+      {edgeSizes.map((size) => (
+        <div key={size} className={row}>
+          {edgeShapes.flatMap((shape) =>
+            edgeValues.map((value) => (
+              <div key={`${shape}-${String(value)}`} className={size === 'fill' ? w334 : undefined} data-testid={`edge-${size}-${shape}-${String(value)}`}>
+                <Thumbnail kind="chart" shape={shape} size={size} reference={{ value, label: `median ${String(value)}%` }} />
+              </div>
+            )),
+          )}
+        </div>
+      ))}
+      <div hidden>
+        {Object.entries(refSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// A computed colour as sRGB channels 0 to 255 and alpha 0 to 1, read
+// back from a canvas so any CSS colour syntax works.
+const rgba = (colour: string): [number, number, number, number] => {
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+  if (ctx === null) throw new Error('no canvas')
+  ctx.clearRect(0, 0, 1, 1)
+  ctx.fillStyle = colour
+  ctx.fillRect(0, 0, 1, 1)
+  const [r = 0, g = 0, b = 0, a = 0] = ctx.getImageData(0, 0, 1, 1).data
+  return [r, g, b, a / 255]
+}
+const luminance = ([r, g, b]: readonly number[]) =>
+  [r, g, b].map((c = 0) => {
+    const v = c / 255
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+  }).reduce((sum, v, i) => sum + v * ([0.2126, 0.7152, 0.0722][i] ?? 0), 0)
+const contrast = (a: readonly number[], b: readonly number[]) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05)
+}
+
+const referenceMeta = {
+  render: () => <References />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const { root } = thumb(canvas.getByTestId('reference'))
+    const box = root.getBoundingClientRect()
+    // The label is text, visible, in mono and amber.
+    const label = within(root).getByText('median 71%')
+    await expect(label).toBeVisible()
+    const mono = canvasElement.querySelector('[data-swatch="mono"]')
+    if (mono === null) throw new Error('no mono swatch')
+    const ls = getComputedStyle(label)
+    await expect(ls.fontFamily).toBe(getComputedStyle(mono).fontFamily)
+    await expect(ls.fontSize).toBe('12px')
+    await expect(ls.lineHeight).toBe(getComputedStyle(mono).lineHeight)
+    await expect(ls.color).toBe(swatch(canvasElement, 'amber'))
+    // The label sits over the bars, so it has its own opaque fill that the
+    // amber text reads on at WCAG AA (4.5:1 for 12 px text).
+    const fill = rgba(ls.backgroundColor)
+    await expect(fill[3]).toBe(1)
+    await expect(contrast(rgba(ls.color), fill)).toBeGreaterThanOrEqual(4.5)
+    // The line is dashed and amber, across the plot (27 to 307 of the
+    // 334-wide drawing, centred in the banner's 376), at 71 on the axis:
+    // 169 - 124 × 0.71 of 188.
+    const line = root.querySelector('.thumbnail__referenceLine')
+    if (!(line instanceof HTMLElement)) throw new Error('no line')
+    const lstyle = getComputedStyle(line)
+    await expect(lstyle.borderTopStyle).toBe('dashed')
+    await expect(lstyle.borderTopColor).toBe(swatch(canvasElement, 'amber'))
+    await expect(lstyle.borderTopWidth).toBe('1px')
+    const l = line.getBoundingClientRect()
+    const unit = box.width / 376
+    await expect(l.top + l.height / 2).toBeCloseTo(box.top + (169 - 124 * 0.71) * unit, 0)
+    await expect(l.left).toBeCloseTo(box.left + (21 + 27) * unit, 0)
+    await expect(l.right).toBeCloseTo(box.left + (21 + 307) * unit, 0)
+    // The label ends at the plot's end, its bottom 4 above the line.
+    const t = label.getBoundingClientRect()
+    await expect(t.right).toBeCloseTo(l.right, 0)
+    await expect(l.top - t.bottom).toBeCloseTo(4, 0)
+    // Without the prop there is no line and no label.
+    const plain = thumb(canvas.getByTestId('no-reference')).root
+    await expect(plain.querySelector('.thumbnail__referenceLine')).toBeNull()
+    await expect(plain.querySelector('[data-reference]')).toBeNull()
+    await expect(plain.textContent).toBe('')
+    // At 0 and 100, in each shape and at lg and fill, the label is inside
+    // the thumbnail and the line still sits at the value.
+    for (const size of edgeSizes) {
+      for (const shape of edgeShapes) {
+        for (const value of edgeValues) {
+          const edge = thumb(canvas.getByTestId(`edge-${size}-${shape}-${String(value)}`)).root
+          const r = edge.getBoundingClientRect()
+          const text = within(edge).getByText(`median ${String(value)}%`).getBoundingClientRect()
+          await expect(text.top).toBeGreaterThanOrEqual(r.top)
+          await expect(text.bottom).toBeLessThanOrEqual(r.bottom)
+          await expect(text.left).toBeGreaterThanOrEqual(r.left)
+          await expect(text.right).toBeLessThanOrEqual(r.right)
+          const edgeLine = edge.querySelector('.thumbnail__referenceLine')
+          if (!(edgeLine instanceof HTMLElement)) throw new Error('no line')
+          const el = edgeLine.getBoundingClientRect()
+          const u = r.height / 188
+          await expect(el.top + el.height / 2).toBeCloseTo(r.top + (169 - 124 * (value / 100)) * u, 0)
+          await expect(el.right).toBeCloseTo(r.left + ((edgeWidths[shape] - 334) / 2 + 307) * (r.width / edgeWidths[shape]), 0)
+        }
+      }
+    }
+  },
+} satisfies StoryObj<typeof meta>
+
+export const ReferenceDark: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'dark' } }
+export const ReferenceLight: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'light' } }

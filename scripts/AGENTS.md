@@ -13,7 +13,8 @@ Repository scripts that are not part of the package.
   runs it; never add it to `pnpm verify`, which it runs.
 - `check-ci.ts` fails when a step of `pnpm verify` does not run on every
   pull request: it must be a `run: pnpm <step>` in a CI job, with no
-  `if:` on the job or the step. One form of `if:` counts: a job with
+  `if:` on the job or the step. One form of `if:` counts, in the five
+  reused jobs only: a job with
   `needs: worktree`, `if: ${{ !cancelled() }}` and a first step with id
   `reuse`, whose other steps have `if: steps.reuse.outputs.reuse != 'true'`.
   Such a step is skipped only when the worktree job ran `pnpm verify` on
@@ -125,7 +126,7 @@ Repository scripts that are not part of the package.
   is a step of `pnpm verify`, word for word, and the jobs run nothing
   else; the reuse step passes only on a worktree `success` and reuses
   only when verify ran; and `check-ci.ts` fails when a reused job drops a
-  command or a step has another `if:`.
+  command, a step has another `if:`, or another job uses the reuse form.
 - `secret-scan.test.ts` runs gitleaks with `../.gitleaks.toml` on planted
   lines: a secret-named key with or without a prefix, an email address
   in any case and its exceptions, and a `gitleaks:allow` comment, which

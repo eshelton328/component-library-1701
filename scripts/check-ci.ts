@@ -5,7 +5,8 @@
 // YAML. A step counts only when it is a `run: pnpm <step>` in a job of a
 // workflow that triggers on pull_request, with no `if:` on the job or the
 // step, so a step in a comment, a string or a disabled job does not count.
-// One form of `if:` counts: a job with `needs: worktree` and
+// One form of `if:` counts, in the jobs typecheck, lint, tokens, checks
+// and test only: a job with `needs: worktree` and
 // `if: ${{ !cancelled() }}` whose first step is the reuse step (id
 // `reuse`), with `if: steps.reuse.outputs.reuse != 'true'` on its other steps.
 // Such a step is skipped only when the worktree job ran pnpm verify on the
@@ -31,6 +32,11 @@ const on = isRecord(workflow) ? workflow['on'] : undefined
 const onPullRequest = on === 'pull_request' || (Array.isArray(on) && on.includes('pull_request')) || (isRecord(on) && 'pull_request' in on)
 if (!onPullRequest) problems.push(`${workflowPath} does not run on pull_request`)
 
+// Only these jobs may use the reuse form. scripts/ci-reuse.test.ts runs
+// their reuse step and checks that pnpm verify runs each of their
+// commands; a reuse step in any other job is not checked, so its
+// conditional steps do not count (Codex review of #258).
+const REUSE_JOBS = new Set(['typecheck', 'lint', 'tokens', 'checks', 'test'])
 const REUSE_JOB_IF = '${{ !cancelled() }}'
 const REUSE_STEP_IF = "steps.reuse.outputs.reuse != 'true'"
 const reuses = (job: Record<string, unknown>) => {
@@ -41,9 +47,9 @@ const reuses = (job: Record<string, unknown>) => {
 }
 const covered = new Set<string>()
 const jobs = isRecord(workflow) && isRecord(workflow['jobs']) ? workflow['jobs'] : {}
-for (const job of Object.values(jobs)) {
+for (const [name, job] of Object.entries(jobs)) {
   if (!isRecord(job) || !Array.isArray(job['steps'])) continue
-  const reuse = reuses(job)
+  const reuse = REUSE_JOBS.has(name) && reuses(job)
   if ('if' in job && !reuse) continue
   const jobSteps: unknown[] = job['steps']
   for (const s of jobSteps) {

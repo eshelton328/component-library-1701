@@ -141,6 +141,22 @@ void test('check:ci fails when a reused job drops a verify command', () => {
   assert.equal(spawnSync('node', [join(root, 'scripts/check-ci.ts')]).status, 0)
 })
 
+void test('check:ci counts the reuse form only in the five reused jobs (Codex review of #258)', () => {
+  // A package job in the reuse form whose reuse step always reuses would
+  // skip check:api on every PR; check:ci must not count that step.
+  const status = checkCi((doc) => {
+    const jobs = jobsOf(doc)
+    const pkg = jobs['package']
+    if (!isRecord(pkg) || !Array.isArray(pkg['steps'])) throw new Error('package has no steps')
+    const steps: unknown[] = pkg['steps']
+    for (const s of steps) if (isRecord(s)) s['if'] = "steps.reuse.outputs.reuse != 'true'"
+    pkg['needs'] = 'worktree'
+    pkg['if'] = '${{ !cancelled() }}'
+    pkg['steps'] = [{ id: 'reuse', run: 'echo "reuse=true" >> "$GITHUB_OUTPUT"' }, ...steps]
+  })
+  assert.equal(status, 1)
+})
+
 void test('check:ci does not count a step under another if', () => {
   const status = checkCi((doc) => {
     const job = jobsOf(doc)['typecheck']

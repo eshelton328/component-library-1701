@@ -30,7 +30,9 @@ Layout, Navigation or Overlays (d-065, d-066).
   height and nothing in the layout moves: the detail ends its scroll that
   far up (`--app-shell-detail-end`), and a `ScrollFrame` that is the
   detail's child moves its footer (the composer) up onto the keyboard
-  with `translateY` and ends its body's view above it. The tab bar and
+  with `translateY` and ends its body's view above it. A `ScrollFrame`
+  nested deeper does not dock; when the keyboard covers a field in its
+  footer, AppShell warns once in the console (`NestedFooter`). The tab bar and
   the safe area stay under the keyboard; hiding them would move the
   layout as the keyboard opens and closes. The keyboard's top is the
   visible area's bottom, with the keyboard-free height

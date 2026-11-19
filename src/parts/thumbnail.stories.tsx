@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { Thumbnail, type ThumbnailKind } from './thumbnail'
+import { Thumbnail, type ThumbnailKind, type ThumbnailTone } from './thumbnail'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '16', justifyItems: 'start' })
 const row = css({ display: 'flex', gap: '16', alignItems: 'flex-start', flexWrap: 'wrap' })
@@ -388,3 +388,102 @@ const referenceMeta = {
 
 export const ReferenceDark: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'dark' } }
 export const ReferenceLight: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'light' } }
+
+// One tone per artifact (D1 400:14): the doc's title bar (green 402:15656,
+// violet 402:15716) and first chip (402:15664), the chart's title bar and
+// main bars (amber 402:15776 to 402:15784, cyan 402:15441), with every
+// third bar violet (402:15443, 402:15779). Without `tone` it draws accent,
+// as before.
+const tones = ['accent', 'violet', 'amber', 'green'] as const satisfies readonly ThumbnailTone[]
+const toneSwatches = {
+  accent: css({ color: 'accent.default' }),
+  violet: css({ color: 'status.running.fg' }),
+  amber: css({ color: 'status.needsYou.fg' }),
+  green: css({ color: 'status.done.fg' }),
+  accentTint: css({ color: 'accent.subtle' }),
+  violetTint: css({ color: 'status.running.bg' }),
+  amberTint: css({ color: 'status.needsYou.bg' }),
+  greenTint: css({ color: 'status.done.bg' }),
+}
+const toneKeys = ['default', ...tones] as const
+
+function Tones() {
+  return (
+    <main className={page}>
+      {toneKeys.map((tone) => (
+        <div key={tone} className={row}>
+          {(['doc', 'chart'] as const).map((k) => (
+            <div key={k} className={row}>
+              <div className={w334} data-testid={`tone-${tone}-${k}`}>
+                {tone === 'default' ? <Thumbnail kind={k} framed={false} /> : <Thumbnail kind={k} tone={tone} framed={false} />}
+              </div>
+              {(['sm', 'md'] as const).map((size) => (
+                <div key={size} data-testid={`tone-${tone}-${k}-${size}`}>
+                  {tone === 'default' ? <Thumbnail kind={k} size={size} /> : <Thumbnail kind={k} tone={tone} size={size} />}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      ))}
+      <div hidden>
+        {Object.entries(toneSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const fillOf = (el: Element | null | undefined) => {
+  if (!(el instanceof SVGElement)) throw new Error('no shape')
+  return getComputedStyle(el).fill
+}
+
+const toneMeta = {
+  render: () => <Tones />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    for (const key of toneKeys) {
+      const tone = key === 'default' ? 'accent' : key
+      const solid = swatch(canvasElement, tone)
+      const tint = swatch(canvasElement, `${tone}Tint`)
+      const violet = swatch(canvasElement, 'violet')
+      await expect(solid).not.toBe('')
+      // Doc: the title bar (the drawing's first shape) in the tone, the
+      // first chip in its tint, the second chip violet's tint.
+      const doc = thumb(canvas.getByTestId(`tone-${key}-doc`)).svg
+      await expect(fillOf(doc.querySelector(':scope > g > rect'))).toBe(solid)
+      const chips = Array.from(doc.querySelectorAll(':scope > g > rect')).filter((r) => r.getAttribute('rx') === '4')
+      await expect(chips.length).toBe(2)
+      await expect(fillOf(chips[0])).toBe(tint)
+      await expect(fillOf(chips[1])).toBe(swatch(canvasElement, 'violetTint'))
+      // Chart: the title bar and main bars in the tone, every third bar violet.
+      for (const id of [`tone-${key}-chart`, `tone-${key}-chart-sm`, `tone-${key}-chart-md`]) {
+        const chart = thumb(canvas.getByTestId(id)).svg
+        const group = chart.querySelector('[data-bars]')
+        await expect(fillOf(group?.previousElementSibling)).toBe(solid)
+        const bars = Array.from(group?.querySelectorAll('rect') ?? [])
+        await expect(bars.length).toBe(9)
+        for (const [i, bar] of bars.entries()) await expect(fillOf(bar)).toBe(i % 3 === 2 ? violet : solid)
+      }
+      // The row doc's title bar (after the window bar) takes the tone.
+      for (const size of ['sm', 'md'] as const) {
+        const rowDoc = thumb(canvas.getByTestId(`tone-${key}-doc-${size}`)).svg
+        await expect(fillOf(rowDoc.querySelectorAll(':scope > g > rect')[1])).toBe(solid)
+      }
+    }
+    // Each tone draws its own colour: four tones, four colours.
+    const titles = tones.map((t) => fillOf(thumb(canvas.getByTestId(`tone-${t}-doc`)).svg.querySelector(':scope > g > rect')))
+    await expect(new Set(titles).size).toBe(4)
+    // Without tone, the colours are those of tone="accent", as on main.
+    for (const id of ['doc', 'chart', 'doc-sm', 'chart-sm', 'doc-md', 'chart-md']) {
+      const plain = Array.from(thumb(canvas.getByTestId(`tone-default-${id}`)).svg.querySelectorAll('rect')).map(fillOf)
+      const accent = Array.from(thumb(canvas.getByTestId(`tone-accent-${id}`)).svg.querySelectorAll('rect')).map(fillOf)
+      await expect(plain).toEqual(accent)
+    }
+  },
+} satisfies StoryObj<typeof meta>
+
+export const ToneDark: StoryObj<typeof meta> = { ...toneMeta, globals: { mode: 'dark' } }
+export const ToneLight: StoryObj<typeof meta> = { ...toneMeta, globals: { mode: 'light' } }

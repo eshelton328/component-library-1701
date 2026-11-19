@@ -1536,6 +1536,58 @@ const nestedFooter: StoryObj<typeof meta> = {
 export const NestedFooterDark: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const NestedFooterLight: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+
+// An iPad at 1232 px with a search field and a long result list in the list pane, beside the detail.
+const wideTabletScreen = { t1232: { name: 'Tablet (1232 x 900)', styles: { width: '1232px', height: '900px' } } }
+const results = Array.from({ length: 40 }, (_, i) => `Result ${String(i + 1)}`)
+const listColumn = css({ display: 'flex', flexDirection: 'column', flex: '1', overflow: 'hidden' })
+const resultList = css({ flex: '1', overflowY: 'auto' })
+function TabletSearch() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="desktop"
+        list={
+          <section aria-label="Inbox" className={listColumn}>
+            <input aria-label="Search" />
+            <div role="list" aria-label="Results" tabIndex={0} className={resultList}>
+              {results.map((r) => (
+                <p role="listitem" key={r} className={text}>
+                  {r}
+                </p>
+              ))}
+            </div>
+          </section>
+        }
+        detail={<p className={text}>The detail</p>}
+      />
+    </div>
+  )
+}
+const listKeyboard: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  parameters: { viewport: { options: wideTabletScreen } },
+  render: () => <TabletSearch />,
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([1232, 900])
+    const canvas = within(canvasElement)
+    const list = canvas.getByRole('list', { name: 'Results' })
+    await expect(Math.round(rect(list).bottom)).toBe(900)
+    // The search field takes the focus and a 400 px keyboard covers the screen's foot: the results end above it, so
+    // the last ones can scroll into view.
+    await userEvent.click(canvas.getByRole('textbox', { name: 'Search' }))
+    fakeViewport.move({ height: 500 })
+    await waitFor(() => expect(Math.round(rect(list).bottom)).toBe(500))
+    // The keyboard closes: the results reach the foot again.
+    canvas.getByRole('textbox', { name: 'Search' }).blur()
+    fakeViewport.move({ height: 900 })
+    await waitFor(() => expect(Math.round(rect(list).bottom)).toBe(900))
+  },
+}
+/** Tablet: a search field in the list pane opens the keyboard, and the results end above it (the-bridge #151 review). */
+export const ListKeyboardDark: StoryObj<typeof meta> = { ...listKeyboard, globals: { mode: 'dark', viewport: { value: 't1232' } } }
+export const ListKeyboardLight: StoryObj<typeof meta> = { ...listKeyboard, globals: { mode: 'light', viewport: { value: 't1232' } } }
+
 const focusScroll: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => (

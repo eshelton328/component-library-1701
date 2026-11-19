@@ -28,7 +28,8 @@ Layout, Navigation or Overlays (d-065, d-066).
   root with `style.setProperty`, the measured runtime value of how far the
   keyboard covers the detail's bottom (the fit). The shell keeps its full
   height and nothing in the layout moves: the detail ends its scroll that
-  far up (`--app-shell-detail-end`), and a `ScrollFrame` that is the
+  far up (`--app-shell-detail-end`), as do a list or side pane beside
+  it (a tablet's search results, `ListKeyboard`), and a `ScrollFrame` that is the
   detail's child moves its footer (the composer) up onto the keyboard
   with `translateY` and ends its body's view above it. A `ScrollFrame`
   nested deeper does not dock; when the keyboard covers a field in its

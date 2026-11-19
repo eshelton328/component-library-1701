@@ -152,6 +152,12 @@ jobs:
               return 0 if s <= 0 else math.ceil(s / 60)
 
 
+          def runner_of(job):
+              """The label that prices a job: "self-hosted" when any label says so, else the first."""
+              labels = [str(x) for x in job.get("labels") or []] or ["?"]
+              return "self-hosted" if any(x.lower() == "self-hosted" for x in labels) else labels[0]
+
+
           def price(label, over):
               """USD a minute for a runner label, or None when no rule prices it."""
               low = str(label).lower()
@@ -227,7 +233,7 @@ jobs:
                       complete = False
                       continue
                   for job in jobs:
-                      rows.append([wf, str(job.get("name")), (job.get("labels") or ["?"])[0], raw(job)])
+                      rows.append([wf, str(job.get("name")), runner_of(job), raw(job)])
                   done[rid] = {"attempt": att, "jobs": rows}
               return done, complete, False
 
@@ -373,8 +379,9 @@ jobs:
                       return {"action": "updated", "number": n, "level": level}
                   made = api.send("POST", f"/repos/{repo}/issues", {"title": USD_TITLE, "body": usd_body(res, repo, level)})
                   return {"action": "opened", "number": made.get("number"), "level": level}
-              if mine and res["partial"]:
-                  return {"action": "kept-open", "number": mine[0]["number"], "reason": "some days were not counted"}
+              if mine and (res["partial"] or res["errors"]):
+                  why = "some days were not counted" if res["partial"] else "a lookup failed: " + res["errors"][0][:200]
+                  return {"action": "kept-open", "number": mine[0]["number"], "reason": why}
               if mine:
                   n = mine[0]["number"]
                   api.send("POST", f"/repos/{repo}/issues/{n}/comments",
@@ -422,8 +429,9 @@ jobs:
                       return {"action": "updated", "number": mine[0]["number"]}
                   made = api.send("POST", f"/repos/{repo}/issues", {"title": ISSUE_TITLE, "body": body})
                   return {"action": "opened", "number": made.get("number")}
-              if mine and res["partial"]:
-                  return {"action": "kept-open", "number": mine[0]["number"], "reason": "some days were not counted"}
+              if mine and (res["partial"] or res["errors"]):
+                  why = "some days were not counted" if res["partial"] else "a lookup failed: " + res["errors"][0][:200]
+                  return {"action": "kept-open", "number": mine[0]["number"], "reason": why}
               if mine:
                   n = mine[0]["number"]
                   api.send("POST", f"/repos/{repo}/issues/{n}/comments",
@@ -477,12 +485,12 @@ jobs:
                   return 2
 
               ledger_path = a.get("--ledger")
-              ledger = {"version": 4, "days": {}}
+              ledger = {"version": 5, "days": {}}
               if ledger_path and os.path.exists(ledger_path):
                   try:
                       with open(ledger_path) as f:
                           have = json.load(f)
-                      if have.get("version") == 4:
+                      if have.get("version") == 5:
                           ledger = have
                   except (OSError, ValueError):
                       pass
@@ -501,12 +509,14 @@ jobs:
                       entry = kept.get(key) or {"complete": False, "final": False, "runs": {}}
                       settled = d < today - dt.timedelta(days=SETTLE)
                       fresh = False
+                      cut = False
                       if not entry.get("final") and not stopped:
                           if not api.room(12):
                               stopped = True
                       if not entry.get("final") and not stopped:
                           try:
                               runs, complete, stopped = count_day(api, repo, d, entry["runs"], settled)
+                              cut = stopped
                               complete = complete and d < today
                               entry = {"complete": complete, "final": complete and settled, "runs": runs}
                               kept[key] = entry
@@ -515,7 +525,9 @@ jobs:
                           except ApiError as e:
                               res["errors"].append(str(e))
                               stopped = True
-                      if not (entry.get("final") or (fresh and (entry["complete"] or d == today))):
+                      # Today may hold runs still in progress, but a count that stopped at
+                      # --max-calls on it is missing, like any other day.
+                      if not (entry.get("final") or (fresh and (entry["complete"] or (d == today and not cut)))):
                           res["missing"].append({"repo": repo, "day": key})
                       if key in kept:
                           day = day_total(entry["runs"], over)
@@ -554,6 +566,7 @@ jobs:
                                          "percent": round(mb * 100 / cap, 1) if cap else 0}
                   except (ApiError, ValueError, KeyError) as e:
                       res["errors"].append(str(e))
+                      res["packages"] = {"name": a["--package"], "error": str(e)}
               if usd is not None:
                   inc = float(a.get("--included-usd", 0))
                   share = float(a.get("--share", 1))
@@ -565,7 +578,7 @@ jobs:
                   fc = res["usd"] * month / gone
                   p = round(res["usd"] * 100 / part, 1) if part else 0
                   fp = round(fc * 100 / part, 1) if part else 0
-                  pk = res.get("packages", {}).get("percent", 0)
+                  pk = res.get("packages", {}).get("percent") or 0
                   hit = [x for x in levels if p >= x or pk >= x]
                   level = f"{hit[-1]:g}" if hit else None
                   if fp >= 100:

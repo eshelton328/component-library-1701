@@ -25,11 +25,15 @@ from `../../tokens/`.
   because Panda puts slot recipes in the cascade layer before recipe
   variants. When the component renders the icon, pass `size` to it.
   When the caller passes the icon in, size it with `!` (`'icon.12!'`).
-  An important style in `base` also wins over one in a variant, so
-  when a variant changes the size, set every size in the variants.
+  An important style in `base` also wins over one in a variant.
   An icon given a `size` carries `data-icon-size`; a slot that keeps
   the caller's size (Button `keepIconSize`) sizes only
-  `svg:not([data-icon-size])`.
+  `svg:not([data-icon-size])`. Keep a component's important icon size in
+  `base`, not in a variant: a variant is in a later layer than the slot
+  recipes, so a slot's important size (GroupHeader's actions) would win
+  over it for a Button inside that slot. Button keys its opt-in on the
+  `keepIconSize` variant's class in base for this reason, so the
+  exported `button()` recipe function opts in too.
 - Write a focus ring under `[focusRing]` from `recipes/focus.ts`, never
   under `_focusVisible`, and set `outline: 'none'` on the same slot, so no
   state draws the browser's default outline. The ring shows on

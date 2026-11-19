@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, waitFor } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { button } from '../../styled-system/recipes'
 import { Button } from '../controls/button'
 import { ItemTabs } from '../controls/item-tabs'
 import { Stack } from '../controls/layout'
@@ -41,6 +42,31 @@ function Slots({ size }: { size?: IconSize | undefined }) {
         <span data-case="group-header">
           <GroupHeader label="Projects" leading={<GridIcon size={size} />} actions={<EditIcon size={size} />} />
         </span>
+        <span data-case="group-header-button">
+          <GroupHeader
+            label="Workspaces"
+            actions={
+              <Button variant="text" size="xs" iconOnly aria-label="Workspaces actions">
+                <EditIcon size={size} />
+              </Button>
+            }
+          />
+        </span>
+        <span data-case="recipe-kept">
+          <button type="button" className={button({ variant: 'text', size: 'xs', iconOnly: true, keepIconSize: true })} aria-label="Recipe kept">
+            <EditIcon size="12" />
+          </button>
+        </span>
+        <span data-case="group-header-kept">
+          <GroupHeader
+            label="Kept"
+            actions={
+              <Button variant="text" size="xs" iconOnly keepIconSize aria-label="Kept actions">
+                <EditIcon size="12" />
+              </Button>
+            }
+          />
+        </span>
         <span data-case="nav-rail">
           <NavRail items={[{ value: 'home', label: 'Home', icon: <HomeIcon size={size} /> }]} />
         </span>
@@ -63,6 +89,13 @@ const expected = {
   'view-switch': [12],
   'search-field': [16, 12],
   'group-header': [12, 12],
+  // A Button in the header's actions (the Workbench sidebar's ⋯, rename and close, D2 105:743 and 105:746) keeps
+  // its own 16 px icon: the button's important size is in an earlier cascade layer than the header's. With
+  // `keepIconSize`, the icon keeps the 12 it was given.
+  'group-header-button': [16],
+  'group-header-kept': [12],
+  // The exported `button()` recipe function opts in with the same variant, on any element.
+  'recipe-kept': [12],
   'nav-rail': [24],
   'tab-bar': [24],
   menu: [16],

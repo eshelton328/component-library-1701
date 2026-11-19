@@ -58,9 +58,10 @@ Layout, Navigation or Overlays (d-065, d-066).
   The measures live in `keyboard-measures.ts` for the page's life, so a
   shell that mounts on a new page expects the last measured keyboard. A
   new target during a move keeps the move's end and curve, so a keyboard
-  reported in the move makes one motion (R22). A step of 2 px or less
-  late in a move or after it (a keyboard that rises frame by frame) is
-  followed at once, so the composer stays on the keyboard. Until the keyboard's
+  reported in the move makes one motion (R22). A keyboard step of 2
+  px or less (a keyboard that rises frame by frame) keeps the move's end
+  even late in it, and after the move it is followed at once, so the
+  composer stays on the keyboard. Until the keyboard's
   measure settles (300 ms after its last resize, or 1 s with none), a
   smaller report holds the dock up as an early step of the rise when the
   expected keyboard was measured; against Figma's guess, a report of at

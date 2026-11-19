@@ -1708,20 +1708,32 @@ const lateStep: StoryObj<typeof meta> = {
   render: () => <ThreadChat />,
   play: async ({ canvasElement }) => {
     const { root, footer, field } = threadParts(canvasElement)
-    // The keyboard reports its last small step late in the dock's move, or after it, as a keyboard that rises frame by
-    // frame does: the dock is on the keyboard at the next frame, not a pixel off it on a new 250 ms move (the-bridge
-    // keyboard:served on Workspaces, beta.80).
+    // The keyboard reports its last small steps late in the dock's move and after it, as a keyboard that rises frame
+    // by frame does (the-bridge keyboard:served on Workspaces, beta.80). A step late in the move keeps the move's end,
+    // and the dock is on the keyboard at that end; a step after the move is followed at the next frame. Neither starts
+    // a new 250 ms move that leaves the dock a pixel off the keyboard.
+    const record = recordRise(footer, root)
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
     const end = Number(root.dataset.keyboardEnd)
     await waitFor(() => expect(performance.now()).toBeGreaterThan(end - 20), { timeout: 2000, interval: 5 })
+    const late = performance.now()
     fakeViewport.move({ height: 543 })
-    await nextFrame()
-    await expect(riseOf(footer)).toBe(267)
+    if (late < end) await expect(Number(root.dataset.keyboardEnd)).toBe(end)
     await settled(footer, 267)
+    const atEnd = Number(root.dataset.keyboardEnd)
+    fakeViewport.move({ height: 542 })
+    await nextFrame()
+    await expect(riseOf(footer)).toBe(268)
+    record.stop()
+    // From one frame after the move's end (the recorder can run before the hook in a frame), every frame shows the
+    // dock on the keyboard.
+    const after = record.frames.filter((f) => f.at >= atEnd).slice(1)
+    await expect(after.length).toBeGreaterThan(0)
+    await expect(after.filter((f) => f.inset !== '267px' && f.inset !== '268px')).toEqual([])
   },
 }
-/** Phone chat: the keyboard's last 1 px step comes late in the rise; the composer stays on the keyboard. */
+/** Phone chat: the keyboard's last 1 px steps come late in the rise and after it; the composer stays on the keyboard. */
 export const LateStepDark: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const LateStepLight: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'light', viewport: { value: 'm390' } } }
 

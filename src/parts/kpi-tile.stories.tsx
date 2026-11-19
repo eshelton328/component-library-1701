@@ -187,3 +187,25 @@ const captionLinesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 export const CaptionLinesDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <CaptionLinesTiles />, play: captionLinesPlay }
 /** The same tiles in the light mode. */
 export const CaptionLinesLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <CaptionLinesTiles />, play: captionLinesPlay }
+
+// captionLines={2} with a caption longer than its two lines: the second line ends with an ellipsis, and hover and
+// keyboard focus show the whole caption in the cut-text tooltip, as on a cut one-line caption. A caption that fits
+// on its two lines is no tab stop and opens no tooltip.
+const captionCutPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const captionOf = (label: string) => {
+    const caption = canvas.getByText(label).closest('dl')?.querySelector('.kpi-tile__caption')
+    if (!(caption instanceof HTMLElement)) throw new Error(`no caption in ${label}`)
+    return caption
+  }
+  const fits = captionOf('from headless runs').querySelector('.truncated-text')
+  if (!(fits instanceof HTMLElement)) throw new Error('no caption text in from headless runs')
+  await expect(getComputedStyle(fits).webkitLineClamp).toBe('2')
+  await expect(fits).not.toHaveAttribute('tabindex')
+  await expectCutText(captionOf('rejected'), tooLongCaption)
+}
+
+/** `captionLines={2}` with a caption longer than two lines: the whole caption shows in a tooltip on hover and keyboard focus. */
+export const CaptionCutDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <CaptionLinesTiles />, play: captionCutPlay }
+/** The same tiles in the light mode. */
+export const CaptionCutLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <CaptionLinesTiles />, play: captionCutPlay }

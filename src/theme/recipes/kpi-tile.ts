@@ -8,9 +8,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // Figma draws each caption whole on one 17 px line (T23 491:8077 "the message
 // broke the rule", 151 px in a 169 px tile, runs into the tile's padding;
 // D12 445:227). The library keeps the caption inside the padding: with the
-// component's `captionLines` above 1 the caption wraps in a Clamp (its own
-// recipe, line-clamp in the `small` line height), so a long caption shows
-// whole on a second line instead of being cut.
+// component's `captionLines` above 1 the caption wraps in a TruncatedText
+// with `lines` (its own recipe, line-clamp in the `small` line height), so a
+// long caption shows whole on a second line instead of being cut, and one
+// longer than its lines shows whole in the cut-text tooltip.
 export const kpiTile = defineSlotRecipe({
   className: 'kpi-tile',
   jsx: ['KpiTile'],

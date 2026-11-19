@@ -51,6 +51,12 @@ export const tooltip = defineSlotRecipe({
 // Text on one line that ends with an ellipsis when it does not fit. It takes
 // its font and colour from where it sits. When the text is cut and nothing
 // around it takes the focus, it is a tab stop of its own, with the focus ring.
+//
+// `lines` above 1 wraps the text onto that many lines with line-clamp, as
+// the Clamp recipe does, so the last line ends in an ellipsis; a text that
+// fits shows whole. A KpiTile caption with `captionLines={2}` uses it (Toolkit
+// T23 491:8077, D12 445:227), so a caption cut on its second line still shows
+// whole in the tooltip.
 export const truncatedText = defineRecipe({
   className: 'truncated-text',
   jsx: ['TruncatedText'],
@@ -67,4 +73,12 @@ export const truncatedText = defineRecipe({
     // row's title button, so the pointer reaches it and opens its tooltip.
     '&[tabindex]': { position: 'relative' },
   },
+  variants: {
+    lines: {
+      '1': {},
+      '2': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineClamp: '2' },
+      '3': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineClamp: '3' },
+    },
+  },
+  defaultVariants: { lines: '1' },
 })

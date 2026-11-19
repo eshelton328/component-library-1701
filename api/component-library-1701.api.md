@@ -793,7 +793,7 @@ export type KpiTileProps = {
     label: string;
     value: string;
     caption?: string | undefined;
-    captionLines?: ClampProps['lines'];
+    captionLines?: TruncatedTextProps['lines'];
 };
 
 // @public
@@ -1753,6 +1753,7 @@ export function TruncatedText(input: TruncatedTextProps): JSX.Element;
 // @public (undocumented)
 export type TruncatedTextProps = {
     children: string;
+    lines?: 1 | 2 | 3 | undefined;
     placement?: TooltipProps['placement'];
     highlight?: string | readonly string[] | undefined;
 };

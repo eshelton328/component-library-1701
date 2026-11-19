@@ -54,6 +54,7 @@ import { layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStac
 import { scrollFrame } from './scroll-frame'
 import { searchField } from './search-field'
 import { splitter } from './splitter'
+import { glyph } from './glyph'
 import { highlight } from './highlight'
 import { textField } from './text-field'
 import { toast } from './toast'
@@ -75,4 +76,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, clamp, highlight, icon, kindMark, kindTile, layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, dialog, dragPreview, emptyPane, errorState, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, dialog, dragPreview, emptyPane, errorState, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, glyph, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

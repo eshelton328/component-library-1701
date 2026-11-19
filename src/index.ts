@@ -63,6 +63,8 @@ export { Tooltip, TruncatedText } from './controls/tooltip'
 export type { TooltipProps, TruncatedTextProps } from './controls/tooltip'
 export { Clamp } from './controls/clamp'
 export type { ClampProps } from './controls/clamp'
+export { Glyph } from './controls/glyph'
+export type { GlyphProps, GlyphSymbol } from './controls/glyph'
 export { Highlight } from './controls/highlight'
 export type { HighlightProps } from './controls/highlight'
 export { createToaster, Toast, Toaster } from './controls/toast'
@@ -101,6 +103,7 @@ export {
   ChartIcon,
   ChatIcon,
   CheckIcon,
+  CheckMarkIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -112,6 +115,7 @@ export {
   CompassIcon,
   CopyIcon,
   CpuIcon,
+  CrossMarkIcon,
   EditIcon,
   ExternalLinkIcon,
   FeatureIcon,

@@ -260,6 +260,35 @@ export function CheckIcon(props: IconProps) {
   )
 }
 
+/**
+ * The check mark character ✓ (U+2713) as Figma draws it inside a line of
+ * text: a short stroke and a long, slightly bowed stroke that rises to the
+ * top right, thinner and taller than `CheckIcon`. Toolkit D28 492:2185, T27
+ * 492:3729, M30 492:4990. `Glyph` draws it over the character.
+ */
+export function CheckMarkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4.5 13.5L9 19C11.5 13 15 8 19.5 4" />
+    </Svg>
+  )
+}
+
+/**
+ * The ballot cross character ✗ (U+2717) as Figma draws it inside a line of
+ * text: a hand-drawn cross that leans to the right, its two strokes bowed,
+ * not the upright `CloseIcon`. Toolkit D28 492:2185, T27 492:3729, M30
+ * 492:4990. `Glyph` draws it over the character.
+ */
+export function CrossMarkIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M8 5C10 9 12 14.5 14.5 19" />
+      <path d="M18.5 4C14.5 8.5 10.5 13.5 6 20" />
+    </Svg>
+  )
+}
+
 /** A chevron that points down. Figma node 346:189, drawn at 12 px and scaled to 24. */
 export function ChevronDownIcon(props: IconProps) {
   return (

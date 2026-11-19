@@ -17,6 +17,7 @@ import {
   ChartIcon,
   ChatIcon,
   CheckIcon,
+  CheckMarkIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -28,6 +29,7 @@ import {
   CompassIcon,
   CopyIcon,
   CpuIcon,
+  CrossMarkIcon,
   EditIcon,
   ExternalLinkIcon,
   FeatureIcon,
@@ -201,6 +203,14 @@ const groups: { title: string; icons: Entry[] }[] = [
     icons: [
       { name: 'warning', Icon: WarningIcon },
       { name: 'compass', Icon: CompassIcon },
+    ],
+  },
+  {
+    // The ✓ and ✗ characters in text (Toolkit D28 492:2185), which Glyph draws.
+    title: 'Marks in text',
+    icons: [
+      { name: 'checkMark', Icon: CheckMarkIcon },
+      { name: 'crossMark', Icon: CrossMarkIcon },
     ],
   },
   {

@@ -555,3 +555,111 @@ const projectChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `MetaChipButton`: the project chip of an open artifact, a button that opens the project menu. */
 export const ChipButtonDark: StoryObj<typeof meta> = { render: () => <ProjectChip />, globals: { mode: 'dark' }, play: projectChipPlay }
 export const ChipButtonLight: StoryObj<typeof meta> = { render: () => <ProjectChip />, globals: { mode: 'light' }, play: projectChipPlay }
+
+// The path badge with its copy icon (`onCopy`, D3 457:46 with `icon/copy` 457:50), beside a badge with no copy
+// icon and one with a 16 px icon (M06 435:493), so the play test compares their heights.
+const copiedPath = fn<(path: string) => void>()
+const copySwatches = {
+  muted: css({ bg: 'fg.muted' }),
+  focus: css({ bg: 'border.focus' }),
+}
+const ring = css({ outlineWidth: 'strong', outlineStyle: 'solid' })
+
+function CopyBadges() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <Stack gap="8">
+          <span data-testid="copy">
+            <PathBadge icon={<FolderIcon />} path="toolkit/skills/writer/" onCopy={copiedPath} />
+          </span>
+          <span data-testid="copy-named">
+            <PathBadge icon={<FolderIcon />} path="toolkit/hooks/guard.sh" onCopy={copiedPath} copyLabel="Copy the hook's path" />
+          </span>
+          <span data-testid="plain">
+            <PathBadge icon={<FolderIcon />} path="toolkit/skills/writer/" />
+          </span>
+          <span data-testid="plain-md">
+            <PathBadge iconSize="md" icon={<FolderIcon />} path="toolkit/skills/writer/SKILL.md" />
+          </span>
+        </Stack>
+      </div>
+      <div hidden>
+        <span data-ring className={ring} />
+        {Object.entries(copySwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// The copy icon is a bare 12 × 12 button in fg.muted at the badge's end, named "Copy <path>" or `copyLabel`; the
+// badge keeps the height of a badge with no copy icon (Figma's 25: 4 + the 16 px mono line + 4 and the 1 px border,
+// on the grid 26). A key press draws the focus ring 2 outside the icon, inside the badge, and a click calls
+// `onCopy` with the path. A badge with no `onCopy` draws no button.
+const pathCopyPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).backgroundColor
+  const first = (id: string) => {
+    const el = canvas.getByTestId(id).firstElementChild
+    if (!(el instanceof HTMLElement)) throw new Error(`nothing in ${id}`)
+    return el
+  }
+  copiedPath.mockClear()
+  const badge = first('copy')
+  const plain = first('plain')
+  const button = within(badge).getByRole('button', { name: 'Copy toolkit/skills/writer/' })
+  await expect(button).toHaveAttribute('type', 'button')
+  await expect(within(first('copy-named')).getByRole('button', { name: "Copy the hook's path" })).toBeVisible()
+  await expect(within(plain).queryByRole('button')).toBeNull()
+  await expect(within(first('plain-md')).queryByRole('button')).toBeNull()
+
+  const badgeBox = badge.getBoundingClientRect()
+  const buttonBox = button.getBoundingClientRect()
+  const icon = button.querySelector('svg')
+  if (icon === null) throw new Error('no copy icon')
+  const iconBox = icon.getBoundingClientRect()
+  await expect([iconBox.width, iconBox.height]).toEqual([12, 12])
+  await expect([buttonBox.width, buttonBox.height]).toEqual([12, 12])
+  await expect(badgeBox.height).toBe(plain.getBoundingClientRect().height)
+  await expect(badgeBox.height).toBe(first('plain-md').getBoundingClientRect().height)
+  const badgeStyle = getComputedStyle(badge)
+  const lineHeight = Math.round(parseFloat(getComputedStyle(badge.querySelector('.path-badge__path') ?? badge).lineHeight))
+  const frame = parseFloat(badgeStyle.paddingTop) + parseFloat(badgeStyle.paddingBottom) + parseFloat(badgeStyle.borderTopWidth) * 2
+  await expect(badgeBox.height).toBe(lineHeight + frame)
+  // The icon ends the badge at its right padding, centred in the line.
+  await expect(badgeBox.right - parseFloat(badgeStyle.borderRightWidth) - parseFloat(badgeStyle.paddingRight)).toBe(buttonBox.right)
+  await expect(Math.abs(buttonBox.top + buttonBox.height / 2 - (badgeBox.top + badgeBox.height / 2))).toBeLessThanOrEqual(0.5)
+  const style = getComputedStyle(button)
+  await expect([style.color, style.backgroundColor, style.borderTopWidth, style.paddingTop, style.paddingLeft]).toEqual([
+    swatch('muted'),
+    'rgba(0, 0, 0, 0)',
+    '0px',
+    '0px',
+    '0px',
+  ])
+
+  await userEvent.tab()
+  await expect(button).toHaveFocus()
+  const focused = getComputedStyle(button)
+  // The ring is borderWidths.strong, which Chromium draws as the reference element below computes it.
+  const ringWidth = getComputedStyle(canvasElement.querySelector('[data-ring]') ?? canvasElement).outlineWidth
+  await expect(parseFloat(ringWidth)).toBeGreaterThan(0)
+  await expect([focused.outlineColor, focused.outlineStyle, focused.outlineWidth, focused.outlineOffset]).toEqual([swatch('focus'), 'solid', ringWidth, '2px'])
+  // The ring (2 offset and its width on each side of the 12 px icon) fits inside the badge's 1 px border.
+  const reach = 2 + parseFloat(ringWidth)
+  await expect(buttonBox.top - reach).toBeGreaterThanOrEqual(badgeBox.top + 1)
+  await expect(buttonBox.bottom + reach).toBeLessThanOrEqual(badgeBox.bottom - 1)
+
+  await userEvent.keyboard('{Enter}')
+  await expect(copiedPath).toHaveBeenCalledOnce()
+  await expect(copiedPath).toHaveBeenCalledWith('toolkit/skills/writer/')
+  await userEvent.click(within(first('copy-named')).getByRole('button', { name: "Copy the hook's path" }))
+  await expect(copiedPath).toHaveBeenLastCalledWith('toolkit/hooks/guard.sh')
+  await expect(copiedPath).toHaveBeenCalledTimes(2)
+}
+
+/** `PathBadge onCopy`: the badge ends with a bare 12 px copy icon that reports the path, and keeps its height. */
+export const PathCopyDark: StoryObj<typeof meta> = { render: () => <CopyBadges />, globals: { mode: 'dark' }, play: pathCopyPlay }
+export const PathCopyLight: StoryObj<typeof meta> = { render: () => <CopyBadges />, globals: { mode: 'light' }, play: pathCopyPlay }

@@ -7,6 +7,7 @@ import { appShell } from './app-shell'
 import { backdrop } from './backdrop'
 import { bottomSheet } from './bottom-sheet'
 import { backRow } from './back-row'
+import { bareIconButton } from './bare-icon-button'
 import { button } from './button'
 import { clamp } from './clamp'
 import { card } from './card'
@@ -74,6 +75,6 @@ import { workspaceTabs } from './workspace-tabs'
 
 type Theme = NonNullable<Config['theme']>
 
-export const recipes: NonNullable<Theme['recipes']> = { backdrop, button, clamp, highlight, icon, kindMark, kindTile, layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
+export const recipes: NonNullable<Theme['recipes']> = { backdrop, bareIconButton, button, clamp, highlight, icon, kindMark, kindTile, layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, statusPill, truncatedText }
 
 export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, dialog, dragPreview, emptyPane, errorState, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, glyph, groupHeader, groupedBarChart, horizontalBarChart, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, splitter, tabBar, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

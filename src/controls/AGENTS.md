@@ -82,6 +82,12 @@ under their purpose group, never under "Controls" (d-065).
   a button that shows or hides a section in place (Hide transcript on a
   subagent card), sets `expandedBorder="default"` and keeps its variant's
   border; a page never overrides `_expanded` itself.
+- `BareIconButton` is a bare 12 px icon that is a button: no fill, no
+  border, no padding, a focus ring 2 outside the icon. Use it where Figma
+  draws a bare icon inside a line of 12 px text, such as the copy icon of
+  a path badge (`PathBadge onCopy` draws one) or of the Files viewer's
+  bar; a `Button` is at least 24 high. A page styles no plain `button`
+  for this.
 - A pressed `Button` draws `border.active`. The Discuss toggle sets
   `pressedBorder="discuss"` and draws `accent.discuss` while its
   discussion is open; a selected toggle chip (a chosen folder) sets

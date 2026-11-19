@@ -1,5 +1,7 @@
 // The package entry: the icons, Controls, Parts and Shell, with their props types, and the focus ring condition.
 export { focusRing } from './theme/recipes/focus'
+export { BareIconButton } from './controls/bare-icon-button'
+export type { BareIconButtonProps } from './controls/bare-icon-button'
 export { Button } from './controls/button'
 export type { ButtonProps } from './controls/button'
 export { ItemTabs } from './controls/item-tabs'

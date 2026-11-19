@@ -14,7 +14,8 @@ import {
 } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { useInputModality } from '../controls/input-modality'
-import { ChevronDownIcon } from '../foundations/icons'
+import { ChevronDownIcon, CopyIcon } from '../foundations/icons'
+import { BareIconButton } from '../controls/bare-icon-button'
 import { TruncatedText } from '../controls/tooltip'
 
 // React renders nothing for null, undefined, booleans and the empty string,
@@ -137,19 +138,42 @@ export type PathBadgeProps = {
   icon?: ReactNode
   /** The icon's size: `sm` (the default) draws 12 px; `md` draws 16 px, as on a file's own page on the phone. */
   iconSize?: 'sm' | 'md' | undefined
-  /** An action after the path, such as a copy button. The caller gives it its name and handler. */
+  /** An action after the path. The caller gives it its name and handler. For the copy icon, use `onCopy`. */
   trailing?: ReactNode
+  /**
+   * Called with the path when the user presses the copy icon. When set, the
+   * badge ends with a bare 12 px copy icon (a `BareIconButton`, after
+   * `trailing`), as Toolkit draws it (D3 457:50), and keeps its height. The
+   * badge does not touch the clipboard; the handler copies. When not set,
+   * the badge draws no copy icon.
+   */
+  onCopy?: ((path: string) => void) | undefined
+  /** The copy icon's accessible name; "Copy <path>" when not set. */
+  copyLabel?: string | undefined
 }
 
 /** The path of a file or folder in a mono badge, as on the Toolkit item page. */
-export function PathBadge({ path: value, icon, iconSize, trailing }: PathBadgeProps) {
+export function PathBadge({ path: value, icon, iconSize, trailing, onCopy, copyLabel }: PathBadgeProps) {
   return (
     <PathRoot iconSize={iconSize}>
       {present(icon) ? <PathIcon>{icon}</PathIcon> : null}
       <PathText>
         <TruncatedText>{value}</TruncatedText>
       </PathText>
-      {present(trailing) ? <PathTrailing>{trailing}</PathTrailing> : null}
+      {present(trailing) || onCopy !== undefined ? (
+        <PathTrailing>
+          {trailing}
+          {onCopy === undefined ? null : (
+            <BareIconButton
+              label={copyLabel ?? `Copy ${value}`}
+              icon={<CopyIcon size="12" />}
+              onClick={() => {
+                onCopy(value)
+              }}
+            />
+          )}
+        </PathTrailing>
+      ) : null}
     </PathRoot>
   )
 }

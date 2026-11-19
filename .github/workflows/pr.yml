@@ -26,9 +26,16 @@ jobs:
       pull-requests: read # the events of an issue that is a PR
     steps:
       # A base-branch change is an `edited` event, and ci.yml does not run
-      # on edits. Fail until ci.yml has run on the head commit after the
-      # last base change, so the code checks always cover the current base.
+      # on edits. On an edit or a label change, fail until ci.yml has run for this PR on the
+      # head commit after the last base change, so the code checks always
+      # cover the current base. A push or reopen starts ci.yml itself, so
+      # the step skips those events: on a push its run may not be listed
+      # yet, and a failed pr-title would stay failed after ci passed. It
+      # runs on a label change too, because a newer run replaces the older
+      # one, and a label change after a base change must not turn a failed
+      # pr-title green without a ci run on the new base.
       - name: Require a ci run after the last base-branch change
+        if: contains(fromJSON('["edited", "labeled", "unlabeled"]'), github.event.action)
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -38,7 +45,7 @@ jobs:
           set -euo pipefail
           changed=$(gh api --paginate "repos/$GH_REPO/issues/$PR/events" --jq '.[] | select(.event == "base_ref_changed") | .created_at' | sort | tail -n 1)
           if [ -z "$changed" ]; then exit 0; fi
-          last=$(gh api --paginate "repos/$GH_REPO/actions/workflows/ci.yml/runs?event=pull_request&head_sha=$HEAD_SHA" --jq '.workflow_runs[].created_at' | sort | tail -n 1)
+          last=$(gh api --paginate "repos/$GH_REPO/actions/workflows/ci.yml/runs?event=pull_request&head_sha=$HEAD_SHA" --jq ".workflow_runs[] | select(any(.pull_requests[]; .number == $PR)) | .created_at" | sort | tail -n 1)
           if [ -z "$last" ] || [[ "$last" < "$changed" ]]; then
             echo "::error::The base branch changed at $changed, and ci.yml has not run on this commit since. Push a commit, or close and reopen the PR, so the code checks run on the new base."
             exit 1

@@ -129,7 +129,8 @@ Repository scripts that are not part of the package.
   command, a step has another `if:`, or another job uses the reuse form.
 - `secret-scan.test.ts` runs gitleaks with `../.gitleaks.toml` on planted
   lines: a secret-named key with or without a prefix, a single-quoted
-  value with a `$`, an email address in any case and its exceptions, a
+  value with a `$` (but not a GitHub expression `'${{ ... }}'`), the Figma
+  `fileKey` exception in a merge conflict hunk, an email address in any case and its exceptions, a
   `gitleaks:allow` comment, which both CI scans must ignore, and a merge
   commit, which both CI scans must read with `--diff-merges=remerge`. The `secrets` job in `ci.yml` runs it; it is
   not in `pnpm verify`, because it needs gitleaks 8.30.1 (on `PATH` or in

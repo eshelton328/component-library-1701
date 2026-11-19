@@ -41,6 +41,26 @@ function Slots({ size }: { size?: IconSize | undefined }) {
         <span data-case="group-header">
           <GroupHeader label="Projects" leading={<GridIcon size={size} />} actions={<EditIcon size={size} />} />
         </span>
+        <span data-case="group-header-button">
+          <GroupHeader
+            label="Workspaces"
+            actions={
+              <Button variant="text" size="xs" iconOnly aria-label="Workspaces actions">
+                <EditIcon size={size} />
+              </Button>
+            }
+          />
+        </span>
+        <span data-case="group-header-kept">
+          <GroupHeader
+            label="Kept"
+            actions={
+              <Button variant="text" size="xs" iconOnly keepIconSize aria-label="Kept actions">
+                <EditIcon size="12" />
+              </Button>
+            }
+          />
+        </span>
         <span data-case="nav-rail">
           <NavRail items={[{ value: 'home', label: 'Home', icon: <HomeIcon size={size} /> }]} />
         </span>
@@ -63,6 +83,11 @@ const expected = {
   'view-switch': [12],
   'search-field': [16, 12],
   'group-header': [12, 12],
+  // A Button in the header's actions (the Workbench sidebar's ⋯, rename and close, D2 105:743 and 105:746) keeps
+  // its own 16 px icon: the button's important size is in an earlier cascade layer than the header's. With
+  // `keepIconSize`, the icon keeps the 12 it was given.
+  'group-header-button': [16],
+  'group-header-kept': [12],
   'nav-rail': [24],
   'tab-bar': [24],
   menu: [16],

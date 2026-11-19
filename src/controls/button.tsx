@@ -72,10 +72,16 @@ export type ButtonProps = ComponentProps<'button'> &
  * border and mutes its label and icon to `fg.muted`; the other variants fade
  * the whole button (`opacity.disabled`).
  */
-export function Button({ type = 'button', pressed, indicator = false, children, ...props }: ButtonProps) {
+export function Button({ type = 'button', pressed, indicator = false, keepIconSize, children, ...props }: ButtonProps) {
   useInputModality()
   return (
-    <StyledButton type={type} aria-pressed={pressed} {...props}>
+    <StyledButton
+      type={type}
+      aria-pressed={pressed}
+      keepIconSize={keepIconSize}
+      data-keep-icon-size={keepIconSize === true ? '' : undefined}
+      {...props}
+    >
       {indicator ? (
         <>
           {children}

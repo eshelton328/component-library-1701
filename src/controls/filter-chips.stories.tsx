@@ -279,3 +279,39 @@ const flushPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** `padding="none"`: the Toolkit chip row, flush with no inset; the default row keeps its 2 px. */
 export const FlushDark: StoryObj<typeof meta> = { render: () => <Flush />, globals: { mode: 'dark' }, play: flushPlay }
 export const FlushLight: StoryObj<typeof meta> = { render: () => <Flush />, globals: { mode: 'light' }, play: flushPlay }
+
+// The Toolkit Activity kind chips (D21 491:4396): the row is narrower than its chips and Figma draws the cut
+// Workflows chip (491:4412) at full strength up to the edge. `fade="none"` draws no mask; the default fades.
+function NoFade() {
+  return (
+    <main className={page}>
+      <div className={narrow}>
+        <FilterChips label="Kinds with no fade" items={toolkitKinds} defaultValue={['all']} multiple={false} padding="none" fade="none" />
+      </div>
+      <div className={narrow}>
+        <FilterChips label="Kinds with the fade" items={toolkitKinds} defaultValue={['all']} multiple={false} padding="none" />
+      </div>
+    </main>
+  )
+}
+
+const noFadePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const plain = canvas.getByLabelText('Kinds with no fade')
+  const faded = canvas.getByLabelText('Kinds with the fade')
+  // Both rows overflow at the end and mark it.
+  await waitFor(() => expect(plain).toHaveAttribute('data-overflow-end'))
+  await waitFor(() => expect(faded).toHaveAttribute('data-overflow-end'))
+  await expect(plain.scrollWidth).toBeGreaterThan(plain.clientWidth)
+  // No mask with `fade="none"`; the default keeps its gradient.
+  await expect(getComputedStyle(plain).maskImage).toBe('none')
+  await expect(getComputedStyle(faded).maskImage).toContain('linear-gradient')
+  // Scrolled to the end, the start overflows, and still no mask.
+  plain.scrollLeft = plain.scrollWidth
+  await waitFor(() => expect(plain).toHaveAttribute('data-overflow-start'))
+  await expect(getComputedStyle(plain).maskImage).toBe('none')
+}
+
+/** `fade="none"`: a row that scrolls with no fade at its edges (Toolkit Activity, D21). */
+export const NoFadeDark: StoryObj<typeof meta> = { render: () => <NoFade />, globals: { mode: 'dark' }, play: noFadePlay }
+export const NoFadeLight: StoryObj<typeof meta> = { render: () => <NoFade />, globals: { mode: 'light' }, play: noFadePlay }

@@ -43,6 +43,13 @@ export type FilterChipsProps = {
    * inside the chip.
    */
   padding?: 'default' | 'none' | undefined
+  /**
+   * The ends of a row that scrolls. `edges` (the default) fades the chips out
+   * over 24 px at each edge with more chips past it. `none` draws no fade, so
+   * a cut chip shows at full strength up to the edge, as the Toolkit Activity
+   * kind chips draw it.
+   */
+  fade?: 'edges' | 'none' | undefined
 }
 
 type Overflow = { start: boolean; end: boolean }
@@ -88,7 +95,7 @@ const fromArk = (vs: string[]) => vs.flatMap((v) => (v.startsWith('chip:') ? [v.
  * With `multiple={false}` the row is a radio group: the arrow keys move the
  * choice, and the chosen chip cannot be turned off.
  */
-export function FilterChips({ label, items, value, defaultValue, onValueChange, multiple = true, disabled, size, padding }: FilterChipsProps) {
+export function FilterChips({ label, items, value, defaultValue, onValueChange, multiple = true, disabled, size, padding, fade }: FilterChipsProps) {
   const [picked, setPicked] = useState<readonly string[]>(defaultValue ?? [])
   const selected = value ?? picked
   // The latest selection, so a focus and a click in the same frame see each other's change.
@@ -109,6 +116,7 @@ export function FilterChips({ label, items, value, defaultValue, onValueChange, 
       ref={rowRef}
       size={size}
       padding={padding}
+      fade={fade}
       data-overflow-start={overflow.start ? '' : undefined}
       data-overflow-end={overflow.end ? '' : undefined}
       aria-label={label}

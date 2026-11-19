@@ -53,10 +53,17 @@ Layout, Navigation or Overlays (d-065, d-066).
   once toward the expected keyboard: the last one measured in that
   orientation, or `sizes.shell.keyboard` (Figma's 380, Workbench M10
   147:97) on a first
-  portrait open. Until the keyboard's measure settles (300 ms after its
-  last resize, or 1 s with none) the dock does not come down for a
-  smaller step; then it takes the measure and keeps it for the next
-  open. A layout that shrinks meanwhile (Android) expects nothing again. Where the browser resizes the
+  portrait open. A field that already has the focus when the shell
+  mounts (a page that focuses its composer) starts the dock the same way.
+  The measures live in `keyboard-measures.ts` for the page's life, so a
+  shell that mounts on a new page expects the last measured keyboard. A
+  new target during a move keeps the move's end and curve, so a keyboard
+  reported in the move makes one motion (R22). Until the keyboard's
+  measure settles (300 ms after its last resize, or 1 s with none), a
+  smaller report holds the dock up as an early step of the rise when the
+  expected keyboard was measured; against Figma's guess, a report of at
+  least three quarters of it is the whole keyboard and is taken at once.
+  The measure is kept for the next open. A layout that shrinks meanwhile (Android) expects nothing again. Where the browser resizes the
   layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
   nothing is set. The fit applies only while a field that opens the
   keyboard has the focus (`editable` in `../controls/editable.ts`, shared

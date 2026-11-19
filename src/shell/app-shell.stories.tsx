@@ -1,12 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { token } from '../../styled-system/tokens'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { AppShell } from './app-shell'
+import { keyboardMeasures } from './keyboard-measures'
 
 // Stand-ins for the nav rail, panels and tab bar, which are Parts or not merged yet.
 const desktopFrame = css({ h: 'shell.dialogLg' })
@@ -1430,6 +1432,8 @@ const threadParts = (canvasElement: HTMLElement) => {
 const withMotion = {
   ...withFakeViewport,
   beforeEach: () => {
+    // Each story starts with no keyboard measured, as a fresh page does.
+    keyboardMeasures.clear()
     fakeViewport = new FakeViewport()
     const restoreViewport = replaceVisualViewport(fakeViewport)
     const restoreMedia = emulateMedia({ coarse: true, reduce: false })
@@ -1442,6 +1446,241 @@ const withMotion = {
   },
 }
 const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
+
+// The dock's rise at every frame, with the time of the frame, until `stop`.
+const recordRise = (footer: HTMLElement, root?: HTMLElement) => {
+  const frames: { at: number; rise: number; inset: string }[] = []
+  let id = 0
+  const tick = () => {
+    frames.push({ at: performance.now(), rise: riseOf(footer), inset: root?.style.getPropertyValue('--app-shell-keyboard') ?? '' })
+    id = requestAnimationFrame(tick)
+  }
+  tick()
+  return {
+    frames,
+    stop: () => {
+      cancelAnimationFrame(id)
+      tick()
+      cancelAnimationFrame(id)
+    },
+  }
+}
+// The time, in ms from a move's start, at which the keyboard curve reaches `progress` (0 to 1), from the tokens.
+const curveTime = (progress: number) => {
+  const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = (token('easings.keyboard').match(/-?\d*\.?\d+/g) ?? []).map(Number)
+  const bezier = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 30; i++) {
+    const mid = (low + high) / 2
+    if (bezier(y1, y2, mid) < progress) low = mid
+    else high = mid
+  }
+  return bezier(x1, x2, high) * Number.parseFloat(token('durations.keyboard'))
+}
+// The rise one frame after the first frame drawn at `at` or later: the recorder can run before the hook in a frame,
+// and then reads the frame before.
+const riseAfter = (frames: { at: number; rise: number }[], at: number) => {
+  const index = frames.findIndex((f) => f.at >= at)
+  return Math.round(frames[index + 1]?.rise ?? frames[index]?.rise ?? 0)
+}
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+// A first open where the real keyboard is 50 px off the 380 guess, reported `delay` ms after the focus: during the
+// dock's 250 ms move, or after it. The composer must make one move that ends on the real keyboard, as the Claude iOS
+// app's does (screen review R22, rec3), with no hold and no second move.
+const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    const rise = real - 34
+    const record = recordRise(footer)
+    await userEvent.click(field)
+    const focused = performance.now()
+    if (delay > 0) await wait(delay)
+    // Or a few frames in, counted in frames, so a slow runner still reports early in the move.
+    for (let i = 0; i < frames; i++) await nextFrame()
+    const reported = performance.now()
+    fakeViewport.move({ height: 844 - real })
+    await settled(footer, rise)
+    await wait(100)
+    record.stop()
+    const moved = record.frames.filter((f) => f.at >= focused)
+    if (delay < 250) {
+      // A report during the move: the move goes on toward the real keyboard and ends when it would have ended. Up to
+      // the report the dock only rises; from it, each frame moves toward the real keyboard and never away, and the dock
+      // is on the keyboard 250 ms after the focus, with two frames to spare.
+      const before = moved.filter((f) => f.at < reported)
+      const after = moved.filter((f) => f.at >= reported)
+      await expect(before.slice(1).filter((f, i) => f.rise < (before[i]?.rise ?? f.rise))).toEqual([])
+      await expect(after.slice(1).filter((f, i) => Math.abs(rise - f.rise) > Math.abs(rise - (after[i]?.rise ?? f.rise)))).toEqual([])
+      // The dock is on the keyboard by the frame after the first one drawn 250 ms or more after the focus, whatever
+      // the frame rate.
+      await expect(riseAfter(moved, focused + 250)).toBe(rise)
+    } else {
+      // A report after the move: one correction that starts at the report and runs 250 ms, with no 300 ms wait: the
+      // dock is on the keyboard by the frame after the first one drawn 250 ms or more after the report.
+      await expect(riseAfter(moved, reported + 250)).toBe(rise)
+    }
+    await expect(moved.filter((f) => f.rise > Math.max(rise, 346) + 1)).toEqual([])
+  },
+})
+const phone = { viewport: { value: 'm390' } }
+/** First open, the real keyboard 50 px lower than the guess, reported during the move: one rise, on time. */
+export const GuessHighDuringDark = { ...guessOff(330, 0, 1), globals: { mode: 'dark', ...phone } }
+export const GuessHighDuringLight = { ...guessOff(330, 0, 1), globals: { mode: 'light', ...phone } }
+/** First open, the real keyboard 50 px higher than the guess, reported during the move: one rise, on time. */
+export const GuessLowDuringDark = { ...guessOff(430, 0, 3), globals: { mode: 'dark', ...phone } }
+export const GuessLowDuringLight = { ...guessOff(430, 0, 3), globals: { mode: 'light', ...phone } }
+/** First open, the real keyboard 50 px lower than the guess, reported after the move: the correction starts at once. */
+export const GuessHighAfterDark = { ...guessOff(330, 400), globals: { mode: 'dark', ...phone } }
+export const GuessHighAfterLight = { ...guessOff(330, 400), globals: { mode: 'light', ...phone } }
+
+// A composer that takes the focus as it mounts, before AppShell's effect runs, as the-bridge's chat does when the Inbox
+// opens it (screen review R23).
+function MountFocusField() {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    ref.current?.focus()
+  }, [])
+  return <textarea ref={ref} aria-label="Message" rows={1} className={messageField} />
+}
+function MountFocusChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <MountFocusField />
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const mountFocus: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <MountFocusChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    await expect(field).toHaveFocus()
+    // The dock starts toward the expected keyboard at once, before the browser reports one: it does not wait at the
+    // bottom for the report and then jump.
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 200 })
+    await expect(fakeViewport.height).toBe(844)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+  },
+}
+/** Phone chat whose composer takes the focus as it mounts: the dock starts at once, before the keyboard is reported. */
+export const MountFocusDark: StoryObj<typeof meta> = { ...mountFocus, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const MountFocusLight: StoryObj<typeof meta> = { ...mountFocus, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The Inbox opens a chat: a new AppShell mounts after the keyboard was measured in another one. The play function
+// turns the page with `pages.next`; a button would sit above the shell and move it down the screen.
+const pages = { next: (): void => undefined }
+function RemountChat() {
+  const [page, setPage] = useState(0)
+  useEffect(() => {
+    pages.next = () => {
+      setPage((p) => p + 1)
+    }
+  }, [])
+  return <ThreadChat key={page} />
+}
+const remountMeasure: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <RemountChat />,
+  play: async ({ canvasElement }) => {
+    const first = threadParts(canvasElement)
+    await userEvent.click(first.field)
+    fakeViewport.move({ height: 544 })
+    await settled(first.footer, 266)
+    first.field.blur()
+    fakeViewport.move({ height: 844 })
+    await settled(first.footer, 0)
+    const old = first.field
+    pages.next()
+    await waitFor(() => expect(threadParts(canvasElement).field).not.toBe(old))
+    // The new page's shell expects the 300 keyboard measured on the last page: the dock rises to 266 and never past it.
+    const next = threadParts(canvasElement)
+    const record = recordRise(next.footer)
+    await userEvent.click(next.field)
+    await waitFor(() => expect(riseOf(next.footer)).toBe(266))
+    record.stop()
+    await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
+  },
+}
+/** Phone chat on a new page: the shell that mounts there expects the keyboard measured on the last page. */
+export const RemountMeasureDark: StoryObj<typeof meta> = { ...remountMeasure, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const RemountMeasureLight: StoryObj<typeof meta> = { ...remountMeasure, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const reopenFalling: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    // The field takes the focus again while the dock comes down: the rise is a new move on the keyboard's curve, not
+    // the rest of the fall's, so it takes the full 250 ms and does not jump.
+    await wait(100)
+    const timed = recordRise(footer, root)
+    const start = performance.now()
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    timed.stop()
+    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    await expect(up - start).toBeGreaterThanOrEqual(250)
+    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
+  },
+}
+/** Phone chat: the field takes the focus again while the composer comes down; it rises on a full keyboard move. */
+export const ReopenFallingDark: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ReopenFallingLight: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const closeAfterCorrection: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The real keyboard is 50 px over the guess and corrects the rise; the keyboard closes before the rise ends. The
+    // fall is a new move on the curve from where the dock is, not the rest of the rise's (Codex review of #236).
+    await userEvent.click(field)
+    fakeViewport.move({ height: 844 - 430 })
+    await wait(60)
+    const timed = recordRise(footer, root)
+    const start = performance.now()
+    const from = riseOf(footer) + 34
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 2000 })
+    await nextFrame()
+    timed.stop()
+    const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
+    await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / from))
+  },
+}
+/** Phone chat: the keyboard closes during a corrected rise; the composer comes down on a full keyboard move. */
+export const CloseAfterCorrectionDark: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const CloseAfterCorrectionLight: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.
@@ -1628,16 +1867,21 @@ const keyboardRise: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 844 })
     await settled(footer, 0)
     const record = recordFrames(root, footer)
+    const timed = recordRise(footer, root)
+    const start = performance.now()
     await userEvent.click(field)
     await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0))
     await expect(fakeViewport.height).toBe(844)
     await stepViewport(rising)
     await settled(footer, 266)
     record.stop()
+    timed.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
     await expect(directions(record.frames)).not.toContain(-1)
     await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
-    await expect(record.frames.filter((f) => f.rise > 0 && f.rise < 266).length).toBeGreaterThan(2)
+    // The dock rises on the curve for the keyboard's 250 ms, not at once, whatever the runner's frame rate.
+    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    await expect(up - start).toBeGreaterThanOrEqual(250)
     await expect(Math.round(composer().bottom)).toBe(544)
   },
 }
@@ -1869,13 +2113,22 @@ const keyboardFall: StoryObj<typeof meta> = {
     // The keyboard's Done blurs the field, and the keyboard falls in steps: the dock comes down with it on the
     // curve and never back up, and the shell keeps its height.
     const record = recordFrames(root, footer)
+    const timed = recordRise(footer, root)
+    const start = performance.now()
     field.blur()
     await stepViewport(falling)
     await settled(footer, 0)
     record.stop()
+    timed.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
     await expect(directions(record.frames)).not.toContain(1)
-    await expect(record.frames.filter((f) => f.rise > 0 && f.rise < 266).length).toBeGreaterThan(2)
+    // The dock moves on the keyboard's curve, not at once: the keyboard leaves the detail (the inset leaves the root)
+    // when the 300 keyboard is down to the 34 safe area, and no frame shows that before the curve gets there. The time
+    // comes from the frames, so a slow runner that draws fewer frames still passes.
+    const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
+    await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / 300))
+    // And it moves on the way: a frame between the keyboard's top and the bottom (Codex review of #236).
+    await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
   },
 }
@@ -1903,16 +2156,16 @@ const keyboardReducedMotion: StoryObj<typeof meta> = {
     const record = recordFrames(root, footer)
     field.focus()
     await expect(riseOf(footer)).toBe(346)
+    // The real keyboard is 80 px under the guess: the dock takes it at once, with no wait for the settle (R22).
     fakeViewport.move({ height: 544 })
-    await expect(riseOf(footer)).toBe(346)
-    await settled(footer, 266)
+    await expect(riseOf(footer)).toBe(266)
     await nextFrame()
     field.blur()
     fakeViewport.move({ height: 844 })
     await expect(riseOf(footer)).toBe(0)
     await nextFrame()
     record.stop()
-    await expect([...new Set(record.frames.map((f) => f.rise))].sort((x, y) => x - y)).toEqual([0, 266, 346])
+    await expect([...new Set(record.frames.map((f) => f.rise))].sort((x, y) => x - y)).toEqual([0, 266])
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
   },
 }

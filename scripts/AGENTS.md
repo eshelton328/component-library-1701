@@ -1,143 +1,35 @@
 # scripts
 
-Repository scripts that are not part of the package.
+Repository scripts that are not part of the package: the checks, the
+release checks, the component build and their tests.
 
-- Write scripts in TypeScript; Node runs them directly
+- Write scripts in TypeScript that Node runs directly
   (`node scripts/<name>.ts`). Parse JSON and other outside input with a
   type guard before use.
-- A script whose name starts with `check-` is a check, so the edit guard
-  blocks agent changes to it outside a `LIB_ALLOW_CHECK_EDITS=1` session.
-- `check-fixtures.ts` (`pnpm checks`) proves the lint and type checks
-  catch the fixtures in `../checks/`.
-- `check-worktree.ts` runs `pnpm verify` in a fresh git worktree. CI
-  runs it; never add it to `pnpm verify`, which it runs.
-- `check-ci.ts` fails when a step of `pnpm verify` does not run on every
-  pull request: it must be a `run: pnpm <step>` in a CI job, with no
-  `if:` on the job or the step. One form of `if:` counts, in the five
-  reused jobs only: a job with
-  `needs: worktree`, `if: ${{ !cancelled() }}` and a first step with id
-  `reuse`, whose other steps have `if: steps.reuse.outputs.reuse != 'true'`.
-  Such a step is skipped only when the worktree job ran `pnpm verify` on
-  the commit and passed.
-- `check-cycles.ts` (`pnpm check:cycles`) fails when files in `src/`
-  import each other in a cycle; type-only imports do not count, and an
-  `import.meta.glob` counts as an import of each file it matches, even
-  when only its keys are used. It also fails on an import it cannot
-  follow: a dynamic import of a computed name, or a glob with a computed
-  pattern or an option other than `eager`.
-  `cycles-lib.ts` holds its pure functions, and `cycles.test.ts`
-  (`pnpm test:cycles`) tests them.
-- `check-agents-md.ts` runs in `pnpm verify`. It fails when a folder has
-  no `AGENTS.md`, a `CLAUDE.md` is not the one-line shim `@AGENTS.md`, or a
-  parent `AGENTS.md` does not link a child's. Exempt a folder in
-  `.agentsignore`, not by deleting its file.
-
-- `check-api.ts` (`pnpm check:api`, `pnpm api:update`) builds the
-  declarations of `src/index.ts` with `tsconfig.api.json` and compares
-  them with `api/` through API Extractor (`api-extractor.json`). It also
-  writes (`--update`) or checks `api/recipe-types.api.md`, the
-  `.d.ts` files of `styled-system/recipes/` in one block
-  (`recipeTypesReport` in `release-lib.ts`), so run `pnpm codegen`
+- A `check-<name>.ts` file is a check, and a `*.test.ts` file a test:
+  the edit guard blocks both outside a `LIB_ALLOW_CHECK_EDITS=1` session.
+- Keep a check's pure functions in a `*-lib.ts` file and test them in a
+  `*.test.ts` file. A new test file runs only once a `pnpm test:*` script
+  in `../package.json` names it.
+- Never add `check-worktree.ts` to `pnpm verify`; it runs `pnpm verify`.
+- A step of `pnpm verify` must be a `run: pnpm <step>` in a CI job with
+  no `if:`, except the reuse form of the reused jobs (`check-ci.ts`,
+  guarded by `ci-reuse.test.ts`).
+- `check-cycles.ts` cannot follow a dynamic import of a computed name or
+  a glob with a computed pattern, and fails on one. Use static paths.
+- Exempt a folder from `check-agents-md.ts` in `../.agentsignore`, never
+  by deleting its `AGENTS.md`.
+- `check-api.ts` reads `styled-system/recipes/`, so run `pnpm codegen`
   first.
-- `check-api-diff.ts` compares two API reports by declaration and member,
-  and finds removed or changed items and new required members. Members of
-  an interface, a class or a type alias that is one plain object literal
-  are items. So are the members of a type alias that is one plain object
-  literal intersected with named types (`{ ... } & A & B;`); its tail
-  (`& A & B;`) is one more required item, `Name.&`, so any change to the
-  named types is breaking. A new optional member of such an alias is
-  breaking when a named type in the tail has a member of that name or an
-  index signature whose key type allows it (`string`, `number` or a
-  template such as `data-${string}`), because it can narrow that
-  property. When a named type is not in the report, is not a plain
-  object or interface, or has a key type the parser cannot read, every
-  new member of the alias is breaking. The same holds for a type alias
-  whose object literal comes after named types or generic references
-  (`Scalar<DialogVariantProps> & { ... } & A;`) or before them
-  (`{ ... } & Scalar<B>;`): its head and tail are the
-  one item `Name.&`. A generic reference `G<X>` allows the names of `X`
-  only when `G` is a mapped type over the keys of its one parameter (as
-  `Scalar` is); otherwise every new member of the alias is breaking. Any
-  other type alias (a union, a second object literal, a generic alias, a
-  mapped type, or a head or tail part with a qualified name, `typeof`, a
-  union or a type argument with a body or a function) is one item. The `api-report`
-  workflow runs on `pull_request_target`, so GitHub runs the base
-  branch's copy of the workflow and of this script, and reads the PR's
-  report as data. A change to either takes effect only after it merges.
-  The workflow also reads `api/recipe-types.api.md` from the merge base
-  and the PR head, as data, and passes them as `--before-types` and
-  `--after-types`, so a variant name of `Scalar<DialogVariantProps>`
-  is known on each side. A side with no such file makes every new
-  member of such an alias breaking.
-- `check-commits.ts` checks every commit header since the last release
-  tag; the release job runs it before semantic-release.
-- `check-release-api.ts` (`pnpm check:release-api`) compares the API with
-  the last release tag. It also reads the recipe types of the work
-  tree, because the report imports the variant props (such as
-  `DialogVariantProps`) and does not declare them: the committed
-  `api/recipe-types.api.md`, or `styled-system/recipes/` from Panda
-  codegen only when that file is missing (`afterRecipeTypes` in
-  `release-lib.ts`). When both are missing, it exits 1 with
-  `recipe types missing: run pnpm install` and gives no diff. When a new member may narrow such a type, it also reads the
-  tag's recipe types, so a variant that the change removes still counts:
-  the tag's `api/recipe-types.api.md`, or for a tag from before that
-  file, a temporary worktree of the tag where `pnpm install` runs
-  codegen. When the tag has no recipe types, every new member of
-  such an alias is breaking. When it broke, `@semantic-release/commit-analyzer`
-  with `release.config.js` must return `major` for the commits in the
-  range, so a reverted breaking commit does not count. The release job
-  runs it, because a squash message can drop the `!` that the PR title
-  had. `semantic-release.d.ts` types the analyzer and the config.
-- `check-pack.ts` (`pnpm check:pack`) builds the package with
-  `pnpm build:lib` and checks the exports and the packed files. A
-  wildcard export must pack a types file for each runtime file and the
-  reverse, and the Panda manifest's preset and build info must be packed.
-  It unpacks the tarball and imports each packed `.js`, `.mjs` and `.cjs`
-  export target, and the Panda preset, under plain Node.
-- `check-release-registry.ts` (`pnpm check:release-registry`) runs in the
-  release job before semantic-release. It fails when the token cannot
-  read the package, or when the last release tag has no package and
-  `@semantic-release/commit-analyzer` finds no release in the commits
-  after it. `semantic-release.d.ts` types the analyzer and the config.
-- `build-components.ts` (`pnpm build:components`, part of
-  `pnpm build:lib`) builds the components into `dist/components/` with
-  `vite.lib.config.ts` and rolls up their types with API Extractor. It
-  fails when the build holds a copy of `styled-system`, when a module does
-  not start with `"use client"`, or when an import is not a dependency, a
-  peer or a subpath that the package exports. It reads the imports with
-  TypeScript's `preProcessFile`, so a comment is not an import.
-- `release-lib.ts` holds the pure functions of these checks, and
-  `release.test.ts` (`pnpm test:release`) tests them.
-- `actions-minutes.test.ts` (also in `pnpm test:release`) runs the
-  counting step of `.github/workflows/actions-minutes.yml` with bash and
-  python3 against a fake `gh` and a fake `curl` for the Packages
-  registry, on a fixed day in the middle of a month,
-  because the workflow counts the month to date. It checks that a re-run of a recent day is
-  counted, that a partial count keeps the alert issue open, that the
-  issue is found past the first page of open issues, that a day over
-  the per-run call limit is finished by the next run from the ledger,
-  that a re-run is counted until a day is final, that a recent day not
-  counted again is missing, and that a workflow name with " / " stays
-  whole.
-- `pr-workflow.test.ts` (also in `pnpm test:release`) reads the
-  base-branch guard step of `.github/workflows/pr.yml`. It checks that
-  the step runs only on an `edited`, `labeled` or `unlabeled` event
-  (never on a push, open or reopen) and counts only the ci runs
-  whose `pull_requests` include this PR.
-- `ci-reuse.test.ts` (also in `pnpm test:release`) checks the reuse in
-  `ci.yml`: each `pnpm` step of typecheck, lint, tokens, checks and test
-  is a step of `pnpm verify`, word for word, and the jobs run nothing
-  else; the reuse step passes only on a worktree `success` and reuses
-  only when verify ran; and `check-ci.ts` fails when a reused job drops a
-  command, a step has another `if:`, or another job uses the reuse form.
-- `secret-scan.test.ts` runs gitleaks with `../.gitleaks.toml` on planted
-  lines: a secret-named key with or without a prefix, a single-quoted
-  value with a `$` (but not a GitHub expression `'${{ ... }}'`), the Figma
-  `fileKey` exception in a merge conflict hunk, an email address in any case and its exceptions, a
-  `gitleaks:allow` comment, which both CI scans must ignore, and a merge
-  commit, which both CI scans must read with `--diff-merges=remerge`. The `secrets` job in `ci.yml` runs it; it is
-  not in `pnpm verify`, because it needs gitleaks 8.30.1 (on `PATH` or in
-  `GITLEAKS`).
+- The `api-report` workflow runs on `pull_request_target`, with the base
+  branch's copy of itself and of `check-api-diff.ts`. A change to either
+  takes effect only after it merges.
+- `check-commits.ts`, `check-release-api.ts` and
+  `check-release-registry.ts` run in the release job, not in `verify`.
+  `check-release-api.ts` reads the committed `api/recipe-types.api.md`,
+  and `styled-system/recipes/` only when that file is missing.
+- `secret-scan.test.ts` is not in `pnpm verify`: it needs gitleaks 8.30.1
+  on `PATH` or in `GITLEAKS`. The `secrets` job in `ci.yml` runs it.
 
 ## Folders
 

@@ -2,22 +2,16 @@
 # ancestor's. Gitignore syntax. Dot-folders and gitignored paths are always
 # skipped. scripts/check-agents-md.ts reads this file.
 
-# Generated output
+# Generated output: `pnpm tokens` writes it
 tokens/generated/
 
-# Token data; tokens/AGENTS.md covers it
-tokens/themes/
-tokens/modes/
-
-# Check fixtures; checks/AGENTS.md covers them
+# Check fixtures and stories: checks/AGENTS.md covers them;
+# fixtures/src/** mirrors src/, so src/AGENTS.md's rules apply there
 checks/fixtures/
 checks/stories/
 
-# Foundation stories and docs; src/AGENTS.md covers them
+# Foundation stories and docs: src/AGENTS.md holds their rules
 src/foundations/
 
-# Recipe files; src/theme/AGENTS.md covers them
-src/theme/recipes/
-
-# The API report; AGENTS.md (Releases) covers it
+# The API report, written by `pnpm api:update`: the root AGENTS.md (Releases) covers it
 api/

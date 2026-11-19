@@ -181,7 +181,7 @@ void test('a single-quoted value from ${ is a literal unless it is a whole expre
   assert.deepEqual(scan('ci.yml', ['          PASS' + "WORD='$" + '{{secrets.PASSWORD}}' + "'"]), [])
 })
 
-void test('the job secrets fails a PR that adds or changes a file under a top-level b/ folder, which would share the exceptions (Codex review of the-bridge #225)', () => {
+void test('the job secrets fails a PR that adds, changes or deletes a file under a top-level b/ folder, which would share the exceptions (Codex review of the-bridge #225)', () => {
   assert.deepEqual(mergePrefixPaths(['b/tokens/x.json', 'src/b/x.ts', 'tokens/b/x.json', 'b.md']), ['b/tokens/x.json'])
   const job = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8').split('\n  secrets:\n')[1] ?? ''
   assert.match(job, /run: node scripts\/secret-merge-prefix\.ts "\$BASE" "\$HEAD"/)
@@ -205,4 +205,11 @@ void test('the job secrets fails a PR that adds or changes a file under a top-le
   const run = spawnSync(process.execPath, [script, base, 'HEAD'], { cwd: repo, encoding: 'utf8' })
   assert.equal(run.status, 1, run.stderr)
   assert.match(run.stdout, /"found":\["b\/tokens\/x\.json"\]/)
+  // A later commit deletes the file, so a diff of base and head has no b/
+  // path, but gitleaks scans the commit that added it (Codex review of #272).
+  git('rm', '-q', 'b/tokens/x.json')
+  git('commit', '-qm', 'three')
+  const deleted = spawnSync(process.execPath, [script, base, 'HEAD'], { cwd: repo, encoding: 'utf8' })
+  assert.equal(deleted.status, 1, deleted.stdout + deleted.stderr)
+  assert.match(deleted.stdout, /"found":\["b\/tokens\/x\.json"\]/)
 })

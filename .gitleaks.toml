@@ -78,7 +78,7 @@ path = '''(?:^|/)\.env(?:\.[A-Za-z0-9_-]+)?$'''
 # --diff-merges=remerge, gitleaks 8.30.1 names a file of a conflict
 # hunk in a merge commit "b/<path>", so the path may start with b/. A real
 # file under a top-level b/ folder would get the same exception, so the job
-# secrets fails a PR that adds or changes a file under b/
+# secrets fails a PR with a commit that adds, changes or deletes a file under b/
 # (scripts/secret-merge-prefix.ts).
 [[allowlists]]
 description = "Figma fileKey in tokens/figma/target.json"

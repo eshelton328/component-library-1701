@@ -144,14 +144,16 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const focused = document.activeElement
       const bodies = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')]
         .filter((body) => !body.contains(focused))
-        .map((body) => ({ body, atEnd: body.scrollHeight - body.scrollTop - body.clientHeight <= 1, view: body.clientHeight }))
+        .map((body) => ({ body, atEnd: body.scrollHeight - body.scrollTop - body.clientHeight <= 1, view: body.clientHeight, top: body.scrollTop }))
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
-      for (const { body, atEnd, view } of bodies) {
+      // The move is added to the scroll position read before the change: a view that grows has the browser clamp
+      // `scrollTop` first, and adding to that would jump the thread (Codex review of #216).
+      for (const { body, atEnd, view, top } of bodies) {
         if (atEnd) body.scrollTop = body.scrollHeight
-        else if (body.clientHeight !== view) body.scrollTop += view - body.clientHeight
+        else if (body.clientHeight !== view) body.scrollTop = top + view - body.clientHeight
       }
       if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
     }

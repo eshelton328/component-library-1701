@@ -1526,6 +1526,31 @@ const srLineStory: StoryObj<typeof meta> = {
 export const SrLineInBodyDark: StoryObj<typeof meta> = { ...srLineStory, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const SrLineInBodyLight: StoryObj<typeof meta> = { ...srLineStory, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+const threadNearEnd: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { footer, field } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    await userEvent.click(field)
+    await stepViewport(rising)
+    await settled(footer, 266)
+    // Docked, 10 px from the end: as the keyboard closes, the view grows and the thread stays 10 px from its end at
+    // every frame, with no jump (Codex review of #216).
+    body.scrollTop = body.scrollHeight - body.clientHeight - 10
+    await nextFrame()
+    const near = recordThread(canvasElement)
+    field.blur()
+    await stepViewport(falling)
+    await settled(footer, 0)
+    near.stop()
+    await expect(near.frames.filter((f) => Math.abs(f.fromEnd - 10) > 1)).toEqual([])
+  },
+}
+/** Phone chat docked 10 px from its end: the thread keeps that distance through the keyboard's fall. */
+export const ThreadNearEndDark: StoryObj<typeof meta> = { ...threadNearEnd, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ThreadNearEndLight: StoryObj<typeof meta> = { ...threadNearEnd, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 // A form in the ScrollFrame body that fits the screen: its first field takes the focus, and the keyboard makes the body
 // scroll. The focused field stays in view; the body is not pinned to its end (Codex review of #210).
 function BodyForm() {

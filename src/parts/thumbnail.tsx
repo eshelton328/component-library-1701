@@ -30,6 +30,14 @@ export type ThumbnailShape = 'wide' | 'compact' | 'banner'
  */
 export type ThumbnailReference = { value: number; label: string }
 
+/**
+ * The colour of one artifact's preview: `accent` (cyan, the default),
+ * `violet`, `amber` or `green`, as the Artifacts page colours each preview
+ * (D1: the Agent factory doc green 402:15656, the Type safety doc violet
+ * 402:15716, the readme cold-reader chart amber 402:15776).
+ */
+export type ThumbnailTone = 'accent' | 'violet' | 'amber' | 'green'
+
 export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
   kind?: ThumbnailKind | undefined
   shape?: ThumbnailShape | undefined
@@ -42,6 +50,15 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
    * the row sizes (`sm`, `md`) ignore it; without it nothing is drawn.
    */
   reference?: ThumbnailReference | undefined
+  /**
+   * The preview's colour. `doc` draws its title bar in the tone and its
+   * first chip in the tone's tint; `chart` draws its title bar and its main
+   * bars in the tone, and every third bar stays violet. At the row sizes
+   * (`sm`, `md`) the doc's title bar and the chart's title bar and main bars
+   * take the tone too. `diagram`, `grid` and `ui` draw their own fixed
+   * colours and ignore it. Without it the preview draws in `accent`, as before.
+   */
+  tone?: ThumbnailTone | undefined
   /**
    * A name for a thumbnail that stands alone, such as "Chart preview".
    * Without one the thumbnail is hidden from assistive technology, because
@@ -56,10 +73,20 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
 const height = 188
 const widths: Record<ThumbnailShape, number> = { wide: (height * 16) / 9, compact: (height * 8) / 5, banner: height * 2 }
 
-type Fill = 'muted' | 'title' | 'well' | 'inset' | 'accent' | 'violet' | 'amber' | 'green' | 'accentTint' | 'violetTint' | 'accentEdge' | 'violetEdge' | 'amberEdge' | 'greenEdge'
+type Fill = 'muted' | 'title' | 'well' | 'inset' | 'accent' | 'violet' | 'amber' | 'green' | 'accentTint' | 'violetTint' | 'amberTint' | 'greenTint' | 'accentEdge' | 'violetEdge' | 'amberEdge' | 'greenEdge'
 
 // The class of each fill slot, from the generated recipe.
 const slots = thumbnail()
+
+// Each tone's solid fill and its tint, slots of the recipe.
+const tones: Record<ThumbnailTone, { solid: Fill; tint: Fill }> = {
+  accent: { solid: 'accent', tint: 'accentTint' },
+  violet: { solid: 'violet', tint: 'violetTint' },
+  amber: { solid: 'amber', tint: 'amberTint' },
+  green: { solid: 'green', tint: 'greenTint' },
+}
+
+type DrawingProps = { tone: ThumbnailTone }
 
 function Rect({ x, y, w, h, r = 2, fill }: { x: number; y: number; w: number; h: number; r?: number; fill: Fill }) {
   const edged = fill.endsWith('Edge')
@@ -68,13 +95,14 @@ function Rect({ x, y, w, h, r = 2, fill }: { x: number; y: number; w: number; h:
 
 // Chart 402:15435: a title bar, nine bars on a baseline, every third violet.
 const bars = [95.354, 65.876, 103.593, 47.916, 107.205, 38.774, 105.949, 57.34, 99.909]
-function Chart() {
+function Chart({ tone }: DrawingProps) {
+  const { solid } = tones[tone]
   return (
     <>
-      <Rect x={27} y={32} w={112} h={8} fill="accent" />
+      <Rect x={27} y={32} w={112} h={8} fill={solid} />
       <g data-bars="">
         {bars.map((h, i) => (
-          <Rect key={String(i)} x={32.6 + i * 31.11} y={169 - h} w={19.911} h={h} fill={i % 3 === 2 ? 'violet' : 'accent'} />
+          <Rect key={String(i)} x={32.6 + i * 31.11} y={169 - h} w={19.911} h={h} fill={i % 3 === 2 ? 'violet' : solid} />
         ))}
       </g>
       <Rect x={27} y={169} w={280} h={1} r={0} fill="muted" />
@@ -108,14 +136,15 @@ function Diagram() {
 
 // Doc 402:15589: a title, seven text lines and two chips.
 const lines = [266, 266, 168, 266, 266, 168, 266]
-function Doc() {
+function Doc({ tone }: DrawingProps) {
+  const { solid, tint } = tones[tone]
   return (
     <>
-      <Rect x={27} y={32} w={154} h={10} fill="accent" />
+      <Rect x={27} y={32} w={154} h={10} fill={solid} />
       {lines.map((w, i) => (
         <Rect key={String(i)} x={27} y={54 + i * 12} w={w} h={5} fill="muted" />
       ))}
-      <Rect x={27} y={142} w={84} h={21.6} r={4} fill="accentTint" />
+      <Rect x={27} y={142} w={84} h={21.6} r={4} fill={tint} />
       <Rect x={122.2} y={142} w={84} h={21.6} r={4} fill="violetTint" />
     </>
   )
@@ -171,7 +200,7 @@ function Ui() {
   )
 }
 
-const drawings: Record<ThumbnailKind, () => ReactNode> = { chart: Chart, diagram: Diagram, doc: Doc, grid: Grid, ui: Ui }
+const drawings: Record<ThumbnailKind, (props: DrawingProps) => ReactNode> = { chart: Chart, diagram: Diagram, doc: Doc, grid: Grid, ui: Ui }
 
 // The chart's value axis: 0 on the baseline (169) and 100 at y 45, 124
 // above it, where 71 lands at Figma's D9 median line (452:3705, 161.4 of
@@ -237,13 +266,14 @@ function ChartReference({ width, reference }: { width: number; reference: Thumbn
 
 // Chart 403:194: a title bar, nine bars on a baseline, every third violet.
 const rowBars = [10, 23, 9, 22, 13, 21, 17, 20, 20]
-function RowChart() {
+function RowChart({ tone }: DrawingProps) {
+  const { solid } = tones[tone]
   return (
     <>
-      <Rect x={5} y={7} w={21} h={3} r={1.5} fill="accent" />
+      <Rect x={5} y={7} w={21} h={3} r={1.5} fill={solid} />
       <g data-bars="">
         {rowBars.map((h, i) => (
-          <Rect key={String(i)} x={6 + i * 6} y={36 - h} w={4} h={h} r={1} fill={i % 3 === 2 ? 'violet' : 'accent'} />
+          <Rect key={String(i)} x={6 + i * 6} y={36 - h} w={4} h={h} r={1} fill={i % 3 === 2 ? 'violet' : solid} />
         ))}
       </g>
       <Rect x={5} y={36} w={54} h={1} r={0} fill="muted" />
@@ -273,10 +303,10 @@ function RowDiagram() {
 
 // Doc 414:759: a title and seven text lines, as the card's; no chips.
 const rowLines = [51, 51, 32, 51, 51, 32, 51]
-function RowDoc() {
+function RowDoc({ tone }: DrawingProps) {
   return (
     <>
-      <Rect x={5} y={7} w={29} h={3} r={1.5} fill="accent" />
+      <Rect x={5} y={7} w={29} h={3} r={1.5} fill={tones[tone].solid} />
       {rowLines.map((w, i) => (
         <Rect key={String(i)} x={5} y={12 + i * 2.5} w={w} h={1.5} r={0.75} fill="muted" />
       ))}
@@ -313,13 +343,13 @@ function RowUi() {
   )
 }
 
-const rowDrawings: Record<ThumbnailKind, () => ReactNode> = { chart: RowChart, diagram: RowDiagram, doc: RowDoc, grid: RowGrid, ui: RowUi }
+const rowDrawings: Record<ThumbnailKind, (props: DrawingProps) => ReactNode> = { chart: RowChart, diagram: RowDiagram, doc: RowDoc, grid: RowGrid, ui: RowUi }
 
 // The row sizes' boxes. md is 76 × 48 (M1 406:122): the 64 × 40 drawing at
 // 1.2, 76.8 wide, centred, so 0.4 of the window bar's ends is cut.
 const rowBoxes = { sm: { w: 64, h: 40, scale: 1 }, md: { w: 76, h: 48, scale: 1.2 } } as const
 
-function RowThumbnail({ kind, size, framed, label }: { kind: ThumbnailKind; size: keyof typeof rowBoxes; framed: boolean | undefined; label: string | undefined }) {
+function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind; tone: ThumbnailTone; size: keyof typeof rowBoxes; framed: boolean | undefined; label: string | undefined }) {
   const box = rowBoxes[size]
   const Drawing = rowDrawings[kind]
   const named = label !== undefined && label.trim() !== ''
@@ -337,7 +367,7 @@ function RowThumbnail({ kind, size, framed, label }: { kind: ThumbnailKind; size
           {[10.5, 19.5, 28.5].map((cx) => (
             <circle key={String(cx)} cx={cx} cy={2} r={2.5} className={slots.dot} />
           ))}
-          <Drawing />
+          <Drawing tone={tone} />
         </g>
       </Svg>
     </Root>
@@ -358,9 +388,12 @@ function RowThumbnail({ kind, size, framed, label }: { kind: ThumbnailKind; size
  * scaled down, and ignore `shape`. `lg` is 128 wide at `shape`'s ratio
  * with the card's drawing, 128 × 72 with `shape="wide"`, as the desktop
  * list view and search results draw it.
+ *
+ * `tone` colours one artifact's preview: the doc's title bar and the
+ * chart's title bar and main bars (see `ThumbnailTone`).
  */
-export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label, reference }: ThumbnailProps) {
-  if (size === 'sm' || size === 'md') return <RowThumbnail kind={kind} size={size} framed={framed} label={label} />
+export function Thumbnail({ kind = 'doc', shape = 'wide', tone = 'accent', framed, size, label, reference }: ThumbnailProps) {
+  if (size === 'sm' || size === 'md') return <RowThumbnail kind={kind} tone={tone} size={size} framed={framed} label={label} />
   const width = widths[shape]
   const Drawing = drawings[kind]
   const named = label !== undefined && label.trim() !== ''
@@ -378,7 +411,7 @@ export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label, r
           <circle key={String(cx)} cx={cx} cy={8.5} r={2.5} className={slots.dot} />
         ))}
         <g transform={`translate(${String((width - 334) / 2)} 0)`}>
-          <Drawing />
+          <Drawing tone={tone} />
         </g>
       </Svg>
       {kind === 'chart' && reference !== undefined ? <ChartReference width={width} reference={reference} /> : null}

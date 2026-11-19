@@ -1635,6 +1635,7 @@ export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
     kind?: ThumbnailKind | undefined;
     shape?: ThumbnailShape | undefined;
     reference?: ThumbnailReference | undefined;
+    tone?: ThumbnailTone | undefined;
     label?: string | undefined;
 };
 
@@ -1646,6 +1647,9 @@ export type ThumbnailReference = {
 
 // @public
 export type ThumbnailShape = 'wide' | 'compact' | 'banner';
+
+// @public
+export type ThumbnailTone = 'accent' | 'violet' | 'amber' | 'green';
 
 // @public
 export function Toast(input: ToastProps): JSX.Element;

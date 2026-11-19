@@ -20,6 +20,17 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // row layers (D2 403:194, 403:220, 403:246, 414:759, 403:274) and sets
 // their box itself, so the height follows from the drawing's ratio.
 //
+// The tone (the component's `tone` prop): Figma colours each preview in
+// one tone (D1 400:14): the doc's title bar at 0.9 (green 402:15656, violet
+// 402:15716) and its first chip at 0.18 (green 402:15664), the chart's
+// title bar at 0.9 and main bars at 0.75 (amber 402:15776, 402:15777 to
+// 402:15784; cyan 402:15441, 402:15442), with the second bars violet
+// (402:15443, 402:15779). As above, the solid shapes take the tone's colour
+// (accent.default, status.running.fg, status.needsYou.fg, status.done.fg)
+// and the chip its tint (accent.subtle, status.running.bg,
+// status.needsYou.bg, status.done.bg); no token holds these colours at 0.75
+// or 0.9, so the bars draw at full colour, as before.
+//
 // A chart's reference line (D9 after Apply, `median line` 452:3705 and its
 // label 452:3706): a dashed line across the plot in amber, the needs-you
 // colour (status.needsYou.fg, as the grid's amber cells and the dashed
@@ -39,7 +50,7 @@ export const thumbnail = defineSlotRecipe({
   className: 'thumbnail',
   jsx: ['Thumbnail'],
   staticCss: ['*'],
-  slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge', 'reference', 'referenceBox', 'referenceLabel', 'referenceLine'],
+  slots: ['root', 'svg', 'chrome', 'dot', 'muted', 'title', 'well', 'inset', 'accent', 'violet', 'amber', 'green', 'accentTint', 'violetTint', 'amberTint', 'greenTint', 'accentEdge', 'violetEdge', 'amberEdge', 'greenEdge', 'reference', 'referenceBox', 'referenceLabel', 'referenceLine'],
   base: {
     root: {
       position: 'relative',
@@ -63,6 +74,8 @@ export const thumbnail = defineSlotRecipe({
     green: { fill: 'status.done.fg' },
     accentTint: { fill: 'accent.subtle' },
     violetTint: { fill: 'status.running.bg' },
+    amberTint: { fill: 'status.needsYou.bg' },
+    greenTint: { fill: 'status.done.bg' },
     accentEdge: { fill: 'surface.well', stroke: 'status.working.border' },
     violetEdge: { fill: 'surface.well', stroke: 'status.running.border' },
     amberEdge: { fill: 'surface.well', stroke: 'status.needsYou.border' },

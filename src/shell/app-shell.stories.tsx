@@ -2482,6 +2482,81 @@ const nestedFooterReported: StoryObj<typeof meta> = {
     }
   },
 }
+// The page changes while the keyboard is open: in one commit the app passes a new `onDiagnostic` and draws a nested
+// chat whose field takes the focus as it mounts. The shell reports the undocked field to the new callback, not to the
+// one it replaced (Codex review of #284).
+let swapChat: (() => void) | undefined
+// A reply field that takes the focus as it mounts, in its own layout effect, as a page that opens a reply does.
+function FocusedReply() {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useLayoutEffect(() => {
+    ref.current?.focus()
+  }, [])
+  return <textarea ref={ref} aria-label="Reply" rows={1} className={messageField} />
+}
+const firstDiagnostic = fn<(diagnostic: AppShellDiagnostic) => void>()
+const nextDiagnostic = fn<(diagnostic: AppShellDiagnostic) => void>()
+function SwapChat() {
+  const [swapped, setSwapped] = useState(false)
+  useEffect(() => {
+    swapChat = () => {
+      setSwapped(true)
+    }
+  })
+  const docked = (
+    <ScrollFrame
+      bodyClassName={frameBody}
+      footer={
+        <div role="group" aria-label="Composer" className={composerBox}>
+          <textarea aria-label="Message" rows={1} className={messageField} />
+        </div>
+      }
+    >
+      <p className={text}>{messages[0]}</p>
+    </ScrollFrame>
+  )
+  const nested = (
+    <section className={nestedColumn}>
+      <div className={nestedColumn}>
+        <ScrollFrame
+          bodyClassName={frameBody}
+          footer={
+            <div role="group" aria-label="Composer" className={composerBox}>
+              <FocusedReply />
+            </div>
+          }
+        >
+          <p className={text}>{messages[0]}</p>
+        </ScrollFrame>
+      </div>
+    </section>
+  )
+  return (
+    <div className={screenFrame}>
+      <AppShell size="phone" view="detail" onDiagnostic={swapped ? nextDiagnostic : firstDiagnostic} detail={swapped ? nested : docked} />
+    </div>
+  )
+}
+const swappedDiagnostic: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <SwapChat />,
+  play: async ({ canvasElement }) => {
+    firstDiagnostic.mockClear()
+    nextDiagnostic.mockClear()
+    await userEvent.click(within(canvasElement).getByRole('textbox', { name: 'Message' }))
+    fakeViewport.move({ height: 544 })
+    swapChat?.()
+    const reply = await within(canvasElement).findByRole('textbox', { name: 'Reply' })
+    await waitFor(() => expect(document.activeElement).toBe(reply))
+    fakeViewport.move({ height: 545 })
+    fakeViewport.move({ height: 544 })
+    await waitFor(() => expect(nextDiagnostic).toHaveBeenCalledTimes(1))
+    await expect(firstDiagnostic).not.toHaveBeenCalled()
+  },
+}
+/** The callback changes in the commit that mounts an autofocus field in a nested chat: the new callback is called. */
+export const SwappedDiagnosticDark: StoryObj<typeof meta> = { ...swappedDiagnostic, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SwappedDiagnosticLight: StoryObj<typeof meta> = { ...swappedDiagnostic, globals: { mode: 'light', viewport: { value: 'm390' } } }
 /** The nested chat with `onDiagnostic`: the app gets the diagnostic, and the console stays quiet. */
 export const NestedFooterReportedDark: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const NestedFooterReportedLight: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'light', viewport: { value: 'm390' } } }

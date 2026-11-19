@@ -94,6 +94,9 @@ function Family({ onCopy = () => undefined }: { onCopy?: () => void }) {
               }
             />
           </span>
+          <span data-testid="path-md">
+            <PathBadge iconSize="md" icon={<Glyph />} path="toolkit/skills/writer/SKILL.md" />
+          </span>
         </Inline>
         <Inline wrap gap="10">
           {kinds.map((k) => (
@@ -199,6 +202,16 @@ const meta = {
     await expect([pathStyle.fontSize, pathStyle.color]).toEqual(['12px', swatch('default')])
     await expect(pathStyle.fontFamily).toContain('Geist Mono')
     await expect(canvas.getByRole('button', { name: 'Copy path' })).toBeVisible()
+    // The icon is 12 px by default and 16 px with `iconSize="md"` (M06 435:494); the badge stays the same height.
+    const iconOf = (el: Element) => {
+      const svg = el.querySelector('.path-badge__icon svg')
+      if (svg === null) throw new Error('no path icon')
+      return box(svg)
+    }
+    const badgeMd = first('path-md')
+    await expect([iconOf(badge).width, iconOf(badge).height]).toEqual([12, 12])
+    await expect([iconOf(badgeMd).width, iconOf(badgeMd).height]).toEqual([16, 16])
+    await expect(box(badgeMd).height).toBe(box(badge).height)
 
     // Kind badge: a pill in the kind colour on the kind's tint (d-074), labelled with the kind's name.
     for (const k of kinds) {

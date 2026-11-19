@@ -133,16 +133,18 @@ const PathTrailing = path.withContext('span', 'trailing')
 export type PathBadgeProps = {
   /** The path, such as "toolkit/skills/writer/". */
   path: string
-  /** A 12 px icon before the path, such as a folder. */
+  /** An icon before the path, such as a folder. `iconSize` sizes it. */
   icon?: ReactNode
+  /** The icon's size: `sm` (the default) draws 12 px; `md` draws 16 px, as on a file's own page on the phone. */
+  iconSize?: 'sm' | 'md' | undefined
   /** An action after the path, such as a copy button. The caller gives it its name and handler. */
   trailing?: ReactNode
 }
 
 /** The path of a file or folder in a mono badge, as on the Toolkit item page. */
-export function PathBadge({ path: value, icon, trailing }: PathBadgeProps) {
+export function PathBadge({ path: value, icon, iconSize, trailing }: PathBadgeProps) {
   return (
-    <PathRoot>
+    <PathRoot iconSize={iconSize}>
       {present(icon) ? <PathIcon>{icon}</PathIcon> : null}
       <PathText>
         <TruncatedText>{value}</TruncatedText>

@@ -52,6 +52,22 @@ export type ComposerProps = {
   onRemoveAttachment?: ((id: string) => void) | undefined
   /** Called when the user presses the attach button. Without it, there is no attach button. */
   onAttach?: (() => void) | undefined
+  /**
+   * The glyph of the attach button. Without it, the button draws a 16 px
+   * paperclip (`<ClipIcon size="16" />`). The button keeps the `size` the
+   * icon is given, so `<PlusIcon size="12" />` draws the 12 px plus of
+   * Workspaces' add button (D04 137:6, 13 in Figma, d-100); an icon
+   * without a `size` draws at 16.
+   */
+  attachIcon?: ReactNode
+  /** The accessible name of the attach button; "Attach a file" when not set. Name it after what it does, such as "Add" for a plus. */
+  attachLabel?: string | undefined
+  /**
+   * The size of the arrow on Send, in px. `16` (the default) draws it at
+   * 16 in both layouts. `12` draws the side chat's 12 px arrow (Workspaces
+   * D05 158:549) on the 24 px button of `layout="inline"`.
+   */
+  sendIconSize?: '12' | '16' | undefined
   /** The model control after the attach button, such as a `ModelChip`. */
   model?: ReactNode
   disabled?: boolean | undefined
@@ -91,6 +107,9 @@ export function Composer({
   attachments = [],
   onRemoveAttachment,
   onAttach,
+  attachIcon,
+  attachLabel = 'Attach a file',
+  sendIconSize = '16',
   model,
   disabled = false,
   layout = 'stacked',
@@ -160,8 +179,8 @@ export function Composer({
   )
   const attach =
     onAttach === undefined ? null : (
-      <Button data-keyboard-keep="" size={buttonSize} iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
-        <ClipIcon size="16" />
+      <Button data-keyboard-keep="" size={buttonSize} iconOnly keepIconSize aria-label={attachLabel} disabled={disabled} onClick={onAttach}>
+        {attachIcon ?? <ClipIcon size="16" />}
       </Button>
     )
   const stop = running ? (
@@ -171,8 +190,8 @@ export function Composer({
     </Button>
   ) : null
   const send = (
-    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
-      <ArrowUpIcon size="16" />
+    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" keepIconSize disabled={disabled} onClick={submit}>
+      <ArrowUpIcon size={sendIconSize} />
     </Button>
   )
   if (inline) {

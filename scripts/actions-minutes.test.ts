@@ -3,8 +3,10 @@
 // `gh` in a temporary folder, and checks one fix from the PR #203 review:
 // a re-run of a recent day is counted, a partial count keeps the alert
 // issue open, and the issue is found past the first page of open issues.
-// One more test checks that a day over the per-run call limit is finished
-// by the next run from the ledger.
+// Later tests check that a day over the per-run call limit is finished by
+// the next run from the ledger, and the three fixes from the PR #215
+// review: a re-run is counted until a day is final, a recent day not
+// counted again is missing, and a workflow name with " / " stays whole.
 // Run with `pnpm test:release`; it needs bash and python3.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -104,7 +106,7 @@ interface Issue {
 }
 
 interface Data {
-  runs: { id: number; name: string; status: 'completed'; created_at: string }[]
+  runs: { id: number; name: string; status: 'completed'; created_at: string; run_attempt?: number }[]
   jobs: Record<string, Job[]>
   fail_days: string[]
 }
@@ -159,7 +161,8 @@ function sandbox(data: Data, issues: Issue[]) {
     if (!isRecord(found)) throw new Error(`no issue #${String(n)}`)
     return found
   }
-  return { run, write, issue }
+  const ledger = join(dir, 'actions-minutes-ledger.json')
+  return { run, write, issue, ledger }
 }
 
 function dayMinutes(result: Record<string, unknown>, on: string): unknown {
@@ -194,6 +197,51 @@ void test('a day over the per-run call limit is finished by the next run from th
   const second = box.run()
   assert.equal(second['partial'], false)
   assert.equal(dayMinutes(second, d), 900)
+})
+
+void test('a re-run made after a day was counted at 2 days old is counted the next day', () => {
+  // The first run counts the run on day(2); the ledger is then moved one
+  // day back, as if a day had passed, and the run gets a second attempt.
+  const d2 = day(2)
+  const d3 = day(3)
+  const box = sandbox({ runs: [{ id: 1, name: 'ci', status: 'completed', created_at: `${d2}T10:00:00Z`, run_attempt: 1 }],
+    jobs: { '1': [job(d2, 1, 10)] }, fail_days: [] }, [])
+  assert.equal(dayMinutes(box.run(), d2), 10)
+  const saved: unknown = JSON.parse(readFileSync(box.ledger, 'utf8'))
+  const days = isRecord(saved) ? saved['days'] : undefined
+  const mine = isRecord(days) ? days[repo] : undefined
+  if (!isRecord(mine)) throw new Error('the ledger has no days for the repository')
+  mine[d3] = mine[d2]
+  Reflect.deleteProperty(mine, d2)
+  writeFileSync(box.ledger, JSON.stringify(saved))
+  box.write({ runs: [{ id: 1, name: 'ci', status: 'completed', created_at: `${d3}T10:00:00Z`, run_attempt: 2 }],
+    jobs: { '1': [job(d3, 1, 10), job(d3, 2, 20)] }, fail_days: [] })
+  assert.equal(dayMinutes(box.run(), d3), 30)
+})
+
+void test('a recent day kept in the ledger but not counted again is missing, and the issue stays open', () => {
+  const d1 = day(1)
+  const data: Data = { runs: [{ id: 1, name: 'ci', status: 'completed', created_at: `${d1}T10:00:00Z`, run_attempt: 1 }],
+    jobs: { '1': [job(d1, 1, 10)] }, fail_days: [] }
+  const first = sandbox(data, [])
+  assert.equal(first.run()['partial'], false)
+  // The next run starts from that ledger with the alert issue open, and
+  // the runs query for day(1) fails.
+  const next = sandbox({ ...data, fail_days: [d1] }, [openIssue(1, title)])
+  writeFileSync(next.ledger, readFileSync(first.ledger, 'utf8'))
+  assert.equal(next.run()['partial'], true)
+  assert.equal(next.issue(1)['state'], 'open')
+})
+
+void test('a workflow name with " / " in it stays one workflow', () => {
+  const d = day(3)
+  const box = sandbox({ runs: [{ id: 1, name: 'deploy / prod', status: 'completed', created_at: `${d}T10:00:00Z`, run_attempt: 1 }],
+    jobs: { '1': [job(d, 1, 10)] }, fail_days: [] }, [])
+  const result = box.run()
+  const repos = result['repos']
+  const mine = isRecord(repos) ? repos[repo] : undefined
+  const byWorkflow = isRecord(mine) ? mine['by_workflow'] : undefined
+  assert.ok(isRecord(byWorkflow) && 'deploy / prod' in byWorkflow, JSON.stringify(byWorkflow))
 })
 
 void test('a partial count below the alert level keeps the alert issue open', () => {

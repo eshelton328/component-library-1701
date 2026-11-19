@@ -1021,3 +1021,87 @@ export const QuickCloseStrictDark: StoryObj<typeof meta> = {
   play: quickClosePlay,
   globals: { mode: 'dark' },
 }
+
+// No scrim: the tablet side chat sheet (Workspaces T2 105:1914) leaves the chat above it (105:1810, 105:1894) in
+// its full colour. A sheet with the default scrim sits beside it, so the play also checks the scrim still shows.
+const onReply = fn()
+const chatTop = css({ textStyle: 'paneTitle', color: 'fg.default' })
+
+function SideChatPage() {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <h2 className={chatTop}>Release the library</h2>
+        <Button onClick={onReply}>Reply</Button>
+        <BottomSheet scrim={false} title="Side chat" closeButton trigger={<Button>Side chat</Button>}>
+          <Button>Send</Button>
+        </BottomSheet>
+        <SortSheet />
+      </Stack>
+      <span hidden data-swatch="scrim" className={scrimSwatch} />
+    </main>
+  )
+}
+
+// The elements of the sheet's layer (scrim, positioner, sheet) whose box covers the point.
+function layerAt(x: number, y: number) {
+  return Array.from(document.querySelectorAll('[data-scope="dialog"]')).filter((el) => {
+    const r = el.getBoundingClientRect()
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+  })
+}
+
+const noScrimPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onReply.mockClear()
+  const canvas = within(canvasElement)
+  const body = within(document.body)
+  const trigger = canvas.getByRole('button', { name: 'Side chat' })
+  await userEvent.click(trigger)
+  const sheet = await body.findByRole('dialog', { name: 'Side chat' })
+  await motionDone(sheet)
+  // No scrim element is drawn.
+  await expect(document.querySelector('.bottom-sheet__backdrop')).toBeNull()
+  // The chat above the sheet stays visible: nothing of the sheet's layer that covers it paints a fill or a blur.
+  // Ark hides the page from assistive technology while a sheet is open, with a scrim or not, so find it by its text.
+  const heading = canvas.getByText('Release the library')
+  const h = heading.getBoundingClientRect()
+  await expect(h.bottom).toBeLessThan(sheet.getBoundingClientRect().top)
+  const x = h.left + 4
+  const y = h.top + h.height / 2
+  const over = layerAt(x, y)
+  await expect(over).not.toContain(sheet)
+  for (const el of over) {
+    const style = getComputedStyle(el)
+    await expect(style.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(style.backdropFilter).toBe('none')
+    await expect(style.opacity).toBe('1')
+  }
+  // The sheet keeps the focus inside, as a sheet on a scrim does.
+  await waitFor(() => expect(within(sheet).getByRole('button', { name: 'Close' })).toHaveFocus())
+  // A press on the chat above closes the sheet and gives the focus back; it does not reach the page under it.
+  const target = document.elementFromPoint(x, y)
+  if (!(target instanceof HTMLElement)) throw new Error('nothing above the sheet')
+  await expect(sheet.contains(target)).toBe(false)
+  await userEvent.click(target)
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+  await waitFor(() => expect(trigger).toHaveFocus())
+  await expect(onReply).not.toHaveBeenCalled()
+  // With the sheet closed, the page above is reachable.
+  await userEvent.click(canvas.getByRole('button', { name: 'Reply' }))
+  await expect(onReply).toHaveBeenCalledTimes(1)
+  // The default sheet still draws its scrim over the whole page, the chat above included.
+  await userEvent.click(canvas.getByRole('button', { name: 'Sort' }))
+  const sorted = await body.findByRole('dialog', { name: 'Sort by' })
+  await motionDone(sorted)
+  const scrim = document.querySelector('.bottom-sheet__backdrop')
+  if (!(scrim instanceof HTMLElement)) throw new Error('no scrim')
+  await expect(getComputedStyle(scrim).backgroundColor).toBe(swatch('scrim'))
+  await expect(scrim.getBoundingClientRect().width).toBe(window.innerWidth)
+  await expect(layerAt(x, y)).toContain(scrim)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
+}
+
+/** `scrim={false}`: the tablet side chat sheet draws no scrim, so the chat above it stays in its full colour. */
+export const NoScrimDark: StoryObj<typeof meta> = { render: () => <SideChatPage />, play: noScrimPlay, globals: { mode: 'dark' } }
+export const NoScrimLight: StoryObj<typeof meta> = { render: () => <SideChatPage />, play: noScrimPlay, globals: { mode: 'light' } }

@@ -67,8 +67,12 @@ export type FileFrameProps = Scalar<FileFrameVariantProps> & {
  * icon (`onCopy`) and Read-only (`readOnly`); under it the file's body, and
  * an optional `foot` line. `variant="box"` (the default) draws it as a
  * bordered box with round corners; `variant="flush"` draws no border and
- * fills its column, for the viewer inside a `FileBrowser`. The name and the
- * end group keep their width; a box too narrow for the bar cuts its end.
+ * fills its column, for the viewer inside a `FileBrowser`. In a box too
+ * narrow for the bar, `barEnd="keep"` (the default) keeps the end group and
+ * cuts the meta, then the name, with an ellipsis; `barEnd="cut"` lets the
+ * name and the meta take the bar first and the box cuts the bar's end, for a
+ * bar whose end holds no control (Read-only only). A name and meta wider than
+ * the bar still end with an ellipsis and show the whole text in a tooltip.
  */
 export function FileFrame({
   name,
@@ -82,11 +86,12 @@ export function FileFrame({
   footIcon,
   children,
   variant,
+  barEnd,
   figma,
 }: FileFrameProps) {
   const hasActions = shown(actions)
   return (
-    <Root variant={variant} aria-label={name} data-figma={figma?.root}>
+    <Root variant={variant} barEnd={barEnd} aria-label={name} data-figma={figma?.root}>
       <Bar data-figma={figma?.bar}>
         <Icon>{icon === 'code' ? <CodeIcon size="16" /> : <FileIcon size="16" />}</Icon>
         <Name>

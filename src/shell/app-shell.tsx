@@ -136,20 +136,25 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
       const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom - keyboardTop)
-      // A docked thread (the ScrollFrame body that is the detail's child) at its end before this frame stays at its
-      // end after it, so its latest message stays just above the composer through the whole move, as in the Claude iOS
-      // app (screen review R22). A thread scrolled up keeps its scroll position.
+      // A docked thread (the ScrollFrame body that is the detail's child) keeps the line above the composer where it
+      // is through the whole move, as in the Claude iOS app (screen review R22): a body at its end before this frame
+      // stays at its end, and any other body scrolls by as much as its view shrinks or grows.
       // A body that holds the focused field is left to the browser, which keeps that field in view (Codex review of
       // #210): a form that fits its body would otherwise be pinned to its end, past the field.
       const focused = document.activeElement
-      const atEnd = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')].filter(
-        (body) => !body.contains(focused) && body.scrollHeight - body.scrollTop - body.clientHeight <= 1,
-      )
+      const bodies = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')]
+        .filter((body) => !body.contains(focused))
+        .map((body) => ({ body, atEnd: body.scrollHeight - body.scrollTop - body.clientHeight <= 1, view: body.clientHeight, top: body.scrollTop }))
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
-      for (const body of atEnd) body.scrollTop = body.scrollHeight
+      // The move is added to the scroll position read before the change: a view that grows has the browser clamp
+      // `scrollTop` first, and adding to that would jump the thread (Codex review of #216).
+      for (const { body, atEnd, view, top } of bodies) {
+        if (atEnd) body.scrollTop = body.scrollHeight
+        else if (body.clientHeight !== view) body.scrollTop = top + view - body.clientHeight
+      }
       if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
     }
     // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is; a new target

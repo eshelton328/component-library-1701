@@ -62,6 +62,9 @@ export const scrollFrame = defineSlotRecipe({
     },
     header: { display: 'flex', flexDirection: 'column', flexShrink: '0', minW: '0' },
     body: {
+      // The containing block of an absolute child (Message's screen-reader name), so it scrolls with the body and never
+      // makes the Backdrop scroll, which iOS would scroll at a field's focus (screen review R22).
+      position: 'relative',
       display: 'flex',
       flexDirection: 'column',
       flex: '1',

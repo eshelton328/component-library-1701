@@ -401,6 +401,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // keyboard (the iPhone trace of screen review R25: a focusout of a div, then the focusin of the textarea, and no dock).
       if (!editable(event.target instanceof Element ? event.target : null)) return
       typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
+      // A close is never a frame step of the opening keyboard, however soon it comes (Codex review of #274).
+      if (!typing) lastQuick = false
       if (!typing) scheduleEnd()
     }
     // The end of the fit after the focus left the fields, when the browser reports no viewport change (iOS standalone

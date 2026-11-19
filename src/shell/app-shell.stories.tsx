@@ -1816,6 +1816,29 @@ const reopenAboveOrigin: StoryObj<typeof meta> = {
 export const ReopenAboveOriginDark: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ReopenAboveOriginLight: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+const quickClose: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The focus starts the dock toward the 380 guess, the keyboard reports 330 a frame later, and the field loses the
+    // focus as the keyboard closes a frame after that: three targets less than 50 ms apart. The close is a new move,
+    // not a frame step of the keyboard, so the composer comes down on the curve (Codex review of #274).
+    await userEvent.click(field)
+    await nextFrame()
+    fakeViewport.move({ height: 844 - 330 })
+    await nextFrame()
+    const closed = performance.now()
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await expect(Number(root.dataset.keyboardEnd)).toBeGreaterThanOrEqual(closed + 250)
+    await settled(footer, 0)
+  },
+}
+/** Phone chat whose keyboard closes a frame after its report: the composer comes down on the curve. */
+export const QuickCloseDark: StoryObj<typeof meta> = { ...quickClose, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const QuickCloseLight: StoryObj<typeof meta> = { ...quickClose, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const closeAfterCorrection: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,

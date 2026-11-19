@@ -65,7 +65,9 @@ GitHub Packages, with GitHub release notes and no `CHANGELOG.md` (brain
 decision d-061). `release.config.js` holds the config, and
 `.github/workflows/release.yml` runs it after the CI checks pass on a push
 to `beta` (always) or `main` (only when the repository variable
-`RELEASE_MAIN` is `true`). Versions are `1.0.0-beta.N` until Erik
+`RELEASE_MAIN` is `true`). While `RELEASE_MAIN` is not `true`, a push to
+`main` runs no CI checks; the beta push checks each commit before it
+publishes. Versions are `1.0.0-beta.N` until Erik
 declares the first stable contract.
 
 - The PR title becomes the commit that sets the version: `fix` is a

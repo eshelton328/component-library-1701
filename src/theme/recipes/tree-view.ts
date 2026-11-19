@@ -3,8 +3,10 @@ import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
 
 // The tree of folders and files in the Toolkit file browser (Toolkit D6,
-// tree 432:2142). Every row has a 1 px border, transparent until the row is
-// selected, so a selected row keeps its height and its text stays put.
+// tree 432:2142). A row has no border: a selected row draws its 1 px border as an
+// inset shadow, and each row pads 1 px more on each side, so a selected row keeps
+// its height and its text stays put. Rows 2 apart with borders would count as
+// touching boxes when the Design System card is scaled down.
 export const treeView = defineSlotRecipe({
   className: 'tree-view',
   jsx: ['TreeView', 'FileTree'],
@@ -39,17 +41,18 @@ export const treeView = defineSlotRecipe({
       display: 'flex',
       alignItems: 'flex-start',
       gap: '8',
-      py: '4',
+      py: 'calc(token(spacing.4) + token(borderWidths.default))',
       // One indent step for each level below the top (--depth is 1 at the top).
-      ps: 'calc(token(spacing.8) + (var(--depth, 1) - 1) * token(spacing.16))',
-      pe: '8',
-      borderWidth: 'default',
-      borderStyle: 'solid',
-      borderColor: 'transparent',
+      ps: 'calc(token(spacing.8) + token(borderWidths.default) + (var(--depth, 1) - 1) * token(spacing.16))',
+      pe: 'calc(token(spacing.8) + token(borderWidths.default))',
       borderRadius: 'sm',
       cursor: 'pointer',
       userSelect: 'none',
-      _selected: { bg: 'surface.selected', borderColor: 'border.selected', color: 'fg.accent' },
+      _selected: {
+        bg: 'surface.selected',
+        boxShadow: 'inset 0 0 0 token(borderWidths.default) token(colors.border.selected)',
+        color: 'fg.accent',
+      },
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },
@@ -70,16 +73,17 @@ export const treeView = defineSlotRecipe({
       display: 'flex',
       alignItems: 'flex-start',
       gap: '8',
-      py: '4',
-      ps: 'calc(token(spacing.8) + (var(--depth, 1) - 1) * token(spacing.16))',
-      pe: '8',
-      borderWidth: 'default',
-      borderStyle: 'solid',
-      borderColor: 'transparent',
+      py: 'calc(token(spacing.4) + token(borderWidths.default))',
+      ps: 'calc(token(spacing.8) + token(borderWidths.default) + (var(--depth, 1) - 1) * token(spacing.16))',
+      pe: 'calc(token(spacing.8) + token(borderWidths.default))',
       borderRadius: 'sm',
       cursor: 'pointer',
       userSelect: 'none',
-      _selected: { bg: 'surface.selected', borderColor: 'border.selected', color: 'fg.accent' },
+      _selected: {
+        bg: 'surface.selected',
+        boxShadow: 'inset 0 0 0 token(borderWidths.default) token(colors.border.selected)',
+        color: 'fg.accent',
+      },
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '0' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled' },

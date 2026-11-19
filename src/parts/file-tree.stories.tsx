@@ -114,12 +114,14 @@ const meta = {
     await expect([rootStyle.paddingTop, rootStyle.paddingRight, rootStyle.paddingBottom, rootStyle.paddingLeft]).toEqual(['12px', '10px', '12px', '10px'])
     await expect(rootStyle.backgroundColor).toBe(swatch(canvasElement, 'well'))
 
-    // File row: 26 high with the border, padding 8 at the start, radius 6, mono 12/16 (432:2161 draws 27 and 12/17).
+    // File row: 26 high, padding 9 at the start (8 and the 1 px a border would take), radius 6, no border, mono 12/16
+    // (432:2161 draws 27 and 12/17).
     const file = row(canvasElement, 'tokens.md')
     const fileStyle = getComputedStyle(file)
     await expect(file.getBoundingClientRect().height).toBe(26)
     await expect(fileStyle.borderTopLeftRadius).toBe('6px')
-    await expect(fileStyle.borderTopColor).toBe('rgba(0, 0, 0, 0)')
+    await expect(fileStyle.borderTopWidth).toBe('0px')
+    await expect(fileStyle.boxShadow).toBe('none')
     const text = getComputedStyle(textOf(file))
     await expect([text.fontSize, Math.round(Number.parseFloat(text.lineHeight)), text.fontWeight]).toEqual(['12px', 16, '400'])
     await expect(text.fontFamily).toContain('Geist Mono')
@@ -129,11 +131,11 @@ const meta = {
     await expect(getComputedStyle(icon).stroke).toBe(swatch(canvasElement, 'muted'))
     await expect(textOf(file).getBoundingClientRect().left - icon.getBoundingClientRect().right).toBe(8)
 
-    // A top-level row starts 8 in; each level below adds 16.
+    // A top-level row starts 9 in; each level below adds 16.
     const top = row(canvasElement, 'SKILL.md')
-    await expect(getComputedStyle(top).paddingLeft).toBe('8px')
-    await expect(fileStyle.paddingLeft).toBe('24px')
-    await expect(getComputedStyle(row(canvasElement, 'one.md')).paddingLeft).toBe('40px')
+    await expect(getComputedStyle(top).paddingLeft).toBe('9px')
+    await expect(fileStyle.paddingLeft).toBe('25px')
+    await expect(getComputedStyle(row(canvasElement, 'one.md')).paddingLeft).toBe('41px')
 
     // Rows are 2 apart.
     const folder = row(canvasElement, 'references/')
@@ -161,7 +163,8 @@ const meta = {
     await expect(selected.getAttribute('aria-selected')).toBe('true')
     await expect(selected.getBoundingClientRect().height).toBe(26)
     await expect(selectedStyle.backgroundColor).toBe(swatch(canvasElement, 'selected'))
-    await expect(selectedStyle.borderTopColor).toBe(swatch(canvasElement, 'selectedBorder'))
+    await expect(selectedStyle.borderTopWidth).toBe('0px')
+    await expect(selectedStyle.boxShadow).toBe(`${swatch(canvasElement, 'selectedBorder')} 0px 0px 0px 1px inset`)
     await expect(selectedStyle.color).toBe(swatch(canvasElement, 'accent'))
     await expect(getComputedStyle(iconOf(selected)).stroke).toBe(swatch(canvasElement, 'accent'))
 

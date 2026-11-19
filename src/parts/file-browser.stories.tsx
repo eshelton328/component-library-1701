@@ -88,9 +88,11 @@ const border = (node: Element) => {
   return [s.borderTopWidth, s.borderTopStyle, s.borderTopColor, s.borderTopLeftRadius]
 }
 
-// Bordered boxes (a transparent border counts) that are not nested must stay at least 2 px apart, as the Design
-// System's no-touching-boxes check asks: a pair 0 to 1 px apart reads as one doubled line.
-function touchingPairs(root: Element): string[] {
+// Bordered boxes (a transparent border counts) that are not nested must stay apart, as the Design System's
+// no-touching-boxes check asks: a pair 0 to 1.5 px apart reads as one doubled line. The check zooms a card to fit its
+// 390 px width (390 / 1048), so `zoom` scales each gap the same way.
+const cardZoom = 390 / 1048
+function touchingPairs(root: Element, zoom = 1): string[] {
   const boxed = [...root.querySelectorAll('*')].filter((n) => {
     const st = getComputedStyle(n)
     return (parseFloat(st.borderTopWidth) > 0 || parseFloat(st.borderBottomWidth) > 0) && st.borderTopStyle !== 'none' && n.getBoundingClientRect().height > 8
@@ -103,8 +105,8 @@ function touchingPairs(root: Element): string[] {
       const q = c.getBoundingClientRect()
       const across = Math.min(r.right, q.right) - Math.max(r.left, q.left)
       const down = Math.min(r.bottom, q.bottom) - Math.max(r.top, q.top)
-      const vGap = Math.max(q.top - r.bottom, r.top - q.bottom)
-      const hGap = Math.max(q.left - r.right, r.left - q.right)
+      const vGap = Math.max(q.top - r.bottom, r.top - q.bottom) * zoom
+      const hGap = Math.max(q.left - r.right, r.left - q.right) * zoom
       if ((across > 4 && vGap >= -0.5 && vGap < 1.5) || (down > 4 && hGap >= -0.5 && hGap < 1.5))
         pairs.push(`${a.className.slice(0, 40)} | ${c.className.slice(0, 40)}`)
     }
@@ -154,6 +156,7 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(rect(file).width).toBe(rect(stacked).width)
 
   await expect(touchingPairs(canvasElement)).toEqual([])
+  await expect(touchingPairs(canvasElement, cardZoom)).toEqual([])
 
   const only = el(canvas.getByTestId('tree-only'), '.file-browser__root')
   await expect(only.querySelector('.file-browser__viewer')).toBeNull()
@@ -180,6 +183,7 @@ const boundedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   const canvas = within(canvasElement)
   // The scrolled-off rows are inside the box, so nothing touches before or after the scroll.
   await expect(touchingPairs(canvasElement)).toEqual([])
+  await expect(touchingPairs(canvasElement, cardZoom)).toEqual([])
   // In a bounded pane the box keeps the pane's height, and the tree and the file each scroll to their ends.
   const pane = canvas.getByTestId('bounded')
   const held = el(pane, '.file-browser__root')
@@ -194,6 +198,7 @@ const boundedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   }
   await expect(canvas.getByText('file-39.md')).toBeInTheDocument()
   await expect(touchingPairs(canvasElement)).toEqual([])
+  await expect(touchingPairs(canvasElement, cardZoom)).toEqual([])
 }
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, play }

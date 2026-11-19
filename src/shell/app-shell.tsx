@@ -30,6 +30,8 @@ const blurEndDelay = 300
 // UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
 // tokens as numbers.
 const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
+// The largest keyboard step, in px, that the dock follows at once: a frame's step of the keyboard near its end.
+const keyboardFollow = 2
 const curvePoints = (token('easings.keyboard').match(/-?\d*\.?\d+/g) ?? []).map(Number)
 const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = curvePoints
 const keyboardCurve = [x1, y1, x2, y2] as const
@@ -202,6 +204,18 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const ahead = Math.sign(inset - origin) === Math.sign(previous - origin)
       if (motion !== undefined && done < 0.9 && ahead) {
         from = (shown - inset * done) / (1 - done)
+        return
+      }
+      // A step of the keyboard's own rise or fall of at most `keyboardFollow` from where the dock is, late in a move or
+      // after it, is followed at once: a new 250 ms move for it would leave the dock a pixel off the moving keyboard for
+      // most of its curve (the-bridge keyboard:served on Workspaces, beta.80).
+      if (Math.abs(inset - shown) <= keyboardFollow) {
+        if (motion !== undefined) cancelAnimationFrame(motion)
+        motion = undefined
+        shown = inset
+        origin = inset
+        root.dataset.keyboardEnd = String(now)
+        paint(inset)
         return
       }
       from = shown

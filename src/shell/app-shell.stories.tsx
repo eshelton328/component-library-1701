@@ -1656,7 +1656,10 @@ const reopenFalling: StoryObj<typeof meta> = {
     await expect(riseEnd).toBeLessThanOrEqual(reported + 250)
     await settled(footer, 266)
     timed.stop()
-    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    // The first frame at the end: the dock's own inset, which has full precision, not the computed transform, which
+    // has six digits and reads 266 a fraction of a millisecond before the end.
+    const last = root.style.getPropertyValue('--app-shell-keyboard')
+    const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
     await expect(up - start).toBeGreaterThanOrEqual(250)
     await expect(timed.frames.some((f) => f.at >= start && f.rise > 0 && f.rise < 266)).toBe(true)
   },
@@ -1699,6 +1702,28 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
 /** Phone chat: the keyboard closes during a corrected rise; the composer comes down on a full keyboard move. */
 export const CloseAfterCorrectionDark: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const CloseAfterCorrectionLight: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const lateStep: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    // The keyboard reports its last small step late in the dock's move, or after it, as a keyboard that rises frame by
+    // frame does: the dock is on the keyboard at the next frame, not a pixel off it on a new 250 ms move (the-bridge
+    // keyboard:served on Workspaces, beta.80).
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    const end = Number(root.dataset.keyboardEnd)
+    await waitFor(() => expect(performance.now()).toBeGreaterThan(end - 20), { timeout: 2000, interval: 5 })
+    fakeViewport.move({ height: 543 })
+    await nextFrame()
+    await expect(riseOf(footer)).toBe(267)
+    await settled(footer, 267)
+  },
+}
+/** Phone chat: the keyboard's last 1 px step comes late in the rise; the composer stays on the keyboard. */
+export const LateStepDark: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateStepLight: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // At every frame: how far the thread is from its end, its scroll position, and the room between the latest message's
 // bottom and the composer's top.
@@ -1898,7 +1923,9 @@ const keyboardRise: StoryObj<typeof meta> = {
     await expect(directions(record.frames)).not.toContain(-1)
     await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
     // The dock rises on the curve for the keyboard's 250 ms, not at once, whatever the runner's frame rate.
-    const up = timed.frames.find((f) => f.at >= start && f.rise === 266)?.at ?? 0
+    // The first frame at the end, from the dock's own inset (full precision), as in Reopen Falling.
+    const last = root.style.getPropertyValue('--app-shell-keyboard')
+    const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
     await expect(up - start).toBeGreaterThanOrEqual(250)
     await expect(Math.round(composer().bottom)).toBe(544)
   },

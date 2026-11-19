@@ -5,7 +5,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
 import config from '../release.config.js'
-import { apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader, registryState } from './release-lib.ts'
+import { apiItems, apiLines, diffApi, hasBreakingMarker, isConventionalHeader, recipeTypesReport, registryState } from './release-lib.ts'
 
 const report = (body: string) => `## API Report File\n\n\`\`\`ts\n\n// comment\nimport { X } from 'y';\n${body}\n\n\`\`\`\n`
 
@@ -413,6 +413,19 @@ void test('an object intersected with a generic reference in its tail splits int
     tail(' & Scalar<DialogVariantProps>;', 'label: string;', 'size?: "md";'),
     tail(' & Scalar<OtherVariantProps>;', 'label: string;'),
   ]) assert.equal(diffApi(before, after, types).breaking, true, after)
+})
+
+void test('the recipe types report holds each recipe file in name order, and the diff reads it (#160 follow-up)', () => {
+  const dialog = dialogVariantTypes.slice(dialogVariantTypes.indexOf('export type DialogVariant ='), dialogVariantTypes.lastIndexOf('}') + 1)
+  const types = recipeTypesReport([
+    { name: 'menu.d.ts', text: "import type { X } from '../types/system.js';\nexport type MenuVariant = {\n  size?: \"sm\"\n}\n" },
+    { name: 'dialog.d.ts', text: `import type { ConditionalValue } from '../types/system.js';\n${dialog}\n` },
+  ])
+  assert.ok(types.indexOf('// dialog.d.ts') < types.indexOf('// menu.d.ts'))
+  assert.deepEqual(apiItems(types).map((i) => i.key), ['DialogVariant', 'DialogVariant.size', 'DialogVariantProps', 'MenuVariant', 'MenuVariant.size'])
+  const both = { before: types, after: types }
+  assert.equal(diffApi(dialogProps, addDialogMember(dialogProps, 'meta?: ReactNode;'), both).breaking, false)
+  assert.deepEqual(diffApi(dialogProps, addDialogMember(dialogProps, 'size?: "md";'), both).narrowed, ['DialogProps.size'])
 })
 
 void test('any change to the generic references before the object is breaking', () => {

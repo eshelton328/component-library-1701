@@ -2,7 +2,8 @@ name: api-report
 
 # Warns on a PR that changes the public API (brain decision d-063). It
 # compares api/component-library-1701.api.md at the PR head with the same
-# file at the merge base. A removed or changed item, or a new required
+# file at the merge base, and reads api/recipe-types.api.md on each side
+# to find the names that a recipe's variant props allow. A removed or changed item, or a new required
 # member, adds the breaking-change label and a comment, and fails when the
 # PR title has no `!`. An addition adds the api-change label.
 #
@@ -61,8 +62,21 @@ jobs:
           else
             : > "$RUNNER_TEMP/before.api.md"
           fi
+          # The recipe types of each side, as data (see recipeTypesReport in
+          # scripts/release-lib.ts). A side without the file passes no flag,
+          # so every new member of an alias such as DialogProps is breaking.
+          types=api/recipe-types.api.md
+          flags=()
+          if git -C pr cat-file -e "$HEAD:$types" 2>/dev/null; then
+            git -C pr show "$HEAD:$types" > "$RUNNER_TEMP/after.types.md"
+            flags+=(--after-types "$RUNNER_TEMP/after.types.md")
+          fi
+          if git -C pr cat-file -e "$base:$types" 2>/dev/null; then
+            git -C pr show "$base:$types" > "$RUNNER_TEMP/before.types.md"
+            flags+=(--before-types "$RUNNER_TEMP/before.types.md")
+          fi
           set +e
-          node scripts/check-api-diff.ts --before "$RUNNER_TEMP/before.api.md" --after "$RUNNER_TEMP/after.api.md" \
+          node scripts/check-api-diff.ts --before "$RUNNER_TEMP/before.api.md" --after "$RUNNER_TEMP/after.api.md" "${flags[@]}" \
             --title "$TITLE" --comment "$RUNNER_TEMP/api-comment.md" > "$RUNNER_TEMP/api-diff.json"
           echo "status=$?" >> "$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/api-diff.json"

@@ -12,7 +12,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { analyzeCommits } from '@semantic-release/commit-analyzer'
-import { diffApi } from './release-lib.ts'
+import { diffApi, recipeTypesFile, recipeTypesReport } from './release-lib.ts'
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 const report = 'api/component-library-1701.api.md'
@@ -34,14 +34,17 @@ const old = git(['show', `${from}:${report}`])
 const recipeTypes = (root: string): string | undefined => {
   const recipes = join(root, 'styled-system/recipes')
   if (!existsSync(recipes)) return undefined
-  const files = readdirSync(recipes).filter((f) => f.endsWith('.d.ts')).sort()
-  return `\`\`\`ts\n${files.map((f) => readFileSync(join(recipes, f), 'utf8')).join('\n')}\n\`\`\`\n`
+  const files = readdirSync(recipes).filter((f) => f.endsWith('.d.ts'))
+  return recipeTypesReport(files.map((name) => ({ name, text: readFileSync(join(recipes, name), 'utf8') })))
 }
 
-// The recipe types of the release tag: a temporary worktree of the tag,
-// where `pnpm install` runs Panda codegen through `prepare`. Any failure
-// gives `undefined`, so the diff stays strict.
+// The recipe types of the release tag: its committed recipeTypesFile, or
+// for a tag from before that file, a temporary worktree of the tag, where
+// `pnpm install` runs Panda codegen through `prepare`. Any failure gives
+// `undefined`, so the diff stays strict.
 const tagRecipeTypes = (ref: string): string | undefined => {
+  const committed = git(['show', `${ref}:${recipeTypesFile}`])
+  if (committed.status === 0) return committed.stdout
   const parent = mkdtempSync(join(tmpdir(), 'release-api-'))
   const dir = join(parent, 'repo')
   try {

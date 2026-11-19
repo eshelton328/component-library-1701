@@ -44,13 +44,14 @@ Repository scripts that are not part of the package.
   object or interface, or has a key type the parser cannot read, every
   new member of the alias is breaking. The same holds for a type alias
   whose object literal comes after named types or generic references
-  (`Scalar<DialogVariantProps> & { ... } & A;`): its head and tail are the
+  (`Scalar<DialogVariantProps> & { ... } & A;`) or before them
+  (`{ ... } & Scalar<B>;`): its head and tail are the
   one item `Name.&`. A generic reference `G<X>` allows the names of `X`
   only when `G` is a mapped type over the keys of its one parameter (as
   `Scalar` is); otherwise every new member of the alias is breaking. Any
   other type alias (a union, a second object literal, a generic alias, a
-  mapped type, a type argument with a body or a function, or a tail that
-  is not plain names) is one item. The `api-report`
+  mapped type, or a head or tail part with a qualified name, `typeof`, a
+  union or a type argument with a body or a function) is one item. The `api-report`
   workflow runs on `pull_request_target`, so GitHub runs the base
   branch's copy of the workflow and of this script, and reads the PR's
   report as data. A change to either takes effect only after it merges.

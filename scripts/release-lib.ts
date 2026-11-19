@@ -84,11 +84,16 @@ function aliasHead(t: string): string[] | undefined {
 /** A mapped type's key line, such as `[K in Keys]: V;`. */
 const mappedKey = /^(?:[-+]?readonly\s+)?\[\s*[A-Za-z_$][\w$]*\s+in\b/
 /**
- * The closing line of an object literal intersected with named types,
- * such as `} & PopoverDataAttributes;`: only plain identifiers joined by
- * `&`, with an optional `;`. Group 1 is the tail after the brace.
+ * The closing line of an object literal intersected with other types,
+ * such as `} & PopoverDataAttributes;` or `} & Scalar<B>;`: parts that
+ * `typeReference` allows, joined by `&`, with an optional `;`.
  */
-const intersectionClose = /^\}\s*(&\s*[A-Za-z_$][\w$]*(?:\s*&\s*[A-Za-z_$][\w$]*)*\s*;?)$/
+const intersectionClose = {
+  test: (t: string): boolean => {
+    const m = /^\}\s*&(.*?)\s*;?$/.exec(t)
+    return m !== null && typeParts(m[1] ?? '') !== undefined
+  },
+}
 
 /**
  * Whether the type alias that opens at `lines[start]` can be split into

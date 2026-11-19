@@ -12,6 +12,8 @@ const Input = withContext(Field.Input, 'input')
 const Textarea = withContext(Field.Textarea, 'textarea')
 const HelperText = withContext(Field.HelperText, 'helperText')
 const ErrorText = withContext(Field.ErrorText, 'errorText')
+const Control = withContext('div', 'control')
+const Icon = withContext('span', 'icon')
 
 /** The props that `TextField` and `TextArea` share. */
 export type TextFieldBaseProps = {
@@ -34,12 +36,36 @@ export type TextFieldBaseProps = {
   name?: string | undefined
   /** The text size: `md` (the default) for `body`, `sm` for `bodySm`, as the Inbox prompt editor draws it. */
   textSize?: Scalar<TextFieldVariantProps>['textSize']
+  /**
+   * The label's text style: `small` (the default) draws it in `small` (12/16) in `fg.muted`; `label` draws it in
+   * `label` (Medium 14/20) in `fg.default`, as the Artifacts Add a link form does. Both sit 6 above the control.
+   */
+  labelStyle?: Scalar<TextFieldVariantProps>['labelStyle']
+  /**
+   * An icon at the start of the field, such as `LinkIcon` in a link field. It draws at 16 px in `fg.muted`, inside the
+   * border and the side padding, and the text starts 6 after it; in a `TextArea` it sits on the first line. Hidden from
+   * assistive technology; the label names the field.
+   */
+  icon?: ReactNode
 }
 
-function Frame({ label, helperText, error, disabled, readOnly, required, size, variant, labelHidden, textSize, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
+const hasIcon = (icon: ReactNode) => icon !== undefined && icon !== null && typeof icon !== 'boolean'
+
+// The field's input or text area, with the `icon` over its start when there is one.
+function WithIcon({ icon, multiline, children }: { icon: ReactNode; multiline: boolean; children: ReactNode }) {
+  if (!hasIcon(icon)) return children
+  return (
+    <Control {...(multiline ? { 'data-multiline': '' } : {})}>
+      <Icon aria-hidden="true">{icon}</Icon>
+      {children}
+    </Control>
+  )
+}
+
+function Frame({ label, helperText, error, disabled, readOnly, required, size, variant, labelHidden, textSize, labelStyle, padding, valueStyle, children }: TextFieldBaseProps & Scalar<TextFieldVariantProps> & { children: ReactNode }) {
   const invalid = error !== undefined && error !== ''
   return (
-    <Root size={size} variant={variant} labelHidden={labelHidden} textSize={textSize} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
+    <Root size={size} variant={variant} labelHidden={labelHidden} textSize={textSize} labelStyle={labelStyle} padding={padding} valueStyle={valueStyle} invalid={invalid} disabled={disabled} readOnly={readOnly} required={required}>
       <Label>
         {label}
         <RequiredIndicator>*</RequiredIndicator>
@@ -67,13 +93,18 @@ export type TextFieldProps = TextFieldBaseProps &
   }
 
 /**
- * A one-line text input with a label, such as the rename field or a dialog input. `size` sets the height;
- * `textSize="sm"` sets the text in `bodySm`.
+ * A one-line text input with a label, such as the rename field or a dialog input. `size` sets the height from the
+ * `control` tokens: `sm` 28, `md` 32 (the default), `lg` 36, `form` 40 (the fields of a dialog form, such as Add a
+ * link) and `xl` 44. `padding` sets the sides: `default` 10, `form` 12. `textSize="sm"` sets the text in `bodySm`;
+ * `valueStyle="mono"` sets it in `mono` (12/16), for a link or a path, over `textSize`. `labelStyle` sets the label's
+ * style.
  */
 export function TextField({ type = 'text', ...props }: TextFieldProps) {
   return (
     <Frame {...props}>
-      <Input type={type} {...inputProps(props)} />
+      <WithIcon icon={props.icon} multiline={false}>
+        <Input type={type} {...inputProps(props)} {...(hasIcon(props.icon) ? { 'data-icon': '' } : {})} />
+      </WithIcon>
     </Frame>
   )
 }
@@ -102,12 +133,15 @@ export type TextAreaProps = TextFieldBaseProps & {
 export function TextArea({ autoresize, rows, onKeyDown, ...props }: TextAreaProps) {
   return (
     <Frame {...props}>
-      <Textarea
-        {...inputProps(props)}
-        {...(autoresize === undefined ? {} : { autoresize })}
-        {...(rows === undefined ? {} : { rows })}
-        {...(onKeyDown === undefined ? {} : { onKeyDown })}
-      />
+      <WithIcon icon={props.icon} multiline>
+        <Textarea
+          {...inputProps(props)}
+          {...(autoresize === undefined ? {} : { autoresize })}
+          {...(rows === undefined ? {} : { rows })}
+          {...(onKeyDown === undefined ? {} : { onKeyDown })}
+          {...(hasIcon(props.icon) ? { 'data-icon': '' } : {})}
+        />
+      </WithIcon>
     </Frame>
   )
 }

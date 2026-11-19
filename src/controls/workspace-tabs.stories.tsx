@@ -13,7 +13,7 @@ const swatches = {
   needsYou: css({ color: 'status.needsYou.fg' }),
 }
 
-// Workbench D1 105:108: every tab has a grip; omni-brain and the-bridge need Erik.
+// Workbench D1 105:108: every tab has a grip; omni-brain and the-bridge need the owner.
 const workspaces = [
   { value: 'omni-brain', label: 'omni-brain', count: 3, draggable: true, needsYou: true, content: <div className={panes}>The omni-brain panes</div> },
   { value: 'the-bridge', label: 'the-bridge', count: 2, draggable: true, needsYou: true, content: <div className={panes}>The the-bridge panes</div> },

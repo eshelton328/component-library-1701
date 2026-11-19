@@ -3,10 +3,10 @@ name: release
 # A push to a release branch runs every CI check on that commit, then
 # semantic-release. `beta` always releases (1.0.0-beta.N). `main` releases
 # only when the repository variable RELEASE_MAIN is 'true', so the first
-# feat on main cannot publish 1.0.0 before Erik decides the contract is
+# feat on main cannot publish 1.0.0 before the owner decides the contract is
 # stable (toolkit rule releases.md). While it is not 'true', a push to main
 # runs no checks either: the PR ran them on the merged tree, and the push
-# to beta runs them again before it publishes (Erik approved, 2026-11-18).
+# to beta runs them again before it publishes (the owner approved, 2026-11-18).
 on:
   push:
     branches: [main, beta]

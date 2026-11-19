@@ -23,7 +23,7 @@ const swatches = {
   onAccent: css({ bg: 'fg.onAccent' }),
 }
 
-// The rail of Inbox desktop (346:105) with Home added (d-047): Inbox selected, with 3 that need Erik.
+// The rail of Inbox desktop (346:105) with Home added (d-047): Inbox selected, with 3 that need the owner.
 const items: readonly NavItem[] = [
   { value: 'home', label: 'Home', icon: <HomeIcon /> },
   { value: 'inbox', label: 'Inbox', icon: <InboxIcon />, badge: 3 },

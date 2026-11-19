@@ -66,14 +66,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Require Erik's label for changed baseline images
+      - name: Require the owner's label for changed baseline images
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           changed=$(git diff --name-only "$BASE" HEAD | grep -E '(__screenshots__/|-snapshots/)' || true)
           if [ -n "$changed" ] && ! echo "$LABELS" | grep -q '"baselines-approved"'; then
-            echo "::error::This PR changes baseline images. Erik must add the baselines-approved label."
+            echo "::error::This PR changes baseline images. The owner must add the baselines-approved label."
             echo "$changed"
             exit 1
           fi

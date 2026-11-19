@@ -14,7 +14,7 @@ function Fields() {
       <TextField label="Chat name" defaultValue="Token sync" />
       <TextField label="Project" placeholder="Pick a short name" helperText="Letters, numbers and dashes." required />
       <TextField label="Repository URL" type="url" defaultValue="not a url" error="Enter a URL that starts with https://." />
-      <TextField label="Owner" defaultValue="Erik" readOnly />
+      <TextField label="Owner" defaultValue="Ada" readOnly />
       <TextField label="Branch" defaultValue="main" disabled />
       <TextArea label="Notes" placeholder="Add a note for the next run" rows={3} />
       {sizes.map((s) => (

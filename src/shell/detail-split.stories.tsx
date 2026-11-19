@@ -8,7 +8,7 @@ import { DetailSplit } from './detail-split'
 const text = css({ textStyle: 'body', color: 'fg.default', m: '0' })
 const side = css({ display: 'flex', flexDirection: 'column', flex: '1', bg: 'surface.pane', p: '16' })
 
-// The viewports of the stories: the 1440 px of the review frames, a 1920 px screen and Erik's 3540 px screen.
+// The viewports of the stories: the 1440 px of the review frames, a 1920 px screen and the owner's 3540 px screen.
 const vp1440 = { w1440: { name: 'Desktop (1440)', styles: { width: '1440px', height: '900px' } } }
 const vp1920 = { w1920: { name: 'Wide (1920)', styles: { width: '1920px', height: '1080px' } } }
 const vp3540 = { w3540: { name: 'Ultra-wide (3540)', styles: { width: '3540px', height: '1440px' } } }

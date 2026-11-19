@@ -61,7 +61,7 @@ export const guarded = [
   /^tokens\/generated\//,
 ]
 
-// Baselines change only through the CI workflow Erik starts, in any session.
+// Baselines change only through the CI workflow the owner starts, in any session.
 export const baselines = [/(^|\/)__screenshots__\//, /-snapshots\//]
 
 // A node_modules linked from another checkout resolves outside the

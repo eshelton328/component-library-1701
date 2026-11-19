@@ -5,7 +5,7 @@ components on Ark UI, styled with Panda CSS v2, shown and tested in
 Storybook. It ships as the private package
 `@eshelton328/component-library-1701`.
 
-Planning lives in Erik's brain, not here: the plan, the toolkit plan and
+Planning lives in the owner's brain, not here: the plan, the toolkit plan and
 the approved token set and component list are in
 `~/ncc-1701/engine/projects/ncc-1701/product/features/f-005-the-bridge/`
 (`design-system.md`, `design-system-toolkit.md`, `design-inventory.md`),
@@ -31,7 +31,7 @@ before adding a token or a component.
 - **No smart components** (d-068, d-069): data comes in as props and
   goes out through callbacks.
 - **Breaking changes** (d-063): the exported props and recipe variants
-  are the contract. A change from Figma comes as a PR that Erik
+  are the contract. A change from Figma comes as a PR that the owner
   approves.
 
 ## Verify
@@ -60,7 +60,7 @@ project facts; render it again there, never edit it by hand.
   lint rejects them. Fix the code instead.
 - Never weaken, skip or delete a test or a check, and never update a
   screenshot baseline, to make a check pass. Baselines change only through
-  a CI workflow Erik starts.
+  a CI workflow the owner starts.
 - Panda v2 builds a library with `panda lib`, not `panda ship`.
 
 ## Releases
@@ -72,7 +72,7 @@ decision d-061). `release.config.js` holds the config, and
 to `beta` (always) or `main` (only when the repository variable
 `RELEASE_MAIN` is `true`). While `RELEASE_MAIN` is not `true`, a push to
 `main` runs no CI checks; the beta push checks each commit before it
-publishes. Versions are `1.0.0-beta.N` until Erik
+publishes. Versions are `1.0.0-beta.N` until the owner
 declares the first stable contract.
 
 - The PR title becomes the commit that sets the version: `fix` is a
@@ -180,7 +180,7 @@ Codex has no matching hooks, so CI carries the same checks.
 ## Commits
 
 Conventional Commits. A PR title becomes the squash commit, and CI checks
-its format. Changed baseline images need Erik's `baselines-approved`
+its format. Changed baseline images need the owner's `baselines-approved`
 label.
 
 In the same PR as the change, update the `AGENTS.md` of each folder whose

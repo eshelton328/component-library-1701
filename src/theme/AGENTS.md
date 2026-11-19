@@ -49,7 +49,7 @@ from `../../tokens/`.
 - Every box that scrolls its own content (`overflow`, `overflowX` or
   `overflowY` `auto` or `scroll`) spreads one style from
   `recipes/scroll-area.ts` beside its overflow: no scroll bar on any
-  platform (Erik, 2026-11-18: the app's document never scrolls; only
+  platform (the owner, 2026-11-18: the app's document never scrolls; only
   these boxes do). A box that bounds a pane (the shell detail, a
   ScrollFrame, an overlay's content) spreads `scrollArea`, which also
   contains both axes, so a scroll at its end does not bounce or move the

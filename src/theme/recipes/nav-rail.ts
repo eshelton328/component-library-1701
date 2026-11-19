@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollArea } from './scroll-area'
 
 // The desktop nav rail: Inbox rail 346:105. Selected item 346:114, idle item
 // 346:123, label 346:122 and 346:131, icon frame 346:115, logo wrapper
@@ -26,6 +27,7 @@ export const navRail = defineSlotRecipe({
       borderInlineEndStyle: 'solid',
       borderInlineEndColor: 'border.default',
       overflowY: 'auto',
+      ...scrollArea,
     },
     logo: { display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' },
     // Figma draws a 28 px line: the 52 px between the paddings less 12 on

@@ -1,5 +1,6 @@
 import { popoverAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
+import { scrollArea } from './scroll-area'
 
 // The filter popovers of Inbox (D4 346:1737, T14 346:8876) and Artifacts
 // (D3 403:6852): a box under its button, with labelled sections of rows and
@@ -49,6 +50,7 @@ export const popover = defineSlotRecipe({
       // Ark measures the space under the trigger; a long popover scrolls.
       maxH: 'var(--available-height)',
       overflowY: 'auto',
+      ...scrollArea,
       p: '8',
       bg: 'surface.overlay',
       color: 'fg.default',

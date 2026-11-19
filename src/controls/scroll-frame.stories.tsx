@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from './button'
+import { expectScrollAreas, expectScrollsByWheelAndKeys } from './scroll-area.testing'
 import { ScrollFrame } from './scroll-frame'
 import { TextArea } from './text-field'
 
@@ -43,6 +44,8 @@ const meta = {
     const reply = canvas.getByRole('button', { name: 'Send a reply' })
     const body = canvas.getByText('Message 1').parentElement
     if (body === null) throw new Error('no body')
+    // The body and the footer scroll with no scroll bar and keep a scroll at their end from moving the page.
+    await expectScrollAreas(canvasElement, 'both', '.scroll-frame__body', '.scroll-frame__footer')
     // No line shrinks to fit: each keeps the height of its text.
     for (const el of canvas.getAllByText(/^Message /)) await expect(el.clientHeight).toBe(el.scrollHeight)
     // The box does not grow to its content: the body scrolls inside it.
@@ -464,3 +467,19 @@ export const DragInFieldKeepsKeyboard: StoryObj<typeof meta> = {
     list.up(40)
   },
 }
+
+/**
+ * With no scroll bar, the body still scrolls: a mouse wheel, and PageDown and ArrowDown with the body focused, move
+ * it. Only the story test runner has the real input these need, so the Storybook UI leaves the story out.
+ */
+const scrolls: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    await expectScrollAreas(canvasElement, 'both', '.scroll-frame__body')
+    const body = within(canvasElement).getByText('Message 1').parentElement
+    if (body === null) throw new Error('no body')
+    await expectScrollsByWheelAndKeys(body)
+  },
+}
+export const ScrollsDark: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'dark' } }
+export const ScrollsLight: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'light' } }

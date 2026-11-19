@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Backdrop } from './backdrop'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const frame = css({ h: 'shell.dialogLg' })
 const label = css({ textStyle: 'body', color: 'fg.default', p: '24' })
@@ -69,6 +70,8 @@ const meta = {
   title: 'Layout/Backdrop',
   component: Page,
   play: async ({ canvasElement }) => {
+    // The backdrop scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'both', '.backdrop')
     const el = backdropOf(canvasElement)
     const s = getComputedStyle(el)
     // bg.canvas under the image layers, which do not repeat.

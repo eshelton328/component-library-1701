@@ -84,7 +84,11 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * stays at the bottom, while only the body between them scrolls (d-107).
  * It fills the height of its parent, which must be a flex column with a
  * bounded height, such as the AppShell detail. The body takes the focus,
- * so the keyboard can scroll it. `gap` sets the space between the three.
+ * so the keyboard can scroll it. The body, and a footer that scrolls, draw
+ * no scroll bar, and a scroll that reaches their end stops there and does
+ * not move the page (the shared `scrollArea` style); a wheel, a trackpad, a
+ * touch drag and the keys still scroll them. `gap` sets the space between
+ * the three.
  * The footer keeps its height; only a footer taller than the room the header
  * leaves shrinks and scrolls inside, unless `footerShrink` is `false`.
  * `footerShrink` sets what gives way when the frame is shorter than its

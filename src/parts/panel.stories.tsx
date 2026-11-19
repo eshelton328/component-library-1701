@@ -5,6 +5,7 @@ import { Button } from '../controls/button'
 import { Grid } from '../controls/layout'
 import { Panel } from './panel'
 import { expectCutText } from '../controls/tooltip.testing'
+import { expectScrollAreas, expectWheelScrollsPast } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const tall = css({ h: 'shell.dialog', display: 'flex', flexDirection: 'column' })
@@ -60,6 +61,8 @@ const meta = {
   title: 'Layout/Panel',
   component: Panels,
   play: async ({ canvasElement }) => {
+    // A panel body scrolls with no scroll bar. It sits in a page's flow, so it contains no axis.
+    await expectScrollAreas(canvasElement, 'none', '.panel__body')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
@@ -193,6 +196,38 @@ export const Behaviour: StoryObj<typeof meta> = {
     body.scrollTop = 200
     await expect(body.scrollTop).toBe(200)
     await expect(header.getBoundingClientRect().top).toBe(top)
+  },
+}
+
+const scroller = css({ h: 'shell.dialog', overflowY: 'auto' })
+
+/**
+ * A short panel in a page that scrolls: a mouse wheel over its body scrolls the page. Only the story test runner has
+ * the real wheel, so the Storybook UI leaves the story out.
+ */
+export const WheelScrollsPage: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={scroller} data-testid="scroller" tabIndex={0}>
+        <Panel title="Linked from 4" meta="2 skills, 2 rules">
+          <div className={row}>toolkit/rules/writing.md</div>
+          <div className={row}>toolkit/skills/writer</div>
+        </Panel>
+        {rows.map((r) => (
+          <div key={r} className={row}>
+            {r}
+          </div>
+        ))}
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const body = canvasElement.querySelector('.panel__body')
+    const page = canvasElement.querySelector('[data-testid="scroller"]')
+    if (!(body instanceof HTMLElement) || !(page instanceof HTMLElement)) throw new Error('no panel body or scroller')
+    await expectWheelScrollsPast(body, page)
   },
 }
 

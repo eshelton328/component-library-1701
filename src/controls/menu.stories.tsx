@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { BranchIcon, BubbleIcon, CalendarIcon, CheckIcon, CloseIcon, EditIcon, GridIcon, MoveIcon, PlusIcon, ProjectsIcon, SnoozeIcon, SparkleIcon, WorkspacesIcon } from '../foundations/icons'
 import { Inline } from './layout'
 import { Menu, RadioMenu, type MenuEntry, type MenuSubmenu, type RadioMenuOption } from './menu'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 
@@ -57,6 +58,8 @@ const meta = {
     // The menu renders in a portal, outside the story's canvas.
     const body = within(document.body)
     const menu = await body.findByRole('menu')
+    // The menu scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(document.body, 'both', '.menu__content')
     const rename = within(menu).getByRole('menuitem', { name: 'Rename' })
     await expect(rename.getBoundingClientRect().height).toBe(32)
     const remove = within(menu).getByRole('menuitem', { name: 'Delete chat' })

@@ -57,6 +57,13 @@ under their purpose group, never under "Controls" (d-065).
   its footer rides up onto the keyboard with `translateY` and its body
   gets an equal clear bottom border, so its view ends at the raised
   footer; the frame's layout does not change.
+- The `ScrollFrame` body and footer, like every library box that scrolls,
+  draw no scroll bar and stop a scroll at their end, so the page never
+  bounces (`scrollArea`, `../theme/AGENTS.md`). A wheel, a trackpad, a
+  touch drag and the keys (PageDown, ArrowDown on the focused body) still
+  scroll them; its stories check both with `expectScrollAreas` and
+  `expectScrollsByWheelAndKeys` from `scroll-area.testing.ts`. A page
+  adds no scroll bar styles of its own.
 - On a touch screen (`pointer: coarse`), a user's drag of the
   `ScrollFrame` body by more than 10 px, or a tap on it that is not on a
   link, button or field, blurs a focused text field, so the keyboard

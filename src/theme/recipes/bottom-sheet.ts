@@ -1,6 +1,7 @@
 import { dialogAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollArea } from './scroll-area'
 
 // The phone bottom sheets: Inbox M6 snooze (346:10207), Artifacts M4 sort
 // (407:814) and Workbench M9 chat actions (146:273). A full-width box on a
@@ -35,6 +36,7 @@ export const bottomSheet = defineSlotRecipe({
       w: '100%',
       maxH: '100%',
       overflowY: 'auto',
+      ...scrollArea,
       px: '12',
       pb: 'token(sizes.shell.safeAreaBottom)',
       bg: 'surface.overlay',

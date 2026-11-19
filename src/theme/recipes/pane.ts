@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { scrollArea } from './scroll-area'
 
 // One Workbench chat pane in the split (D9 402:1145): pane A 402:1628 is
 // focused, pane B 402:1699 idle.
@@ -49,7 +50,7 @@ export const pane = defineSlotRecipe({
     title: { minW: '0', textStyle: 'label', color: 'fg.default' },
     meta: { display: 'inline-flex', alignItems: 'center', gap: '8', flexShrink: '0', textStyle: 'mono', color: 'fg.muted' },
     actions: { display: 'inline-flex', alignItems: 'center', gap: '4', flexShrink: '0', ml: 'auto' },
-    body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto' },
+    body: { display: 'flex', flexDirection: 'column', flex: '1', minH: '0', overflowY: 'auto', ...scrollArea },
   },
   variants: {
     focused: {

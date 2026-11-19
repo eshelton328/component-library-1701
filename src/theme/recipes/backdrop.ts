@@ -1,5 +1,6 @@
 import { defineRecipe } from '@pandacss/dev'
 import { desktopStars, phoneStars, tabletStars, type Star } from './backdrop-stars'
+import { scrollArea } from './scroll-area'
 
 // The page backdrop: bg.canvas under a radial glow, with stars over it.
 // Figma (Inbox D1 346:5, T1 346:5353, M1 346:8982) draws the glow as an
@@ -39,6 +40,7 @@ export const backdrop = defineRecipe({
     h: '100%',
     minH: '0',
     overflowY: 'auto',
+    ...scrollArea,
     bg: 'bg.canvas',
     color: 'fg.default',
     backgroundRepeat: 'no-repeat',

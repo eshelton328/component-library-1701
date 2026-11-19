@@ -1,6 +1,7 @@
 import { tabsAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollAreaX } from './scroll-area'
 
 // The tabs of a Toolkit item (Selected and idle). The selected border was
 // drawn solid on some frames and cyan 0.5 on others; it is `border.selected`.
@@ -45,7 +46,7 @@ export const itemTabs = defineSlotRecipe({
       // The list scrolls, which clips anything outside it; the padding keeps the focus ring visible.
       p: '2',
       overflowX: 'auto',
-      scrollbarWidth: 'none',
+      ...scrollAreaX,
     },
     // Each trigger shows its own selected state, so the moving indicator is not drawn.
     indicator: { display: 'none' },

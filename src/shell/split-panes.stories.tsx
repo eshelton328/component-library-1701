@@ -6,6 +6,7 @@ import { Button } from '../controls/button'
 import { Pane } from './pane'
 import { SplitPanes, type SplitPart } from './split-panes'
 import { expectCutText } from '../controls/tooltip.testing'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const frame = css({ h: 'shell.dialogLg', p: '10', bg: 'bg.canvas' })
 const body = css({ textStyle: 'body', color: 'fg.default', p: '12' })
@@ -78,6 +79,8 @@ const meta = {
   component: Workbench,
   args: { count: 2 },
   play: async ({ canvasElement }) => {
+    // A pane body scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'both', '.pane__body')
     const canvas = within(canvasElement)
     const a = canvas.getByRole('region', { name: 'bridge themes' })
     const b = canvas.getByRole('region', { name: 'drift check' })

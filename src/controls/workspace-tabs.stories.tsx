@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { WorkspaceTabs } from './workspace-tabs'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const frame = css({ display: 'flex', h: 'shell.dialog', bg: 'bg.canvas' })
 const panes = css({ flex: '1', bg: 'surface.pane', borderRadius: 'xl', textStyle: 'body', color: 'fg.default', p: '12' })
@@ -39,6 +40,8 @@ const meta = {
   title: 'Navigation/Workspace tabs',
   component: Tabs,
   play: async ({ canvasElement }) => {
+    // The tab list scrolls with no scroll bar and keeps a swipe at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'x', '.workspace-tabs__list')
     onValueChange.mockClear()
     const canvas = within(canvasElement)
     const swatch = (name: string) => {

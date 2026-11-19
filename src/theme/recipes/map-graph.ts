@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollAreaX } from './scroll-area'
 
 const kinds = ['skill', 'agent', 'rule', 'workflow', 'hook'] as const
 
@@ -113,7 +114,7 @@ export const mapGraph = defineSlotRecipe({
       borderRadius: 'xl',
       overflow: 'hidden',
     },
-    scroller: { overflow: 'auto', maxW: '100%' },
+    scroller: { overflow: 'auto', maxW: '100%', ...scrollAreaX },
     svg: { display: 'block', overflow: 'visible' },
     columnLabel: { textStyle: 'monoCaps', fill: 'fg.muted' },
     edge: {

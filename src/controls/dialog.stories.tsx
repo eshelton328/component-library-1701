@@ -5,6 +5,7 @@ import { Button } from './button'
 import { Dialog, DialogClose } from './dialog'
 import { Stack } from './layout'
 import { TextArea, TextField } from './text-field'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 // A swatch of the scrim token, so the play function compares resolved colours.
@@ -75,6 +76,8 @@ const meta = {
     // The dialog renders in a portal, outside the story's canvas.
     const body = within(document.body)
     const box = await body.findByRole('alertdialog', { name: 'Remove this task?' })
+    // The dialog scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(document.body, 'both', '.dialog__content')
     await expect(box).toHaveAccessibleDescription('The task leaves Inbox, and its chat stays in Workbench.')
     await expect(box.getBoundingClientRect().width).toBe(440)
     const style = getComputedStyle(box)

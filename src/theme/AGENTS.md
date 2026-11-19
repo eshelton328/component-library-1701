@@ -39,6 +39,21 @@ from `../../tokens/`.
 - Variant values are literals, so Panda can extract them. A theme changes
   tokens, never variant names; a removed or renamed variant is a breaking
   change.
+- Every box that scrolls its own content (`overflow`, `overflowX` or
+  `overflowY` `auto` or `scroll`) spreads one style from
+  `recipes/scroll-area.ts` beside its overflow: no scroll bar on any
+  platform (Erik, 2026-11-18: the app's document never scrolls; only
+  these boxes do). A box that bounds a pane (the shell detail, a
+  ScrollFrame, an overlay's content) spreads `scrollArea`, which also
+  contains both axes, so a scroll at its end does not bounce or move the
+  page. A box that scrolls sideways inside a page spreads `scrollAreaX`
+  (x axis only). A box that scrolls vertically inside a page spreads
+  `scrollAreaNested` (no axis). Chrome 144 and later apply
+  `overscrollBehavior` to a box that does not overflow, so a short
+  nested box that contains the y axis stops the page's wheel scroll.
+  They set no overflow, size or layout. Do not copy their properties
+  into a recipe. The story of each such box calls `expectScrollAreas`
+  from `../controls/scroll-area.testing.ts` with its axes.
 - Components never import this folder; they import the generated recipe.
 - `keyframes.ts` holds the keyframes, which `../../panda.config.ts` adds
   to the theme. A recipe names one in `animationName` and takes

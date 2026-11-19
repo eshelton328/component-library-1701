@@ -4,6 +4,7 @@ import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { GroupedBarChart, HorizontalBarChart } from './bar-chart'
 import { expectCutText } from '../controls/tooltip.testing'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const panel = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
@@ -88,6 +89,8 @@ const meta = {
   title: 'Data display/Bar chart',
   component: Charts,
   play: async ({ canvasElement }) => {
+    // The chart scrolls sideways with no scroll bar and keeps a swipe at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'x', '.grouped-bar-chart__root')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

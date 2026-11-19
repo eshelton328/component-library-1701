@@ -1,6 +1,7 @@
 import { dialogAnatomy } from '@ark-ui/react/anatomy'
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollArea } from './scroll-area'
 
 // The dialogs of Inbox (D20 confirm, 403:3914) and Workbench (D3 New chat,
 // 105:1379): a box on a scrim, with a title, a description, content and a
@@ -27,6 +28,7 @@ export const dialog = defineSlotRecipe({
       maxW: '100%',
       maxH: '100%',
       overflowY: 'auto',
+      ...scrollArea,
       p: '20',
       bg: 'surface.overlay',
       color: 'fg.default',

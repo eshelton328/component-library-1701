@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { CodeLines, type CodeSegment } from './code-lines'
+import { expectScrollAreas, expectWheelScrollsPast } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // The viewer panel of Toolkit D6 (#0f1626, merged into surface.overlay).
@@ -66,6 +67,9 @@ const meta = {
   title: 'Data display/Code lines',
   component: Code,
   play: async ({ canvasElement }) => {
+    // The code scrolls sideways with no scroll bar and keeps a sideways swipe at its end from moving the page; a
+    // vertical scroll over it still moves the page.
+    await expectScrollAreas(canvasElement, 'x', '.code-lines__root')
     const rows = texts(canvasElement, 'highlighted')
     const [shebang, , , def, , ret] = rows
     if (shebang === undefined || def === undefined || ret === undefined) throw new Error('no lines')
@@ -205,3 +209,31 @@ const wrapStory: StoryObj<typeof meta> = {
 }
 export const WrapDark: StoryObj<typeof meta> = { ...wrapStory, globals: { mode: 'dark', viewport: { value: 'm22' } } }
 export const WrapLight: StoryObj<typeof meta> = { ...wrapStory, globals: { mode: 'light', viewport: { value: 'm22' } } }
+
+const scroller = css({ h: 'shell.dialog', overflowY: 'auto' })
+const filler = css({ h: 'shell.dialogLg' })
+
+/**
+ * Code in a page that scrolls: a vertical mouse wheel over it scrolls the page, as the code scrolls only sideways.
+ * Only the story test runner has the real wheel, so the Storybook UI leaves the story out.
+ */
+export const WheelScrollsPage: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <div className={scroller} data-testid="scroller">
+        <div className={panel}>
+          <CodeLines lines={lines} segments={highlighted} />
+        </div>
+        <div className={filler} />
+      </div>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const code = canvasElement.querySelector('.code-lines__root')
+    const page = canvasElement.querySelector('[data-testid="scroller"]')
+    if (!(code instanceof HTMLElement) || !(page instanceof HTMLElement)) throw new Error('no code or scroller')
+    await expectWheelScrollsPast(code, page)
+  },
+}

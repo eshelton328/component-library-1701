@@ -62,6 +62,11 @@ Layout, Navigation or Overlays (d-065, d-066).
   keyboard;
   the app's page needs `interactive-widget=resizes-content` in its
   viewport meta for Chrome on Android.
+- The `AppShell` detail scrolls with no scroll bar and stops a scroll at
+  its end, so the page never bounces (`scrollArea`,
+  `../theme/AGENTS.md`); the `Backdrop`, a `Pane` body and the nav rail
+  do too. The app's document does not scroll. A wheel, a trackpad, a
+  touch drag and the keys still scroll the focused detail.
 - The `AppShell` detail is an inline-size query container. A detail
   `Container` in it widens to `shell.detailWide` and centres itself
   when the detail is at least `shell.detailWideFrom` wide; an item or

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapNode, MapSelectionCard } from './map-graph'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -96,6 +97,8 @@ const meta = {
   component: Map,
   args: { onSelect: fn(), onOpen: fn() },
   play: async ({ canvasElement, args }) => {
+    // The map scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'x', '.map-graph__scroller')
     const canvas = within(canvasElement)
     const swatch = (name: string) => {
       const el = canvasElement.querySelector(`[data-swatch="${name}"]`)

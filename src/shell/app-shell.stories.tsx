@@ -4,6 +4,7 @@ import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
+import { expectScrollAreas, expectScrollsByWheel } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { AppShell } from './app-shell'
 
@@ -86,12 +87,28 @@ const meta = {
     await expect(rect(list).top).toBe(top)
     // With only text in it, the detail takes focus, so the keyboard can scroll it.
     await expect(detail).toHaveAttribute('tabindex', '0')
+    // The detail scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(canvasElement, 'both', '.app-shell__detail')
   },
 } satisfies Meta<typeof Desktop>
 export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+/**
+ * With no scroll bar, the detail still scrolls: a mouse wheel moves it. Only the story test runner has the real wheel,
+ * so the Storybook UI leaves the story out. The keys are checked on the ScrollFrame body (`expectScrollsByWheelAndKeys`).
+ */
+const scrolls: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  play: async ({ canvasElement }) => {
+    await expectScrollAreas(canvasElement, 'both', '.app-shell__detail')
+    await expectScrollsByWheel(within(canvasElement).getByRole('main'))
+  },
+}
+export const ScrollsDark: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'dark' } }
+export const ScrollsLight: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'light' } }
 
 /** The Workbench widths: the 330 sidebar and the 420 subagents pane; a slot left out takes no room. */
 export const Widths: StoryObj<typeof meta> = {

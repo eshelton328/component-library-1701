@@ -17,7 +17,8 @@ export type BackdropProps = Scalar<BackdropVariantProps> & {
  * glow and stars come from the theme's `backdrop.*` colours, so a theme or
  * mode can turn them off. It takes the height of its parent, which must
  * have a definite height (such as `100dvh`); taller content scrolls inside
- * it while the glow and stars stay put.
+ * it, with no scroll bar and no bounce of the page, while the glow and stars
+ * stay put.
  */
 export function Backdrop({ size, children }: BackdropProps) {
   return <Root size={size}>{children}</Root>

@@ -10,6 +10,7 @@ import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
 import { motionDone } from './bottom-sheet.testing'
+import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 // Swatches of the expected tokens, so the play functions compare resolved colours.
@@ -78,6 +79,8 @@ const meta = {
     const body = within(document.body)
     const sheet = await body.findByRole('dialog', { name: 'Sort by' })
     await motionDone(sheet)
+    // The sheet scrolls with no scroll bar and keeps a scroll at its end from moving the page.
+    await expectScrollAreas(document.body, 'both', '.bottom-sheet__content')
     const box = sheet.getBoundingClientRect()
     // Full width, flush with the bottom of the window.
     await expect(box.width).toBe(window.innerWidth)

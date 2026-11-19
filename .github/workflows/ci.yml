@@ -121,7 +121,11 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          other=$(git diff --name-only "$BASE" HEAD | grep -vE '^(src/|api/)|\.md$' || true)
+          # --no-renames lists both paths of a rename, so a file moved into src/
+          # still counts where it came from. A failed diff stops the step (set
+          # -e), so the job fails and never passes unchecked.
+          changed=$(git diff --name-only --no-renames "$BASE" HEAD)
+          other=$(printf '%s\n' "$changed" | grep -vE '^(src/|api/)|\.md$' || true)
           if [ -n "$other" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             echo "Files outside src/ and api/ changed, so check:worktree runs:"

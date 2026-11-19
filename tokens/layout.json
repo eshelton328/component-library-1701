@@ -48,7 +48,7 @@
     "24": {
       "$type": "dimension",
       "$value": { "value": 24, "unit": "px" },
-      "$description": "24px of padding, gap or margin."
+      "$description": "24px of padding, gap or margin, such as the padding of a Dialog with padding form (the Artifacts Add a link dialog, D5 403:7542)."
     },
     "32": {
       "$type": "dimension",
@@ -82,6 +82,11 @@
         "$type": "dimension",
         "$value": { "value": 36, "unit": "px" },
         "$description": "Tablet and phone controls."
+      },
+      "form": {
+        "$type": "dimension",
+        "$value": { "value": 40, "unit": "px" },
+        "$description": "The text fields of a desktop form in a dialog: a TextField with size form, such as the Add a link dialog's fields (Artifacts D5 403:7552, 403:7571, 403:7580). Not for buttons, rows or phone fields, which use md, lg or xl."
       },
       "xl": {
         "$type": "dimension",

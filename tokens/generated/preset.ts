@@ -33,6 +33,10 @@ export default definePreset({
         },
         "sizes": {
           "control": {
+            "form": {
+              "value": "40px",
+              "description": "The text fields of a desktop form in a dialog: a TextField with size form, such as the Add a link dialog's fields (Artifacts D5 403:7552, 403:7571, 403:7580). Not for buttons, rows or phone fields, which use md, lg or xl."
+            },
             "lg": {
               "value": "36px",
               "description": "Tablet and phone controls."
@@ -272,7 +276,7 @@ export default definePreset({
           },
           "24": {
             "value": "24px",
-            "description": "24px of padding, gap or margin."
+            "description": "24px of padding, gap or margin, such as the padding of a Dialog with padding form (the Artifacts Add a link dialog, D5 403:7542)."
           },
           "32": {
             "value": "32px",
@@ -1609,7 +1613,7 @@ export default definePreset({
           }
         },
         "label": {
-          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, and the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81).",
+          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81), and the label of a TextField with labelStyle label (the Artifacts Add a link fields, D5 403:7551, M6 408:716).",
           "value": {
             "fontFamily": "text.label",
             "fontSize": "text.label",
@@ -1669,7 +1673,7 @@ export default definePreset({
           }
         },
         "mono": {
-          "description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, and the names of an OptionList with labelStyle mono (the Workbench skill picker's /names).",
+          "description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, the names of an OptionList with labelStyle mono (the Workbench skill picker's /names), and the value of a TextField with valueStyle mono, such as a link (Artifacts D5 403:7553, M6 408:718).",
           "value": {
             "fontFamily": "text.mono",
             "fontSize": "text.mono",

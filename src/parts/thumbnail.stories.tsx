@@ -77,7 +77,7 @@ const thumb = (el: HTMLElement) => {
   return { root, svg }
 }
 
-const shapes = (svg: SVGSVGElement, slot: string) => Array.from(svg.querySelectorAll(`.thumbnail__${slot}`))
+const shapes = (svg: Element, slot: string) => Array.from(svg.querySelectorAll(`.thumbnail__${slot}`))
 
 const meta = {
   title: 'Data display/Thumbnail',
@@ -93,11 +93,11 @@ const meta = {
       await expect(getComputedStyle(wide.root).borderTopWidth).toBe('0px')
       await expect(getComputedStyle(wide.root).backgroundImage).toContain('linear-gradient')
       await expect(wide.svg.getAttribute('aria-hidden')).toBe('true')
-      // Every kind has the window bar and three dots.
+      // Every kind has the window bar and three dots (in their own layer, WindowDots).
       const [chrome] = shapes(wide.svg, 'chrome')
       if (chrome === undefined) throw new Error('no chrome')
       await expect(getComputedStyle(chrome).fill).toBe(swatch(canvasElement, 'well'))
-      const dots = shapes(wide.svg, 'dot')
+      const dots = shapes(wide.root, 'dot')
       await expect(dots.length).toBe(3)
       for (const d of dots) await expect(getComputedStyle(d).fill).toBe(swatch(canvasElement, 'dot'))
       // Compact at 64 wide is 40 high with the frame (403:194): border.default, radius 6.
@@ -351,7 +351,6 @@ const refSwatches = {
 const edgeSizes = ['lg', 'fill'] as const
 const edgeShapes = ['wide', 'compact', 'banner'] as const
 const edgeValues = [0, 100] as const
-const edgeWidths = { wide: (188 * 16) / 9, compact: (188 * 8) / 5, banner: 376 } as const
 
 function References() {
   return (
@@ -424,9 +423,8 @@ const referenceMeta = {
     const fill = rgba(ls.backgroundColor)
     await expect(fill[3]).toBe(1)
     await expect(contrast(rgba(ls.color), fill)).toBeGreaterThanOrEqual(4.5)
-    // The line is dashed and amber, across the plot (27 to 307 of the
-    // 334-wide drawing, centred in the banner's 376), at 71 on the axis:
-    // 169 - 124 × 0.71 of 188.
+    // The line is dashed and amber, across the plot (8 % to 92 % of the
+    // width, the axis of ChartPlot), at 71 on the axis: 169 - 124 × 0.71 of 188.
     const line = root.querySelector('.thumbnail__referenceLine')
     if (!(line instanceof HTMLElement)) throw new Error('no line')
     const lstyle = getComputedStyle(line)
@@ -436,8 +434,8 @@ const referenceMeta = {
     const l = line.getBoundingClientRect()
     const unit = box.width / 376
     await expect(l.top + l.height / 2).toBeCloseTo(box.top + (169 - 124 * 0.71) * unit, 0)
-    await expect(l.left).toBeCloseTo(box.left + (21 + 27) * unit, 0)
-    await expect(l.right).toBeCloseTo(box.left + (21 + 307) * unit, 0)
+    await expect(l.left).toBeCloseTo(box.left + box.width * 0.08, 0)
+    await expect(l.right).toBeCloseTo(box.left + box.width * 0.92, 0)
     // The label ends at the plot's end, its bottom 4 above the line.
     const t = label.getBoundingClientRect()
     await expect(t.right).toBeCloseTo(l.right, 0)
@@ -464,7 +462,7 @@ const referenceMeta = {
           const el = edgeLine.getBoundingClientRect()
           const u = r.height / 188
           await expect(el.top + el.height / 2).toBeCloseTo(r.top + (169 - 124 * (value / 100)) * u, 0)
-          await expect(el.right).toBeCloseTo(r.left + ((edgeWidths[shape] - 334) / 2 + 307) * (r.width / edgeWidths[shape]), 0)
+          await expect(el.right).toBeCloseTo(r.left + r.width * 0.92, 0)
         }
       }
     }
@@ -572,3 +570,127 @@ const toneMeta = {
 
 export const ToneDark: StoryObj<typeof meta> = { ...toneMeta, globals: { mode: 'dark' } }
 export const ToneLight: StoryObj<typeof meta> = { ...toneMeta, globals: { mode: 'light' } }
+
+// The card drawings at Figma's narrowest and widest widths: D1's 334-wide
+// cards (402:15435, 402:15469) and D2's 748-wide banner (403:483).
+// No size token is 334 wide: the box is the 328-wide sidebar size, and the
+// thumbnail's own box reaches 6 past its end.
+const box334 = { outer: css({ w: 'shell.sidebar' }), inner: css({ me: '-6' }) }
+const box748 = { outer: css({ w: 'shell.detail' }), inner: undefined }
+const previews = [
+  { id: '334', box: box334, shape: 'wide' },
+  { id: '748', box: box748, shape: 'banner' },
+] as const
+
+function PreviewWidths() {
+  return (
+    <main className={page}>
+      {previews.map(({ id, box, shape }) => (
+        <div key={id} className={row}>
+          {kinds.map((k) => (
+            <div key={k} className={box.outer}>
+              <div className={box.inner} data-testid={`preview-${id}-${k}`}>
+                <Thumbnail kind={k} shape={shape} framed={false} />
+              </div>
+            </div>
+          ))}
+          <div className={box.outer}>
+            <div className={box.inner} data-testid={`preview-${id}-reference`}>
+              <Thumbnail kind="chart" shape={shape} framed={false} reference={{ value: 71, label: 'median 71%' }} />
+            </div>
+          </div>
+        </div>
+      ))}
+      <div data-testid="preview-lg">
+        <Thumbnail kind="chart" size="lg" />
+      </div>
+    </main>
+  )
+}
+
+// The window dots are 5 px, 9 apart, at x 8, 17 and 26 at any width (D1
+// 402:15437 and 402:15471 at 334, D2 403:485 to 403:487 at 748, and lg),
+// centred in the bar, which scales.
+const windowDotsMeta = {
+  render: () => <PreviewWidths />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const ids = [...previews.flatMap(({ id }) => kinds.map((k) => `preview-${id}-${k}`)), 'preview-lg']
+    for (const id of ids) {
+      const { root, svg } = thumb(canvas.getByTestId(id))
+      const box = root.getBoundingClientRect()
+      const [chrome] = shapes(svg, 'chrome')
+      if (chrome === undefined) throw new Error('no chrome')
+      const bar = chrome.getBoundingClientRect()
+      await expect(bar.height).toBeCloseTo((17 / 188) * box.height, 1)
+      const dots = shapes(root, 'dot').map((d) => d.getBoundingClientRect())
+      await expect(dots.length).toBe(3)
+      for (const [i, d] of dots.entries()) {
+        await expect(d.width).toBeCloseTo(5, 1)
+        await expect(d.height).toBeCloseTo(5, 1)
+        await expect(d.left - box.left).toBeCloseTo(8 + i * 9, 1)
+        await expect(d.top + d.height / 2).toBeCloseTo(bar.top + bar.height / 2, 1)
+      }
+    }
+  },
+} satisfies StoryObj<typeof meta>
+
+export const WindowDotsDark: StoryObj<typeof meta> = { ...windowDotsMeta, globals: { mode: 'dark' } }
+export const WindowDotsLight: StoryObj<typeof meta> = { ...windowDotsMeta, globals: { mode: 'light' } }
+
+// The chart's plot at Figma's place, within 1 px: D1 at 334 (axis 402:15450
+// at x 27, 280 wide; first bar 32.6, last 281.489, 19.911 wide; title bar
+// 402:15436 at 27, 112 × 8) and D2 at 748 (axis 403:498 at x 60, 628 wide;
+// first bar 72.56, last 630.782, 44.658 wide; title bar 403:484 at 60,
+// 251.2 × 14.96). The reference line spans the axis at its value.
+const figmaPlots = {
+  '334': { axis: [27, 280], first: 32.6, last: 281.489, bar: 19.911, title: [27, 112, 8] },
+  '748': { axis: [60, 628], first: 72.56, last: 630.782, bar: 44.658, title: [60, 251.2, 14.96] },
+} as const
+
+const within1 = async (actual: number, expected: number) => {
+  await expect(Math.abs(actual - expected)).toBeLessThanOrEqual(1)
+}
+
+const chartPlotMeta = {
+  render: () => <PreviewWidths />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    for (const { id } of previews) {
+      const figma = figmaPlots[id]
+      const { root, svg } = thumb(canvas.getByTestId(`preview-${id}-chart`))
+      const box = root.getBoundingClientRect()
+      await expect(box.width).toBe(Number(id))
+      const [axis] = shapes(svg, 'muted').map((el) => el.getBoundingClientRect())
+      if (axis === undefined) throw new Error('no axis')
+      await within1(axis.left - box.left, figma.axis[0])
+      await within1(axis.width, figma.axis[1])
+      await within1(box.right - axis.right, figma.axis[0])
+      const bars = Array.from(svg.querySelectorAll('[data-bars] rect')).map((el) => el.getBoundingClientRect())
+      await expect(bars.length).toBe(9)
+      const first = bars[0]
+      const last = bars[8]
+      if (first === undefined || last === undefined) throw new Error('no bars')
+      await within1(first.left - box.left, figma.first)
+      await within1(last.left - box.left, figma.last)
+      for (const b of bars) await within1(b.width, figma.bar)
+      const title = svg.querySelector('[data-bars]')?.previousElementSibling?.getBoundingClientRect()
+      if (title === undefined) throw new Error('no title bar')
+      await within1(title.left - box.left, figma.title[0])
+      await within1(title.width, figma.title[1])
+      await within1(title.height, figma.title[2])
+      // The reference line runs along the axis, at 71 on the value scale.
+      const ref = thumb(canvas.getByTestId(`preview-${id}-reference`)).root
+      const line = ref.querySelector('.thumbnail__referenceLine')
+      if (!(line instanceof HTMLElement)) throw new Error('no line')
+      const l = line.getBoundingClientRect()
+      const r = ref.getBoundingClientRect()
+      await within1(l.left - r.left, figma.axis[0])
+      await within1(l.width, figma.axis[1])
+      await expect(l.top + l.height / 2).toBeCloseTo(r.top + ((169 - 124 * 0.71) / 188) * r.height, 0)
+    }
+  },
+} satisfies StoryObj<typeof meta>
+
+export const ChartPlotDark: StoryObj<typeof meta> = { ...chartPlotMeta, globals: { mode: 'dark' } }
+export const ChartPlotLight: StoryObj<typeof meta> = { ...chartPlotMeta, globals: { mode: 'light' } }

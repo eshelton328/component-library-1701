@@ -6,6 +6,7 @@ import type { Scalar } from '../controls/scalar'
 const { withProvider, withContext } = createSlotRecipeContext(thumbnail)
 const Root = withProvider('div', 'root')
 const Svg = withContext('svg', 'svg')
+const Dots = withContext('svg', 'dots')
 const Reference = withContext('svg', 'reference')
 const ReferenceBox = withContext('div', 'referenceBox')
 const ReferenceLabel = withContext('span', 'referenceLabel')
@@ -86,26 +87,46 @@ const tones: Record<ThumbnailTone, { solid: Fill; tint: Fill }> = {
   green: { solid: 'green', tint: 'greenTint' },
 }
 
-type DrawingProps = { tone: ThumbnailTone }
+// `width` is the drawing's viewBox width (`widths[shape]`); only the chart,
+// laid out on the whole width, reads it.
+type DrawingProps = { tone: ThumbnailTone; width: number }
 
 function Rect({ x, y, w, h, r = 2, fill }: { x: number; y: number; w: number; h: number; r?: number; fill: Fill }) {
   const edged = fill.endsWith('Edge')
   return <rect x={x} y={y} width={w} height={h} rx={r} className={slots[fill]} strokeWidth={edged ? 1 : undefined} vectorEffect={edged ? 'non-scaling-stroke' : undefined} />
 }
 
+// The chart's plot, in the viewBox of a drawing `width` wide. Figma scales
+// the chart with the thumbnail's width, not with the 334-wide content the
+// other kinds centre: at every width from 334 to 748 (D1 402:15450, T1
+// 405:183, M1 407:991, M2 406:406, T2 405:466, D2 403:498) the axis starts
+// 8 % of the width in and is 84 % of it wide (D2: 60 and 628 of 748). The
+// nine bars split the axis into ninths, each bar 0.64 of its ninth wide,
+// the first 2 % of the axis from its start, so the last ends 2 % short of
+// its end (D2: 72.56 and 630.782, 44.658 wide). The title bar starts at the
+// axis and is 33.6 % of the width wide (D2 251.2, T2 239.2, D1 112); its
+// height follows the height, 4 % of it (D2 14.96 of 374, T2 16 of 400),
+// where D1 draws 8 of 188.
+const chartPlot = (width: number) => {
+  const start = width * 0.08
+  const axis = width * 0.84
+  return { start, axis, end: start + axis, pitch: axis / 9, bar: (axis / 9) * 0.64, first: start + axis * 0.02 }
+}
+
 // Chart 402:15435: a title bar, nine bars on a baseline, every third violet.
 const bars = [95.354, 65.876, 103.593, 47.916, 107.205, 38.774, 105.949, 57.34, 99.909]
-function Chart({ tone }: DrawingProps) {
+function Chart({ tone, width }: DrawingProps) {
   const { solid } = tones[tone]
+  const p = chartPlot(width)
   return (
     <>
-      <Rect x={27} y={32} w={112} h={8} fill={solid} />
+      <Rect x={p.start} y={32} w={width * 0.336} h={7.52} fill={solid} />
       <g data-bars="">
         {bars.map((h, i) => (
-          <Rect key={String(i)} x={32.6 + i * 31.11} y={169 - h} w={19.911} h={h} fill={i % 3 === 2 ? 'violet' : solid} />
+          <Rect key={String(i)} x={p.first + i * p.pitch} y={169 - h} w={p.bar} h={h} fill={i % 3 === 2 ? 'violet' : solid} />
         ))}
       </g>
-      <Rect x={27} y={169} w={280} h={1} r={0} fill="muted" />
+      <Rect x={p.start} y={169} w={p.axis} h={1} r={0} fill="muted" />
     </>
   )
 }
@@ -205,8 +226,8 @@ const drawings: Record<ThumbnailKind, (props: DrawingProps) => ReactNode> = { ch
 // The chart's value axis: 0 on the baseline (169) and 100 at y 45, 124
 // above it, where 71 lands at Figma's D9 median line (452:3705, 161.4 of
 // the 374-high banner, 81 of 188). The plot runs from the baseline's start
-// (27) to its end (307) in the 334-wide drawing.
-const plot = { base: 169, span: 124, start: 27, end: 307 }
+// to its end (`chartPlot`).
+const plot = { base: 169, span: 124 }
 const percent = (n: number) => `${String(n * 100)}%`
 
 // The line and label are drawn in an SVG with no viewBox over the drawing,
@@ -217,10 +238,10 @@ const percent = (n: number) => `${String(n * 100)}%`
 // inside the thumbnail while the line stays at the value.
 function ChartReference({ width, reference }: { width: number; reference: ThumbnailReference }) {
   const value = Math.min(100, Math.max(0, reference.value))
-  const offset = (width - 334) / 2
+  const { start, axis } = chartPlot(width)
   const y = (plot.base - (plot.span * value) / 100) / height
-  const x = (offset + plot.start) / width
-  const w = (plot.end - plot.start) / width
+  const x = start / width
+  const w = axis / width
   const above = useRef<HTMLDivElement>(null)
   const label = useRef<HTMLSpanElement>(null)
   const [below, setBelow] = useState(false)
@@ -462,7 +483,7 @@ function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind
           {dots.map((cx) => (
             <circle key={String(cx)} cx={cx} cy={2} r={2.5} className={slots.dot} />
           ))}
-          <Drawing tone={tone} />
+          <Drawing tone={tone} width={box.w} />
         </g>
       </Svg>
     </Root>
@@ -486,12 +507,19 @@ function RowThumbnail({ kind, tone, size, framed, label }: { kind: ThumbnailKind
  * list view and search results draw it.
  *
  * `tone` colours one artifact's preview: the doc's title bar and the
- * chart's title bar and main bars (see `ThumbnailTone`).
+ * chart's title bar and main bars (see `ThumbnailTone`). *
+ * At `fill` and `lg` the window bar scales with the width, but its three
+ * dots stay 5 px, 9 apart, at x 8, 17 and 26, as Figma draws them at every
+ * width; and the chart lays its plot out on the whole width (its axis 8 %
+ * in from each side), so it keeps Figma's proportions at any width.
  */
 export function Thumbnail({ kind = 'doc', shape = 'wide', tone = 'accent', framed, size, label, reference }: ThumbnailProps) {
   if (size === 'sm' || size === 'md') return <RowThumbnail kind={kind} tone={tone} size={size} framed={framed} label={label} />
   const width = widths[shape]
   const Drawing = drawings[kind]
+  // The chart is laid out on the whole width (`chartPlot`); the other kinds
+  // centre their 334-wide content.
+  const offset = kind === 'chart' ? 0 : (width - 334) / 2
   const named = label !== undefined && label.trim() !== ''
   return (
     <Root framed={framed} size={size} data-kind={kind} data-shape={shape}>
@@ -503,13 +531,19 @@ export function Thumbnail({ kind = 'doc', shape = 'wide', tone = 'accent', frame
         focusable="false"
       >
         <rect x={0} y={0} width={width} height={17} className={slots.chrome} />
-        {[10.5, 19.5, 28.5].map((cx) => (
-          <circle key={String(cx)} cx={cx} cy={8.5} r={2.5} className={slots.dot} />
-        ))}
-        <g transform={`translate(${String((width - 334) / 2)} 0)`}>
-          <Drawing tone={tone} />
+        <g transform={`translate(${String(offset)} 0)`}>
+          <Drawing tone={tone} width={width} />
         </g>
       </Svg>
+      {/* The window dots keep Figma's 5 px at x 8, 17 and 26 (403:485 to
+          403:487, 405:453, 406:393, 402:15437) at any width, so they are
+          drawn in an SVG with no viewBox over the drawing: cx and r are CSS
+          px, cy the bar's middle as a percentage of the height (8.5 of 188). */}
+      <Dots aria-hidden focusable="false">
+        {[10.5, 19.5, 28.5].map((cx) => (
+          <circle key={String(cx)} cx={cx} cy={percent(8.5 / height)} r={2.5} className={slots.dot} />
+        ))}
+      </Dots>
       {kind === 'chart' && reference !== undefined ? <ChartReference width={width} reference={reference} /> : null}
     </Root>
   )

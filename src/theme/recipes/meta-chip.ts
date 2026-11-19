@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 
 // The meta chip had two builds (inventory inconsistency 10): Inbox task
 // 346:327 (padding 8/4, gap 5, opaque fill, Mono 11 muted) and Artifacts
@@ -14,11 +15,20 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `surface="raised"` fills the chip with the opaque #17213a of the Inbox
 // chips (346:327, the NCC chip 346:342): surface.raised (d-100). The default
 // `inset` keeps the merged surface.inset.
+// `MetaChipButton` draws the same chip on a <button>, with a trailing 12 px
+// chevron: the project chip that opens the project menu (Artifacts D2 403:472,
+// 136 × 29: icon/folder 403:473 10 from the start, the project in mono
+// 403:475, icon/down 403:476 10 from the end, 6 apart; also D7 452:2361, D8
+// 452:2971, T2 405:440, M2 406:384). The `md` chip is 30 high (6 + 16 + 6
+// and the 1 px border), as MetaChip `md` is. Only a button gets the pointer,
+// the focus ring, the accent.faint hover tint of the library's hovered rows
+// and the border.active border of an open menu trigger; a MetaChip span
+// draws as before.
 export const metaChip = defineSlotRecipe({
   className: 'meta-chip',
-  jsx: ['MetaChip'],
+  jsx: ['MetaChip', 'MetaChipButton'],
   staticCss: ['*'],
-  slots: ['root', 'icon', 'label'],
+  slots: ['root', 'icon', 'label', 'chevron'],
   base: {
     root: {
       display: 'inline-flex',
@@ -33,6 +43,15 @@ export const metaChip = defineSlotRecipe({
       borderRadius: 'sm',
       textStyle: 'mono',
       whiteSpace: 'nowrap',
+      '&:is(button)': {
+        cursor: 'pointer',
+        userSelect: 'none',
+        outline: 'none',
+        _hover: { bg: 'accent.faint' },
+        _expanded: { borderColor: 'border.active' },
+        [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+        _disabled: { cursor: 'not-allowed', opacity: 'disabled', _hover: { bg: 'surface.inset' } },
+      },
     },
     icon: {
       display: 'inline-flex',
@@ -41,6 +60,8 @@ export const metaChip = defineSlotRecipe({
     },
     // TruncatedText inside cuts a long label and shows it whole in a tooltip.
     label: { minW: '0' },
+    // MetaChipButton's ChevronDownIcon, at 12 px (icon/down 403:476), in the chip's text colour.
+    chevron: { display: 'inline-flex', flexShrink: '0', color: 'inherit' },
   },
   variants: {
     size: {
@@ -57,7 +78,13 @@ export const metaChip = defineSlotRecipe({
     },
     surface: {
       inset: {},
-      raised: { root: { bg: 'surface.raised' } },
+      // A variant's fill wins over the base hover, so the button's hover is set again here.
+      raised: {
+        root: {
+          bg: 'surface.raised',
+          '&:is(button)': { _hover: { bg: 'accent.faint' }, _disabled: { _hover: { bg: 'surface.raised' } } },
+        },
+      },
     },
   },
   defaultVariants: { size: 'md', tone: 'default', surface: 'inset' },

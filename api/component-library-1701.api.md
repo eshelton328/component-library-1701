@@ -1091,6 +1091,15 @@ export type MessageProps = Scalar<MessageVariantProps> & {
 // @public
 export function MetaChip(input: MetaChipProps): JSX.Element;
 
+// @public
+export function MetaChipButton(input: MetaChipButtonProps): JSX.Element;
+
+// @public (undocumented)
+export type MetaChipButtonProps = Omit<ComponentProps<'button'>, 'children'> & Scalar<MetaChipVariantProps> & {
+    label: string;
+    icon?: ReactNode;
+};
+
 // @public (undocumented)
 export type MetaChipProps = Scalar<MetaChipVariantProps> & {
     label: string;

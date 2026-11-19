@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Inline, Stack } from '../controls/layout'
+import { Menu } from '../controls/menu'
 import { CopyIcon, FolderIcon, HookIcon, SkillIcon, TagIcon } from '../foundations/icons'
-import { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './meta-line'
+import { KindBadge, MetaChip, MetaChipButton, MetaLine, PathBadge, TagsLine } from './meta-line'
 import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -445,3 +446,99 @@ const raisedChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** `surface="raised"`: the opaque Inbox task chips, such as the NCC issue chip. */
 export const RaisedChipDark: StoryObj<typeof meta> = { render: () => <RaisedChips />, globals: { mode: 'dark' }, play: raisedChipPlay }
 export const RaisedChipLight: StoryObj<typeof meta> = { render: () => <RaisedChips />, globals: { mode: 'light' }, play: raisedChipPlay }
+
+// Swatches of the tokens the chip button draws in its states, so the play function compares resolved colours.
+const buttonSwatches = {
+  inset: css({ bg: 'surface.inset' }),
+  hover: css({ bg: 'accent.faint' }),
+  border: css({ bg: 'border.default' }),
+  active: css({ bg: 'border.active' }),
+  focus: css({ bg: 'border.focus' }),
+}
+
+// The project chip of the open artifact (Artifacts D2 403:472, 136 × 29), the trigger of the project menu (M7), beside
+// a read-only MetaChip of the same size.
+function ProjectChip() {
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <Inline gap="6">
+          <Menu
+            trigger={<MetaChipButton icon={<FolderIcon />} label="skill-evals" />}
+            items={[
+              { value: 'open', label: 'Open project' },
+              { value: 'move', label: 'Move to another project' },
+            ]}
+          />
+          <span data-testid="read-only">
+            <MetaChip icon={<FolderIcon />} label="updated 12m ago" />
+          </span>
+        </Inline>
+      </div>
+      <div hidden>
+        {Object.entries(buttonSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// The D2 chip's measures: a button 29 high in Figma (the md chip is 30: 6 + the 16 px mono line + 6, and the 1 px
+// border), 10 px padding at each side, the folder and chevron 12 × 12, 6 apart from the label. It tints on hover,
+// draws the focus ring on keyboard focus, opens the menu on a click and draws border.active while it is open. The
+// read-only MetaChip stays a span with no chevron, at the same height.
+const projectChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).backgroundColor
+  const body = within(canvasElement.ownerDocument.body)
+  const chip = within(canvasElement).getByRole('button', { name: 'skill-evals' })
+  await expect(chip.tagName).toBe('BUTTON')
+  await expect(chip).toHaveAttribute('type', 'button')
+  await expect(chip).toHaveAttribute('aria-haspopup', 'menu')
+  const box = chip.getBoundingClientRect()
+  await expect(Math.abs(box.height - 29)).toBeLessThanOrEqual(1)
+  const style = getComputedStyle(chip)
+  await expect([style.paddingLeft, style.paddingRight]).toEqual(['10px', '10px'])
+  const icons = Array.from(chip.querySelectorAll('svg'), (svg) => svg.getBoundingClientRect())
+  await expect(icons.map((r) => [r.width, r.height])).toEqual([
+    [12, 12],
+    [12, 12],
+  ])
+  const [folder, chevron] = icons
+  const label = chip.querySelector('.meta-chip__label')
+  if (folder === undefined || chevron === undefined || label === null) throw new Error('the chip lacks a part')
+  const text = label.getBoundingClientRect()
+  const border = parseFloat(style.borderLeftWidth)
+  await expect(folder.left - box.left - border).toBe(10)
+  await expect(box.right - border - chevron.right).toBe(10)
+  await expect(text.left - folder.right).toBe(6)
+  await expect(chevron.left - text.right).toBe(6)
+  await expect([style.backgroundColor, style.borderTopColor]).toEqual([swatch('inset'), swatch('border')])
+  const readOnly = canvasElement.querySelector('[data-testid="read-only"] .meta-chip__root')
+  if (!(readOnly instanceof HTMLElement)) throw new Error('no read-only chip')
+  await expect(readOnly.tagName).toBe('SPAN')
+  await expect(readOnly.querySelectorAll('svg')).toHaveLength(1)
+  await expect(readOnly.getBoundingClientRect().height).toBe(box.height)
+
+  await userEvent.tab()
+  await expect(chip).toHaveFocus()
+  await expect([getComputedStyle(chip).outlineColor, getComputedStyle(chip).outlineStyle]).toEqual([swatch('focus'), 'solid'])
+  // Simulated pointer events set no :hover; Panda's hover condition also matches [data-hover], as Button's story sets.
+  chip.setAttribute('data-hover', '')
+  await expect(getComputedStyle(chip).backgroundColor).toBe(swatch('hover'))
+  chip.removeAttribute('data-hover')
+  await expect(getComputedStyle(chip).backgroundColor).toBe(swatch('inset'))
+
+  await userEvent.click(chip)
+  const menu = await body.findByRole('menu')
+  await expect(within(menu).getByRole('menuitem', { name: 'Open project' })).toBeInTheDocument()
+  await expect(chip).toHaveAttribute('aria-expanded', 'true')
+  await expect(getComputedStyle(chip).borderTopColor).toBe(swatch('active'))
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+  await waitFor(() => expect(chip).toHaveFocus())
+}
+
+/** `MetaChipButton`: the project chip of an open artifact, a button that opens the project menu. */
+export const ChipButtonDark: StoryObj<typeof meta> = { render: () => <ProjectChip />, globals: { mode: 'dark' }, play: projectChipPlay }
+export const ChipButtonLight: StoryObj<typeof meta> = { render: () => <ProjectChip />, globals: { mode: 'light' }, play: projectChipPlay }

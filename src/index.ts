@@ -168,8 +168,8 @@ export {
   WorkspacesIcon,
 } from './foundations/icons'
 export type { IconProps, IconSize } from './foundations/icons'
-export { KindBadge, MetaChip, MetaLine, PathBadge, TagsLine } from './parts/meta-line'
-export type { KindBadgeProps, MetaChipProps, MetaLineProps, PathBadgeProps, TagsLineProps, ToolkitKind } from './parts/meta-line'
+export { KindBadge, MetaChip, MetaChipButton, MetaLine, PathBadge, TagsLine } from './parts/meta-line'
+export type { KindBadgeProps, MetaChipButtonProps, MetaChipProps, MetaLineProps, PathBadgeProps, TagsLineProps, ToolkitKind } from './parts/meta-line'
 export { GroupHeader } from './parts/group-header'
 export type { GroupHeaderProps } from './parts/group-header'
 export { BackRow } from './parts/back-row'

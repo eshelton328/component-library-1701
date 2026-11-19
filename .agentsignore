@@ -7,7 +7,7 @@ tokens/generated/
 
 # Check fixtures and stories: checks/AGENTS.md covers them;
 # fixtures/src/** mirrors src/, so src/AGENTS.md's rules apply there
-checks/fixtures/
+checks/fixtures/src/
 checks/stories/
 
 # Foundation stories and docs: src/AGENTS.md holds their rules

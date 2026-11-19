@@ -378,6 +378,7 @@ export type ComposerProps = {
     defaultValue?: string | undefined;
     onValueChange?: ((value: string) => void) | undefined;
     onSubmit?: ((text: string) => void) | undefined;
+    onSend?: ((text: string) => boolean | Promise<boolean>) | undefined;
     running?: boolean | undefined;
     onStop?: (() => void) | undefined;
     attachments?: readonly ComposerAttachment[] | undefined;

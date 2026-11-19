@@ -5,11 +5,17 @@ import { TruncatedText } from '../controls/tooltip'
 /** The colour of a series or a bar: the accent, grey, or a status colour. */
 export type BarTone = 'accent' | 'muted' | 'running' | 'needsYou' | 'done' | 'danger'
 
-// The geometry of Toolkit D20 (chart 482:1932, axis 482:1947), in px.
-const BAR = 16
+// The geometry of the Toolkit eval chart, in px: a 110 px plot, the axis 8
+// under it and 17 high, bars 4 apart in a group (D20 chart 482:1932, axis
+// 482:1947). Each size sets the bar width, the narrowest group step and the
+// room a group keeps beside its bars: `md` is D20's (16 px bars, a group
+// every 56) and `sm` the phone's (M18 482:2602, bars 482:2603 to 482:2616:
+// 12 px bars, a group every 44).
+const GROUPED_SIZES = {
+  md: { bar: 16, pitch: 56, pad: 20 },
+  sm: { bar: 12, pitch: 44, pad: 16 },
+} as const
 const BAR_GAP = 4
-const GROUP_PITCH = 56
-const GROUP_PAD = 20
 const PLOT = 110
 const AXIS_GAP = 8
 const AXIS = 17
@@ -27,6 +33,7 @@ function scaleMax(max: number | undefined, values: readonly number[]): number {
 const grouped = createSlotRecipeContext(groupedBarChart)
 const GroupedRoot = grouped.withProvider('div', 'root')
 const GroupedSvg = grouped.withContext('svg', 'svg')
+const GroupedGroup = grouped.withContext('svg', 'group')
 const GroupedBar = grouped.withContext('rect', 'bar')
 const AxisLabel = grouped.withContext('text', 'axisLabel')
 const Data = grouped.withContext('div', 'data')
@@ -56,6 +63,23 @@ export type GroupedBarChartProps = {
   max?: number | undefined
   /** Writes a value in the data table. Defaults to the number as it is. */
   formatValue?: ((value: number) => string) | undefined
+  /**
+   * The bar size. `md` (the default) draws 16 px bars with a group every
+   * 56 px, as the desktop and tablet Figma frames; `sm` draws 12 px bars
+   * with a group every 44 px, as the phone frame. Bars are 4 px apart in
+   * both.
+   */
+  size?: 'md' | 'sm' | undefined
+  /**
+   * How wide the chart is. `content` (the default) is as wide as its
+   * groups at the size's group step (7 groups: 392 px at `md`, 308 at
+   * `sm`). `fill` spreads the groups over the width of the chart's box,
+   * one equal slot each with the bars and the axis label centred in it,
+   * as the tablet frame spreads 7 groups over 630 px; the bars keep their
+   * size. In a box narrower than the `content` width, `fill` keeps that
+   * width and the chart scrolls sideways.
+   */
+  width?: 'content' | 'fill' | undefined
 }
 
 /**
@@ -63,32 +87,33 @@ export type GroupedBarChartProps = {
  * each eval round. The chart is drawn in SVG and hidden from assistive
  * technology; a visually hidden table holds the same data.
  */
-export function GroupedBarChart({ label, series, groups, max, formatValue = String }: GroupedBarChartProps) {
+export function GroupedBarChart({ label, series, groups, max, formatValue = String, size = 'md', width = 'content' }: GroupedBarChartProps) {
   const top = scaleMax(
     max,
     groups.flatMap((g) => g.values),
   )
-  const span = series.length * BAR + Math.max(0, series.length - 1) * BAR_GAP
-  const pitch = Math.max(GROUP_PITCH, span + GROUP_PAD)
-  const width = groups.length * pitch
+  const { bar, pitch: step, pad } = GROUPED_SIZES[size]
+  const span = series.length * bar + Math.max(0, series.length - 1) * BAR_GAP
+  const pitch = Math.max(step, span + pad)
+  const contentWidth = groups.length * pitch
   const height = PLOT + AXIS_GAP + AXIS
   return (
-    <GroupedRoot role="figure" aria-label={label}>
-      <GroupedSvg width={width} height={height} viewBox={`0 0 ${String(width)} ${String(height)}`} aria-hidden="true" focusable="false">
-        {groups.map((group, g) => {
-          const left = g * pitch + (pitch - span) / 2
-          return (
-            <g key={`${String(g)}:${group.label}`}>
-              {series.map((s, i) => {
-                const h = (Math.min(finite(group.values[i] ?? 0), top) / top) * PLOT
-                return <GroupedBar key={`${String(i)}:${s.name}`} data-tone={s.tone ?? (i === 0 ? 'accent' : 'muted')} x={left + i * (BAR + BAR_GAP)} y={PLOT - h} width={BAR} height={h} />
-              })}
-              <AxisLabel x={g * pitch + pitch / 2} y={PLOT + AXIS_GAP + AXIS / 2} textAnchor="middle" dominantBaseline="central">
-                {group.label}
-              </AxisLabel>
-            </g>
-          )
-        })}
+    <GroupedRoot role="figure" aria-label={label} width={width}>
+      {/* No viewBox: one user unit is one CSS px, so with `fill` the SVG grows
+          past its content width and each group sits at its share of it. */}
+      <GroupedSvg width={contentWidth} height={height} aria-hidden="true" focusable="false">
+        {groups.map((group, g) => (
+          // Each group is drawn around the centre of its equal slot.
+          <GroupedGroup key={`${String(g)}:${group.label}`} x={`${String(((g + 0.5) * 100) / groups.length)}%`}>
+            {series.map((s, i) => {
+              const h = (Math.min(finite(group.values[i] ?? 0), top) / top) * PLOT
+              return <GroupedBar key={`${String(i)}:${s.name}`} data-tone={s.tone ?? (i === 0 ? 'accent' : 'muted')} x={i * (bar + BAR_GAP) - span / 2} y={PLOT - h} width={bar} height={h} />
+            })}
+            <AxisLabel x={0} y={PLOT + AXIS_GAP + AXIS / 2} textAnchor="middle" dominantBaseline="central">
+              {group.label}
+            </AxisLabel>
+          </GroupedGroup>
+        ))}
       </GroupedSvg>
       <Data>
         <table>

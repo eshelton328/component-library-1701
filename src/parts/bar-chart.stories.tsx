@@ -223,3 +223,140 @@ export const LongLabel: StoryObj<typeof meta> = {
     await expectCutText(label, 'skill-eval-round-with-held-out-cases-and-a-trigger-set')
   },
 }
+
+// The frames of the size and width stories: a 320 px box holds Figma's
+// phone chart (M18 482:2602, 308 wide in a 332 px panel), a 720 px box a
+// wide panel such as the tablet's (T16 482:2288, 630 wide), and a 240 px box
+// is narrower than any chart. The play functions move a chart into a
+// narrower box only while they measure its scroll.
+const phoneBox = css({ w: 'shell.popover' })
+const wideBox = css({ w: 'shell.dialogWide' })
+const narrowChartBox = css({ w: 'shell.popoverSm' })
+const evalSeries = [{ name: 'with the skill' }, { name: 'without' }]
+
+function rect(el: Element) {
+  const r = el.getBoundingClientRect()
+  const t = (n: number) => Math.round(n * 10) / 10
+  return { left: t(r.left), right: t(r.right), width: t(r.width), height: t(r.height), centre: t((r.left + r.right) / 2) }
+}
+
+// Puts the chart's box in another frame while `check` runs, then back, so
+// the story's axe run sees no scroll region the keyboard cannot reach.
+async function inFrame(figure: HTMLElement, from: string, to: string, check: () => Promise<void>) {
+  const frame = figure.parentElement
+  if (frame === null) throw new Error('no frame')
+  frame.classList.replace(from, to)
+  try {
+    await check()
+  } finally {
+    frame.classList.replace(to, from)
+  }
+}
+
+function chartParts(figure: HTMLElement) {
+  const svg = figure.querySelector('svg')
+  if (svg === null) throw new Error('no svg')
+  return { svg, bars: Array.from(figure.querySelectorAll('rect')), labels: Array.from(figure.querySelectorAll('text')) }
+}
+
+/** `size="sm"`: Figma's phone chart, 12 px bars 4 apart and a group every 44 px, fits the phone's panel. */
+const smallMeta: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Stack gap="24">
+        <div className={phoneBox}>
+          <GroupedBarChart label="Phone chart" size="sm" series={evalSeries} groups={rounds} max={100} />
+        </div>
+        <div className={wideBox}>
+          <GroupedBarChart label="Default chart" series={evalSeries} groups={rounds} max={100} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const small = canvas.getByRole('figure', { name: 'Phone chart' })
+    const { svg, bars, labels } = chartParts(small)
+    // Seven groups 44 apart: 308 wide, with the 110 px plot, 8 px gap and 17 px axis under it.
+    await expect([rect(svg).width, rect(svg).height]).toEqual([308, 135])
+    await expect(bars).toHaveLength(14)
+    const [with1, without1, with2] = bars
+    if (with1 === undefined || without1 === undefined || with2 === undefined) throw new Error('no bars')
+    await expect([rect(with1).width, rect(without1).width]).toEqual([12, 12])
+    await expect(rect(without1).left - rect(with1).right).toBe(4)
+    await expect(rect(with1).left - rect(svg).left).toBe(8)
+    await expect(rect(with2).left - rect(with1).left).toBe(44)
+    await expect(rect(with1).height).toBe(95.7)
+    // The axis label is centred under its group, in mono 12.
+    await expect(rect(labels[0] ?? svg).centre - rect(svg).left).toBe(22)
+    await expect(getComputedStyle(labels[0] ?? svg).fontSize).toBe('12px')
+    // The chart fits the box, so nothing scrolls sideways and x1 shows.
+    await expect(small.scrollWidth).toBeLessThanOrEqual(small.clientWidth)
+    await expect(rect(labels[6] ?? svg).right).toBeLessThanOrEqual(rect(small).right)
+    // The default stays 16 px bars a group every 56 px, 392 wide, and scrolls in the phone's box.
+    const mdFigure = canvas.getByRole('figure', { name: 'Default chart' })
+    const md = chartParts(mdFigure)
+    await expect(rect(md.svg).width).toBe(392)
+    await expect(rect(md.bars[0] ?? md.svg).width).toBe(16)
+    await expect(rect(md.bars[2] ?? md.svg).left - rect(md.bars[0] ?? md.svg).left).toBe(56)
+    await inFrame(mdFigure, wideBox, phoneBox, async () => {
+      await expect(mdFigure.scrollWidth).toBeGreaterThan(mdFigure.clientWidth)
+    })
+  },
+}
+export const SmallDark: StoryObj<typeof meta> = { ...smallMeta, globals: { mode: 'dark' } }
+export const SmallLight: StoryObj<typeof meta> = { ...smallMeta, globals: { mode: 'light' } }
+
+/** `width="fill"`: the groups spread over the box, as Figma's tablet chart; in a box too narrow, the chart keeps its content width and scrolls. */
+const fillMeta: StoryObj<typeof meta> = {
+  render: () => (
+    <main className={page}>
+      <Stack gap="24">
+        <div className={wideBox}>
+          <GroupedBarChart label="Filled chart" width="fill" series={evalSeries} groups={rounds} max={100} />
+        </div>
+        <div className={wideBox}>
+          <GroupedBarChart label="Content chart" series={evalSeries} groups={rounds} max={100} />
+        </div>
+        <div className={wideBox}>
+          <GroupedBarChart label="Narrow filled chart" width="fill" series={evalSeries} groups={rounds} max={100} />
+        </div>
+      </Stack>
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const filled = canvas.getByRole('figure', { name: 'Filled chart' })
+    const { svg, bars, labels } = chartParts(filled)
+    // The SVG is as wide as its 720 px box, and each of the 7 groups takes a seventh of it.
+    await expect(rect(svg).width).toBe(rect(filled.parentElement ?? filled).width)
+    await expect(rect(svg).width).toBe(720)
+    await expect(rect(svg).height).toBe(135)
+    const step = 720 / 7
+    // The bars keep their size and gap, and each pair and label is centred in its slot.
+    await expect(rect(bars[0] ?? svg).width).toBe(16)
+    await expect(rect(bars[1] ?? svg).left - rect(bars[0] ?? svg).right).toBe(4)
+    for (let g = 0; g < 7; g += 1) {
+      const centre = rect(svg).left + (g + 0.5) * step
+      await expect(rect(labels[g] ?? svg).centre).toBeCloseTo(centre, 0)
+      await expect((rect(bars[2 * g] ?? svg).left + rect(bars[2 * g + 1] ?? svg).right) / 2).toBeCloseTo(centre, 0)
+    }
+    await expect(filled.scrollWidth).toBeLessThanOrEqual(filled.clientWidth)
+    // The default in the same box stays 392 wide with a group every 56 px.
+    const content = chartParts(canvas.getByRole('figure', { name: 'Content chart' }))
+    await expect(rect(content.svg).width).toBe(392)
+    await expect(rect(content.bars[2] ?? content.svg).left - rect(content.bars[0] ?? content.svg).left).toBe(56)
+    // In a 240 px box the filled chart keeps its 392 px content width and scrolls sideways.
+    const narrow = canvas.getByRole('figure', { name: 'Narrow filled chart' })
+    const tight = chartParts(narrow)
+    await inFrame(narrow, wideBox, narrowChartBox, async () => {
+      await expect(rect(narrow).width).toBe(240)
+      await expect(rect(tight.svg).width).toBe(392)
+      await expect(rect(tight.bars[2] ?? tight.svg).left - rect(tight.bars[0] ?? tight.svg).left).toBe(56)
+      await expect(narrow.scrollWidth).toBeGreaterThan(narrow.clientWidth)
+    })
+    await expect(rect(tight.svg).width).toBe(720)
+  },
+}
+export const FillDark: StoryObj<typeof meta> = { ...fillMeta, globals: { mode: 'dark' } }
+export const FillLight: StoryObj<typeof meta> = { ...fillMeta, globals: { mode: 'light' } }

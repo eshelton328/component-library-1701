@@ -680,6 +680,8 @@ export type GroupedBarChartProps = {
     groups: readonly BarGroup[];
     max?: number | undefined;
     formatValue?: ((value: number) => string) | undefined;
+    size?: 'md' | 'sm' | undefined;
+    width?: 'content' | 'fill' | undefined;
 };
 
 // @public

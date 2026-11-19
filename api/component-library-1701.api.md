@@ -978,6 +978,7 @@ export type MapGraphNode = {
         height: number;
     } | undefined;
     labelStyle?: MapNodeLabelStyle | undefined;
+    iconSize?: MapNodeIconSize | undefined;
 };
 
 // @public (undocumented)
@@ -994,6 +995,7 @@ export type MapGraphProps = {
     } | undefined;
     nodeTone?: MapNodeTone | undefined;
     nodeDensity?: MapNodeDensity | undefined;
+    nodeIconSize?: MapNodeIconSize | undefined;
     edgeEnd?: 'dot' | 'none' | undefined;
     orientation?: 'horizontal' | 'vertical' | undefined;
     selectedId?: string | null | undefined;
@@ -1029,6 +1031,9 @@ export function MapNode(input: MapNodeProps): JSX.Element;
 export type MapNodeDensity = 'default' | 'compact';
 
 // @public
+export type MapNodeIconSize = '12' | '16';
+
+// @public
 export type MapNodeLabelStyle = 'mono' | 'label';
 
 // @public (undocumented)
@@ -1040,6 +1045,7 @@ export type MapNodeProps = {
     tone?: MapNodeTone | undefined;
     labelStyle?: MapNodeLabelStyle | undefined;
     density?: MapNodeDensity | undefined;
+    iconSize?: MapNodeIconSize | undefined;
     onClick?: (() => void) | undefined;
     onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
     describedBy?: string | undefined;

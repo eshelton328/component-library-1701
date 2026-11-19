@@ -1133,6 +1133,59 @@ const compactPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasE
 }
 
 export const CompactNodeDark: StoryObj<typeof meta> = { render: () => <CompactNodes />, play: compactPlay, globals: { mode: 'dark' } }
+
+// D19 500:9871 and M17 500:10189: a 13 px kind icon (icon.12, d-100) on a default node. In a row, the node alone takes
+// `iconSize="12"`; on a graph, `nodeIconSize="12"` sets every node and the open item keeps 16 with its own `iconSize`.
+const smallIconNodes: MapGraphNode[] = [
+  { id: 'writer', label: 'writer', kind: 'skill', x: 20, y: 20, iconSize: '16' },
+  { id: 'writing', label: 'writing', kind: 'rule', x: 220, y: 20 },
+]
+
+function SmallIconNodes() {
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <div data-testid="row-small">
+          <MapNode label="writing-row" kind="rule" tone="faint" iconSize="12" />
+        </div>
+        <div data-testid="row-plain">
+          <MapNode label="writing-row" kind="rule" tone="faint" />
+        </div>
+        <MapGraph label="Small icon map" width={420} height={70} nodes={smallIconNodes} nodeIconSize="12" minimap />
+      </div>
+    </main>
+  )
+}
+
+const smallIconPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const svgOf = (el: Element) => {
+    const icon = el.querySelector('svg')
+    if (icon === null) throw new Error('no icon')
+    return icon.getBoundingClientRect()
+  }
+  const small = within(canvas.getByTestId('row-small')).getByRole('button', { name: 'writing-row' })
+  const plain = within(canvas.getByTestId('row-plain')).getByRole('button', { name: 'writing-row' })
+  // A 12 px icon; the node keeps the default 10 px sides and 8 px gap, and its height.
+  await expect([svgOf(small).width, svgOf(small).height]).toEqual([12, 12])
+  await expect([svgOf(plain).width, svgOf(plain).height]).toEqual([16, 16])
+  const s = getComputedStyle(small)
+  await expect([s.paddingLeft, s.columnGap]).toEqual(['10px', '8px'])
+  await expect(small.getBoundingClientRect().height).toBe(plain.getBoundingClientRect().height)
+  // The name starts 4 px nearer: 31 px in, against 35.
+  const nameLeft = (node: HTMLElement) => within(node).getByText('writing-row').getBoundingClientRect().left - node.getBoundingClientRect().left
+  await expect([nameLeft(small), nameLeft(plain)]).toEqual([31, 35])
+  // On a graph, nodeIconSize sets every node with no iconSize of its own.
+  const map = canvas.getByRole('group', { name: 'Small icon map' })
+  await expect(svgOf(within(map).getByRole('button', { name: 'writing' })).width).toBe(12)
+  await expect(svgOf(within(map).getByRole('button', { name: 'writer' })).width).toBe(16)
+  // The minimap's name starts where the node's does.
+  const labels = [...map.querySelectorAll('[data-minimap] text')].filter((t) => t.textContent === 'writing')
+  await expect(labels.map((t) => t.getAttribute('x'))).toEqual(['251'])
+}
+
+export const SmallIconDark: StoryObj<typeof meta> = { render: () => <SmallIconNodes />, play: smallIconPlay, globals: { mode: 'dark' } }
+export const SmallIconLight: StoryObj<typeof meta> = { render: () => <SmallIconNodes />, play: smallIconPlay, globals: { mode: 'light' } }
 export const CompactNodeLight: StoryObj<typeof meta> = { render: () => <CompactNodes />, play: compactPlay, globals: { mode: 'light' } }
 
 // The phone's selection card under the map window (Toolkit M11 `selection · writer` 461:1259): the counts as arrows

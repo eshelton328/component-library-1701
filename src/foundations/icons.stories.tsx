@@ -23,6 +23,7 @@ import {
   ChevronRightIcon,
   ClipIcon,
   ClockIcon,
+  CloseBoldIcon,
   CloseCircleIcon,
   CloseIcon,
   CodeIcon,
@@ -134,6 +135,7 @@ const groups: { title: string; icons: Entry[] }[] = [
     icons: [
       { name: 'search', Icon: SearchIcon },
       { name: 'close', Icon: CloseIcon },
+      { name: 'closeBold', Icon: CloseBoldIcon },
       { name: 'closeCircle', Icon: CloseCircleIcon },
       { name: 'check', Icon: CheckIcon },
       { name: 'chevronDown', Icon: ChevronDownIcon },
@@ -276,7 +278,7 @@ function Icons() {
   )
 }
 
-const filled = ['more', 'play', 'sparkFilled']
+const filled = ['more', 'play', 'sparkFilled', 'closeBold']
 
 const svgIn = (el: HTMLElement) => {
   const svg = el.querySelector('svg')
@@ -354,6 +356,15 @@ const meta = {
     if (ring === undefined || cross === undefined) throw new Error('closeCircle needs a circle and an x')
     await expect([ring.x, ring.y, ring.width, ring.height]).toEqual([3, 3, 18, 18])
     await expect([cross.x, cross.y, cross.width, cross.height]).toEqual([9, 9, 6, 6])
+    // Close bold (403:8202, the clear button of a focused search field) is close's x 3 thick: two filled bars from 6
+    // to 18 with round ends of radius 1.5, so each bar's box is the x's 12 plus 1.5 at each side.
+    const bars = Array.from(svgIn(canvas.getByTestId('icon-closeBold')).querySelectorAll('path')).map((p) => p.getBBox())
+    await expect(bars).toHaveLength(2)
+    for (const bar of bars) {
+      await expect([bar.x, bar.y, bar.width, bar.height].map((v) => Math.round(v * 100) / 100)).toEqual([4.5, 4.5, 15, 15])
+    }
+    const thin = svgIn(canvas.getByTestId('icon-close')).querySelector('path')?.getBBox()
+    await expect([thin?.x, thin?.y, thin?.width, thin?.height]).toEqual([6, 6, 12, 12])
     // The size prop maps to the sizes.icon tokens.
     const sized = Array.from(canvas.getByTestId('sizes').querySelectorAll('svg'))
     await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 16, 20, 24])

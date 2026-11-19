@@ -239,6 +239,23 @@ export function CloseIcon(props: IconProps) {
   )
 }
 
+/**
+ * Clear, bold: `CloseIcon`'s x, 3 thick on the 24 grid (2 px at 16 px), not
+ * 2. Filled, not stroked: each bar is a round-ended shape from 6 to 18, as
+ * the icon set's strokes are 2 (1.8 in the navigation). Figma draws the
+ * clear button of a focused search field bold (Artifacts D4 and M5,
+ * `icon/x` 403:8202, 14 px). `SearchField` with `clearFocus="strong"`
+ * draws it while the field has the focus.
+ */
+export function CloseBoldIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4.939 7.061L16.939 19.061A1.5 1.5 0 0 0 19.061 16.939L7.061 4.939A1.5 1.5 0 0 0 4.939 7.061Z" />
+      <path d="M16.939 4.939L4.939 16.939A1.5 1.5 0 0 0 7.061 19.061L19.061 7.061A1.5 1.5 0 0 0 16.939 4.939Z" />
+    </Svg>
+  )
+}
+
 /** Clear: an x in a circle, as on the Inbox search clear button. Figma node 346:4201, drawn at 15 px and scaled to 24. */
 export function CloseCircleIcon(props: IconProps) {
   return (

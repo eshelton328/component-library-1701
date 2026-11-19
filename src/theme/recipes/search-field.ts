@@ -16,6 +16,14 @@ import { focusRing } from './focus'
 // #17213a at 0.7 there, so the field shows #17213a, where fg.subtle is
 // 4.39:1, below WCAG AA (d-055). The placeholder and the clear icon take
 // fg.muted, which surface.raised allows (d-100 rule 2: the nearest AA pass).
+// `clearFocus="strong"` is the clear button of Artifacts D4 and M5 (`icon/x`
+// 403:8202): bold and bright in the focused field. While the field (or its
+// clear button) has the focus, the button is fg.default and shows the bold
+// x (`CloseBoldIcon`, 3 thick on the 24 grid, not 2) in place of `clearIcon`;
+// with no focus it is as the default. No border width token is heavier than
+// the icons' own stroke of 2, so the bold x is its own icon. Figma's 14 px has no icon
+// token; `clearSize="16"` is the nearest (12 and 16 tie; d-072 takes the
+// larger).
 export const searchField = defineSlotRecipe({
   className: 'search-field',
   jsx: ['SearchField'],
@@ -86,10 +94,24 @@ export const searchField = defineSlotRecipe({
       md: {},
       sm: { input: { textStyle: 'bodySm' } },
     },
+    clearFocus: {
+      default: {},
+      strong: {
+        clear: {
+          '& [data-clear-icon]': { display: 'inline-flex' },
+          '& [data-clear-icon=focus]': { display: 'none' },
+          '[data-scope=field][data-part=root]:focus-within > &': {
+            color: 'fg.default',
+            '& [data-clear-icon=rest]': { display: 'none' },
+            '& [data-clear-icon=focus]': { display: 'inline-flex' },
+          },
+        },
+      },
+    },
     surface: {
       default: {},
       raised: { input: { _placeholder: { color: 'fg.muted' } }, clear: { color: 'fg.muted' } },
     },
   },
-  defaultVariants: { size: 'md', clearSize: '12', textSize: 'md', surface: 'default' },
+  defaultVariants: { size: 'md', clearSize: '12', clearFocus: 'default', textSize: 'md', surface: 'default' },
 })

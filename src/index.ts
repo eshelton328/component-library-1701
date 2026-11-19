@@ -115,6 +115,7 @@ export {
   ChevronRightIcon,
   ClipIcon,
   ClockIcon,
+  CloseBoldIcon,
   CloseCircleIcon,
   CloseIcon,
   CodeIcon,

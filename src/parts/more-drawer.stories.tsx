@@ -71,6 +71,7 @@ const meta = {
     const drawer = await body.findByRole('dialog', { name: 'More' })
     await motionDone(drawer)
     // Put the runner's pointer on the title row, which has no hover style, before the items' idle fills are read.
+    // Dark and Light also run in the Storybook UI, where restPointerOn does nothing.
     const titleRow = drawer.querySelector('.bottom-sheet__header')
     if (titleRow === null) throw new Error('no title row')
     await restPointerOn(titleRow)

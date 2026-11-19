@@ -36,7 +36,19 @@ Layout, Navigation or Overlays (d-065, d-066).
   visible area's bottom, with the keyboard-free height
   `visualViewport.height * scale`, so Safari's focus zoom on a field
   under 16 px keeps the fit, and under a zoom the top stays at the last
-  scale-1 `offsetTop`, moved only as far as the visible area needs. Where the browser resizes the
+  scale-1 `offsetTop`, moved only as far as the visible area needs. The
+  dock moves for `durations.keyboard` (250 ms) on `easings.keyboard`,
+  the iOS keyboard's curve, driven by the hook frame by frame from the
+  token values; with
+  `prefers-reduced-motion: reduce` it moves at once. On a touch screen
+  with no VirtualKeyboard API (iOS), a field's focus starts the dock at
+  once toward the expected keyboard: the last one measured in that
+  orientation, or `sizes.shell.keyboard` (Figma's 380, Workbench M10
+  147:97) on a first
+  portrait open. Until the keyboard's measure settles (300 ms after its
+  last resize, or 1 s with none) the dock does not come down for a
+  smaller step; then it takes the measure and keeps it for the next
+  open. A layout that shrinks meanwhile (Android) expects nothing again. Where the browser resizes the
   layout, at a pinch zoom with no keyboard, or with no `visualViewport`,
   nothing is set. The fit applies only while a field that opens the
   keyboard has the focus (`editable` in `../controls/editable.ts`, shared

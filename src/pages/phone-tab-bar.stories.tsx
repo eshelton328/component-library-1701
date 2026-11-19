@@ -187,12 +187,22 @@ class FakeViewport extends EventTarget {
   }
 }
 let fakeViewport = new FakeViewport()
+// Puts the fake in place of window.visualViewport for one story, on a device with a mouse and reduced motion, so each
+// change of the dock is there at once (as in the AppShell stories of the dock's rules).
 const replaceVisualViewport = (value: FakeViewport) => {
   const own = Object.getOwnPropertyDescriptor(window, 'visualViewport')
+  const ownMedia = Object.getOwnPropertyDescriptor(window, 'matchMedia')
+  const real = window.matchMedia.bind(window)
   Object.defineProperty(window, 'visualViewport', { configurable: true, value })
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: (query: string) => (query === '(prefers-reduced-motion: reduce)' ? { matches: true, media: query } : real(query)),
+  })
   return () => {
     if (own) Object.defineProperty(window, 'visualViewport', own)
     else Reflect.deleteProperty(window, 'visualViewport')
+    if (ownMedia) Object.defineProperty(window, 'matchMedia', ownMedia)
+    else Reflect.deleteProperty(window, 'matchMedia')
   }
 }
 

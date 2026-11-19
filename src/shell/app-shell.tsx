@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
+import { token } from '../../styled-system/tokens'
 import { editable } from '../controls/editable'
 import { useInputModality } from '../controls/input-modality'
 import type { Scalar } from '../controls/scalar'
@@ -24,6 +25,40 @@ const keyboardInset = '--app-shell-keyboard'
 // reports the visual viewport's resize during it, so 300 lets that resize come first and end the fit in step with
 // the keyboard. Only an iOS standalone app that reports the resize late, in steps or never needs the timer.
 const blurEndDelay = 300
+// The dock moves as the iOS keyboard does: `durations.keyboard` (250ms) on `easings.keyboard`, a curve close to
+// UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
+// tokens as numbers.
+const keyboardMotion = Number.parseFloat(token('durations.keyboard'))
+const curvePoints = (token('easings.keyboard').match(/-?\d*\.?\d+/g) ?? []).map(Number)
+const [x1 = 0, y1 = 0, x2 = 1, y2 = 1] = curvePoints
+const keyboardCurve = [x1, y1, x2, y2] as const
+// The keyboard a field is expected to open before the browser reports it: the last one measured in that
+// orientation, and on a first portrait open the iOS keyboard with Safari's form bar that Figma draws,
+// `sizes.shell.keyboard` (380 on the 844 screen, Workbench M10 147:97). A landscape keyboard has no Figma frame, so
+// the dock waits for its measure.
+const figmaKeyboard = Number.parseFloat(token('sizes.shell.keyboard'))
+// How long after a field takes the focus the dock waits for the keyboard's measure; with none by then, no on-screen
+// keyboard opened (a hardware keyboard), and the dock follows the visual viewport as it is.
+const keyboardWait = 1000
+
+// The curve's progress at the time fraction `t`: the bezier's y where its x is `t`, found by bisection.
+const bezier = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3
+const ease = (t: number) => {
+  const [x1, y1, x2, y2] = keyboardCurve
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 24; i += 1) {
+    const mid = (low + high) / 2
+    if (bezier(x1, x2, mid) < t) low = mid
+    else high = mid
+  }
+  return bezier(y1, y2, (low + high) / 2)
+}
+const media = (query: string) => typeof window.matchMedia === 'function' && window.matchMedia(query).matches
+// Whether a field's focus will open an on-screen keyboard that only the visual viewport reports: a touch screen whose
+// browser has no VirtualKeyboard API (iOS Safari). Chromium has it and resizes the layout with
+// `interactive-widget=resizes-content`, so it expects nothing.
+const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigator, 'virtualKeyboard') === undefined
 
 /**
  * Docks the foot of the page on the on-screen keyboard (the fit) when the browser does not resize the layout for
@@ -74,15 +109,75 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     let top = 0
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
     let typing = editable(document.activeElement)
-    // Shows a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
-    const show = (inset: number) => {
+    // Paints a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
+    const paint = (inset: number) => {
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
       const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom - keyboardTop)
-      if (covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
+      // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
+      // screen).
+      if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
     }
-    const fit = () => {
+    // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is; a new target
+    // during a move starts a new move from there. With reduced motion it is there at once.
+    let shown = 0
+    let target = 0
+    let from = 0
+    let start = 0
+    let motion: number | undefined
+    // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
+    // frame already moves.
+    const step = () => {
+      const t = Math.min(1, Math.max(0, (performance.now() - start) / keyboardMotion))
+      shown = t === 1 ? target : from + (target - from) * ease(t)
+      paint(shown)
+      motion = t === 1 ? undefined : requestAnimationFrame(step)
+    }
+    const show = (inset: number) => {
+      // The same inset again, as after a route change or a window resize, is painted again for the new layout.
+      if (inset === target) {
+        if (motion === undefined) paint(inset)
+        return
+      }
+      target = inset
+      if (media('(prefers-reduced-motion: reduce)')) {
+        if (motion !== undefined) cancelAnimationFrame(motion)
+        motion = undefined
+        shown = inset
+        paint(inset)
+        return
+      }
+      from = shown
+      start = performance.now()
+      motion ??= requestAnimationFrame(step)
+    }
+    // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
+    // measure settles, the dock rises at once to the expected inset and does not come down for a smaller step of the
+    // keyboard's rise. It takes the measure as it is `blurEndDelay` after the last resize (or `keyboardWait` after the
+    // focus with none), and keeps it for the next open. A layout that shrinks meanwhile is a browser that resizes it
+    // for the keyboard: nothing is expected there again.
+    const measured = new Map<string, number>()
+    const orientation = () => (document.documentElement.clientWidth > document.documentElement.clientHeight ? 'landscape' : 'portrait')
+    let opening = false
+    let openLayout = 0
+    let settleTimer: ReturnType<typeof setTimeout> | undefined
+    const settle = () => {
+      settleTimer = undefined
+      opening = false
+      // The focus left the fields during the opening (a press on Send): the end of the fit brings the dock down after
+      // the press's release, so the settle moves nothing (Codex review of #202).
+      if (!typing || !editable(document.activeElement)) return
+      const inset = measure()
+      if (inset > 1) measured.set(orientation(), inset)
+      show(inset)
+    }
+    const scheduleSettle = (delay: number) => {
+      if (settleTimer !== undefined) clearTimeout(settleTimer)
+      settleTimer = setTimeout(settle, delay)
+    }
+    // The keyboard's inset as the visual viewport reports it now, or 0 with no field focused.
+    const measure = () => {
       // A field removed while it had the focus fires no focusout in WebKit: the focus is then on the body, and the
       // fit must not stay on for it.
       if (!editable(document.activeElement)) typing = false
@@ -91,14 +186,22 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       if (viewport.scale === 1) top = viewport.offsetTop
       // A field has the focus and the visible area is more than a pixel of rounding smaller: a keyboard covers the
       // layout. With no focused field it is the browser's bars, which the shell does not follow.
-      if (typing && layout - visible > 1) {
-        top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
-        show(layout - top - visible)
-      } else {
-        // No keyboard: nothing docks, even where the detail's foot lies below the layout's (a parent taller than the
-        // screen).
-        root.style.removeProperty(keyboardInset)
+      if (!typing || layout - visible <= 1) return 0
+      top = Math.min(Math.max(top, viewport.offsetTop + viewport.height - visible), viewport.offsetTop)
+      return layout - top - visible
+    }
+    const fit = () => {
+      const inset = measure()
+      if (opening && typing && document.documentElement.clientHeight < openLayout - 1) {
+        measured.set(orientation(), 0)
+        opening = false
       }
+      show(opening && typing ? Math.max(target, inset) : inset)
+    }
+    // A visualViewport resize during an opening is a step of the keyboard's rise: the measure settles after the last.
+    const resize = () => {
+      fit()
+      if (opening) scheduleSettle(blurEndDelay)
     }
     // iOS scrolls the document to bring a focused field above the keyboard, so the whole shell, its top bar too,
     // slides up, and it comes back down when the keyboard closes (screen reviews R20 and R21). The dock keeps the
@@ -116,12 +219,20 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       fit()
     }
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
+    // With no keyboard open yet, it rises to the expected keyboard before the browser reports one.
     const focusIn = () => {
+      const was = typing
       typing = editable(document.activeElement)
       if (!typing) return
       cancelEnd()
       keepTop()
-      fit()
+      const expected = measured.get(orientation()) ?? (orientation() === 'portrait' ? figmaKeyboard : 0)
+      if (!was && measure() <= 1 && expected > 0 && keyboardExpected()) {
+        opening = true
+        openLayout = document.documentElement.clientHeight
+        scheduleSettle(keyboardWait)
+        show(expected)
+      } else fit()
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
     // Only `typing` changes, and nothing is fitted: the fit stays as it is, the leaving state, until the next
@@ -188,7 +299,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       fit()
     }
     fit()
-    viewport.addEventListener('resize', fit)
+    viewport.addEventListener('resize', resize)
     viewport.addEventListener('scroll', scroll)
     window.addEventListener('scroll', keepTop)
     document.addEventListener('focusin', focusIn)
@@ -201,7 +312,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     window.addEventListener('orientationchange', refit)
     window.addEventListener('pageshow', refit)
     return () => {
-      viewport.removeEventListener('resize', fit)
+      viewport.removeEventListener('resize', resize)
       viewport.removeEventListener('scroll', scroll)
       window.removeEventListener('scroll', keepTop)
       document.removeEventListener('focusin', focusIn)
@@ -211,6 +322,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       document.removeEventListener('pointercancel', release, true)
       document.removeEventListener('visibilitychange', refit)
       cancelEnd()
+      if (settleTimer !== undefined) clearTimeout(settleTimer)
+      if (motion !== undefined) cancelAnimationFrame(motion)
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)

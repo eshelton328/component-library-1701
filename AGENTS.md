@@ -44,7 +44,11 @@ the API report, the release script tests and the package
 check. CI runs the same steps as separate jobs (typecheck, lint, tokens,
 checks, test, package, build, worktree), so a PR shows which one failed.
 A new step in `verify` needs a `run: pnpm <step>` line in
-`.github/workflows/ci.yml`; `pnpm check:ci` fails without it.
+`.github/workflows/ci.yml`; `pnpm check:ci` fails without it. When the
+worktree job ran `pnpm verify` on a commit and passed, typecheck, lint,
+tokens, checks and test use its result instead of running the same
+commands again; when it skipped verify, they run in full, and any other
+end of the worktree job fails them (`scripts/ci-reuse.test.ts`).
 
 `.github/workflows/actions-minutes.yml` counts the repository's Actions
 spend in USD for the month to date every 3 hours, and the storage of the

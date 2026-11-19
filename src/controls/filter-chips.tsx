@@ -34,8 +34,8 @@ export type FilterChipsProps = {
   /** Whether more than one chip can be selected; `true` when not set. */
   multiple?: boolean | undefined
   disabled?: boolean | undefined
-  /** `md` (the default): 32 high with 10 px sides and the `label` style, as the Toolkit draws them. `compact`: 30 high with 8 px sides and the `small` style, as the Inbox desktop list pane draws them. */
-  size?: 'md' | 'compact' | undefined
+  /** `md` (the default): 32 high with 10 px sides and the `label` style, as the Toolkit draws them. `compact`: 30 high with 8 px sides and the `small` style, as the Inbox desktop list pane draws them. `phone`: `compact` with 12 px sides, as the Inbox phone list draws them. */
+  size?: 'md' | 'compact' | 'phone' | undefined
   /**
    * The space around the chips. `default` pads the row 2 px, so a focused
    * chip's ring shows outside it. `none` puts the chips flush with the row's

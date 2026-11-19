@@ -7,6 +7,7 @@ import { Inline, Stack } from '../controls/layout'
 import { OptionList } from '../controls/option-list'
 import { Popover, PopoverSection } from '../controls/popover'
 import { ScrollFrame } from '../controls/scroll-frame'
+import { PlusIcon } from '../foundations/icons'
 import { Composer, type ComposerAttachment } from './composer'
 import { ModelChip } from './model-chip'
 import { expectCutText } from '../controls/tooltip.testing'
@@ -739,3 +740,57 @@ export const SkillPickerTouchDark: StoryObj<typeof meta> = {
   },
 }
 export const SkillPickerTouchLight: StoryObj<typeof meta> = { ...SkillPickerTouchDark, globals: { mode: 'light', viewport: { value: 'phone' } } }
+
+const onIconAttach = fn()
+
+// The attach glyph and Send's arrow: the defaults (16 px paperclip, 16 px arrow), Workspaces D04's add
+// button (a 12 px plus for Figma's 13, 137:6) and the side chat's 12 px arrow (D05 158:549).
+function IconSizes() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer label="Default stacked" onAttach={() => undefined} />
+        <Composer label="Add stacked" onAttach={onIconAttach} attachIcon={<PlusIcon size="12" />} attachLabel="Add" />
+        <Composer label="Default inline" layout="inline" />
+        <Composer label="Small send inline" layout="inline" sendIconSize="12" />
+      </Stack>
+      {swatchRow}
+    </main>
+  )
+}
+
+const iconSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const box = (name: string) => {
+    const el = canvas.getByRole('textbox', { name }).closest<HTMLElement>('.composer__root')
+    if (el === null) throw new Error(`no composer ${name}`)
+    return within(el)
+  }
+  const svgSize = (button: HTMLElement) => {
+    const svg = button.querySelector('svg')
+    if (svg === null) throw new Error('no svg')
+    const rect = svg.getBoundingClientRect()
+    return [rect.width, rect.height]
+  }
+  // The defaults stay: a 16 px paperclip named "Attach a file" and a 16 px arrow on Send, in both layouts.
+  const defaults = box('Default stacked')
+  await expect(svgSize(defaults.getByRole('button', { name: 'Attach a file' }))).toEqual([16, 16])
+  await expect(svgSize(defaults.getByRole('button', { name: 'Send' }))).toEqual([16, 16])
+  await expect(svgSize(box('Default inline').getByRole('button', { name: 'Send' }))).toEqual([16, 16])
+  // attachIcon and attachLabel: the add button draws the 12 px plus it is given, named "Add", in the 28 px button.
+  const add = box('Add stacked').getByRole('button', { name: 'Add' })
+  await expect(svgSize(add)).toEqual([12, 12])
+  await expect(add.getBoundingClientRect().height).toBe(28)
+  await expect(box('Add stacked').queryByRole('button', { name: 'Attach a file' })).toBeNull()
+  onIconAttach.mockClear()
+  await userEvent.click(add)
+  await expect(onIconAttach).toHaveBeenCalledTimes(1)
+  // sendIconSize="12": the inline Send keeps its 24 px button and draws a 12 px arrow.
+  const smallSend = box('Small send inline').getByRole('button', { name: 'Send' })
+  await expect(svgSize(smallSend)).toEqual([12, 12])
+  await expect(smallSend.getBoundingClientRect().height).toBe(24)
+}
+
+/** `attachIcon`, `attachLabel` and `sendIconSize`: Workspaces D04's 12 px plus and D05's 12 px Send arrow, beside the defaults. */
+export const IconSizesDark: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'dark' }, play: iconSizesPlay }
+export const IconSizesLight: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'light' }, play: iconSizesPlay }

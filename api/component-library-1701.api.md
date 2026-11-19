@@ -96,6 +96,7 @@ export type BackRowProps = {
     label: string;
     backLabel?: string | undefined;
     onBack?: (() => void) | undefined;
+    size?: 'md' | 'sm' | undefined;
     children?: ReactNode;
 };
 
@@ -362,6 +363,9 @@ export type ComposerProps = {
     attachments?: readonly ComposerAttachment[] | undefined;
     onRemoveAttachment?: ((id: string) => void) | undefined;
     onAttach?: (() => void) | undefined;
+    attachIcon?: ReactNode;
+    attachLabel?: string | undefined;
+    sendIconSize?: '12' | '16' | undefined;
     model?: ReactNode;
     disabled?: boolean | undefined;
     layout?: 'stacked' | 'inline' | undefined;

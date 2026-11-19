@@ -6,6 +6,10 @@ import type { Scalar } from '../controls/scalar'
 const { withProvider, withContext } = createSlotRecipeContext(thumbnail)
 const Root = withProvider('div', 'root')
 const Svg = withContext('svg', 'svg')
+const Reference = withContext('svg', 'reference')
+const ReferenceBox = withContext('div', 'referenceBox')
+const ReferenceLabel = withContext('span', 'referenceLabel')
+const ReferenceLine = withContext('span', 'referenceLine')
 
 /** The kind of sample content a thumbnail draws. */
 export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui'
@@ -17,9 +21,26 @@ export type ThumbnailKind = 'chart' | 'diagram' | 'doc' | 'grid' | 'ui'
  */
 export type ThumbnailShape = 'wide' | 'compact' | 'banner'
 
+/**
+ * A reference line on a chart thumbnail, such as a median. `value` is a
+ * percentage on the chart's value axis: 0 is the baseline and 100 the top
+ * of the plot, the scale the sample bars use (they read 31 to 86). Values
+ * outside 0 to 100 are clamped. `label` is the text drawn above the line at
+ * the plot's end, such as "median 71%".
+ */
+export type ThumbnailReference = { value: number; label: string }
+
 export type ThumbnailProps = Scalar<ThumbnailVariantProps> & {
   kind?: ThumbnailKind | undefined
   shape?: ThumbnailShape | undefined
+  /**
+   * With `kind="chart"`, a dashed line across the plot at `value` with its
+   * label in mono above the line's end, both in the needs-you colour (the
+   * Artifacts page's D9 median line, 452:3705 and 452:3706). The label is
+   * text, unscaled, so it keeps the mono size at any width. Other kinds and
+   * the row sizes (`sm`, `md`) ignore it; without it nothing is drawn.
+   */
+  reference?: ThumbnailReference | undefined
   /**
    * A name for a thumbnail that stands alone, such as "Chart preview".
    * Without one the thumbnail is hidden from assistive technology, because
@@ -151,6 +172,34 @@ function Ui() {
 
 const drawings: Record<ThumbnailKind, () => ReactNode> = { chart: Chart, diagram: Diagram, doc: Doc, grid: Grid, ui: Ui }
 
+// The chart's value axis: 0 on the baseline (169) and 100 at y 45, 124
+// above it, where 71 lands at Figma's D9 median line (452:3705, 161.4 of
+// the 374-high banner, 81 of 188). The plot runs from the baseline's start
+// (27) to its end (307) in the 334-wide drawing.
+const plot = { base: 169, span: 124, start: 27, end: 307 }
+const percent = (n: number) => `${String(n * 100)}%`
+
+// The line and label are drawn in an SVG with no viewBox over the drawing,
+// placed in percentages of the box, so the label's text and the dash are
+// not scaled with the drawing.
+function ChartReference({ width, reference }: { width: number; reference: ThumbnailReference }) {
+  const value = Math.min(100, Math.max(0, reference.value))
+  const offset = (width - 334) / 2
+  const y = (plot.base - (plot.span * value) / 100) / height
+  const x = (offset + plot.start) / width
+  const w = (plot.end - plot.start) / width
+  return (
+    <Reference data-reference="">
+      <foreignObject x={percent(x)} y="0" width={percent(w)} height={percent(y)}>
+        <ReferenceBox>
+          <ReferenceLabel>{reference.label}</ReferenceLabel>
+          <ReferenceLine aria-hidden />
+        </ReferenceBox>
+      </foreignObject>
+    </Reference>
+  )
+}
+
 // The row drawings, on Figma's 64 × 40 row preview (D2 403:194 and its
 // siblings): each kind drawn for its size, with no labels, as the card
 // drawing scaled down would cut its shapes to slivers. The values are read
@@ -280,7 +329,7 @@ function RowThumbnail({ kind, size, framed, label }: { kind: ThumbnailKind; size
  * with the card's drawing, 128 × 72 with `shape="wide"`, as the desktop
  * list view and search results draw it.
  */
-export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label }: ThumbnailProps) {
+export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label, reference }: ThumbnailProps) {
   if (size === 'sm' || size === 'md') return <RowThumbnail kind={kind} size={size} framed={framed} label={label} />
   const width = widths[shape]
   const Drawing = drawings[kind]
@@ -302,6 +351,7 @@ export function Thumbnail({ kind = 'doc', shape = 'wide', framed, size, label }:
           <Drawing />
         </g>
       </Svg>
+      {kind === 'chart' && reference !== undefined ? <ChartReference width={width} reference={reference} /> : null}
     </Root>
   )
 }

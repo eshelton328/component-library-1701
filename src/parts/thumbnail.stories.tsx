@@ -252,3 +252,73 @@ const rowMeta = {
 
 export const RowSizeDark: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'dark' } }
 export const RowSizeLight: StoryObj<typeof meta> = { ...rowMeta, globals: { mode: 'light' } }
+
+// A chart's reference line (D9 after Apply, 452:3705 and 452:3706): dashed
+// in the needs-you colour across the plot at the value, with its label in
+// mono at the plot's end, 4 above the line. A chart without it draws neither.
+const refSwatches = {
+  amber: css({ color: 'status.needsYou.fg' }),
+  mono: css({ textStyle: 'mono' }),
+}
+function References() {
+  return (
+    <main className={page}>
+      <div className={css({ w: 'shell.dialogLg' })} data-testid="reference">
+        <Thumbnail kind="chart" shape="banner" reference={{ value: 71, label: 'median 71%' }} />
+      </div>
+      <div className={css({ w: 'shell.dialogLg' })} data-testid="no-reference">
+        <Thumbnail kind="chart" shape="banner" />
+      </div>
+      <div hidden>
+        {Object.entries(refSwatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const referenceMeta = {
+  render: () => <References />,
+  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+    const canvas = within(canvasElement)
+    const { root } = thumb(canvas.getByTestId('reference'))
+    const box = root.getBoundingClientRect()
+    // The label is text, visible, in mono and amber.
+    const label = within(root).getByText('median 71%')
+    await expect(label).toBeVisible()
+    const mono = canvasElement.querySelector('[data-swatch="mono"]')
+    if (mono === null) throw new Error('no mono swatch')
+    const ls = getComputedStyle(label)
+    await expect(ls.fontFamily).toBe(getComputedStyle(mono).fontFamily)
+    await expect(ls.fontSize).toBe('12px')
+    await expect(ls.lineHeight).toBe(getComputedStyle(mono).lineHeight)
+    await expect(ls.color).toBe(swatch(canvasElement, 'amber'))
+    // The line is dashed and amber, across the plot (27 to 307 of the
+    // 334-wide drawing, centred in the banner's 376), at 71 on the axis:
+    // 169 - 124 × 0.71 of 188.
+    const line = root.querySelector('.thumbnail__referenceLine')
+    if (!(line instanceof HTMLElement)) throw new Error('no line')
+    const lstyle = getComputedStyle(line)
+    await expect(lstyle.borderTopStyle).toBe('dashed')
+    await expect(lstyle.borderTopColor).toBe(swatch(canvasElement, 'amber'))
+    await expect(lstyle.borderTopWidth).toBe('1px')
+    const l = line.getBoundingClientRect()
+    const unit = box.width / 376
+    await expect(l.top + l.height / 2).toBeCloseTo(box.top + (169 - 124 * 0.71) * unit, 0)
+    await expect(l.left).toBeCloseTo(box.left + (21 + 27) * unit, 0)
+    await expect(l.right).toBeCloseTo(box.left + (21 + 307) * unit, 0)
+    // The label ends at the plot's end, its bottom 4 above the line.
+    const t = label.getBoundingClientRect()
+    await expect(t.right).toBeCloseTo(l.right, 0)
+    await expect(l.top - t.bottom).toBeCloseTo(4, 0)
+    // Without the prop there is no line and no label.
+    const plain = thumb(canvas.getByTestId('no-reference')).root
+    await expect(plain.querySelector('.thumbnail__referenceLine')).toBeNull()
+    await expect(plain.querySelector('[data-reference]')).toBeNull()
+    await expect(plain.textContent).toBe('')
+  },
+} satisfies StoryObj<typeof meta>
+
+export const ReferenceDark: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'dark' } }
+export const ReferenceLight: StoryObj<typeof meta> = { ...referenceMeta, globals: { mode: 'light' } }

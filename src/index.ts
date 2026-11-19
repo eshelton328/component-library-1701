@@ -80,7 +80,7 @@ export type { MarkdownHighlight, MarkdownViewProps } from './parts/markdown-view
 export { ScriptExplanation } from './parts/script-explanation'
 export type { ScriptExplanationProps, ScriptFact, ScriptStep } from './parts/script-explanation'
 export { Thumbnail } from './parts/thumbnail'
-export type { ThumbnailKind, ThumbnailProps, ThumbnailShape } from './parts/thumbnail'
+export type { ThumbnailKind, ThumbnailProps, ThumbnailReference, ThumbnailShape } from './parts/thumbnail'
 export { ListRow } from './parts/list-row'
 export type { ListRowProps } from './parts/list-row'
 export { Logo } from './parts/logo'

@@ -826,6 +826,9 @@ export function LinkIcon(props: IconProps): JSX.Element;
 export function LinkMarkIcon(props: IconProps): JSX.Element;
 
 // @public
+export function LinksIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ListIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -922,6 +925,7 @@ export type MapGraphProps = {
         height: number;
     } | undefined;
     nodeTone?: MapNodeTone | undefined;
+    nodeDensity?: MapNodeDensity | undefined;
     edgeEnd?: 'dot' | 'none' | undefined;
     orientation?: 'horizontal' | 'vertical' | undefined;
     selectedId?: string | null | undefined;
@@ -929,6 +933,7 @@ export type MapGraphProps = {
     legend?: ReactNode;
     card?: ReactNode;
     zoom?: boolean | MapGraphZoom | undefined;
+    minimap?: boolean | undefined;
 };
 
 // @public
@@ -953,6 +958,9 @@ export type MapLegendProps = {
 export function MapNode(input: MapNodeProps): JSX.Element;
 
 // @public
+export type MapNodeDensity = 'default' | 'compact';
+
+// @public
 export type MapNodeLabelStyle = 'mono' | 'label';
 
 // @public (undocumented)
@@ -963,6 +971,7 @@ export type MapNodeProps = {
     state?: MapNodeState | undefined;
     tone?: MapNodeTone | undefined;
     labelStyle?: MapNodeLabelStyle | undefined;
+    density?: MapNodeDensity | undefined;
     onClick?: (() => void) | undefined;
     onKeyDown?: ((event: KeyboardEvent_2<HTMLButtonElement>) => void) | undefined;
     describedBy?: string | undefined;
@@ -986,7 +995,10 @@ export type MapSelectionCardProps = {
     linkedFrom?: number | undefined;
     actionLabel?: string | undefined;
     onAction?: (() => void) | undefined;
+    linksLabel?: string | undefined;
+    onLinks?: (() => void) | undefined;
     onClose?: (() => void) | undefined;
+    density?: 'default' | 'compact' | undefined;
 };
 
 // @public

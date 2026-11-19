@@ -42,7 +42,7 @@
             "alpha": 0.98,
             "hex": "#0f1626"
           },
-          "$description": "Menus, popovers, pickers, sheets, dialogs and the drawer."
+          "$description": "Menus, popovers, pickers, sheets, dialogs and the drawer, and the minimap that floats over a MapGraph's drawing (Toolkit M11 461:1255)."
         },
         "raised": {
           "$type": "color",
@@ -2020,7 +2020,7 @@
     "xs": {
       "$type": "dimension",
       "$value": { "value": 4, "unit": "px" },
-      "$description": "Checkboxes."
+      "$description": "Checkboxes, and the box of a MapGraph minimap that shows the window's part of the drawing (Toolkit M11 461:1256)."
     },
     "sm": {
       "$type": "dimension",

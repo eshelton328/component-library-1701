@@ -34,7 +34,7 @@ export type { CardProps } from './parts/card'
 export { KpiTile } from './parts/kpi-tile'
 export type { KpiTileProps } from './parts/kpi-tile'
 export { MapGraph, MapLegend, MapNode, MapSelectionCard } from './parts/map-graph'
-export type { MapGraphColumn, MapGraphEdge, MapGraphNode, MapGraphProps, MapGraphZoom, MapLegendProps, MapNodeLabelStyle, MapNodeProps, MapNodeState, MapNodeTone, MapSelectionCardProps } from './parts/map-graph'
+export type { MapGraphColumn, MapGraphEdge, MapGraphNode, MapGraphProps, MapGraphZoom, MapLegendProps, MapNodeDensity, MapNodeLabelStyle, MapNodeProps, MapNodeState, MapNodeTone, MapSelectionCardProps } from './parts/map-graph'
 export { ChatPath, FlowDiagram } from './parts/flow-diagram'
 export type { ChatPathProps, ChatPathStep, FlowDiagramProps, FlowStep, FlowUse, FlowUseKind } from './parts/flow-diagram'
 export { FlowBranch, FlowElbow, FlowLine, FlowLoop } from './parts/flow-connector'
@@ -130,6 +130,7 @@ export {
   LinearIcon,
   LinkIcon,
   LinkMarkIcon,
+  LinksIcon,
   ListIcon,
   LockIcon,
   LoopIcon,

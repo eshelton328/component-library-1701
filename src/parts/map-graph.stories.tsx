@@ -4,6 +4,7 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapNode, MapSelectionCard } from './map-graph'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { expectCutText } from '../controls/tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -1067,3 +1068,333 @@ const keysPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElem
 
 export const ZoomKeysDark: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'dark' } }
 export const ZoomKeysLight: StoryObj<typeof meta> = { render: () => <KeysMap />, play: keysPlay, globals: { mode: 'light' } }
+
+// The resolved colour of a swatch from `swatches`, which each story below draws hidden.
+const swatchOf = (canvasElement: HTMLElement, name: keyof typeof swatches) => {
+  const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+  if (el === null) throw new Error(`no swatch ${name}`)
+  return getComputedStyle(el).backgroundColor
+}
+function Swatches() {
+  return (
+    <div hidden>
+      {Object.entries(swatches).map(([name, className]) => (
+        <span key={name} data-swatch={name} className={className} />
+      ))}
+    </div>
+  )
+}
+
+// The tablet's and the phone's 140 × 30 nodes (Toolkit T2 428:402, M11 461:921): `pr-description` (428:458) fits
+// a compact node whole; the same node at the default density cuts it.
+const compactSize = { width: 140, height: 30 }
+const compactNodes: MapGraphNode[] = [
+  { id: 'writing', label: 'writing', kind: 'rule', x: 20, y: 20 },
+  { id: 'pr-description', label: 'pr-description', kind: 'skill', x: 200, y: 20 },
+]
+
+function CompactNodes() {
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Compact map" width={360} height={70} nodes={compactNodes} edges={[{ from: 'pr-description', to: 'writing' }]} nodeSize={compactSize} nodeDensity="compact" />
+        <MapGraph label="Default map" width={360} height={70} nodes={compactNodes} nodeSize={compactSize} />
+      </div>
+    </main>
+  )
+}
+
+const compactPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const parts = (mapName: string) => {
+    const map = within(canvasElement).getByRole('group', { name: mapName })
+    const node = within(map).getByRole('button', { name: 'pr-description' })
+    const label = within(node).getByText('pr-description')
+    const icon = node.querySelector('svg')
+    if (icon === null) throw new Error('no icon')
+    return { node, label, icon }
+  }
+  const compact = parts('Compact map')
+  const n = compact.node.getBoundingClientRect()
+  await expect([n.width, n.height]).toEqual([140, 30])
+  // A 12 px icon 9 px in (8 inside the 1 px border), a 6 px gap, and the name 27 px in with 104 px to the side padding.
+  const c = getComputedStyle(compact.node)
+  await expect([c.paddingLeft, c.paddingRight, c.columnGap]).toEqual(['8px', '8px', '6px'])
+  await expect([compact.icon.getBoundingClientRect().width, compact.icon.getBoundingClientRect().left - n.left]).toEqual([12, 9])
+  const l = compact.label.getBoundingClientRect()
+  await expect([l.left - n.left, n.right - 9 - l.left]).toEqual([27, 104])
+  // The name is mono 12 and shows whole.
+  await expect(getComputedStyle(compact.label).fontSize).toBe('12px')
+  await expect(compact.label.scrollWidth).toBeLessThanOrEqual(compact.label.clientWidth)
+  // The default density is as before: a 16 px icon, 10 px sides and an 8 px gap, so the same name is cut.
+  const plain = parts('Default map')
+  const p = getComputedStyle(plain.node)
+  await expect([p.paddingLeft, p.columnGap, plain.icon.getBoundingClientRect().width]).toEqual(['10px', '8px', 16])
+  await waitFor(() => expect(plain.label.scrollWidth).toBeGreaterThan(plain.label.clientWidth))
+}
+
+export const CompactNodeDark: StoryObj<typeof meta> = { render: () => <CompactNodes />, play: compactPlay, globals: { mode: 'dark' } }
+export const CompactNodeLight: StoryObj<typeof meta> = { render: () => <CompactNodes />, play: compactPlay, globals: { mode: 'light' } }
+
+// The phone's selection card under the map window (Toolkit M11 `selection · writer` 461:1259): the counts as arrows
+// at the end of the title row, Show links and Open writer side by side, and no close button.
+const phoneCardFrame = css({ w: 'shell.popoverLg', display: 'flex', flexDirection: 'column', gap: '24' })
+
+function PhoneCard({ onOpen, onSelect }: { onOpen: () => void; onSelect: (id: string | null) => void }) {
+  return (
+    <main className={page}>
+      <div className={phoneCardFrame}>
+        <MapSelectionCard
+          name="writer"
+          kind="skill"
+          linksTo={7}
+          linkedFrom={4}
+          density="compact"
+          linksLabel="Show links"
+          onLinks={() => { onSelect('links') }}
+          actionLabel="Open writer"
+          onAction={onOpen}
+        />
+        <MapSelectionCard name="audit-slop" kind="skill" linksTo={3} linkedFrom={1} actionLabel="Open audit-slop" onAction={onOpen} />
+      </div>
+      <Swatches />
+    </main>
+  )
+}
+
+// The text a screen reader reads in an element: every text node outside an aria-hidden subtree.
+function spokenText(element: Element): string {
+  if (element.getAttribute('aria-hidden') === 'true') return ''
+  return Array.from(element.childNodes)
+    .map((node) => (node instanceof Element ? spokenText(node) : node.nodeType === Node.TEXT_NODE ? (node.textContent ?? '') : ''))
+    .join('')
+}
+
+const phoneCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement, args }) => {
+  const swatch = (name: keyof typeof swatches) => swatchOf(canvasElement, name)
+  const card = within(canvasElement).getByRole('region', { name: 'writer' })
+  // 12 px from the top and foot, 16 from the sides, an 8 px gap: 1 + 12 + 20 + 8 + 32 + 12 + 1 = 86 high.
+  const s = getComputedStyle(card)
+  await expect([s.paddingTop, s.paddingBottom, s.paddingLeft, s.rowGap]).toEqual(['12px', '12px', '16px', '8px'])
+  await expect(card.getBoundingClientRect().height).toBe(86)
+  // The counts end the title row as arrows and numbers, two spaces apart, in muted mono.
+  const counts = within(card).getByText('→7 ←4', { normalizer: (t) => t.replace(/\s+/g, ' ').trim() })
+  await expect(counts.textContent).toBe('→7  ←4')
+  const title = within(card).getByRole('heading', { name: 'writer' }).parentElement
+  await expect(counts.parentElement).toBe(title)
+  const k = getComputedStyle(counts)
+  await expect([k.color, k.fontSize, k.whiteSpace]).toEqual([swatch('muted'), '12px', 'pre'])
+  await expect(k.fontFamily).toContain('Geist Mono')
+  await expect(Math.round(counts.getBoundingClientRect().right)).toBe(Math.round(card.getBoundingClientRect().right - 17))
+  // The words are not drawn: the only text with them is the visually hidden label, clipped to 1 × 1 px.
+  const said = within(card).getAllByText(/links to/)
+  await expect(said).toHaveLength(1)
+  const label = said[0]
+  if (label === undefined) throw new Error('no counts label')
+  const l = getComputedStyle(label)
+  await expect([l.position, l.width, l.height, l.overflow, l.getPropertyValue('clip')]).toEqual(['absolute', '1px', '1px', 'hidden', 'rect(0px, 0px, 0px, 0px)'])
+  // Assistive technology reads the default card's words for the arrows, which it does not read.
+  await expect(counts.getAttribute('aria-hidden')).toBe('true')
+  await expect(label.textContent).toBe('→ links to 7   ← linked from 4')
+  await expect(label.closest('[aria-hidden="true"]')).toBeNull()
+  await expect(spokenText(card)).toContain('links to 7')
+  await expect(spokenText(card)).toContain('linked from 4')
+  await expect(spokenText(card)).not.toContain('→7')
+  // No close button; Show links (primary, with the 16 px links icon) and Open writer (secondary, no chevron).
+  await expect(within(card).queryByRole('button', { name: /Close/ })).toBeNull()
+  const links = within(card).getByRole('button', { name: 'Show links' })
+  const open = within(card).getByRole('button', { name: 'Open writer' })
+  await expect(getComputedStyle(links).backgroundColor).toBe(swatch('accent'))
+  await expect(links.querySelector('svg')?.getBoundingClientRect().width).toBe(16)
+  await expect(getComputedStyle(open).backgroundColor).toBe(swatch('raised'))
+  await expect(open.querySelector('svg')).toBeNull()
+  // Side by side at their own width, 8 px apart, 32 high.
+  const a = links.getBoundingClientRect()
+  const b = open.getBoundingClientRect()
+  await expect([b.left - a.right, a.top, a.height, b.height]).toEqual([8, b.top, 32, 32])
+  await expect(a.width).toBeLessThan(card.getBoundingClientRect().width / 2)
+  await userEvent.click(links)
+  await expect(args.onSelect).toHaveBeenLastCalledWith('links')
+  await userEvent.click(open)
+  await expect(args.onOpen).toHaveBeenCalledOnce()
+  // The default card is as before: 16 px padding, the counts in words on their own line, one full-width button.
+  const plain = within(canvasElement).getByRole('region', { name: 'audit-slop' })
+  const p = getComputedStyle(plain)
+  await expect([p.paddingTop, p.rowGap]).toEqual(['16px', '10px'])
+  const words = within(plain).getByText('→ links to 3 ← linked from 1', { normalizer: (t) => t.replace(/\s+/g, ' ').trim() })
+  await expect([words.parentElement, getComputedStyle(words).color]).toEqual([plain, swatch('text')])
+  const one = within(plain).getByRole('button', { name: 'Open audit-slop' })
+  await expect(getComputedStyle(one).backgroundColor).toBe(swatch('accent'))
+  await expect(one.querySelector('svg')).not.toBeNull()
+  await expect(one.getBoundingClientRect().width).toBe(plain.getBoundingClientRect().width - 34)
+}
+
+export const PhoneCardDark: StoryObj<typeof meta> = { render: (args) => <PhoneCard onOpen={args.onOpen} onSelect={args.onSelect} />, play: phoneCardPlay, globals: { mode: 'dark' } }
+export const PhoneCardLight: StoryObj<typeof meta> = { render: (args) => <PhoneCard onOpen={args.onOpen} onSelect={args.onSelect} />, play: phoneCardPlay, globals: { mode: 'light' } }
+
+// The phone card on a 320 px screen with a long name (Codex review of #211): Show links and Open
+// control-in-app-browser do not both fit at their own width, so the open button's label is cut and the row stays
+// one row (M11 461:1268, 461:1275) inside the card. A card whose buttons fit keeps both labels whole.
+const narrow = { w320: { name: 'Phone (320)', styles: { width: '320px', height: '568px' } } }
+const narrowPage = css({ bg: 'bg.canvas', p: '12', display: 'flex', flexDirection: 'column', gap: '24' })
+
+function NarrowPhoneCard() {
+  return (
+    <main className={narrowPage}>
+      <MapSelectionCard
+        name="control-in-app-browser"
+        kind="skill"
+        linksTo={7}
+        linkedFrom={4}
+        density="compact"
+        linksLabel="Show links"
+        actionLabel="Open control-in-app-browser"
+      />
+      <MapSelectionCard name="writer" kind="skill" linksTo={7} linkedFrom={4} density="compact" linksLabel="Show links" actionLabel="Open writer" />
+    </main>
+  )
+}
+
+const narrowCardPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(320)
+  const card = within(canvasElement).getByRole('region', { name: 'control-in-app-browser' })
+  const box = card.getBoundingClientRect()
+  await expect([box.left >= 0, box.right <= window.innerWidth]).toEqual([true, true])
+  // No part of the card is past its box: every drawn element (the visually hidden counts label aside) is inside it.
+  for (const element of Array.from(card.querySelectorAll('*'))) {
+    if (element.closest('.map-selection-card__countsLabel') !== null) continue
+    const r = element.getBoundingClientRect()
+    await expect([element.className, r.left >= box.left, r.right <= box.right]).toEqual([element.className, true, true])
+  }
+  await expect(card.scrollWidth).toBe(card.clientWidth)
+  // One row: Show links whole at its own width, then the open button, 8 px apart, its label cut and shown whole in a tooltip.
+  const links = within(card).getByRole('button', { name: 'Show links' })
+  const open = within(card).getByRole('button', { name: 'Open control-in-app-browser' })
+  const a = links.getBoundingClientRect()
+  const b = open.getBoundingClientRect()
+  await expect([b.left - a.right, b.top, b.height]).toEqual([8, a.top, 32])
+  await expect(Math.round(b.right)).toBe(Math.round(box.right - 17))
+  const linksText = links.textContent
+  await expect(linksText).toBe('Show links')
+  await expect(links.scrollWidth).toBe(links.clientWidth)
+  await expectCutText(open, 'Open control-in-app-browser', open)
+  // A card whose buttons fit draws both labels whole at their own width, as Figma's M11 card does.
+  const fits = within(canvasElement).getByRole('region', { name: 'writer' })
+  const short = within(fits).getByRole('button', { name: 'Open writer' })
+  const label = short.querySelector('.truncated-text')
+  if (!(label instanceof HTMLElement)) throw new Error('no open label')
+  await expect(label.scrollWidth).toBe(label.clientWidth)
+  await expect(short.getBoundingClientRect().right).toBeLessThan(fits.getBoundingClientRect().right - 17)
+}
+
+export const NarrowPhoneCardDark: StoryObj<typeof meta> = {
+  render: () => <NarrowPhoneCard />,
+  play: narrowCardPlay,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'dark', viewport: { value: 'w320' } },
+}
+export const NarrowPhoneCardLight: StoryObj<typeof meta> = {
+  render: () => <NarrowPhoneCard />,
+  play: narrowCardPlay,
+  parameters: { viewport: { options: narrow } },
+  globals: { mode: 'light', viewport: { value: 'w320' } },
+}
+
+// The phone's minimap (Toolkit M11 `minimap bg` 461:1255) on the zoom window over the 1384 × 460 map, and on a map
+// with no zoom that scrolls.
+function MinimapMaps() {
+  return (
+    <main className={page}>
+      <div className={zoomFrame}>
+        <MapGraph label="Zoom map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} selectedId="writer" zoom={{ min: 0.5, max: 2 }} minimap />
+        <MapGraph label="Plain map" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} minimap />
+        <MapGraph label="No minimap" width={1384} height={460} nodes={nodes} edges={edges} columns={columns} />
+      </div>
+      <Swatches />
+    </main>
+  )
+}
+
+const minimapPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const swatch = (name: keyof typeof swatches) => swatchOf(canvasElement, name)
+  const { map, scroller, pointer, drawing } = zoomParts(canvasElement)
+  const mini = map.querySelector<HTMLElement>('[data-minimap]')
+  const view = map.querySelector<HTMLElement>('.map-graph__minimapView')
+  const miniSvg = mini?.querySelector('svg')
+  if (mini === null || view === null || miniSvg === null || miniSvg === undefined) throw new Error('no minimap')
+  // An opaque panel 8 px inside the window's top right corner, 4 px padding, a 1 px border and radius 8; it takes no pointer
+  // and is hidden from assistive technology.
+  const w = scroller.getBoundingClientRect()
+  const r = mini.getBoundingClientRect()
+  await expect([r.top - w.top, w.right - r.right]).toEqual([8, 8])
+  const m = getComputedStyle(mini)
+  await expect([m.backgroundColor, m.borderTopColor, m.borderTopWidth, m.borderTopLeftRadius, m.paddingTop, m.pointerEvents]).toEqual([
+    swatch('overlay'),
+    swatch('border'),
+    '1px',
+    '8px',
+    '4px',
+    'none',
+  ])
+  await expect(mini).toHaveAttribute('aria-hidden', 'true')
+  // The whole drawing at 0.12 scale, with every heading and node name.
+  const sv = miniSvg.getBoundingClientRect()
+  await expect(sv.width).toBeCloseTo(1384 * 0.12, 1)
+  await expect(sv.height).toBeCloseTo(460 * 0.12, 1)
+  const texts = Array.from(miniSvg.querySelectorAll('text')).map((t) => t.textContent)
+  await expect(texts).toEqual([...columns.map((c) => c.label), ...nodes.map((n) => n.label)])
+  await expect(miniSvg.querySelectorAll('path')).toHaveLength(7)
+  // Nodes keep their state: writer is selected, a node it links to is in its kind colour, the others are dim.
+  const rect = (id: string) => {
+    const i = nodes.findIndex((n) => n.id === id)
+    const el = miniSvg.querySelectorAll('rect')[i]
+    if (el === undefined) throw new Error(`no rect ${id}`)
+    return getComputedStyle(el)
+  }
+  await expect([rect('writer').stroke, rect('writer').fill]).toEqual([swatch('accent'), swatch('selected')])
+  await expect([rect('writing').stroke, rect('writing').fill]).toEqual([swatch('rule'), swatch('raised')])
+  await expect(rect('ambitious').stroke).toBe(swatch('border'))
+  // The box shows the window's part of the drawing: 318 × 460 at scale 1 is 38.16 × 55.2, from the top left.
+  const box = () => {
+    const v = view.getBoundingClientRect()
+    return { x: v.left - sv.left, y: v.top - sv.top, width: v.width, height: v.height }
+  }
+  const expectBox = async (expected: { x: number; y: number; width: number; height: number }) => {
+    const b = box()
+    for (const key of ['x', 'y', 'width', 'height'] as const) await expect(b[key], key).toBeCloseTo(expected[key], 1)
+  }
+  const v = getComputedStyle(view)
+  await expect([v.borderTopColor, v.borderTopWidth, v.borderTopLeftRadius]).toEqual([swatch('accent'), '1px', '4px'])
+  await expectBox({ x: 0, y: 0, width: 318 * 0.12, height: 460 * 0.12 })
+  // A drag 50 px to the left moves the box 6 px to the right.
+  pointer('pointerdown', 1, 200, 100)
+  pointer('pointermove', 1, 150, 100)
+  pointer('pointerup', 1, 150, 100)
+  await expect(drawing().left).toBeCloseTo(-50, 1)
+  await expectBox({ x: 6, y: 0, width: 318 * 0.12, height: 460 * 0.12 })
+  // A pinch to scale 2 about (120, 100) halves the box, about the same drawing point.
+  pointer('pointerdown', 1, 100, 100)
+  pointer('pointerdown', 2, 140, 100)
+  pointer('pointermove', 2, 180, 100)
+  pointer('pointerup', 1, 100, 100)
+  pointer('pointerup', 2, 180, 100)
+  const d = drawing()
+  await expectBox({ x: (-d.left / 2) * 0.12, y: (-d.top / 2) * 0.12, width: 159 * 0.12, height: 230 * 0.12 })
+
+  // A map with no zoom: the box follows the scroll.
+  const plain = within(canvasElement).getByRole('group', { name: 'Plain map' })
+  const plainScroller = plain.querySelector<HTMLElement>('.map-graph__scroller')
+  const plainView = plain.querySelector<HTMLElement>('.map-graph__minimapView')
+  const plainSvg = plain.querySelector('[data-minimap] svg')
+  if (plainScroller === null || plainView === null || plainSvg === null) throw new Error('no plain minimap')
+  const plainBox = () => plainView.getBoundingClientRect().left - plainSvg.getBoundingClientRect().left
+  await expect(plainView.getBoundingClientRect().width).toBeCloseTo(318 * 0.12, 1)
+  await expect(plainBox()).toBeCloseTo(0, 1)
+  plainScroller.scrollLeft = 100
+  await waitFor(() => expect(plainBox()).toBeCloseTo(12, 1))
+  // A map without `minimap` draws none.
+  const none = within(canvasElement).getByRole('group', { name: 'No minimap' })
+  await expect(none.querySelector('[data-minimap]')).toBeNull()
+}
+
+export const MinimapDark: StoryObj<typeof meta> = { render: () => <MinimapMaps />, play: minimapPlay, globals: { mode: 'dark' } }
+export const MinimapLight: StoryObj<typeof meta> = { render: () => <MinimapMaps />, play: minimapPlay, globals: { mode: 'light' } }

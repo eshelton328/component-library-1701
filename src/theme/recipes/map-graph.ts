@@ -20,6 +20,12 @@ const kindColour = Object.fromEntries(kinds.map((k) => [`&[data-kind=${k}]`, { c
 // dim or selected node keeps its own border. `labelStyle: 'label'` is the
 // graph's open item (writer 493:78, 150 x 40): its name in the label style
 // (493:81, 14/20), with the icon and name centred in the node.
+// `density: 'compact'` is the tablet's and the phone's 140 x 30 node (T2
+// `node · writing` 428:402, M11 461:921): a 13 px icon 9 px in (`icon/rule`
+// 500:7295, here icon.12, the nearest icon token, which MapNode passes) and
+// the name 28 px in and 104 wide (428:406). So the root pads 8 inside its
+// 1 px border, 9 in as Figma's, with a 6 px gap: the name starts 27 px in
+// and has 104 px, and `pr-description` (428:458, 461:977) shows whole.
 export const mapNode = defineSlotRecipe({
   className: 'map-node',
   jsx: ['MapNode', 'MapGraph'],
@@ -77,8 +83,12 @@ export const mapNode = defineSlotRecipe({
       mono: { label: { textStyle: 'mono' } },
       label: { root: { justifyContent: 'center' }, label: { textStyle: 'label' } },
     },
+    density: {
+      default: {},
+      compact: { root: { px: '8', gap: '6' } },
+    },
   },
-  defaultVariants: { kind: 'skill', labelStyle: 'mono' },
+  defaultVariants: { kind: 'skill', labelStyle: 'mono', density: 'default' },
 })
 
 // The map canvas, 426:362: surface.overlay (the opaque #0f1626 panel), a
@@ -99,11 +109,39 @@ export const mapNode = defineSlotRecipe({
 // --map-graph-scale, the runtime values `MapGraph` sets with
 // `style.setProperty`. With no value set it draws as it does without the
 // variant. Without `zoomable` the map keeps no variant class at all.
+// The minimap (M11 `minimap bg` 461:1255, 93 x 116) sits in the window's top
+// right corner, 9 px inside its border in Figma, here 8: an opaque panel
+// (surface.overlay; Figma's fill is darker than the map's, but the darker
+// surface.well is see-through and would show the nodes under it) with a 1 px
+// border, radius 8 and 4 px padding round the whole drawing at 0.12 scale
+// (`map canvas` 461:1061, 712 x 900 drawn 85 x 108), with every heading and
+// node (461:1062 to 461:1242). Its lines and node borders keep 1 px at that
+// scale (non-scaling stroke). A 1 px cyan box (`minimap viewport` 461:1256,
+// 44 x 60, radius 4) shows the part of the drawing in the window; MapGraph
+// sets its place and size as --map-graph-mini-x, -y, -w and -h. The minimap
+// takes no pointer, so a pinch or drag on it still moves the map.
 export const mapGraph = defineSlotRecipe({
   className: 'map-graph',
   jsx: ['MapGraph'],
   staticCss: ['*'],
-  slots: ['root', 'scroller', 'svg', 'columnLabel', 'edge', 'edgeEnd', 'node', 'links', 'legend', 'card'],
+  slots: [
+    'root',
+    'scroller',
+    'svg',
+    'columnLabel',
+    'edge',
+    'edgeEnd',
+    'node',
+    'links',
+    'legend',
+    'card',
+    'minimap',
+    'minimapSvg',
+    'minimapEdge',
+    'minimapNode',
+    'minimapLabel',
+    'minimapView',
+  ],
   base: {
     root: {
       position: 'relative',
@@ -130,6 +168,52 @@ export const mapGraph = defineSlotRecipe({
     legend: { position: 'absolute', left: '24', bottom: '24' },
     // Figma's card is 300 px wide; shell.popover (320) is the nearest size token.
     card: { position: 'absolute', right: '24', bottom: '24', w: 'shell.popover' },
+    minimap: {
+      position: 'absolute',
+      top: '8',
+      right: '8',
+      p: '4',
+      bg: 'surface.overlay',
+      borderWidth: 'default',
+      borderStyle: 'solid',
+      borderColor: 'border.default',
+      borderRadius: 'md',
+      pointerEvents: 'none',
+    },
+    minimapSvg: { display: 'block', overflow: 'hidden' },
+    minimapEdge: {
+      fill: 'none',
+      stroke: 'fg.muted',
+      strokeWidth: 'token(borderWidths.default)',
+      vectorEffect: 'non-scaling-stroke',
+      '&[data-lit]': { stroke: 'accent.default' },
+    },
+    minimapNode: {
+      fill: 'surface.raised',
+      strokeWidth: 'token(borderWidths.default)',
+      vectorEffect: 'non-scaling-stroke',
+      ...Object.fromEntries(kinds.map((k) => [`&[data-kind=${k}]`, { stroke: `kind.${k}` }])),
+      '&[data-state=dim]': { stroke: 'border.default' },
+      '&[data-state=selected]': { fill: 'surface.selected', stroke: 'accent.default' },
+    },
+    minimapLabel: {
+      textStyle: 'mono',
+      fill: 'fg.default',
+      '&[data-state=dim]': { fill: 'fg.muted' },
+      '&[data-state=selected]': { fill: 'fg.accent' },
+    },
+    minimapView: {
+      position: 'absolute',
+      top: '4',
+      left: '4',
+      w: 'var(--map-graph-mini-w, 0px)',
+      h: 'var(--map-graph-mini-h, 0px)',
+      transform: 'translate(var(--map-graph-mini-x, 0px), var(--map-graph-mini-y, 0px))',
+      borderWidth: 'default',
+      borderStyle: 'solid',
+      borderColor: 'accent.default',
+      borderRadius: 'xs',
+    },
   },
   variants: {
     zoomable: {
@@ -179,11 +263,28 @@ export const mapLegend = defineSlotRecipe({
 // the 16 px kind icon, the name in the label style, the kind in mono in
 // its kind colour and a close button; then the description in small muted
 // text, the link counts in mono and a full-width primary button.
+// With a links button (M11 `buttons` 461:1267) the action row holds two
+// buttons 8 apart at their own width: `button · Show links` (461:1268,
+// primary, a 14 px `icon/links` 461:1269, here icon.16 as in every button)
+// and the open button (461:1275), now secondary. Figma's buttons are 34 and
+// 36 high; both are the md button (control.md, 32), as the open button is.
+// Figma keeps both on one row; when a narrow card (a 320 px phone) has no
+// room for both, the open button shrinks and its label is cut with
+// TruncatedText (whole in a tooltip), so the row stays one row and never
+// overflows. A wrap would put the open button on a second row and make the
+// card taller than M11's 90 px; it would also still overflow with a name
+// longer than the card.
+// `density: 'compact'` is the phone's card under the map window (M11
+// `selection · writer` 461:1259, 366 x 90): 13 px from its top and 15 from
+// its side, here 12 and 16 (spacing tokens, the larger on a tie, d-072),
+// an 8 px gap, and the counts at the end of the title row (461:1266) as
+// arrows and numbers, `→7  ←4`, in muted mono, keeping their two spaces;
+// assistive technology reads the default card's words (`countsLabel`).
 export const mapSelectionCard = defineSlotRecipe({
   className: 'map-selection-card',
   jsx: ['MapSelectionCard'],
   staticCss: ['*'],
-  slots: ['root', 'title', 'icon', 'name', 'kind', 'close', 'description', 'counts', 'action'],
+  slots: ['root', 'title', 'icon', 'name', 'kind', 'close', 'description', 'counts', 'countsLabel', 'action'],
   base: {
     root: {
       display: 'flex',
@@ -204,9 +305,27 @@ export const mapSelectionCard = defineSlotRecipe({
     close: { ms: 'auto', flexShrink: '0' },
     description: { textStyle: 'small', color: 'fg.muted', m: '0' },
     counts: { textStyle: 'mono', color: 'fg.default', m: '0' },
-    action: { display: 'flex', '& > button': { w: '100%' } },
+    // The compact counts in the default card's words, read by assistive technology and hidden from view.
+    countsLabel: { srOnly: true },
+    action: {
+      display: 'flex',
+      '& > button': { w: '100%' },
+      '&[data-links]': { gap: '8', '& > button': { w: 'auto' } },
+      // The open button gives way first: its label (TruncatedText) is cut, so the row never overflows the card.
+      '& > button:last-child': { minW: '0', flexShrink: '1' },
+    },
   },
   variants: {
     kind: Object.fromEntries(kinds.map((k) => [k, { icon: { color: `kind.${k}` }, kind: { color: `kind.${k}` } }])),
+    density: {
+      default: {},
+      compact: {
+        root: { py: '12', px: '16', gap: '8' },
+        counts: { ms: 'auto', flexShrink: '0', color: 'fg.muted', whiteSpace: 'pre' },
+        // The counts push the close button to the end with them.
+        close: { '.map-selection-card__counts ~ &': { ms: '0' } },
+      },
+    },
   },
+  defaultVariants: { density: 'default' },
 })

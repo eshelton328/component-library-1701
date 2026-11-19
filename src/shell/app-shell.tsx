@@ -105,6 +105,9 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     // field above the keyboard, so while a field has the focus or the dock is set, the document goes back to its top
     // at once. Under a zoom the user pans the page, and nothing is reset.
     const keepTop = () => {
+      // A field removed while it had the focus fires no focusout in WebKit, so the focus is read again here, as in
+      // `fit` (Codex review of #200).
+      if (!editable(document.activeElement)) typing = false
       if (viewport.scale !== 1 || window.scrollY === 0) return
       if (typing || root.style.getPropertyValue(keyboardInset) !== '') window.scrollTo(0, 0)
     }

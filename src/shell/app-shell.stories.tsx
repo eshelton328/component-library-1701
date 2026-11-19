@@ -1463,6 +1463,23 @@ const focusScroll: StoryObj<typeof meta> = {
       await nextFrame()
       await nextFrame()
       await expect(window.scrollY).toBe(25)
+      window.scrollTo(0, 0)
+      // WebKit fires no focusout when it removes a focused field (a route change): the focus is then on the body, and
+      // a document scroll is the page's own again. Chromium fires one, so the story stops it before AppShell sees it.
+      await userEvent.click(field)
+      const stop = (event: Event) => {
+        event.stopImmediatePropagation()
+      }
+      document.addEventListener('focusout', stop, { capture: true })
+      try {
+        field.blur()
+      } finally {
+        document.removeEventListener('focusout', stop, { capture: true })
+      }
+      window.scrollTo(0, 25)
+      await nextFrame()
+      await nextFrame()
+      await expect(window.scrollY).toBe(25)
     } finally {
       window.scrollTo(0, 0)
     }

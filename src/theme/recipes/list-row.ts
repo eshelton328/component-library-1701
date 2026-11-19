@@ -33,6 +33,18 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   1 + 8 + 48 + 8 + 1 = 66, Figma's height.
 //   `padding="lg"` is the library's list
 //   view (D4 403:8216): 12 inside the border, so the preview sits 13 in.
+//   `padding="pane"` is the Toolkit list beside an open item (D03 427:94,
+//   D14 459:193, D37 495:193, D10 440:1018): Figma's row is 386 x 53 with no
+//   border, the 28 px kind tile 10 in and 12.5 down, the name (20) over the
+//   path (17) with no gap, and the counts (427:102) centred at the end. 53 is
+//   off the 4 px grid (d-100), so the row is 52: 6 above and below inside the
+//   1 px border, the title and meta 2 apart, 1 + 6 + 20 + 2 + 16 + 6 + 1. 56
+//   would be 3 off; 52 is 1 off and keeps more rows in the pane. The leading,
+//   the body and the trailing are centred down the row, so the tile sits 12
+//   down. The sides keep 10, so the tile is 11 in (Figma 10; 9 is no token,
+//   d-072). The open item's row (427:166, 386 x 55 with the selected fill and
+//   a cyan border) keeps the same 52: the border is there, clear, on every
+//   row, so opening an item does not move the list.
 // - `surface="card"` draws the D4 row's box: a 1 px border.default border
 //   on surface.pane, as the Card has, in the row's own lg radius. A
 //   selected or running row keeps the selected colours.
@@ -153,7 +165,7 @@ export const listRow = defineSlotRecipe({
       compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
     // The padding of an `inbox` row; the compound variants below set it, so it wins over the variant's 10.
-    padding: { default: {}, sm: {}, lg: {}, phone: {} },
+    padding: { default: {}, sm: {}, lg: {}, phone: {}, pane: {} },
     surface: {
       default: {},
       // The base's selected colours lose to a variant, so the card sets them again.
@@ -203,6 +215,7 @@ export const listRow = defineSlotRecipe({
     { variant: 'inbox', padding: 'sm', css: { root: { p: '8' } } },
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
     { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
+    { variant: 'inbox', padding: 'pane', css: { root: { alignItems: 'center', px: '10', py: '6' }, body: { gap: '2' } } },
   ],
   defaultVariants: { variant: 'inbox', density: 'default', padding: 'default', surface: 'default', trailingAlign: 'start', bodyAlign: 'start', dotPosition: 'title', trailingPlacement: 'column' },
 })

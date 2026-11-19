@@ -894,3 +894,70 @@ const toolkitPhonePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }
 /** `leadingGap="12"`: the Toolkit phone row (M1 429:96). */
 export const LeadingGap12Dark: StoryObj<typeof meta> = { render: () => <ToolkitPhoneRows />, globals: { mode: 'dark' }, play: toolkitPhonePlay }
 export const LeadingGap12Light: StoryObj<typeof meta> = { render: () => <ToolkitPhoneRows />, globals: { mode: 'light' }, play: toolkitPhonePlay }
+
+/**
+ * The Toolkit list beside an open item (D03 427:94, the open row 427:166):
+ * `padding="pane"` draws each row 52 high, the 28 px kind tile, the name over
+ * the path and the counts centred down it, and the open row keeps the same
+ * height with its cyan border. A row without the prop keeps the 62 px Inbox
+ * row with its items at the top.
+ */
+function ToolkitPaneRows() {
+  return (
+    <main className={page}>
+      <div className={libraryList}>
+        <ListRow padding="pane" title="agents-md" meta="toolkit/skills/agents-md" leading={<KindTile kind="skill" size="sm" />} trailing="→0 ←1" onSelect={() => undefined} />
+        <ListRow padding="pane" title="writer" meta="toolkit/agents/writer" leading={<KindTile kind="agent" size="sm" />} trailing="→2 ←0" selected onSelect={() => undefined} />
+        <ListRow title="commits-and-prs" meta="toolkit/skills/commits-and-prs" leading={<KindTile kind="skill" size="sm" />} trailing="→1 ←3" onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const toolkitPanePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const centre = (r: DOMRect) => r.top + r.height / 2
+  for (const name of ['agents-md', 'writer']) {
+    const pane = rowParts(canvasElement, name)
+    const tile = pane.slot('leading')
+    const title = pane.slot('title')
+    const path = pane.slot('meta')
+    // 1 + 6 + 20 + 2 + 16 + 6 + 1: Figma's 53 on the 4 px grid, the open row too (Figma 55).
+    await expect(pane.row.height).toBe(52)
+    await expect([tile.width, tile.height]).toEqual([28, 28])
+    // The tile is centred down the row (Figma 12.5 down) and 11 in: the border and 10.
+    await expect(tile.top - pane.row.top).toBe(12)
+    await expect(tile.left - pane.row.left).toBe(11)
+    // The name (label, 20) over the path (mono, 16), 2 apart, the pair centred.
+    await expect([title.height, path.height]).toEqual([20, 16])
+    await expect(path.top - title.bottom).toBe(2)
+    await expect(title.top - pane.row.top).toBe(7)
+    // The counts are centred down the row, not on the title line.
+    await expect(centre(pane.slot('trailing'))).toBe(centre(pane.row))
+  }
+  // The text styles keep the row's own: the name in label (14 / 20, medium), the path in mono (12 / 16).
+  const px = (value: string) => Math.round(Number.parseFloat(value))
+  const titleStyle = getComputedStyle(within(canvasElement).getByRole('button', { name: 'agents-md' }))
+  await expect([px(titleStyle.fontSize), px(titleStyle.lineHeight), titleStyle.fontWeight]).toEqual([14, 20, '500'])
+  const pathStyle = getComputedStyle(within(canvasElement).getByText('toolkit/skills/agents-md'))
+  await expect([px(pathStyle.fontSize), px(pathStyle.lineHeight)]).toEqual([12, 16])
+  await expect(pathStyle.fontFamily).toMatch(/mono/i)
+  // The plain row has no fill and a clear border; the open row draws the selected fill and border.
+  const rowOf = (name: string) => within(canvasElement).getByText(name).closest('.list-row__root')
+  const plain = rowOf('agents-md')
+  const open = rowOf('writer')
+  if (!(plain instanceof HTMLElement) || !(open instanceof HTMLElement)) throw new Error('no rows')
+  await expect(getComputedStyle(plain).borderTopColor).toBe('rgba(0, 0, 0, 0)')
+  await expect(getComputedStyle(plain).backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  await expect(getComputedStyle(open).borderTopWidth).toBe('1px')
+  await expect(getComputedStyle(open).borderTopColor).not.toBe('rgba(0, 0, 0, 0)')
+  await expect(getComputedStyle(open).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
+  // Without the prop the row keeps the Inbox look: 1 + 10 + 20 + 4 + 16 + 10 + 1, items at the top.
+  const inbox = rowParts(canvasElement, 'commits-and-prs')
+  await expect(inbox.row.height).toBe(62)
+  await expect(inbox.slot('leading').top - inbox.row.top).toBe(11)
+  await expect(inbox.slot('trailing').top - inbox.row.top).toBe(11)
+}
+
+/** `padding="pane"`: the Toolkit list beside an open item (D03), 52 px rows. */
+export const ToolkitPaneDark: StoryObj<typeof meta> = { render: () => <ToolkitPaneRows />, globals: { mode: 'dark' }, play: toolkitPanePlay }
+export const ToolkitPaneLight: StoryObj<typeof meta> = { render: () => <ToolkitPaneRows />, globals: { mode: 'light' }, play: toolkitPanePlay }

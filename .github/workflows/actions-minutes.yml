@@ -36,33 +36,24 @@ jobs:
         run: |
           cat > "$RUNNER_TEMP/minutes" <<'MINUTES'
           #!/usr/bin/env python3
-          """minutes: counts the billed GitHub Actions minutes of repositories from the runs and jobs API.
+          """minutes: counts billed GitHub Actions minutes from the runs and jobs API.
 
-          Usage:
-            minutes --repo OWNER/NAME [--repo ...] --since YYYY-MM-DD [--until YYYY-MM-DD]
-            minutes --repo OWNER/NAME --days N [--today YYYY-MM-DD] [--ledger FILE]
-                    [--budget MINUTES --alert-percent P [--issue]] [--max-calls N]
+          Usage: minutes --repo OWNER/NAME [--repo ...] (--since DAY [--until DAY] | --days N
+                 [--today DAY]) [--ledger FILE] [--budget M --alert-percent P [--issue]] [--max-calls N]
 
-          A job bills ceil(seconds / 60) minutes times its runner multiplier
-          (Linux 1, Windows 2, macOS 10, self-hosted 0); skipped jobs bill 0, and
-          every run attempt counts. A query over the runs API's 1,000-run cap is
-          split. Calls use "gh api" (GH_TOKEN or the gh login); a failure other
-          than HTTP 4xx is tried twice more. It needs read access to Actions only: it never reads the billing
-          API and never runs "gh auth".
-
-          --since/--until: every UTC day from since to until (default yesterday).
-          --days N: the N complete UTC days before --today (default today, UTC).
-          --ledger FILE keeps complete days, so a later run counts only new days.
-          --max-calls N stops before a day that would pass about N calls; days
-          not counted are in "missing" and the totals are a lower bound.
-          --budget and --alert-percent add a "budget" object. With --issue, the
-          first repo's issue "Actions minutes at the weekly alert level" is opened
-          or updated when the total reaches the alert level, and gets a comment
-          and is closed when the total is below it.
-
-          Prints one JSON object. Exit 0; 4 at the alert level without --issue;
-          3 when an API error left no day counted or the issue update failed;
-          2 on usage errors.
+          A job bills ceil(seconds / 60) minutes times its runner multiplier (Linux 1,
+          Windows 2, macOS 10, self-hosted 0); skipped jobs bill 0; every attempt counts.
+          A query over the 1,000-run cap is split. Calls use "gh api"; a failure other
+          than HTTP 4xx is tried twice more. It never reads the billing API or runs "gh auth".
+          --since/--until: UTC days (until defaults to yesterday). --days N: the N days
+          before --today. --ledger keeps days older than 2 days; newer days, which a
+          re-run may change, are counted again. --max-calls N stops before a day that would
+          pass about N calls; days not counted are in "missing" (a lower bound). --budget
+          adds a "budget" object; --issue opens or updates the first repo's issue "Actions
+          minutes at the weekly alert level" at the alert level, and closes it when a
+          complete count is below. Prints JSON. Exit 0; 4 at the alert level without
+          --issue; 3 when an API error left no day counted or the issue update failed; 2 on
+          usage errors.
           """
           import datetime as dt
           import json
@@ -75,14 +66,15 @@ jobs:
           ISSUE_TITLE = "Actions minutes at the weekly alert level"
           MARK = "<!-- actions-minutes -->"
           CAP = 1000
+          SETTLE = 2  # days a re-run may still add jobs to a day's runs
 
 
           class ApiError(Exception):
-              pass
+              """A gh api call failed."""
 
 
           class Stop(Exception):
-              pass
+              """The call limit would be passed."""
 
 
           class Api:
@@ -254,7 +246,13 @@ jobs:
 
 
           def update_issue(api, res, repo):
-              issues = api.get(f"/repos/{repo}/issues", {"state": "open", "per_page": 100})
+              issues, page = [], 0
+              while True:
+                  page += 1
+                  got = api.get(f"/repos/{repo}/issues", {"state": "open", "per_page": 100, "page": page})
+                  issues += got
+                  if len(got) < 100:
+                      break
               mine = [i for i in issues if i.get("title") == ISSUE_TITLE and "pull_request" not in i]
               alert = res["budget"]["alert"]
               if alert:
@@ -264,6 +262,8 @@ jobs:
                       return {"action": "updated", "number": mine[0]["number"]}
                   made = api.send("POST", f"/repos/{repo}/issues", {"title": ISSUE_TITLE, "body": body})
                   return {"action": "opened", "number": made.get("number")}
+              if mine and res["partial"]:
+                  return {"action": "kept-open", "number": mine[0]["number"], "reason": "some days were not counted"}
               if mine:
                   n = mine[0]["number"]
                   api.send("POST", f"/repos/{repo}/issues/{n}/comments",
@@ -327,7 +327,7 @@ jobs:
                           try:
                               day = count_day(api, repo, d)
                               counted += 1
-                              if day["incomplete"] == 0 and d < today:
+                              if day["incomplete"] == 0 and d < today - dt.timedelta(days=SETTLE):
                                   kept[key] = day
                           except Stop:
                               stopped = True

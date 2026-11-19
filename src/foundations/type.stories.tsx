@@ -11,7 +11,8 @@ import { css } from '../../styled-system/css'
 // and `bodyLg` the Read the whole prompt dialog (D08 346:3548, 15/23 in
 // Figma, 15/24 on the grid). `smallXs` is the Artifacts Sort menu's
 // descriptions and note (D6 403:8884, 403:8907: Regular 11 on 14 px lines,
-// 11/16 on the grid).
+// 11/16 on the grid). `pageCount` is the Artifacts page count (D1
+// 402:15373: Regular 16 on 21 px lines, 16/20 on the grid).
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '12' })
 const row = css({ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'baseline', gap: '16' })
 const name = css({ textStyle: 'mono', color: 'fg.muted' })
@@ -28,6 +29,7 @@ const styles = [
   { name: 'labelXsStrong', className: css({ textStyle: 'labelXsStrong', color: 'fg.default' }) },
   { name: 'bodyLg', className: css({ textStyle: 'bodyLg', color: 'fg.default' }) },
   { name: 'body', className: css({ textStyle: 'body', color: 'fg.default' }) },
+  { name: 'pageCount', className: css({ textStyle: 'pageCount', color: 'fg.muted' }) },
   { name: 'bodySm', className: css({ textStyle: 'bodySm', color: 'fg.default' }) },
   { name: 'small', className: css({ textStyle: 'small', color: 'fg.muted' }) },
   { name: 'smallXs', className: css({ textStyle: 'smallXs', color: 'fg.muted' }) },
@@ -74,6 +76,7 @@ const meta = {
     await expect(sample('labelXsStrong')).toEqual({ family: '"Geist Variable"', size: '12px', weight: '600', lineHeight: 16, tracking: 'normal' })
     await expect(sample('smallXs')).toEqual({ family: '"Geist Variable"', size: '11px', weight: '400', lineHeight: 16, tracking: 'normal' })
     await expect(sample('bodyLg')).toEqual({ family: '"Geist Variable"', size: '15px', weight: '400', lineHeight: 24, tracking: 'normal' })
+    await expect(sample('pageCount')).toEqual({ family: '"Geist Variable"', size: '16px', weight: '400', lineHeight: 20, tracking: 'normal' })
   },
 } satisfies Meta<typeof TypeScale>
 export default meta

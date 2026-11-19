@@ -29,15 +29,18 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 /**
  * The header of a page or a list pane: the title, an optional count and the
  * page's actions at the end of the row. `size` picks the title style:
- * `pane` (15), `page` (20, the default) or `phone` (28).
+ * `pane` (15), `page` (20, the default) or `phone` (28). `countSize` picks
+ * the count's text: `md` (the default) keeps the size's own count, mono 12
+ * in a pane and Regular 14/20 on a page or phone; `lg` draws it Regular
+ * 16/20, as the Artifacts header does.
  */
-export function PageHeader({ title, count, countLabel, level = 1, size, children }: PageHeaderProps) {
+export function PageHeader({ title, count, countLabel, level = 1, size, countSize, children }: PageHeaderProps) {
   const Title = level === 1 ? Title1 : level === 2 ? Title2 : Title3
   const hasCount = count !== undefined && count !== ''
   // A blank label would hide the count and say nothing in its place.
   const spoken = countLabel !== undefined && countLabel.trim() !== '' ? countLabel : undefined
   return (
-    <Root size={size}>
+    <Root size={size} countSize={countSize}>
       <Title>
         <TruncatedText>{title}</TruncatedText>
       </Title>

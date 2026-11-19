@@ -1848,7 +1848,18 @@
         "lineHeight": 1.4286,
         "letterSpacing": { "value": 0, "unit": "px" }
       },
-      "$description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg."
+      "$description": "Descriptions, messages and the prompt. The Inbox dialog prompt and large menu rows use bodyLg. Not for the Artifacts page count, which uses pageCount."
+    },
+    "pageCount": {
+      "$type": "typography",
+      "$value": {
+        "fontFamily": "{font.family.sans}",
+        "fontSize": { "value": 16, "unit": "px" },
+        "fontWeight": 400,
+        "lineHeight": 1.25,
+        "letterSpacing": { "value": 0, "unit": "px" }
+      },
+      "$description": "Regular 16/20 for the count after a page title in a PageHeader with countSize lg, as the Artifacts header draws it (D1 402:15373 and D4 403:7774, 21 high in Figma, 20 on the 4 px grid, d-100). Not for other counts, which use body or mono, or for body text."
     },
     "bodyLg": {
       "$type": "typography",

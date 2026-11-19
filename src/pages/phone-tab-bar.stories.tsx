@@ -6,6 +6,7 @@ import { Button } from '../controls/button'
 import { Container, Inline, Stack } from '../controls/layout'
 import { ScrollFrame } from '../controls/scroll-frame'
 import { ArtifactsIcon, HomeIcon, InboxIcon, MoreIcon, WorkspacesIcon } from '../foundations/icons'
+import { Composer } from '../parts/composer'
 import type { NavItem } from '../parts/nav-item'
 import { TabBar } from '../parts/tab-bar'
 import { AppShell } from '../shell/app-shell'
@@ -418,3 +419,310 @@ const blurThenPress: StoryObj<typeof meta> = {
 /** A blur with no pointer, then a press on Send within the 300 ms that stays down past them: the composer stays docked until the release, the click lands on Send, and one frame later the dock ends. */
 export const BlurThenPressDark: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const BlurThenPressLight: StoryObj<typeof meta> = { ...blurThenPress, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The Inbox list with a search field at its top, under the overlaid tab bar: a page with no dock.
+const searchField = css({ textStyle: 'body', color: 'fg.default', bg: 'transparent', py: '12' })
+function PhoneInboxSearch() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        tabBarOverlay
+        list={
+          <Container>
+            <Stack>
+              <input type="search" aria-label="Search tasks" className={searchField} />
+              {tasks.map((t) => (
+                <p key={t} className={row}>
+                  {t}
+                </p>
+              ))}
+            </Stack>
+          </Container>
+        }
+        tabBar={<TabBar items={items} selected="inbox" />}
+      />
+    </div>
+  )
+}
+
+const searchKeyboard: StoryObj<typeof meta> = {
+  render: () => <PhoneInboxSearch />,
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+  play: async ({ canvasElement }) => {
+    await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
+    const canvas = within(canvasElement)
+    const root = canvasElement.querySelector('.app-shell__root')
+    if (!(root instanceof HTMLElement)) throw new Error('no shell')
+    const field = canvas.getByRole('searchbox', { name: 'Search tasks' })
+    const places = () =>
+      [root, canvas.getByRole('navigation', { name: 'Main' }), field, canvas.getByText('Task 1 needs a review'), canvas.getByText('Task 8 needs a review')].map((el) => {
+        const box = el.getBoundingClientRect()
+        return [Math.round(box.top), Math.round(box.bottom)]
+      })
+    const before = places()
+    // The tab bar sits at the shell's foot, at the screen's 844.
+    await expect(before[1]?.[1]).toBe(844)
+    // The search field takes the focus and the keyboard covers the screen's 300 px foot: the keyboard lies over the
+    // tab bar, which stays fixed at the shell's foot, and nothing on the page moves.
+    await userEvent.click(field)
+    await expect(field).toHaveFocus()
+    fakeViewport.move(544)
+    await expect(places()).toEqual(before)
+    await expect(Math.round(root.getBoundingClientRect().height)).toBe(844)
+    // The keyboard closes: still nothing has moved.
+    field.blur()
+    fakeViewport.move(844)
+    await expect(places()).toEqual(before)
+  },
+}
+
+/** The phone Inbox list with its search field focused and the keyboard open: there is no dock, so the keyboard covers the tab bar, which stays at the shell's foot, and nothing moves. */
+export const SearchKeyboardDark: StoryObj<typeof meta> = { ...searchKeyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SearchKeyboardLight: StoryObj<typeof meta> = { ...searchKeyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The Inbox list with a search field and rows that open a task, and a chat with the Composer, for the tap outside
+// a field (R19). `opened` counts the rows' clicks and `sent` the Composer's sends.
+function TapInbox() {
+  const [opened, setOpened] = useState<string[]>([])
+  const [page, setPage] = useState<'list' | 'chat'>('list')
+  const [sent, setSent] = useState(0)
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view={page === 'chat' ? 'detail' : 'list'}
+        tabBarOverlay
+        list={
+          <Container>
+            <Stack>
+              <input type="search" aria-label="Search tasks" className={searchField} />
+              <label className={row}>
+                Owner
+                <input type="text" aria-label="Filter by owner" className={searchField} />
+              </label>
+              <p className={row}>Opened {opened.length}</p>
+              {tasks.map((t) => (
+                <Button
+                  key={t}
+                  onClick={() => {
+                    setOpened((o) => [...o, t])
+                  }}
+                >
+                  {t}
+                </Button>
+              ))}
+              <Button
+                onClick={() => {
+                  setPage('chat')
+                }}
+              >
+                Open the chat
+              </Button>
+            </Stack>
+          </Container>
+        }
+        detail={
+          <ScrollFrame footer={<Composer label="Message" onSubmit={() => {
+            setSent((n) => n + 1)
+          }} />}>
+            <p className={row}>Sent {sent}</p>
+          </ScrollFrame>
+        }
+        tabBar={<TabBar items={items} selected="inbox" />}
+      />
+    </div>
+  )
+}
+
+// A finger's tap as Safari delivers it: a touch press and release on the element, then a click. A press on a field
+// focuses it, as the browser does at the tap; Safari focuses no button on a tap.
+const touchTap = async (el: HTMLElement) => {
+  const box = el.getBoundingClientRect()
+  const at = { bubbles: true, cancelable: true, composed: true, pointerType: 'touch', pointerId: 7, isPrimary: true, clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 }
+  el.dispatchEvent(new PointerEvent('pointerdown', at))
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.focus()
+  el.dispatchEvent(new PointerEvent('pointerup', at))
+  el.dispatchEvent(new MouseEvent('click', at))
+  // React renders what the click changed in a later task; read the page after it.
+  return new Promise((resolve) => setTimeout(resolve, 50))
+}
+
+const tapParts = (canvasElement: HTMLElement) => {
+  const canvas = within(canvasElement)
+  return {
+    canvas,
+    search: canvas.getByRole('searchbox', { name: 'Search tasks' }),
+    row: (n: number) => canvas.getByRole('button', { name: `Task ${String(n)} needs a review` }),
+    opened: () => canvas.getByText(/^Opened \d+$/).textContent,
+  }
+}
+const withTapDevice = {
+  render: () => <TapInbox />,
+  beforeEach: () => {
+    fakeViewport = new FakeViewport()
+    return replaceVisualViewport(fakeViewport)
+  },
+}
+
+const tapOutsideField: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { search, row, opened } = tapParts(canvasElement)
+    await touchTap(search)
+    await expect(search).toHaveFocus()
+    fakeViewport.move(544)
+    // With the keyboard open, a tap on a row closes the keyboard and opens nothing.
+    await touchTap(row(2))
+    await expect(search).not.toHaveFocus()
+    await expect(opened()).toBe('Opened 0')
+    // The next tap, with no field focused, opens the row.
+    fakeViewport.move(844)
+    await touchTap(row(2))
+    await expect(opened()).toBe('Opened 1')
+  },
+}
+
+/** The phone Inbox list with its search field focused: a tap on a row closes the keyboard and opens nothing; the next tap opens the row. */
+export const TapOutsideFieldDark: StoryObj<typeof meta> = { ...tapOutsideField, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapOutsideFieldLight: StoryObj<typeof meta> = { ...tapOutsideField, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapSend: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { canvas } = tapParts(canvasElement)
+    await userEvent.click(canvas.getByRole('button', { name: 'Open the chat' }))
+    const message = canvas.getByRole('textbox', { name: 'Message' })
+    await touchTap(message)
+    await userEvent.keyboard('Ready to ship')
+    fakeViewport.move(544)
+    const root = canvasElement.querySelector('.app-shell__root')
+    if (!(root instanceof HTMLElement)) throw new Error('no shell')
+    // Send is a keep element: a tap on it sends, and the field keeps the focus and the dock its place.
+    const send = canvas.getByRole('button', { name: 'Send' })
+    const top = send.getBoundingClientRect().top
+    await touchTap(send)
+    await expect(canvas.getByText('Sent 1')).toBeVisible()
+    await expect(message).toHaveFocus()
+    await expect(send.getBoundingClientRect().top).toBe(top)
+    await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
+  },
+}
+
+/** The phone chat with the keyboard open: a tap on the Composer's Send sends, and the keyboard stays open. */
+export const TapSendDark: StoryObj<typeof meta> = { ...tapSend, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapSendLight: StoryObj<typeof meta> = { ...tapSend, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapFieldToField: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { canvas, search, opened } = tapParts(canvasElement)
+    const owner = canvas.getByRole('textbox', { name: 'Filter by owner' })
+    await touchTap(search)
+    fakeViewport.move(544)
+    // A tap on another field moves the focus to it, and its click is not swallowed.
+    let clicks = 0
+    owner.addEventListener('click', () => (clicks += 1))
+    await touchTap(owner)
+    await expect(owner).toHaveFocus()
+    await expect(clicks).toBe(1)
+    await expect(opened()).toBe('Opened 0')
+  },
+}
+
+/** The phone Inbox list with the keyboard open: a tap on another field moves the focus to it, as before. */
+export const TapFieldToFieldDark: StoryObj<typeof meta> = { ...tapFieldToField, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapFieldToFieldLight: StoryObj<typeof meta> = { ...tapFieldToField, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapScrollDrag: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { canvas, search, row, opened } = tapParts(canvasElement)
+    const list = canvas.getByRole('main')
+    await touchTap(search)
+    fakeViewport.move(544)
+    // A real touch drag up over the rows, through the test runner's DevTools session: the list scrolls and the
+    // keyboard closes, and no click opens a row.
+    const box = row(4).getBoundingClientRect()
+    const { cdp } = await import('vitest/browser')
+    // Touch emulation makes Chromium scroll for the touch events on every platform (headless Linux in CI as well).
+    await cdp().send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 })
+    try {
+      const x = Math.round(box.left + 20)
+      const y = Math.round(box.top)
+      await cdp().send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] })
+      for (let step = 1; step <= 10; step++) {
+        await cdp().send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x, y: y - step * 20 }] })
+      }
+      await cdp().send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    } finally {
+      await cdp().send('Emulation.setTouchEmulationEnabled', { enabled: false })
+    }
+    await waitFor(() => expect(list.scrollTop).toBeGreaterThan(100))
+    await expect(search).not.toHaveFocus()
+    await expect(opened()).toBe('Opened 0')
+    // The next tap is not eaten: it opens its row.
+    await touchTap(row(10))
+    await expect(opened()).toBe('Opened 1')
+  },
+}
+
+/** The phone Inbox list with the keyboard open: a touch drag over the rows still scrolls the list and closes the keyboard, and the next tap opens a row. */
+export const TapScrollDragDark: StoryObj<typeof meta> = { ...tapScrollDrag, tags: ['!dev'], globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapScrollDragLight: StoryObj<typeof meta> = { ...tapScrollDrag, tags: ['!dev'], globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapLabel: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { canvas, search, opened } = tapParts(canvasElement)
+    const owner = canvas.getByRole('textbox', { name: 'Filter by owner' })
+    const label = owner.closest('label')
+    if (label === null) throw new Error('no label')
+    await touchTap(search)
+    fakeViewport.move(544)
+    // A tap on another field's label moves the focus to that field, as a tap on the field does (Codex review of #213).
+    await touchTap(label)
+    await expect(owner).toHaveFocus()
+    await expect(opened()).toBe('Opened 0')
+  },
+}
+
+/** The phone Inbox list with the keyboard open: a tap on another field's label moves the focus to that field. */
+export const TapLabelDark: StoryObj<typeof meta> = { ...tapLabel, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapLabelLight: StoryObj<typeof meta> = { ...tapLabel, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const tapNoKeyboard: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { search, row, opened } = tapParts(canvasElement)
+    // A field focused with a hardware keyboard: no on-screen keyboard covers the screen, so the shell docks nothing.
+    await touchTap(search)
+    await expect(search).toHaveFocus()
+    // A tap on a row opens the row at once, as with no field focused (Codex review of #213).
+    await touchTap(row(5))
+    await expect(opened()).toBe('Opened 1')
+  },
+}
+
+/** The phone Inbox list with a field focused and no on-screen keyboard (a hardware keyboard): a tap on a row opens it. */
+export const TapNoKeyboardDark: StoryObj<typeof meta> = { ...tapNoKeyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapNoKeyboardLight: StoryObj<typeof meta> = { ...tapNoKeyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const mouseClickRow: StoryObj<typeof meta> = {
+  ...withTapDevice,
+  play: async ({ canvasElement }) => {
+    const { search, row, opened } = tapParts(canvasElement)
+    await userEvent.click(search)
+    await expect(search).toHaveFocus()
+    // A mouse click on a row with the field focused opens the row at once, as before.
+    await userEvent.click(row(3))
+    await expect(opened()).toBe('Opened 1')
+  },
+}
+
+/** The Inbox list with a mouse: a click on a row while the search field has the focus opens the row, as before. */
+export const MouseClickRowDark: StoryObj<typeof meta> = { ...mouseClickRow, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const MouseClickRowLight: StoryObj<typeof meta> = { ...mouseClickRow, globals: { mode: 'light', viewport: { value: 'm390' } } }

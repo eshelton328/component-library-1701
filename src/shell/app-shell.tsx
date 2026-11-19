@@ -40,6 +40,14 @@ const figmaKeyboard = Number.parseFloat(token('sizes.shell.keyboard'))
 // How long after a field takes the focus the dock waits for the keyboard's measure; with none by then, no on-screen
 // keyboard opened (a hardware keyboard), and the dock follows the visual viewport as it is.
 const keyboardWait = 1000
+// A tap outside the focused field closes the keyboard and does nothing else: its click is swallowed if it comes
+// within `tapClickWait` of the release (a click follows its release at once), and at the latest `tapClickWait` after
+// the press, so a later tap is never eaten. A drag that scrolls ends in a pointercancel and no click.
+const tapClickWait = 100
+const tapPressWait = 1000
+// Inside one of these, a tap keeps the keyboard and does its own action: Send, attach, a search's sort or filter.
+const keyboardKeep = '[data-keyboard-keep]'
+const fieldSelector = 'input, textarea, [contenteditable]'
 
 // The curve's progress at the time fraction `t`: the bezier's y where its x is `t`, found by bisection.
 const bezier = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3
@@ -285,6 +293,46 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     const release = () => {
       pressing = false
     }
+    // A touch or pen press inside the shell while a field has the focus, on neither a field nor a keep element:
+    // the field is blurred at once, so the keyboard closes, and the click of that gesture is swallowed, so the tap
+    // opens nothing (an Inbox row stays closed). A press on another field moves the focus as always, and a mouse or
+    // a hardware keyboard changes nothing. The blur's focusout comes while the press is down, so the dock waits for
+    // the release, as for any press that takes the focus.
+    let swallowTimer: ReturnType<typeof setTimeout> | undefined
+    const swallow = (event: MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+      stopSwallow()
+    }
+    const stopSwallow = () => {
+      if (swallowTimer !== undefined) clearTimeout(swallowTimer)
+      swallowTimer = undefined
+      document.removeEventListener('click', swallow, true)
+      document.removeEventListener('pointerup', afterTap, true)
+      document.removeEventListener('pointercancel', stopSwallow, true)
+    }
+    const afterTap = () => {
+      if (swallowTimer !== undefined) clearTimeout(swallowTimer)
+      swallowTimer = setTimeout(stopSwallow, tapClickWait)
+    }
+    const tapOutside = (event: PointerEvent) => {
+      const focused = document.activeElement
+      const target = event.target instanceof Element ? event.target : null
+      if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
+      if (!editable(focused) || target === null || !root.contains(target)) return
+      if (editable(target.closest(fieldSelector)) || target.closest(keyboardKeep) !== null) return
+      // A field's label moves the focus to its field, as a tap on the field does (Codex review of #213).
+      const label = target.closest('label')
+      if (label !== null && editable(label.control)) return
+      // With no on-screen keyboard docked (a hardware keyboard), the tap acts at once (Codex review of #213).
+      if (root.style.getPropertyValue(keyboardInset) === '') return
+      stopSwallow()
+      focused.blur()
+      document.addEventListener('click', swallow, true)
+      document.addEventListener('pointerup', afterTap, true)
+      document.addEventListener('pointercancel', stopSwallow, true)
+      swallowTimer = setTimeout(stopSwallow, tapPressWait)
+    }
     // An end that comes while a pointer is down (a press that started after a blur, within `blurEndDelay`) waits
     // for that press's release and one frame more, as the press path does, so the shell does not grow under the
     // finger before the click.
@@ -330,6 +378,7 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
     document.addEventListener('focusin', focusIn)
     document.addEventListener('focusout', focusOut)
     document.addEventListener('pointerdown', press, true)
+    document.addEventListener('pointerdown', tapOutside, true)
     document.addEventListener('pointerup', release, true)
     document.addEventListener('pointercancel', release, true)
     document.addEventListener('visibilitychange', refit)
@@ -343,6 +392,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       document.removeEventListener('focusin', focusIn)
       document.removeEventListener('focusout', focusOut)
       document.removeEventListener('pointerdown', press, true)
+      document.removeEventListener('pointerdown', tapOutside, true)
+      stopSwallow()
       document.removeEventListener('pointerup', release, true)
       document.removeEventListener('pointercancel', release, true)
       document.removeEventListener('visibilitychange', refit)
@@ -407,7 +458,11 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * otherwise the browser's bars that show and hide on a
  * scroll move nothing; where the browser resizes the layout
  * (Chrome on Android with `interactive-widget=resizes-content`), or with no
- * `visualViewport`, nothing docks. The scrolling pane is focusable, so the keyboard can scroll it
+ * `visualViewport`, nothing docks. With the keyboard open, a touch or pen
+ * tap in the shell that is not on a field or inside `[data-keyboard-keep]`
+ * (Send, a search's sort or filter) closes the keyboard and opens nothing:
+ * its click is swallowed once. A tap on another field moves the focus, a
+ * drag still scrolls, and a mouse changes nothing. The scrolling pane is focusable, so the keyboard can scroll it
  * when it holds only text. It draws no scroll bar, and a scroll that reaches its end stops there and does not move
  * the page (the shared `scrollArea` style); a wheel, a trackpad, a touch drag and the keys still scroll it.
  */

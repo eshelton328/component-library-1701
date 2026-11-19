@@ -160,18 +160,18 @@ export function Composer({
   )
   const attach =
     onAttach === undefined ? null : (
-      <Button size={buttonSize} iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
+      <Button data-keyboard-keep="" size={buttonSize} iconOnly aria-label="Attach a file" disabled={disabled} onClick={onAttach}>
         <ClipIcon size="16" />
       </Button>
     )
   const stop = running ? (
-    <Button size={buttonSize} textSize={inline ? 'xs' : 'md'} disabled={disabled} onClick={onStop}>
+    <Button data-keyboard-keep="" size={buttonSize} textSize={inline ? 'xs' : 'md'} disabled={disabled} onClick={onStop}>
       <StopIcon size="16" />
       Stop
     </Button>
   ) : null
   const send = (
-    <Button variant="primary" size={buttonSize} iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
+    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" disabled={disabled} onClick={submit}>
       <ArrowUpIcon size="16" />
     </Button>
   )

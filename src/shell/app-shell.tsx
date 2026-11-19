@@ -131,8 +131,11 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // A docked thread (the ScrollFrame body that is the detail's child) at its end before this frame stays at its
       // end after it, so its latest message stays just above the composer through the whole move, as in the Claude iOS
       // app (screen review R22). A thread scrolled up keeps its scroll position.
+      // A body that holds the focused field is left to the browser, which keeps that field in view (Codex review of
+      // #210): a form that fits its body would otherwise be pinned to its end, past the field.
+      const focused = document.activeElement
       const atEnd = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')].filter(
-        (body) => body.scrollHeight - body.scrollTop - body.clientHeight <= 1,
+        (body) => !body.contains(focused) && body.scrollHeight - body.scrollTop - body.clientHeight <= 1,
       )
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).

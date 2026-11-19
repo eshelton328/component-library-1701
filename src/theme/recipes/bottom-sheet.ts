@@ -13,6 +13,9 @@ import { scrollArea } from './scroll-area'
 // 8 after a spacer, centred on the title. Artifacts M7 (408:706) puts Cancel
 // at the start and Add at the end, with the title centred between them by
 // two equal spacers. The caller passes the buttons; the row keeps its gap 8.
+//
+// No scrim: the tablet side chat sheet (Workspaces T2 105:1914) draws no scrim, so the chat above it keeps its
+// colour. `BottomSheet scrim={false}` leaves the `backdrop` slot out; the positioner has no fill of its own.
 export const bottomSheet = defineSlotRecipe({
   className: 'bottom-sheet',
   jsx: ['BottomSheet'],

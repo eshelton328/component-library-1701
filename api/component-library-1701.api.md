@@ -158,6 +158,7 @@ export type BottomSheetProps = ({
     leading?: ReactNode;
     initialFocus?: (() => HTMLElement | null) | undefined;
     size?: 'sm' | 'md' | undefined;
+    scrim?: boolean | undefined;
 };
 
 // @public

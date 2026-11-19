@@ -48,6 +48,13 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
   initialFocus?: (() => HTMLElement | null) | undefined
   /** `md` (the default) has a 17 px title, as the snooze and sort sheets do. `sm` has a 15 px title, as the Workbench chat actions sheet does. */
   size?: 'sm' | 'md' | undefined
+  /**
+   * `true` (the default) draws the `overlay.scrim` backdrop over the page behind the sheet. `false` draws no scrim,
+   * so the page above the sheet keeps its full colour and stays readable, as the tablet side chat sheet does
+   * (Workspaces T2 105:1914). The sheet behaves the same either way: it keeps the focus inside, and a press outside
+   * it closes it (the press does not reach the page under it) and gives the focus back.
+   */
+  scrim?: boolean | undefined
 }
 
 // Omit `size` from each member of the union, so the title or label choice stays.
@@ -55,9 +62,11 @@ type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
 
 /**
  * A sheet at the bottom of the window on a scrim, with a grabber at the top: the snooze,
- * sort and chat actions sheets of the phone. It keeps the focus inside while
- * it is open; Escape, a click on the scrim, `BottomSheetClose` and a swipe
- * down close it, and the focus goes back to the trigger.
+ * sort and chat actions sheets of the phone. With `scrim={false}` it draws no
+ * scrim, as the tablet side chat does. It keeps the focus inside while it is
+ * open; Escape, a click outside it (on the scrim, or on the page with no
+ * scrim), `BottomSheetClose` and a swipe down close it, and the focus goes
+ * back to the trigger.
  *
  * Swipe to close: a downward touch or pen drag from the grabber or the title
  * row, or from the content when it is scrolled to the top, moves the sheet
@@ -92,7 +101,7 @@ type SizedBottomSheetProps = WithoutSize<BottomSheetProps> &
  * `md` are the sheets, `lg` the More drawer, with a larger title. The
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, focusSheet = false }: SizedBottomSheetProps) {
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, scrim = true, focusSheet = false }: SizedBottomSheetProps) {
   useInputModality()
   const hasLeading = present(leading)
   // The sheet's own id, so the focus can find it when it opens.
@@ -116,7 +125,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       <FocusOrigin returnToRef={returnToRef} />
       {trigger === undefined ? null : <ArkDialog.Trigger asChild>{trigger}</ArkDialog.Trigger>}
       <Portal>
-        <Backdrop />
+        {scrim ? <Backdrop /> : null}
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
           <DraggableContent aria-label={title ?? label} returnToRef={returnToRef}>

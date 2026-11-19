@@ -121,6 +121,10 @@ under their purpose group, never under "Controls" (d-065).
   unmounts it when the close motion ends, so a play function that
   measures an open sheet first awaits `motionDone` from
   `bottom-sheet.testing.ts`.
+- `BottomSheet scrim={false}` draws no scrim (the tablet side chat) and
+  changes nothing else: the focus stays inside, the page stays hidden from
+  assistive technology, and a press outside closes the sheet without
+  reaching the page under it. `motionDone` waits for the sheet alone then.
 - Keep Ark's own interaction state (open, highlighted, focus), and expose
   each one as a controlled prop pair, such as `open` and `onOpenChange`
   (d-069).

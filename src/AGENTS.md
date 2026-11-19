@@ -1,93 +1,48 @@
 # src
 
-The library's source. `structure.ts` lists the code tiers, the purpose
-groups and the bans that the lint reads. Read it before you add a file.
-
-| Folder | What it holds |
-| --- | --- |
-| `foundations/` | Token pages and the icon set (`icons.tsx`); a tier that imports nothing else in `src/` |
-| `controls/` | One Ark part or one element each, and the layout components |
-| `parts/` | Domain components |
-| `shell/` | The page frame and its panes |
-| `pages/` | Example pages as stories; never exported |
-| `theme/` | The config recipe of each component; not a tier |
+The library's source. Each tier is a folder; `structure.ts` lists the
+tiers, the purpose groups and the bans that the lint reads. Read it before
+you add a file. `theme/` is not a tier.
 
 ## Rules
 
-- A file sits in the tier that its imports allow (d-064). The lint
-  (`structure/tier-imports` in `../eslint.structure.js`) resolves each
-  relative import, re-export and dynamic import to its folder, so the
-  spelling of a path does not matter, and names the allowed tiers. A
-  tier may import files in its own folder (d-071), but no files may
-  import each other in a cycle: `pnpm check:cycles` fails on one. No file imports the `src`
-  barrel (`index.ts`); a tier folder such as `../controls` is that tier.
-  A dynamic import needs a static path, and may not load a restricted
-  module such as a Panda pattern.
-- Component styles are config recipes in `theme/recipes/` (d-067).
-  Components in `controls/`, `parts/` and `shell/` use no `css()`,
-  `cva()` or `sva()`; they connect Ark parts to the generated recipe with
-  `createSlotRecipeContext`, or use `styled(element, recipe)`. The lint
-  (`structure/no-inline-recipe`) rejects an object literal as the recipe,
-  also through a renamed `styled` or a local const, and rejects
-  `@pandacss/dev` there. Story and
-  foundation files may use `css()` for their own frames.
+- A file sits in the tier its imports allow (d-064, d-071); the lint rule
+  `structure/tier-imports` names the allowed tiers. No file imports the
+  `index.ts` barrel, and `pnpm check:cycles` fails on an import cycle.
+- Component styles are config recipes in `theme/recipes/` (d-067). Tier
+  code uses no `css()`, `cva()` or `sva()` (`structure/no-inline-recipe`);
+  only story and `foundations/` files may, for their own frames.
 - Draw an icon once, in `foundations/icons.tsx`, on the 24 grid in
-  `currentColor`, and size it with its `size` prop. Components use those
-  icons; a new component draws no inline `<svg>`.
-- Use tokens only. The lint rejects raw values, `'[...]'` values, opacity
-  modifiers, primitive tokens where a semantic token exists, and inline
-  `style` props. Use a text style (`textStyle: 'body'`), not `fontSize`
-  alone.
-- Place components with the layout components in `controls/` (d-066).
-  No file uses Panda's `Box`, `Spacer` or other free-form patterns, from
-  the barrel or a deep path, as a component or as a pattern function.
-- No smart components (d-068, d-069). Components take data as props and
-  report through callbacks. Ark keeps its own interaction state, and each
-  state has a controlled prop pair. No fetch, storage, router, URL or
-  state library, or a subpath of one; the lint blocks them.
-- A name or label that a user must read and that can be cut to one line
-  uses `TruncatedText` (`controls/tooltip.tsx`), not an ellipsis in the
-  recipe: it shows the whole text in a tooltip when the text is cut. Text
-  that may wrap onto two or three lines and is cut on the last uses its
-  `lines` option, not a `Clamp`, so it keeps that tooltip.
-- `fg.subtle` is allowed only on the surfaces its description names. On
+  `currentColor`; a component draws no inline `<svg>`.
+- Use tokens only: no raw values, `'[...]'` values, opacity modifiers or
+  inline `style` props. Use a text style (`textStyle: 'body'`), not
+  `fontSize` alone. Never edit `foundations/colours.mdx`; `pnpm tokens`
+  writes it.
+- Place components with Container, Stack, Inline and Grid (d-066), never
+  Panda's `Box`, `Spacer` or other free-form patterns.
+- No smart components (d-068, d-069): data comes in as props and goes out
+  through callbacks. No fetch, storage, router, URL or state library.
+- Text that can be cut uses `TruncatedText` (`controls/tooltip.tsx`), with
+  `lines` for two or three lines, never an ellipsis or a `Clamp`. Its
+  story shows a long value and calls `expectCutText` in its play function.
+- `fg.subtle` only on the surfaces its description names; on
   `surface.raised` or `surface.selected`, use `fg.muted`.
-- If a design needs a value that no token has, stop and name the missing
-  token in your reply (d-050).
 
 ## Stories
 
-- A story title starts with its purpose group from `structure.ts`, for
-  example `Actions/Button` or `Data display/List row`, never with a tier
-  name (d-065). The lint (`structure/story-title`) checks the `title` of
-  the default export in `.stories.ts` and `.stories.tsx`, whatever its
-  variable is called. It needs a plain `title` key: with no title, or a
-  quoted `'title'` key, Storybook names the story after its tier folder. The sidebar
-  follows that order.
-- A story that shows colours or text exports a `Dark` and a `Light` story
-  (`globals: { mode: 'dark' }`), so the axe test checks both modes.
-- A component that cuts text with `TruncatedText` has a story with a long
-  value whose play function calls `expectCutText` from
-  `controls/tooltip.testing.ts`: the text is cut, and hover and keyboard
-  focus show it whole in the tooltip.
-
-## Public API
-
-`index.ts` exports the icons, Controls, Parts and Shell; their props and
-recipe variants are the contract. It also re-exports `focusRing` from
-`theme/recipes/focus.ts`, so a page draws its own ring under the same
-condition. `focus-ring.stories.tsx` sits beside `index.ts`, outside the
-tiers, because it tests that public export with a Button. A removed or
-renamed prop or variant is a breaking change (d-063): deprecate it in a
-minor version first, then remove it with a `!` commit and a migration
-footer.
+- A story title starts with its purpose group, such as `Actions/Button`,
+  never a tier name (d-065, `structure/story-title`). Use a plain `title`
+  key in the default export.
+- A story that shows colours or text exports a `Dark` and a `Light`
+  story (`globals: { mode: 'dark' }`), so the axe test checks both.
 
 ## Folders
 
-- [controls/AGENTS.md](controls/AGENTS.md): read before adding a control or
-  a layout component.
-- [parts/AGENTS.md](parts/AGENTS.md): read before adding a domain
+- [controls/AGENTS.md](controls/AGENTS.md): read before changing a control
+  or a layout component.
+- [parts/AGENTS.md](parts/AGENTS.md): read before changing a domain
   component.
-- [shell/AGENTS.md](shell/AGENTS.md): read before changing the page frame.
+- [shell/AGENTS.md](shell/AGENTS.md): read before changing the page frame
+  or the keyboard dock.
 - [pages/AGENTS.md](pages/AGENTS.md): read before adding an example page.
 - [theme/AGENTS.md](theme/AGENTS.md): read before writing a recipe.

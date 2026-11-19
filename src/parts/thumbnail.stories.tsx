@@ -157,8 +157,9 @@ export default meta
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
-// The row sizes: sm (64 × 40, D2 403:194), md (76 × 48, M1 406:122) and lg
-// (128 × 72 with shape wide, D4 403:8217). The default fill stays as it was.
+// The row sizes: sm (64 × 40, D2 403:194, with window dots), md (76 × 48,
+// M1 406:122, the phone drawing with no dots) and lg (128 × 72 with shape
+// wide, D4 403:8217). The default fill stays as it was.
 function RowSizes() {
   return (
     <main className={page}>
@@ -192,10 +193,8 @@ const rowMeta = {
   render: () => <RowSizes />,
   play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
     const canvas = within(canvasElement)
-    for (const [size, w, h, scale] of [
-      ['sm', 64, 40, 1],
-      ['md', 76, 48, 1.2],
-    ] as const) {
+    // sm keeps D2's desktop drawing, window dots and all.
+    for (const [size, w, h, scale] of [['sm', 64, 40, 1]] as const) {
       for (const k of kinds) {
         const t = thumb(canvas.getByTestId(`${size}-${k}`))
         const box = t.root.getBoundingClientRect()
@@ -235,6 +234,92 @@ const rowMeta = {
         await expect(bar.getBoundingClientRect().width).toBeCloseTo(4 * scale, 1)
         await expect(getComputedStyle(bar).fill).toBe(swatch(canvasElement, i % 3 === 2 ? 'violet' : 'accent'))
       }
+    }
+    // md is M1's phone drawing (406:122 to 406:278): 76 × 48 in its frame,
+    // a 76 × 4 top bar with no window dots, and Figma's boxes, each placed
+    // 1 in from Figma's (its values are inside the 1 px frame border).
+    const near = async (shape: Element | undefined, origin: DOMRect, [x, y, w, h]: readonly [number, number, number, number]) => {
+      if (shape === undefined) throw new Error('no shape')
+      const b = shape.getBoundingClientRect()
+      await expect(b.left - origin.left).toBeCloseTo(x + 1, 1)
+      await expect(b.top - origin.top).toBeCloseTo(y + 1, 1)
+      await expect(b.width).toBeCloseTo(w, 1)
+      await expect(b.height).toBeCloseTo(h, 1)
+    }
+    for (const k of kinds) {
+      const t = thumb(canvas.getByTestId(`md-${k}`))
+      const box = t.root.getBoundingClientRect()
+      await expect(box.width).toBe(76)
+      await expect(box.height).toBe(48)
+      await expect(getComputedStyle(t.root, '::after').borderTopWidth).toBe('1px')
+      await expect(getComputedStyle(t.root, '::after').borderTopColor).toBe(swatch(canvasElement, 'border'))
+      await expect(getComputedStyle(t.root).borderTopLeftRadius).toBe('6px')
+      await expect(shapes(t.svg, 'dot').length).toBe(0)
+      await near(shapes(t.svg, 'chrome')[0], box, [-1, -1, 76, 4])
+    }
+    const mdBox = (k: ThumbnailKind) => thumb(canvas.getByTestId(`md-${k}`))
+    // Chart 406:122: title bar 406:124, first bar 406:125, the violet third
+    // bar 406:127, baseline 406:134.
+    {
+      const { root, svg } = mdBox('chart')
+      const box = root.getBoundingClientRect()
+      const bars = Array.from(svg.querySelectorAll('[data-bars] rect'))
+      await expect(bars.length).toBe(9)
+      await near(svg.querySelector('[data-bars]')?.previousElementSibling ?? undefined, box, [5, 7, 25.6, 3])
+      await near(bars[0], box, [6.28, 30.55, 4.551, 11.454])
+      await near(bars[2], box, [20.5, 31.01, 4.551, 10.987])
+      await near(bars[8], box, [63.17, 18.43, 4.551, 23.565])
+      await near(shapes(svg, 'muted')[0], box, [5, 42, 64, 1])
+      for (const [i, bar] of bars.entries()) await expect(getComputedStyle(bar).fill).toBe(swatch(canvasElement, i % 3 === 2 ? 'violet' : 'accent'))
+    }
+    // UI 406:149: side bar 406:151, first row 406:152 and its pill 406:153, last row 406:158.
+    {
+      const { root, svg } = mdBox('ui')
+      const box = root.getBoundingClientRect()
+      await near(shapes(svg, 'well')[0], box, [5, 7, 14.08, 35])
+      const rows = shapes(svg, 'inset')
+      await expect(rows.length).toBe(4)
+      await near(rows[0], box, [21.64, 7, 47.36, 5.75])
+      await near(rows[3], box, [21.64, 33.25, 47.36, 5.75])
+      const pills = shapes(svg, 'green')
+      await expect(pills.length).toBe(4)
+      await near(pills[0], box, [62.6, 10, 3.84, 2.4])
+      await expect(shapes(svg, 'muted').length).toBe(0)
+    }
+    // Diagram 406:176: one line 406:178 and four nodes, 406:179 and 406:182.
+    {
+      const { root, svg } = mdBox('diagram')
+      const box = root.getBoundingClientRect()
+      const lines = shapes(svg, 'muted')
+      await expect(lines.length).toBe(1)
+      await near(lines[0], box, [17.8, 19.25, 16, 1.5])
+      const nodes = shapes(svg, 'violetEdge')
+      await expect(nodes.length).toBe(4)
+      await near(nodes[0], box, [10.12, 15.75, 12.8, 8.4])
+      await near(nodes[3], box, [53.64, 18.55, 12.8, 8.4])
+    }
+    // Doc 414:799: title bar 414:801, the first line 414:802, the short third 414:804, the last 414:808.
+    {
+      const { root, svg } = mdBox('doc')
+      const box = root.getBoundingClientRect()
+      const lines = shapes(svg, 'muted')
+      await expect(lines.length).toBe(7)
+      await near(shapes(svg, 'accent')[0], box, [5, 7, 35.2, 3])
+      await near(lines[0], box, [5, 12.76, 60.8, 2])
+      await near(lines[2], box, [5, 19, 38.4, 2])
+      await near(lines[6], box, [5, 31.48, 60.8, 2])
+      await expect(shapes(svg, 'accentTint').length).toBe(0)
+    }
+    // Grid 406:204: six cells in Figma's order (cyan, amber, violet, green,
+    // cyan, amber), the first 406:206 and the last 406:211.
+    {
+      const { root, svg } = mdBox('grid')
+      const box = root.getBoundingClientRect()
+      const cells = Array.from(svg.querySelectorAll('[class*="Edge"]'))
+      await expect(cells.map((c) => c.getAttribute('class')?.match(/thumbnail__(\w+Edge)/)?.[1])).toEqual(['accentEdge', 'amberEdge', 'violetEdge', 'greenEdge', 'accentEdge', 'amberEdge'])
+      await near(cells[0], box, [5, 7, 18.667, 15.5])
+      await near(cells[5], box, [50.33, 26.5, 18.667, 15.5])
+      await expect(getComputedStyle(cells[0] ?? svg).stroke).toBe(swatch(canvasElement, 'accentBorder'))
     }
     // lg is 128 × 72 at 16:9 with the card's drawing (its 17-high bar at 188 high).
     const lg = thumb(canvas.getByTestId('lg-chart'))

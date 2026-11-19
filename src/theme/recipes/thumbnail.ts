@@ -16,9 +16,14 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // `size` fixes the width for an artifact row; `fill` (the default) takes the
 // container's. `sm` is the desktop row's 64 × 40 (D2 403:194), `md` the
 // phone row's 76 × 48 (M1 406:122) and `lg` the list view's 128 × 72 (D4
-// 403:8217, with shape wide). The component draws sm and md with each kind's
-// row layers (D2 403:194, 403:220, 403:246, 414:759, 403:274) and sets
-// their box itself, so the height follows from the drawing's ratio.
+// 403:8217, with shape wide). The component draws sm with each kind's
+// desktop row layers (D2 403:194, 403:220, 403:246, 414:759, 403:274) and
+// md with the phone row layers (M1 406:122, 406:149, 406:176, 414:799,
+// 406:204: a top bar with no window dots, larger shapes), and sets their
+// box itself, so the height follows from the drawing's ratio. The phone
+// layers use the same slots: the doc lines at 0.35 and the diagram line
+// at 0.6 are muted, the side bar at 0.7 and the cells at 0.8 to 0.9 well,
+// the pills at 0.8 green.
 //
 // The tone (the component's `tone` prop): Figma colours each preview in
 // one tone (D1 400:14): the doc's title bar at 0.9 (green 402:15656, violet

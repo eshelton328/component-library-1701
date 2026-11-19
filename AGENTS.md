@@ -46,6 +46,11 @@ checks, test, package, build, worktree), so a PR shows which one failed.
 A new step in `verify` needs a `run: pnpm <step>` line in
 `.github/workflows/ci.yml`; `pnpm check:ci` fails without it.
 
+`.github/workflows/actions-minutes.yml` counts the repository's billed
+Actions minutes each day and opens an issue at 80 % of the weekly
+budget. The brain's `actions-minutes` skill generates it from the
+project facts; render it again there, never edit it by hand.
+
 ## Rules
 
 - If a design needs a value that no token has, stop and name the missing

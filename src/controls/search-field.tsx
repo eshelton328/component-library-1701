@@ -2,6 +2,7 @@ import { Field } from '@ark-ui/react/field'
 import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { searchField, type SearchFieldVariantProps } from '../../styled-system/recipes'
+import { CloseBoldIcon } from '../foundations/icons'
 import type { Scalar } from './scalar'
 
 const { withProvider, withContext } = createSlotRecipeContext(searchField)
@@ -37,6 +38,11 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
  * `surface` names what lies under the field: `raised` (on `surface.raised`,
  * such as a raised `Popover`) draws the placeholder and the clear icon in
  * `fg.muted`, because `fg.subtle` fails WCAG AA there.
+ * `clearFocus` sets the clear button while the field has the focus:
+ * `default` keeps it as it is with no focus; `strong` draws it in
+ * `fg.default` with the bold x (`CloseBoldIcon`) in place of `clearIcon`,
+ * as the Artifacts search draws it (Figma 403:8202). With no focus a
+ * `strong` button looks as the default.
  */
 export function SearchField({
   label,
@@ -50,6 +56,7 @@ export function SearchField({
   disabled,
   size,
   clearSize,
+  clearFocus,
   textSize,
   surface,
 }: SearchFieldProps) {
@@ -68,7 +75,7 @@ export function SearchField({
     }
   }
   return (
-    <Root size={size} clearSize={clearSize} textSize={textSize} surface={surface} disabled={disabled}>
+    <Root size={size} clearSize={clearSize} clearFocus={clearFocus} textSize={textSize} surface={surface} disabled={disabled}>
       {icon === undefined ? null : <Icon aria-hidden="true">{icon}</Icon>}
       <Input
         ref={input}
@@ -96,7 +103,16 @@ export function SearchField({
                 input.current?.focus({ preventScroll: true })
               }}
             >
-              {clearIcon ?? '×'}
+              {clearFocus === 'strong' ? (
+                <>
+                  <span data-clear-icon="rest">{clearIcon ?? '×'}</span>
+                  <span data-clear-icon="focus">
+                    <CloseBoldIcon />
+                  </span>
+                </>
+              ) : (
+                (clearIcon ?? '×')
+              )}
             </Clear>
           )
         }

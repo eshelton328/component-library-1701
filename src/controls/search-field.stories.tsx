@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { CloseCircleIcon, SearchIcon } from '../foundations/icons'
+import { CloseCircleIcon, CloseIcon, SearchIcon } from '../foundations/icons'
 import { SearchField } from './search-field'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
@@ -263,3 +263,68 @@ const surfacePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const SurfaceDark: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'dark' }, play: surfacePlay }
 export const SurfaceLight: StoryObj<typeof meta> = { render: () => <Surfaces />, globals: { mode: 'light' }, play: surfacePlay }
+
+// The Artifacts search (D4, M5; `icon/x` 403:8202): with `clearFocus="strong"` the clear button is fg.default and
+// shows the bold x while the field has the focus. Figma's 14 px takes `clearSize="16"`.
+function StrongClear() {
+  return (
+    <main className={page}>
+      <div className={column}>
+        <SearchField
+          label="Search artifacts"
+          defaultValue="sync"
+          icon={<SearchIcon />}
+          clearIcon={<CloseIcon />}
+          clearSize="16"
+          clearFocus="strong"
+        />
+        <SearchField label="Search, default clear" defaultValue="sync" icon={<SearchIcon />} clearIcon={<CloseIcon />} clearSize="16" />
+      </div>
+      <div hidden>
+        {Object.entries({ ...swatches, default: css({ color: 'fg.default' }) }).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+const strongClearPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => getComputedStyle(canvasElement.querySelector(`[data-swatch="${name}"]`) ?? canvasElement).color
+  const clearOf = (name: string) => {
+    const button = canvas.getByRole('searchbox', { name }).parentElement?.querySelector('button')
+    if (!(button instanceof HTMLButtonElement)) throw new Error(`no clear button in ${name}`)
+    return button
+  }
+  // The icons the button shows: their size and their build ('thin' is stroked at 2, 'bold' is filled).
+  const shown = (button: HTMLElement) => {
+    const svgs = Array.from(button.querySelectorAll('svg')).filter((svg) => svg.getBoundingClientRect().width > 0)
+    return svgs.map((svg) => [svg.getBoundingClientRect().width, svg.getAttribute('stroke-width') === '2' ? 'thin' : 'bold'])
+  }
+  const strong = clearOf('Search artifacts')
+  const plain = clearOf('Search, default clear')
+  // No focus: both buttons draw the caller's thin x in fg.subtle.
+  await expect(shown(strong)).toEqual([[16, 'thin']])
+  await expect(getComputedStyle(strong).color).toBe(swatch('subtle'))
+  await expect(getComputedStyle(plain).color).toBe(swatch('subtle'))
+  // Focus in the strong field: the bold x in fg.default, still 16 in its 20 px box.
+  canvas.getByRole('searchbox', { name: 'Search artifacts' }).focus()
+  await expect(shown(strong)).toEqual([[16, 'bold']])
+  await expect(getComputedStyle(strong).color).toBe(swatch('default'))
+  await expect([strong.getBoundingClientRect().width, strong.getBoundingClientRect().height]).toEqual([20, 20])
+  // The default field keeps its thin fg.subtle x when it has the focus.
+  canvas.getByRole('searchbox', { name: 'Search, default clear' }).focus()
+  await expect(shown(plain)).toEqual([[16, 'thin']])
+  await expect(getComputedStyle(plain).color).toBe(swatch('subtle'))
+  await expect(shown(strong)).toEqual([[16, 'thin']])
+  // A click on the strong clear button empties the field and keeps the focus in it.
+  canvas.getByRole('searchbox', { name: 'Search artifacts' }).focus()
+  await userEvent.click(strong)
+  await expect(canvas.getByRole('searchbox', { name: 'Search artifacts' })).toHaveValue('')
+  await expect(canvas.getByRole('searchbox', { name: 'Search artifacts' })).toHaveFocus()
+}
+
+/** `clearFocus="strong"`: the bold, bright clear button of the focused Artifacts search. */
+export const StrongClearDark: StoryObj<typeof meta> = { render: () => <StrongClear />, play: strongClearPlay, globals: { mode: 'dark' } }
+export const StrongClearLight: StoryObj<typeof meta> = { render: () => <StrongClear />, play: strongClearPlay, globals: { mode: 'light' } }

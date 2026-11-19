@@ -109,6 +109,10 @@ Repository scripts that are not part of the package.
   that a re-run is counted until a day is final, that a recent day not
   counted again is missing, and that a workflow name with " / " stays
   whole.
+- `pr-workflow.test.ts` (also in `pnpm test:release`) reads the
+  base-branch guard step of `.github/workflows/pr.yml`. It checks that
+  the step runs only on an `edited` event and counts only the ci runs
+  whose `pull_requests` include this PR.
 
 ## Folders
 

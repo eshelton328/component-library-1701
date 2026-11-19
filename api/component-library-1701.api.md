@@ -41,6 +41,7 @@ import { Ref } from 'react';
 import { RefObject } from 'react';
 import { ScrollFrameVariantProps } from '../../styled-system/recipes';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
+import { SelectFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TagsLineVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
@@ -1564,6 +1565,23 @@ export type SearchFieldProps = Scalar<SearchFieldVariantProps> & {
 
 // @public
 export function SearchIcon(props: IconProps): JSX.Element;
+
+// @public
+export function SelectField(input: SelectFieldProps): JSX.Element;
+
+// @public (undocumented)
+export type SelectFieldProps = Scalar<SelectFieldVariantProps> & {
+    label: string;
+    options: readonly RadioMenuOption[];
+    value?: string | undefined;
+    defaultValue?: string | undefined;
+    onValueChange?: ((value: string) => void) | undefined;
+    placeholder?: string | undefined;
+    icon?: ReactNode;
+    open?: boolean | undefined;
+    onOpenChange?: ((open: boolean) => void) | undefined;
+    disabled?: boolean | undefined;
+};
 
 // @public
 export function SkillIcon(props: IconProps): JSX.Element;

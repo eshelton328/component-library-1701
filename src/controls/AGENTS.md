@@ -88,6 +88,9 @@ under their purpose group, never under "Controls" (d-065).
   a path badge (`PathBadge onCopy` draws one) or of the Files viewer's
   bar; a `Button` is at least 24 high. A page styles no plain `button`
   for this.
+- `SelectField` is a form value picked from a `RadioMenu`, drawn as a
+  `TextField` (the Artifacts Project field). Use it for a form value; a
+  `Button` trigger stays for a menu of actions or a sort.
 - A pressed `Button` draws `border.active`. The Discuss toggle sets
   `pressedBorder="discuss"` and draws `accent.discuss` while its
   discussion is open; a selected toggle chip (a chosen folder) sets

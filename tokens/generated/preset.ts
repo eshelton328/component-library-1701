@@ -1673,7 +1673,7 @@ export default definePreset({
           }
         },
         "mono": {
-          "description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, the names of an OptionList with labelStyle mono (the Workbench skill picker's /names), and the value of a TextField with valueStyle mono, such as a link (Artifacts D5 403:7553, M6 408:718).",
+          "description": "Meta, paths, counts, code lines and axis labels, the lines of a TerminalLines, the names of an OptionList with labelStyle mono (the Workbench skill picker's /names), the value of a TextField with valueStyle mono, such as a link (Artifacts D5 403:7553, M6 408:718), and the value of a SelectField with mono, such as a project (Artifacts D5 403:7580).",
           "value": {
             "fontFamily": "text.mono",
             "fontSize": "text.mono",

@@ -755,6 +755,7 @@ export * from './proposal-section.js';
 export * from './script-explanation.js';
 export * from './scroll-frame.js';
 export * from './search-field.js';
+export * from './select-field.js';
 export * from './splitter.js';
 export * from './tab-bar.js';
 export * from './tags-line.js';
@@ -1497,6 +1498,28 @@ export type SearchFieldSlot = "root" | "errorText" | "helperText" | "input" | "l
 export type SearchFieldRecipe = ConfigSlotRecipeRuntimeFn<SearchFieldSlot, SearchFieldVariantProps, SearchFieldVariantMap>
 
 export declare const searchField: SearchFieldRecipe;
+
+// select-field.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type SelectFieldVariant = {
+  size?: "sm" | "md" | "lg" | "xl"
+  mono?: boolean
+  labelHidden?: boolean
+}
+
+export type SelectFieldVariantProps = {
+  [K in keyof SelectFieldVariant]?: ConditionalValue<SelectFieldVariant[K]>
+}
+
+export type SelectFieldVariantMap = RecipeVariantMap<SelectFieldVariant>
+
+export type SelectFieldSlot = "root" | "label" | "trigger" | "icon" | "value" | "chevron"
+
+export type SelectFieldRecipe = ConfigSlotRecipeRuntimeFn<SelectFieldSlot, SelectFieldVariantProps, SelectFieldVariantMap>
+
+export declare const selectField: SelectFieldRecipe;
 
 // splitter.d.ts
 import type { ConditionalValue } from '../types/system.js';

@@ -3,7 +3,7 @@
 // marker, and the API report diff that finds a breaking change (brain
 // decision d-063).
 
-/** The Conventional Commits header that the pr-title job in ci.yml checks. */
+/** The Conventional Commits header that the pr-title job in pr.yml checks. */
 const header = /^(feat|fix|perf|refactor|docs|test|build|ci|chore|revert)(\([a-z0-9-]+\))?!?: [a-z].*[^.]$/
 
 export const isConventionalHeader = (subject: string): boolean => header.test(subject)

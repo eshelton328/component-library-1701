@@ -148,7 +148,10 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       // The detail's foot where it is with the document at its top: iOS scrolls the document as it reports the
       // keyboard, and `keepTop` takes it back, so a paint between the two must not read the scrolled place (the 9 px
       // step in the iPhone trace of screen review R25).
-      const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom + window.scrollY - keyboardTop)
+      // Only at scale 1, where `keepTop` takes that scroll back: under a zoom the user scrolls the document, and the
+      // detail's foot is where it is (Codex review of #263).
+      const scrolled = viewport.scale === 1 ? window.scrollY : 0
+      const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom + scrolled - keyboardTop)
       // A docked thread (the ScrollFrame body that is the detail's child) keeps the line above the composer where it
       // is through the whole move, as in the Claude iOS app (screen review R22): a body at its end before this frame
       // stays at its end, and any other body scrolls by as much as its view shrinks or grows.

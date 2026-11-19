@@ -1855,6 +1855,38 @@ const scrolledReport: StoryObj<typeof meta> = {
 export const ScrolledReportDark: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ScrolledReportLight: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+const zoomScroll: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => (
+    <>
+      <ThreadChat />
+      <div className={belowScreen} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const { footer, field, composer } = threadParts(canvasElement)
+    // Under a zoom the user scrolls the document with the keyboard open, and the shell leaves that scroll alone: the
+    // composer stays on the keyboard's top at 544 and does not rise by the scroll (Codex review of #263).
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    const scale = 2
+    fakeViewport.move({ height: 544 / scale, offsetTop: 544 - 544 / scale, scale }, 'scroll')
+    await nextFrame()
+    await expect(Math.abs(composer().bottom - 544)).toBeLessThanOrEqual(1)
+    window.scrollTo(0, 40)
+    await expect(window.scrollY).toBe(40)
+    fakeViewport.dispatchEvent(new Event('scroll'))
+    await nextFrame()
+    await expect(window.scrollY).toBe(40)
+    await expect(Math.abs(composer().bottom - 544)).toBeLessThanOrEqual(1)
+    window.scrollTo(0, 0)
+  },
+}
+/** Phone chat under a zoom with the keyboard open: a document scroll leaves the dock where it is. */
+export const ZoomScrollDark: StoryObj<typeof meta> = { ...zoomScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ZoomScrollLight: StoryObj<typeof meta> = { ...zoomScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const restReopen: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,

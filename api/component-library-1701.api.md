@@ -62,6 +62,12 @@ export function ApproveIcon(props: IconProps): JSX.Element;
 // @public
 export function AppShell(input: AppShellProps): JSX.Element;
 
+// @public
+export type AppShellDiagnostic = {
+    code: 'undocked-field';
+    message: string;
+};
+
 // @public (undocumented)
 export type AppShellProps = Scalar<AppShellVariantProps> & {
     rail?: ReactNode;
@@ -70,6 +76,7 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
     side?: ReactNode;
     tabBar?: ReactNode;
     view?: 'list' | 'detail' | undefined;
+    onDiagnostic?: ((diagnostic: AppShellDiagnostic) => void) | undefined;
 };
 
 // @public

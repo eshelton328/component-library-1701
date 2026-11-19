@@ -115,7 +115,7 @@ const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigat
  * visible to the library; the removed field counts as not focused at the next event, which drops the fit. Without `visualViewport` (an old browser, or no window when rendered on the server)
  * nothing changes: the hook reads the window only in its effect.
  */
-function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
+function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagnostic) => void) | undefined>): RefObject<HTMLDivElement | null> {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const viewport = window.visualViewport
@@ -140,10 +140,12 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       const frame = field?.closest('.scroll-frame__footer')?.closest('.scroll-frame__root')
       if (warned || !frame || frame.parentElement === detail || !detail.contains(frame)) return
       warned = true
-      console.warn(
-        'AppShell: the focused field is in the footer of a ScrollFrame that is not the detail\'s direct child, so it does not dock on the keyboard. Render that ScrollFrame as the detail.',
-        frame,
-      )
+      const message =
+        'AppShell: the focused field is in the footer of a ScrollFrame that is not the detail\'s direct child, so it does not dock on the keyboard. Render that ScrollFrame as the detail.'
+      // With `onDiagnostic` the app reports it (the-bridge's report(), audit L-8); without it, the console names it.
+      const report = diagnostic.current
+      if (report === undefined) console.warn(message, frame)
+      else report({ code: 'undocked-field', message })
     }
     // Paints a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
     const paint = (inset: number) => {
@@ -558,7 +560,8 @@ function useVisualViewportFit(): RefObject<HTMLDivElement | null> {
       window.removeEventListener('pageshow', refit)
       root.style.removeProperty(keyboardInset)
     }
-  }, [])
+    // `diagnostic` is a ref: the same object on every render, so it never restarts the dock.
+  }, [diagnostic])
   return ref
 }
 
@@ -575,6 +578,20 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
   tabBar?: ReactNode
   /** On a tablet or phone, which pane fills the screen: `list` (the default) or `detail`. With no list, the detail shows. */
   view?: 'list' | 'detail' | undefined
+  /**
+   * Called once when the shell finds a mistake in the page that it can only see at run time, such as a focused field
+   * in a ScrollFrame footer that does not dock on the keyboard (`undocked-field`). Without it, the shell writes the
+   * message to the console. Pass the app's error reporter.
+   */
+  onDiagnostic?: ((diagnostic: AppShellDiagnostic) => void) | undefined
+}
+
+/** A mistake in the page that `AppShell` found at run time, for `onDiagnostic`. It holds no element or page text. */
+export type AppShellDiagnostic = {
+  /** `undocked-field`: the focused field is in the footer of a ScrollFrame that is not the detail's direct child. */
+  code: 'undocked-field'
+  /** What is wrong and how to fix it, in English. */
+  message: string
 }
 
 /**
@@ -619,9 +636,14 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
  * when it holds only text. It draws no scroll bar, and a scroll that reaches its end stops there and does not move
  * the page (the shared `scrollArea` style); a wheel, a trackpad, a touch drag and the keys still scroll it.
  */
-export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false }: AppShellProps) {
+export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false, onDiagnostic }: AppShellProps) {
   useInputModality()
-  const fit = useVisualViewportFit()
+  // The latest callback, read when a diagnostic comes, so a new callback does not restart the keyboard dock.
+  const diagnostic = useRef(onDiagnostic)
+  useEffect(() => {
+    diagnostic.current = onDiagnostic
+  })
+  const fit = useVisualViewportFit(diagnostic)
   const desktop = size === undefined || size === 'desktop'
   if (desktop) {
     return (

@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { expect, spyOn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { token } from '../../styled-system/tokens'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
-import { AppShell } from './app-shell'
+import { AppShell, type AppShellDiagnostic, type AppShellProps } from './app-shell'
 import { cssCubicBezier, cssDuration, cssPx } from './css-values'
 import { keyboardMeasures } from './keyboard-measures'
 
@@ -2399,12 +2399,13 @@ const keyboardInsetOf = (root: HTMLElement) => root.style.getPropertyValue('--ap
 
 // The chat ScrollFrame two levels below the detail, as the-bridge's Workspaces PhoneChat had it: its footer does not
 // dock, and AppShell names the frame once in the console.
-function NestedThreadChat() {
+function NestedThreadChat({ onDiagnostic }: { onDiagnostic?: AppShellProps['onDiagnostic'] }) {
   return (
     <div className={screenFrame}>
       <AppShell
         size="phone"
         view="detail"
+        onDiagnostic={onDiagnostic}
         detail={
           <section className={nestedColumn}>
             <div className={nestedColumn}>
@@ -2455,6 +2456,35 @@ const nestedFooter: StoryObj<typeof meta> = {
 /** A chat ScrollFrame nested below the detail does not dock; AppShell warns once in the console. */
 export const NestedFooterDark: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const NestedFooterLight: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// With `onDiagnostic` the app reports the undocked field itself (audit L-8): the shell calls it once, with a code and a
+// message and no element, and writes nothing to the console.
+const onDiagnostic = fn<(diagnostic: AppShellDiagnostic) => void>()
+const nestedFooterReported: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <NestedThreadChat onDiagnostic={onDiagnostic} />,
+  play: async ({ canvasElement }) => {
+    onDiagnostic.mockClear()
+    const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
+    try {
+      await userEvent.click(within(canvasElement).getByRole('textbox', { name: 'Message' }))
+      fakeViewport.move({ height: 544 })
+      await waitFor(() => expect(onDiagnostic).toHaveBeenCalledTimes(1))
+      fakeViewport.move({ height: 545 })
+      fakeViewport.move({ height: 544 })
+      await expect(onDiagnostic).toHaveBeenCalledTimes(1)
+      const diagnostic = onDiagnostic.mock.calls[0]?.[0]
+      await expect(diagnostic?.code).toBe('undocked-field')
+      await expect(diagnostic?.message.startsWith('AppShell: the focused field')).toBe(true)
+      await expect(Object.keys(diagnostic ?? {}).sort()).toEqual(['code', 'message'])
+      await expect(undockedWarning(warn)).toBe(0)
+    } finally {
+      warn.mockRestore()
+    }
+  },
+}
+/** The nested chat with `onDiagnostic`: the app gets the diagnostic, and the console stays quiet. */
+export const NestedFooterReportedDark: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const NestedFooterReportedLight: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 
 // An iPad at 1232 px with a search field and a long result list in the list pane, beside the detail.

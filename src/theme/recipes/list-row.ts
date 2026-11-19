@@ -180,7 +180,7 @@ export const listRow = defineSlotRecipe({
       compact: { body: { gap: '2' }, title: { textStyle: 'labelSm' }, meta: { textStyle: 'monoSm' }, trailing: { textStyle: 'monoSm' } },
     },
     // The padding of an `inbox` row; the compound variants below set it, so it wins over the variant's 10.
-    padding: { default: {}, sm: {}, lg: {}, phone: {}, pane: {}, flush: {} },
+    padding: { default: {}, sm: {}, lg: {}, phone: {}, phoneSides: {}, pane: {}, flush: {} },
     // The meta line's text style: `small` is the Activity list's sans meta (D17 474:655).
     metaStyle: {
       mono: {},
@@ -235,6 +235,10 @@ export const listRow = defineSlotRecipe({
     { variant: 'inbox', padding: 'sm', css: { root: { p: '8' } } },
     { variant: 'inbox', padding: 'lg', css: { root: { p: '12' } } },
     { variant: 'inbox', padding: 'phone', css: { root: { px: '4', py: '8' } } },
+    // The Inbox phone list (M1 346:9052): 4 at the sides, so the kind tile sits 16 from the screen's edge under the
+    // group's chevron and the age ends 16 from the other edge, and the row's 10 above and below, so a compact row keeps
+    // the tablet's height.
+    { variant: 'inbox', padding: 'phoneSides', css: { root: { px: '4', py: '10' } } },
     { variant: 'inbox', padding: 'pane', css: { root: { alignItems: 'center', px: '10', py: '6' }, body: { gap: '2' } } },
     { variant: 'inbox', padding: 'flush', css: { root: { alignItems: 'center', px: '0', py: '6' }, body: { gap: '2' } } },
   ],

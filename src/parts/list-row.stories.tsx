@@ -691,6 +691,38 @@ const phoneRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   }
 }
 
+/** `padding="phoneSides"`: the Inbox phone list's compact rows (M1 346:9052), 4 at the sides and 10 above and below. */
+function PhoneSidesRows() {
+  return (
+    <main className={page}>
+      <div className={phoneList}>
+        <ListRow density="compact" padding="phoneSides" title="Write the tickets for increment one" meta="ncc-1701 · f-005" leading={<KindTile kind="skill" />} trailing="2h" onSelect={() => undefined} />
+        <ListRow density="compact" title="The same row with the default padding" meta="ncc-1701 · f-005" leading={<KindTile kind="skill" />} trailing="2h" onSelect={() => undefined} />
+      </div>
+    </main>
+  )
+}
+
+const phoneSidesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const rowOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const sides = rowOf('Write the tickets for increment one')
+  const plain = rowOf('The same row with the default padding')
+  const style = getComputedStyle(sides)
+  await expect([style.paddingLeft, style.paddingRight, style.paddingTop, style.paddingBottom]).toEqual(['4px', '4px', '10px', '10px'])
+  // The tile is 1 + 4 in from the row's edge, and the row is as high as a default compact row.
+  const tile = sides.querySelector('.list-row__leading')
+  if (!(tile instanceof HTMLElement)) throw new Error('no leading')
+  await expect(tile.getBoundingClientRect().left - sides.getBoundingClientRect().left).toBe(5)
+  await expect(sides.getBoundingClientRect().height).toBe(plain.getBoundingClientRect().height)
+}
+
+export const PhoneSidesRowDark: StoryObj<typeof meta> = { render: () => <PhoneSidesRows />, globals: { mode: 'dark' }, play: phoneSidesPlay }
+
 /** `padding="phone"`: the phone library's 66 px rows (M1). */
 export const PhoneRowDark: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'dark' }, play: phoneRowsPlay }
 export const PhoneRowLight: StoryObj<typeof meta> = { render: () => <PhoneRows />, globals: { mode: 'light' }, play: phoneRowsPlay }

@@ -76,10 +76,16 @@ const focusable = 'a[href], button, input, select, textarea, summary, [tabindex]
 const rovingRoles = new Set(['treeitem', 'tab', 'option', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'gridcell', 'row', 'radio'])
 
 // The nearest element around `node` that the keyboard reaches, so the text inside it needs no tab stop of its own.
-// A container with tabindex -1, such as a dialog, is skipped: the keyboard never lands on it.
+// A container with tabindex -1, such as a dialog, is skipped: the keyboard never lands on it. So is a pane that takes
+// the focus only so the keys scroll it (`data-scroll-pane`: the AppShell detail, a ScrollFrame body): as the owner, a
+// pointer anywhere in the pane would open the tooltip of every cut text in it.
 function focusOwner(node: HTMLElement): HTMLElement | null {
   let candidate = node.parentElement?.closest<HTMLElement>(focusable) ?? null
   while (candidate !== null) {
+    if (candidate.hasAttribute('data-scroll-pane')) {
+      candidate = candidate.parentElement?.closest<HTMLElement>(focusable) ?? null
+      continue
+    }
     if (candidate.tabIndex >= 0 || rovingRoles.has(candidate.getAttribute('role') ?? '')) return candidate
     candidate = candidate.parentElement?.closest<HTMLElement>(focusable) ?? null
   }

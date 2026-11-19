@@ -46,12 +46,12 @@ export const button = defineRecipe({
     _pressed: { bg: 'surface.selected', color: 'fg.default', borderColor: 'border.active' },
     '& svg': { flexShrink: '0' },
     // Every icon draws at 16 (icon.16), whatever its `size`, and keeps a
-    // `size` only with `keepIconSize` (`data-keep-icon-size`, set by
-    // Button). The size stays in base: Panda puts recipe base before slot
+    // `size` only with `keepIconSize` (its class, which `<Button>` and the
+    // `button()` recipe function both set). The size stays in base: Panda puts recipe base before slot
     // recipes and recipe variants in the cascade, and an important style in
     // an earlier layer wins, so a slot's own important icon size (the
     // GroupHeader's 12 for its actions) does not reach a button inside it.
-    '&:not([data-keep-icon-size]) svg': { width: 'icon.16!', height: 'icon.16!' },
+    '&:not(.button--keepIconSize_true) svg': { width: 'icon.16!', height: 'icon.16!' },
     '& svg:not([data-icon-size])': { width: 'icon.16!', height: 'icon.16!' },
     // The active dot (`indicator`): a 6 px ellipse in #5ee1ff (accent.default)
     // after the label, 6 apart (403:6841). The button is the dot's anchor when
@@ -196,8 +196,8 @@ export const button = defineRecipe({
     // (icon.16), whatever its `size`. `true` draws an icon without a `size`
     // at 16 and keeps the size of an icon given one (`data-icon-size`, set
     // by the icon set), as the 12 px chevron of Artifacts' Sort (402:15410)
-    // after its label. The styles are in base, on `data-keep-icon-size`;
-    // this variant is the prop.
+    // after its label. The styles are in base, on this variant's class;
+    // the variant has none of its own.
     keepIconSize: {
       false: {},
       true: {},

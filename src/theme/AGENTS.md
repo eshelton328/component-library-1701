@@ -31,8 +31,9 @@ from `../../tokens/`.
   `svg:not([data-icon-size])`. Keep a component's important icon size in
   `base`, not in a variant: a variant is in a later layer than the slot
   recipes, so a slot's important size (GroupHeader's actions) would win
-  over it for a Button inside that slot. Button keys its opt-in on
-  `data-keep-icon-size` in base for this reason.
+  over it for a Button inside that slot. Button keys its opt-in on the
+  `keepIconSize` variant's class in base for this reason, so the
+  exported `button()` recipe function opts in too.
 - Write a focus ring under `[focusRing]` from `recipes/focus.ts`, never
   under `_focusVisible`, and set `outline: 'none'` on the same slot, so no
   state draws the browser's default outline. The ring shows on

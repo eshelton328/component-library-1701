@@ -54,6 +54,9 @@ function Messages() {
             {answer}
           </Message>
         </div>
+        <div data-testid="claude-16">
+          <Message name="writer" markSize="16">The Toolkit discussion draws a 15 px mark (D05 438:29).</Message>
+        </div>
         <div data-testid="codex">
           <Message kind="codex" actions={[]}>
             3 candidate pairs, 1 stale link.
@@ -126,6 +129,12 @@ const meta = {
     await expect(slot(canvasElement, 'codex', 'name')).toHaveTextContent(/^Codex$/)
     await expect(canvas.getByRole('article', { name: 'Shell' })).toBe(canvas.getByTestId('shell').firstElementChild)
     await expect(within(canvas.getByTestId('unnamed-user')).getByRole('article', { name: 'You' })).toBeInTheDocument()
+    // `markSize="16"`: a 16 px mark (Figma 15, D05 438:29), still 6 px before the name.
+    const bigAuthor = slot(canvasElement, 'claude-16', 'author')
+    const bigMark = bigAuthor.querySelector('svg')
+    if (bigMark === null) throw new Error('no 16 px mark')
+    await expect([bigMark.getBoundingClientRect().width, bigMark.getBoundingClientRect().height]).toEqual([16, 16])
+    await expect(slot(canvasElement, 'claude-16', 'name').getBoundingClientRect().left - bigMark.getBoundingClientRect().right).toBe(6)
     // Codex: its own mark; actions that render nothing leave no actions slot.
     const codexMark = canvas.getByTestId('codex').querySelector('svg')
     if (codexMark === null) throw new Error('no codex mark')

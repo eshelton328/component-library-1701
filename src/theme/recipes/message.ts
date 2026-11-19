@@ -7,7 +7,9 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // - The assistant's message (105:874, 105:2790): no fill; author row, body
 //   and actions in a column with gap 6. The author row (105:875) has gap 6:
 //   a 13 px kind mark (KindMark size 12) and the name in Geist SemiBold 12
-//   #e6ecff, which no text style has; it uses `label`. The body (105:879)
+//   #e6ecff, which no text style has; it uses `label`. `markSize` takes a
+//   larger KindMark: the Toolkit discussion draws a 15 px mark (D05
+//   438:29), so it takes 16. The body (105:879)
 //   is Geist Regular 13/19 #e6ecff (`body`).
 // `size="sm"` sets the body in `bodySm` (13/20, d-090): the Inbox
 // discussion draws Erik's message and the reply in Geist Regular 13/19

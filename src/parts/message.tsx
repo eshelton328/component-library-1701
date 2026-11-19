@@ -3,7 +3,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { message, type MessageVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { TruncatedText } from '../controls/tooltip'
-import { KindMark, type KindMarkKind } from './kind-mark'
+import { KindMark, type KindMarkKind, type KindMarkSize } from './kind-mark'
 
 const { withProvider, withContext } = createSlotRecipeContext(message)
 const Root = withProvider('article', 'root')
@@ -40,6 +40,8 @@ export type MessageProps = Scalar<MessageVariantProps> & {
   name?: string | undefined
   /** The kind mark before an assistant's name: `claude`, `codex` or `shell`. A user message has no mark. */
   kind?: KindMarkKind | undefined
+  /** The kind mark's size: `12` (the default, the chat's 13 px mark), `16` or `20`. The Toolkit discussion draws a 15 px mark, so it takes `16`. */
+  markSize?: KindMarkSize | undefined
   /** The time as shown, such as "09:41" or "2 min ago". */
   time?: string | undefined
   /** The time for machines, an ISO date such as "2026-11-15T09:41"; set it with `time`. */
@@ -63,6 +65,7 @@ export function Message({
   size = 'md',
   name,
   kind = 'claude',
+  markSize = '12',
   time,
   dateTime,
   children,
@@ -84,7 +87,7 @@ export function Message({
   return (
     <Root from="assistant" size={size} aria-labelledby={nameId}>
       <Author>
-        <KindMark kind={kind} size="12" />
+        <KindMark kind={kind} size={markSize} />
         <Name id={nameId}>
           <TruncatedText>{shown}</TruncatedText>
         </Name>

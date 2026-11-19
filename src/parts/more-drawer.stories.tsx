@@ -227,6 +227,8 @@ export const Behaviour: StoryObj<typeof meta> = {
 const spacingPlay: StoryObj<typeof meta>['play'] = async () => {
   const body = within(document.body)
   const drawer = await body.findByRole('dialog', { name: 'More' })
+  // Measure where the sheet rests, not a frame of its slide.
+  await motionDone(drawer)
   await waitFor(() => expect(document.activeElement).toBe(drawer))
   await expect(drawer.querySelector(':focus-visible')).toBeNull()
   const artifacts = item(drawer, /^Artifacts/)

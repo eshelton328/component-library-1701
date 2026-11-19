@@ -348,6 +348,35 @@ const inlinePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 export const InlineDark: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'dark' }, play: inlinePlay }
 export const InlineLight: StoryObj<typeof meta> = { render: () => <InlineComposers />, globals: { mode: 'light' }, play: inlinePlay }
 
+function SmallStop() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer label="Reply" running stopTextSize="xs" stopIconSize="12" onAttach={() => undefined} />
+        <Composer label="Default Stop" running />
+      </Stack>
+    </main>
+  )
+}
+
+/** `stopTextSize="xs"` (Inbox T05 346:6428): Stop's label is 12 px, as in Figma; the default stays 14. Both are 28 high. */
+const smallStopPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const stopIn = (label: string) => {
+    const box = canvas.getByRole('textbox', { name: label }).closest<HTMLElement>('.composer__root')
+    if (box === null) throw new Error(`no composer ${label}`)
+    return within(box).getByRole('button', { name: 'Stop' })
+  }
+  const small = stopIn('Reply')
+  const normal = stopIn('Default Stop')
+  await expect([getComputedStyle(small).fontSize, getComputedStyle(normal).fontSize]).toEqual(['12px', '14px'])
+  await expect([small.getBoundingClientRect().height, normal.getBoundingClientRect().height]).toEqual([28, 28])
+  await expect(small.getBoundingClientRect().width).toBeLessThan(normal.getBoundingClientRect().width)
+}
+
+export const SmallStopDark: StoryObj<typeof meta> = { render: () => <SmallStop />, globals: { mode: 'dark' }, play: smallStopPlay }
+export const SmallStopLight: StoryObj<typeof meta> = { render: () => <SmallStop />, globals: { mode: 'light' }, play: smallStopPlay }
+
 // A pane with a bounded height around a ScrollFrame whose footer is a composer, as a chat pane or the Inbox
 // discussion has. The pane is a size container, as a Workspaces pane is, so the composer's cap is 30% of it.
 // The play functions set the pane's height to a window's.

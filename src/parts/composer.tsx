@@ -74,6 +74,14 @@ export type ComposerProps = {
    * (Inbox D05 346:2285).
    */
   stopIconSize?: '12' | '16' | undefined
+  /**
+   * The label size of Stop, while `running`. `md` (the default) draws the
+   * `label` style (14) in the stacked layout and `labelXs` (12) inline.
+   * `xs` draws `labelXs` in both layouts, as the reply boxes of Inbox and
+   * Workspaces draw Stop (Inbox T05 346:6428, Workspaces D01 105:255: 12 px
+   * Medium, 25 × 14).
+   */
+  stopTextSize?: 'md' | 'xs' | undefined
   /** The model control after the attach button, such as a `ModelChip`. */
   model?: ReactNode
   disabled?: boolean | undefined
@@ -117,6 +125,7 @@ export function Composer({
   attachLabel = 'Attach a file',
   sendIconSize = '16',
   stopIconSize = '16',
+  stopTextSize = 'md',
   model,
   disabled = false,
   layout = 'stacked',
@@ -191,7 +200,7 @@ export function Composer({
       </Button>
     )
   const stop = running ? (
-    <Button data-keyboard-keep="" size={buttonSize} textSize={inline ? 'xs' : 'md'} keepIconSize disabled={disabled} onClick={onStop}>
+    <Button data-keyboard-keep="" size={buttonSize} textSize={inline || stopTextSize === 'xs' ? 'xs' : 'md'} keepIconSize disabled={disabled} onClick={onStop}>
       <StopIcon size={stopIconSize} />
       Stop
     </Button>

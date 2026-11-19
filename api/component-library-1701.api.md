@@ -386,6 +386,7 @@ export type ComposerProps = {
     attachLabel?: string | undefined;
     sendIconSize?: '12' | '16' | undefined;
     stopIconSize?: '12' | '16' | undefined;
+    stopTextSize?: 'md' | 'xs' | undefined;
     model?: ReactNode;
     disabled?: boolean | undefined;
     layout?: 'stacked' | 'inline' | undefined;

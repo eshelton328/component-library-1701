@@ -1670,6 +1670,9 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
     await userEvent.click(field)
     fakeViewport.move({ height: 844 - 430 })
     await wait(60)
+    // And the rise is under way: a loaded runner can draw no frame in those 60 ms, and a fall from no rise has no
+    // curve to check (Close After Correction Light measured 0 for 2.7 ms in a 2-CPU Linux run).
+    await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
     const timed = recordRise(footer, root)
     const start = performance.now()
     const from = riseOf(footer) + 34

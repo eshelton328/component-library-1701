@@ -19,8 +19,8 @@ jobs:
   # checked the same files (the same tree, on top of this commit's parent).
   # scripts/release-reuse.ts finds that run; when it passed, ci.yml does not
   # run again. When none is found, or a lookup fails, ci.yml runs in full.
-  # No check is skipped: check:worktree, which a PR run skips when it changes
-  # only src/, api/ or Markdown, runs below when the PR run skipped it.
+  # No check is skipped: when the PR run did not run check:worktree (a run
+  # from before ci.yml ran it on every PR), the worktree job runs it below.
   reuse:
     if: github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true'
     runs-on: ubuntu-24.04

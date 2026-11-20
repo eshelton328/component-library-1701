@@ -7,7 +7,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parse } from 'yaml'
-import { decide } from './release-reuse.ts'
+import { decide, isPull, isRun, isJob, listOf } from './release-reuse.ts'
 import type { Deps, Pull, Run, Job } from './release-reuse.ts'
 
 const root = new URL('..', import.meta.url).pathname
@@ -78,7 +78,7 @@ void test('no PR, two PRs, a fork, another merge commit, no run or a push run al
     { runs: () => Promise.resolve([run({ head_sha: PARENT })]) },
     { fetchHead: () => false },
   ]
-  for (const [i, c] of cases.entries()) assert.equal((await decide(SHA, deps(c))).reuse, false, `case ${i}`)
+  for (const [i, c] of cases.entries()) assert.equal((await decide(SHA, deps(c))).reuse, false, `case ${String(i)}`)
 })
 
 const jobsOf = (path: string): Record<string, Record<string, unknown>> => {
@@ -91,7 +91,7 @@ const jobsOf = (path: string): Record<string, Record<string, unknown>> => {
 
 void test('release.yml runs ci.yml unless reuse is true, and releases only after a check passed', () => {
   const j = jobsOf('.github/workflows/release.yml')
-  const ifOf = (name: string) => String(j[name]?.['if'] ?? '')
+  const ifOf = (name: string) => { const v = j[name]?.['if']; return typeof v === 'string' ? v : '' }
   assert.match(ifOf('ci'), /!cancelled\(\)/)
   assert.match(ifOf('ci'), /needs\.reuse\.outputs\.reuse != 'true'/)
   assert.equal(j['ci']?.['uses'], './.github/workflows/ci.yml')
@@ -120,4 +120,19 @@ void test('ci.yml runs check:worktree on every commit (bridge-coord, 2026-11-20)
   const paths: unknown = steps.find((s: unknown) => typeof s === 'object' && s !== null && 'id' in s && s.id === 'paths')
   assert.ok(typeof paths === 'object' && paths !== null && 'run' in paths)
   assert.equal(String(paths.run).trim(), 'echo "run=true" >> "$GITHUB_OUTPUT"')
+})
+
+void test('the API guards accept the shapes the script reads and reject the rest, so a bad reply runs ci in full', () => {
+  assert.ok(isPull(pull()))
+  assert.ok(isPull(pull({ head: { sha: HEAD, repo: null } })))
+  for (const bad of [null, [], {}, { ...pull(), number: '7' }, { ...pull(), merged_at: 1 }, { ...pull(), merge_commit_sha: undefined }, { ...pull(), head: null }, { ...pull(), head: { sha: 1, repo: null } }, { ...pull(), head: { sha: HEAD, repo: {} } }]) assert.equal(isPull(bad), false, JSON.stringify(bad))
+  assert.ok(isRun(run()))
+  assert.ok(isRun(run({ conclusion: null })))
+  for (const key of ['id', 'event', 'head_sha', 'conclusion', 'created_at']) assert.equal(isRun({ ...run(), [key]: undefined }), false, key)
+  assert.ok(isJob(worktreeJob('success')))
+  assert.ok(isJob({ name: 'worktree' }))
+  for (const bad of [{ steps: [] }, { name: 'worktree', steps: {} }, { name: 'worktree', steps: [{ name: 1, conclusion: null }] }, { name: 'worktree', steps: [{ name: 'x', conclusion: 1 }] }]) assert.equal(isJob(bad), false, JSON.stringify(bad))
+  assert.throws(() => listOf({ jobs: [] }, isJob, 'jobs'), /not a list of jobs/)
+  assert.throws(() => listOf([run(), { id: 2 }], isRun, 'runs'), /not a list of runs/)
+  assert.deepEqual(listOf([run()], isRun, 'runs'), [run()])
 })

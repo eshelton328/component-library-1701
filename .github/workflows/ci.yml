@@ -254,12 +254,8 @@ jobs:
       - run: pnpm check:pack
 
   # Agents work in git worktrees, so the checks must pass in a fresh one.
-  # On a PR that changes only files under src/ or api/, or Markdown files,
-  # the job passes without running: a fresh worktree differs from the CI
-  # checkout only in setup (install, config, scripts), and those files do
-  # not change it (the owner approved, ci-actions-audit in the brain). A push run
-  # (release.yml, before a release) always runs it, and nightly.yml runs it
-  # on main every night.
+  # The job runs pnpm check:worktree on every PR and push run, and
+  # nightly.yml runs it on main every night.
   worktree:
     runs-on: ubuntu-24.04
     outputs:

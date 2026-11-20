@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
-import { expect, waitFor, within } from 'storybook/test'
+import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet } from './bottom-sheet'
 import { Button } from './button'
@@ -127,3 +127,66 @@ const openFirstPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 /** A sheet open from the start lifts a row that comes after it in the tree. */
 export const OpenFirstDark: StoryObj<typeof meta> = { render: () => <OpenFirst />, play: openFirstPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const OpenFirstLight: StoryObj<typeof meta> = { render: () => <OpenFirst />, play: openFirstPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// "Open" opens the sheet with no row, so the sheet spends its tries on a ref that is never set; "Open with row"
+// opens it again, and the row mounts 50 ms later, within the sheet's tries.
+function LateRow() {
+  const [open, setOpen] = useState(false)
+  const [shown, setShown] = useState(false)
+  const held = useRef<HTMLDivElement>(null)
+  return (
+    <main className={page}>
+      <Button
+        onClick={() => {
+          setOpen(true)
+        }}
+      >
+        Open
+      </Button>
+      <Button
+        onClick={() => {
+          setOpen(true)
+          setTimeout(() => {
+            setShown(true)
+          }, 50)
+        }}
+      >
+        Open with row
+      </Button>
+      <BottomSheet title="Actions" open={open} onOpenChange={setOpen} lifted={{ content: <div className={liftedRow}>{heldChat}</div>, anchor: held }}>
+        <Button>Rename</Button>
+      </BottomSheet>
+      {shown ? (
+        <div ref={held} className={row} data-row={heldChat}>
+          {heldChat}
+        </div>
+      ) : null}
+    </main>
+  )
+}
+
+const frames = async (n: number) => {
+  for (let i = 0; i < n; i++) await new Promise((resolve) => requestAnimationFrame(resolve))
+}
+
+const lateRowPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await press(canvas.getByRole('button', { name: 'Open' }))
+  const first = await within(document.body).findByRole('dialog', { name: 'Actions' })
+  await frames(20)
+  await userEvent.keyboard('{Escape}')
+  await unmounted(first)
+  // A later open tries again: the copy lies at the row's place, and the row hides.
+  await press(canvas.getByRole('button', { name: 'Open with row' }))
+  const anchor = await canvas.findByText(heldChat)
+  await waitFor(() => expect(getComputedStyle(anchor).visibility).toBe('hidden'))
+  const lifted = document.querySelector('.bottom-sheet__lifted')
+  if (lifted === null) throw new Error('no copy')
+  const at = anchor.getBoundingClientRect()
+  const box = lifted.getBoundingClientRect()
+  await expect([box.left, box.top, box.width, box.height].map(Math.round)).toEqual([at.left, at.top, at.width, at.height].map(Math.round))
+}
+
+/** Each open of the sheet tries again to place the copy, also after an open whose row never came. */
+export const LateRowDark: StoryObj<typeof meta> = { render: () => <LateRow />, play: lateRowPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateRowLight: StoryObj<typeof meta> = { render: () => <LateRow />, play: lateRowPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }

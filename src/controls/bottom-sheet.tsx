@@ -206,6 +206,12 @@ function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
   // commit (a sheet open from the start). The effect then tries again on the next frames, at most `placeTries` times,
   // so a ref that is never set does not render on each frame; the copy stays hidden until it is placed (`data-placed`).
   const [tries, setTries] = useState(0)
+  // Each open gets its own tries, also after an open that spent them all.
+  const [triedOpen, setTriedOpen] = useState(open)
+  if (open !== triedOpen) {
+    setTriedOpen(open)
+    setTries(0)
+  }
   useLayoutEffect(() => {
     const target = anchor instanceof HTMLElement ? anchor : (anchor?.current ?? null)
     const copy = ref.current

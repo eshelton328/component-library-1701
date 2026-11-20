@@ -7,6 +7,7 @@ import { Checkbox } from './checkbox'
 import { Inline } from './layout'
 import { OptionList } from './option-list'
 import { Popover, PopoverSection } from './popover'
+import { layerSettled } from './layer.testing'
 import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialogLg' })
@@ -126,9 +127,10 @@ export const Behaviour: StoryObj<typeof meta> = {
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(body.queryByRole('dialog', { name: 'Filters' })).toBeNull())
     await waitFor(() => expect(trigger).toHaveFocus())
-    // A click outside closes it.
+    // A click outside closes it, once Ark takes outside clicks again after the close and the open (layer.testing.ts).
     await userEvent.click(trigger)
     await body.findByRole('dialog', { name: 'Filters' })
+    await layerSettled()
     await userEvent.click(canvas.getByText('Outside the popover'))
     await waitFor(() => expect(body.queryByRole('dialog', { name: 'Filters' })).toBeNull())
   },

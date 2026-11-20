@@ -184,13 +184,17 @@ export const Behaviour: StoryObj<typeof meta> = {
     const area = canvas.getByRole('textbox', { name: 'Message' })
     const box = area.closest<HTMLElement>('.composer__root')
     if (box === null) throw new Error('no composer box')
-    // Enter on empty text or spaces submits nothing.
     await userEvent.click(area)
     await waitFor(() => expect(getComputedStyle(box).borderTopColor).toBe(swatch(canvasElement, 'selected')))
+    // Enter on empty text or spaces submits nothing, in a composer with no files (with ready files it sends the
+    // files alone: FilesOnly).
+    const bare = canvas.getByRole('textbox', { name: 'Controlled' })
+    await userEvent.click(bare)
     await userEvent.keyboard('{Enter}')
-    await userEvent.type(area, '   {Enter}')
+    await userEvent.type(bare, '   {Enter}')
     await expect(onSubmit).not.toHaveBeenCalled()
-    await userEvent.clear(area)
+    await userEvent.clear(bare)
+    await userEvent.click(area)
     // Shift+Enter adds a line; Enter submits the text and clears the uncontrolled composer.
     await userEvent.type(area, 'Fix the build{Shift>}{Enter}{/Shift}then rerun')
     await expect(area).toHaveValue('Fix the build\nthen rerun')
@@ -1041,6 +1045,121 @@ const sendStatesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** `sendDisabled`: Send is off while an upload is pending; the default leaves it on. */
 export const SendDisabledDark: StoryObj<typeof meta> = { render: () => <SendStates />, globals: { mode: 'dark' }, play: sendStatesPlay }
 export const SendDisabledLight: StoryObj<typeof meta> = { render: () => <SendStates />, globals: { mode: 'light' }, play: sendStatesPlay }
+
+// A message of files alone (the-bridge W1b): with every file ready, Send and Enter submit '' with no text; an upload
+// that runs or failed holds it, and a composer with no files still submits nothing.
+const onFilesSubmit = fn<(text: string) => void>()
+const onFilesSend = fn<(text: string) => boolean>(() => true)
+const readyFiles: readonly ComposerAttachment[] = [
+  { id: 'notes', name: 'notes.md', status: 'ready' },
+  { id: 'shot', name: 'screenshot.png' },
+]
+
+function FilesOnly() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer label="Files" attachments={readyFiles} onSubmit={onFilesSubmit} />
+        <Composer label="Files by onSend" attachments={readyFiles} onSend={onFilesSend} />
+        <Composer label="Uploading" attachments={[...readyFiles, { id: 'up', name: 'design-review.mov', status: 'uploading', progress: 0.3 }]} onSubmit={onFilesSubmit} />
+        <Composer label="Failed" attachments={[...readyFiles, { id: 'bad', name: 'build.log', status: 'failed' }]} onSubmit={onFilesSubmit} />
+        <Composer label="No files" onSubmit={onFilesSubmit} />
+      </Stack>
+    </main>
+  )
+}
+
+const filesOnlyPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onFilesSubmit.mockClear()
+  onFilesSend.mockClear()
+  // Every file ready and no text: Send submits '', and so does Enter.
+  const files = composerOf(canvasElement, 'Files')
+  const field = within(files).getByRole('textbox', { name: 'Files' })
+  const send = within(files).getByRole('button', { name: 'Send' })
+  await expect(send).toBeEnabled()
+  await userEvent.click(send)
+  await expect(onFilesSubmit).toHaveBeenCalledTimes(1)
+  await expect(onFilesSubmit).toHaveBeenLastCalledWith('')
+  await userEvent.click(field)
+  await userEvent.keyboard('{Enter}')
+  await expect(onFilesSubmit).toHaveBeenCalledTimes(2)
+  await expect(onFilesSubmit).toHaveBeenLastCalledWith('')
+  // Text of only spaces is no text: it submits '' and the box clears.
+  await userEvent.type(field, '   {Enter}')
+  await expect(onFilesSubmit).toHaveBeenCalledTimes(3)
+  await expect(onFilesSubmit).toHaveBeenLastCalledWith('')
+  await expect(field).toHaveValue('')
+  // A text with the files is submitted as typed, as before.
+  await userEvent.type(field, 'See the notes{Enter}')
+  await expect(onFilesSubmit).toHaveBeenLastCalledWith('See the notes')
+  // onSend gets '' the same way, by Send and by Enter.
+  const bySend = composerOf(canvasElement, 'Files by onSend')
+  await userEvent.click(within(bySend).getByRole('button', { name: 'Send' }))
+  await expect(onFilesSend).toHaveBeenCalledTimes(1)
+  await expect(onFilesSend).toHaveBeenLastCalledWith('')
+  await userEvent.click(within(bySend).getByRole('textbox', { name: 'Files by onSend' }))
+  await userEvent.keyboard('{Enter}')
+  await expect(onFilesSend).toHaveBeenCalledTimes(2)
+  await expect(onFilesSend).toHaveBeenLastCalledWith('')
+  onFilesSubmit.mockClear()
+  // A file that uploads or failed holds a message of files alone; so does a composer with no files.
+  for (const label of ['Uploading', 'Failed', 'No files']) {
+    const box = composerOf(canvasElement, label)
+    await userEvent.click(within(box).getByRole('button', { name: 'Send' }))
+    await userEvent.click(within(box).getByRole('textbox', { name: label }))
+    await userEvent.keyboard('{Enter}')
+    await userEvent.keyboard('   {Enter}')
+  }
+  await expect(onFilesSubmit).not.toHaveBeenCalled()
+}
+
+/** A message of files alone: Send and Enter submit `''` once every file is ready. */
+export const FilesOnlyDark: StoryObj<typeof meta> = { render: () => <FilesOnly />, globals: { mode: 'dark' }, play: filesOnlyPlay }
+export const FilesOnlyLight: StoryObj<typeof meta> = { render: () => <FilesOnly />, globals: { mode: 'light' }, play: filesOnlyPlay }
+
+// Retry per file (the-bridge W1b): a file the server never takes (too large, empty, a type it cannot read) fails
+// with `retry: false` and shows no Retry; a failed file with no `retry`, or `retry: true`, shows it.
+const onFileRetry = fn<(id: string) => void>()
+
+function RetryPerFile() {
+  return (
+    <main className={page}>
+      <Composer
+        label="Retry per file"
+        onRetryAttachment={onFileRetry}
+        onRemoveAttachment={() => undefined}
+        attachments={[
+          { id: 'huge', name: 'disk.iso', status: 'failed', retry: false },
+          { id: 'log', name: 'build.log', status: 'failed' },
+          { id: 'zip', name: 'trace.zip', status: 'failed', retry: true },
+        ]}
+      />
+      {swatchRow}
+    </main>
+  )
+}
+
+const retryPerFilePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onFileRetry.mockClear()
+  const box = composerOf(canvasElement, 'Retry per file')
+  // retry: false: no Retry, and the chip keeps the failed look (warning sign, danger border) and its remove button.
+  const never = chipOf(box, 'disk.iso')
+  await expect(within(never).queryByRole('button', { name: /^Retry/ })).toBeNull()
+  await expect(within(never).getByRole('img', { name: 'Upload failed' })).toBeInTheDocument()
+  await expect(getComputedStyle(never).borderTopColor).toBe(swatch(canvasElement, 'dangerBorder'))
+  await expect(within(never).getByRole('button', { name: 'Remove disk.iso' })).toBeInTheDocument()
+  // The default and retry: true show Retry in fg.accent, which reports the file's id.
+  const retry = within(chipOf(box, 'build.log')).getByRole('button', { name: 'Retry build.log' })
+  await expect(getComputedStyle(retry).color).toBe(swatch(canvasElement, 'link'))
+  await expect(within(chipOf(box, 'trace.zip')).getByRole('button', { name: 'Retry trace.zip' })).toBeInTheDocument()
+  await userEvent.click(retry)
+  await expect(onFileRetry).toHaveBeenLastCalledWith('log')
+  await expect(within(box).getAllByRole('button', { name: /^Retry/ })).toHaveLength(2)
+}
+
+/** `retry: false` on a failed attachment hides its Retry; the default shows it. */
+export const RetryPerFileDark: StoryObj<typeof meta> = { render: () => <RetryPerFile />, globals: { mode: 'dark' }, play: retryPerFilePlay }
+export const RetryPerFileLight: StoryObj<typeof meta> = { render: () => <RetryPerFile />, globals: { mode: 'light' }, play: retryPerFilePlay }
 
 // Files from outside the attach button: a drop on the composer and a paste into it (onAddFiles), beside a
 // composer without onAddFiles.

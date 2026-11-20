@@ -15,5 +15,9 @@ under their purpose group, never under "Parts" (d-065).
   stories). A story that drops or pastes sends a `DragEvent` or
   `userEvent.paste` with a `DataTransfer`, and waits for the drop state:
   React renders a drag's state change after the event returns.
+- With every attachment ready, Send and Enter submit `''` for a message of
+  files alone; an `uploading` or `failed` file holds it (`FilesOnly`
+  stories). `retry: false` takes Retry off one failed chip
+  (`RetryPerFile` stories).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.

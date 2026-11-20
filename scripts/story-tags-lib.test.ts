@@ -38,6 +38,13 @@ void test('parseIndex skips docs entries and rejects a story with a broken shape
   assert.throws(() => parseIndex({ entries: { s: 1 } }), /not an object/)
 })
 
+void test('a later dev tag shows a story again, as in Storybook (meta !dev, story dev)', () => {
+  const shown = compare(parseIndex(index(story('Back', ['dev', 'test']))), new Map([['./a.stories.tsx:Back', ['!dev', 'dev']]]))
+  assert.deepEqual(shown, [])
+  const hidden = compare(parseIndex(index(story('Gone', ['test']))), new Map([['./a.stories.tsx:Gone', ['dev', '!dev']]]))
+  assert.deepEqual(hidden, [])
+})
+
 void test('tagsOf reads only a string array', () => {
   assert.deepEqual(tagsOf({ tags: ['!dev'] }), ['!dev'])
   assert.deepEqual(tagsOf({ tags: [1] }), [])

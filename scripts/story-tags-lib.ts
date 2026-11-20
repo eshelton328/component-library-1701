@@ -30,6 +30,16 @@ export function tagsOf(value: unknown): string[] {
   return value.tags
 }
 
+/** True when Storybook shows a story in its UI: it starts from 'dev' and applies each tag in order ('!x' removes x). */
+export function shownInUi(tags: readonly string[]): boolean {
+  const set = new Set(['dev'])
+  for (const t of tags) {
+    if (t.startsWith('!')) set.delete(t.slice(1))
+    else set.add(t)
+  }
+  return set.has('dev')
+}
+
 /**
  * The problems: each story that the index shows in the Storybook UI while its file hides it with '!dev', or the
  * reverse. Storybook reads tags without running the file, so a tag that comes from a helper function or a spread
@@ -44,7 +54,7 @@ export function compare(stories: readonly IndexStory[], runtime: ReadonlyMap<str
       problems.push(`${s.importPath} ${s.exportName}: in the index, but the file does not export it`)
       continue
     }
-    const fileShows = !tags.includes('!dev')
+    const fileShows = shownInUi(tags)
     const indexShows = s.tags.includes('dev')
     if (fileShows !== indexShows)
       problems.push(

@@ -15,7 +15,7 @@ const root = new URL('..', import.meta.url).pathname
 const REUSED = ['typecheck', 'lint', 'tokens', 'checks', 'test']
 
 type Step = Record<string, unknown>
-interface Job { needs: unknown; if: unknown; outputs: Record<string, unknown>; steps: Step[] }
+interface Job { needs: unknown; if: unknown; timeout: unknown; outputs: Record<string, unknown>; steps: Step[] }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -38,7 +38,7 @@ function jobOf(doc: unknown, name: string): Job {
   const steps = job['steps']
   if (!Array.isArray(steps) || !steps.every(isRecord)) throw new Error(`${name} has no list of steps`)
   const outputs = job['outputs']
-  return { needs: job['needs'], if: job['if'], outputs: isRecord(outputs) ? outputs : {}, steps }
+  return { needs: job['needs'], if: job['if'], timeout: job['timeout-minutes'], outputs: isRecord(outputs) ? outputs : {}, steps }
 }
 
 const ciText = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')
@@ -87,6 +87,7 @@ void test('the reused jobs run only pnpm commands after the reuse step, so verif
 void test('the worktree job runs pnpm verify with the same setup, and reports whether it ran', () => {
   const w = jobOf(ci, 'worktree')
   assert.equal(w.outputs['ran'], '${{ steps.paths.outputs.run }}')
+  assert.equal(w.timeout, 30)
   const setup = w.steps.find((s) => s['uses'] === './.github/actions/setup')
   const withs = setup?.['with']
   assert.equal(isRecord(withs) ? withs['browser'] : undefined, 'true')

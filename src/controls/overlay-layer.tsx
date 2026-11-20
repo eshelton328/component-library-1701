@@ -48,19 +48,27 @@ export function OverlayPortal({ children }: { children: ReactNode }) {
         if (runs.current === run) root.remove()
       })
     }
-    if (parent === undefined) {
-      root.ownerDocument.body.append(root)
-      return leave
+    const host = parent ?? root.ownerDocument.body
+    // A layer goes to the end of its host when its overlay opens, so the overlay opened last is on top, whatever
+    // order the overlays mounted in (a confirm dialog opened from a sibling dialog that mounted after it). Only a
+    // part or its box counts: an open submenu row deeper down does not move its menu, which has the focus.
+    let open = false
+    const place = () => {
+      // A layer inside another one leaves the document while it is empty (see above).
+      if (parent !== undefined && parts.childElementCount === 0) {
+        root.remove()
+        open = false
+        return
+      }
+      const opened = parts.querySelector(':scope > [data-state="open"], :scope > * > [data-state="open"]') !== null
+      if (root.parentNode !== host || (opened && !open && host.lastElementChild !== root)) host.append(root)
+      open = opened
     }
     // A child's effect runs before its parent's, but the parent's layer exists from its first render, so a part
     // that appears in the same commit as the parent's still lands in it, after the parent's parts.
-    const place = () => {
-      if (parts.childElementCount === 0) root.remove()
-      else if (root.parentNode !== parent) parent.append(root)
-    }
     place()
     const watch = new MutationObserver(place)
-    watch.observe(parts, { childList: true })
+    watch.observe(parts, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state'] })
     return () => {
       watch.disconnect()
       leave()

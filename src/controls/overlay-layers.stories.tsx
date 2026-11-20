@@ -159,6 +159,48 @@ const escapePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await waitFor(() => expect(body().queryByRole('dialog', { name: 'Add a link' })).toBeNull())
 }
 
+// Two sibling dialogs on the page, mounted A (the confirm) then B (the form). B opens A while B stays open, so A
+// opened last and must be on top, whatever their mount order.
+function SiblingDialogs() {
+  const [confirm, setConfirm] = useState(false)
+  const [done, setDone] = useState('no')
+  return (
+    <main className={page}>
+      <p>{`Confirmed: ${done}`}</p>
+      <Dialog role="alertdialog" title="Remove the link?" open={confirm} onOpenChange={setConfirm}>
+        <Button
+          onClick={() => {
+            setDone('yes')
+          }}
+        >
+          Yes, remove
+        </Button>
+      </Dialog>
+      <Dialog size="lg" title="Edit the link" trigger={<Button>Edit</Button>}>
+        <Button
+          onClick={() => {
+            setConfirm(true)
+          }}
+        >
+          Remove
+        </Button>
+      </Dialog>
+    </main>
+  )
+}
+
+const siblingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await press(within(canvasElement).getByRole('button', { name: 'Edit' }))
+  const edit = await body().findByRole('dialog', { name: 'Edit the link' })
+  await press(within(edit).getByRole('button', { name: 'Remove' }))
+  const confirm = await body().findByRole('alertdialog', { name: 'Remove the link?' })
+  // No part sets a z-index, so the one later in the document paints on top. Ark turns pointer events off on the
+  // dialog under a modal one, so a click alone would reach the confirm even where the form covers it.
+  await waitFor(() => expect(edit.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  await press(within(confirm).getByRole('button', { name: 'Yes, remove' }))
+  await waitFor(() => expect(within(canvasElement).getByText('Confirmed: yes')).toBeInTheDocument())
+}
+
 const meta = {
   title: 'Overlays/Overlay layers',
   parameters: { layout: 'fullscreen' },
@@ -180,3 +222,7 @@ export const DialogFromSheetLight: StoryObj<typeof meta> = { render: () => <Dial
 
 /** Escape closes the top overlay only: the open list, then the dialog. */
 export const EscapeClosesTop: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: escapePlay, globals: { mode: 'dark' } }
+
+/** A dialog opened from a sibling dialog that mounted after it is on top: a pointer reaches it. */
+export const SiblingOpenOrderDark: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'dark' } }
+export const SiblingOpenOrderLight: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'light' } }

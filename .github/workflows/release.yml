@@ -15,13 +15,71 @@ permissions:
   contents: read
 
 jobs:
-  ci:
+  # A release commit is the squash commit of a PR whose ci run already
+  # checked the same files (the same tree, on top of this commit's parent).
+  # scripts/release-reuse.ts finds that run; when it passed, ci.yml does not
+  # run again. When none is found, or a lookup fails, ci.yml runs in full.
+  # No check is skipped: when the PR run did not run check:worktree (a run
+  # from before ci.yml ran it on every PR), the worktree job runs it below.
+  reuse:
     if: github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+      issues: read # the PR timeline, for a changed base branch
+      pull-requests: read
+    outputs:
+      reuse: ${{ steps.find.outputs.reuse }}
+      worktree: ${{ steps.find.outputs.worktree }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Find a passed ci run of the merged PR on the same tree
+        id: find
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          node scripts/release-reuse.ts "$SHA" | tee -a "$GITHUB_OUTPUT"
+
+  ci:
+    needs: reuse
+    if: ${{ !cancelled() && (github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true') && needs.reuse.outputs.reuse != 'true' }}
     uses: ./.github/workflows/ci.yml
 
+  # The PR run passed on these files but skipped check:worktree, so it runs
+  # here, as in ci.yml.
+  worktree:
+    needs: reuse
+    if: needs.reuse.outputs.reuse == 'true' && needs.reuse.outputs.worktree != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+        with:
+          browser: 'true'
+      - run: pnpm check:worktree
+
   release:
-    needs: ci
-    if: github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true'
+    needs: [reuse, ci, worktree]
+    # ci.yml passed here, or the PR run passed on the same tree and
+    # check:worktree passed in that run or in the worktree job above.
+    if: >-
+      ${{ !cancelled() && (github.ref_name == 'beta' || vars.RELEASE_MAIN == 'true') &&
+      (needs.ci.result == 'success' ||
+      (needs.reuse.outputs.reuse == 'true' && needs.ci.result == 'skipped' &&
+      (needs.worktree.result == 'success' ||
+      (needs.worktree.result == 'skipped' && needs.reuse.outputs.worktree == 'true')))) }}
     runs-on: ubuntu-24.04
     # One release at a time across branches, and never cancel a publisher.
     concurrency:

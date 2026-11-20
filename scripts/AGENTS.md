@@ -31,6 +31,10 @@ release checks, the component build and their tests.
   `check-release-registry.ts` run in the release job, not in `verify`.
   `check-release-api.ts` reads the committed `api/recipe-types.api.md`,
   and `styled-system/recipes/` only when that file is missing.
+- `release-reuse.ts` is the `reuse` job of `release.yml`: it finds the merged
+  PR's ci run on the same tree as the release commit, so a release does not
+  run ci.yml again; any other case runs it in full. `release-reuse.test.ts`
+  tests it in `pnpm test:release`.
 - `secret-scan.test.ts` is not in `pnpm verify`: it needs gitleaks 8.30.1
   on `PATH` or in `GITLEAKS`. The `secrets` job in `ci.yml` runs it.
 - Put no file under a top-level `b/` folder. The gitleaks path

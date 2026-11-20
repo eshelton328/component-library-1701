@@ -254,12 +254,8 @@ jobs:
       - run: pnpm check:pack
 
   # Agents work in git worktrees, so the checks must pass in a fresh one.
-  # On a PR that changes only files under src/ or api/, or Markdown files,
-  # the job passes without running: a fresh worktree differs from the CI
-  # checkout only in setup (install, config, scripts), and those files do
-  # not change it (the owner approved, ci-actions-audit in the brain). A push run
-  # (release.yml, before a release) always runs it, and nightly.yml runs it
-  # on main every night.
+  # The job runs pnpm check:worktree on every PR and push run, and
+  # nightly.yml runs it on main every night.
   worktree:
     runs-on: ubuntu-24.04
     outputs:
@@ -269,30 +265,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Decide whether the change can affect a fresh worktree
+      # check:worktree runs on every PR (bridge-coord, 2026-11-20). The reuse
+      # in release.yml then finds a PR run that also checked a fresh worktree,
+      # so a release runs no ci job again (issue #275: about 470 minutes a
+      # day). The output stays, so the five jobs still run in full on any
+      # run where verify did not run.
+      - name: Run check:worktree on every commit
         id: paths
-        env:
-          EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT" != pull_request ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # --no-renames lists both paths of a rename, so a file moved into src/
-          # still counts where it came from. A failed diff stops the step (set
-          # -e), so the job fails and never passes unchecked.
-          changed=$(git diff --name-only --no-renames "$BASE" HEAD)
-          other=$(printf '%s\n' "$changed" | grep -vE '^(src/|api/)|\.md$' || true)
-          if [ -n "$other" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "Files outside src/ and api/ changed, so check:worktree runs:"
-            echo "$other"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Only src/, api/ or Markdown files changed, so check:worktree does not run on this PR; nightly.yml runs it on main."
-          fi
+        run: echo "run=true" >> "$GITHUB_OUTPUT"
       - if: steps.paths.outputs.run == 'true'
         uses: ./.github/actions/setup
         with:

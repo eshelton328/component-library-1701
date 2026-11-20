@@ -530,5 +530,5 @@ const scrolls: StoryObj<typeof meta> = {
     await expectScrollsByWheelAndKeys(body)
   },
 }
-export const ScrollsDark: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'dark' } }
-export const ScrollsLight: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'light' } }
+export const ScrollsDark: StoryObj<typeof meta> = { tags: ['!dev'], ...scrolls, globals: { mode: 'dark' } }
+export const ScrollsLight: StoryObj<typeof meta> = { tags: ['!dev'], ...scrolls, globals: { mode: 'light' } }

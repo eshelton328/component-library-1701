@@ -24,6 +24,10 @@ export default defineConfig({
         plugins: [storybookTest({ configDir: 'checks/.storybook' })],
         test: { name: 'checks', browser },
       },
+      {
+        extends: true,
+        test: { name: 'story-tags', include: ['scripts/story-tags.test.ts'], browser },
+      },
     ],
   },
 })

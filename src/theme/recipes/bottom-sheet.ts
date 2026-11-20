@@ -44,6 +44,8 @@ export const bottomSheet = defineSlotRecipe({
       w: 'var(--bottom-sheet-lifted-width)',
       h: 'var(--bottom-sheet-lifted-height)',
       pointerEvents: 'none',
+      // It stays as it is while the scrim fades out, so the component keeps it, and the row hidden, until then.
+      _closed: { animationName: 'hold', animationDuration: 'sheetClose', animationFillMode: 'forwards' },
     },
     // The top padding keeps a strip of scrim above a tall sheet, so a click there can close it.
     positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', pt: '40' },

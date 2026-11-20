@@ -162,6 +162,12 @@ export function BottomSheetClose(input: {
 }): JSX.Element;
 
 // @public
+export type BottomSheetLifted = {
+    content: ReactNode;
+    anchor: HTMLElement | RefObject<HTMLElement | null> | null;
+};
+
+// @public
 export type BottomSheetProps = ({
     title: string;
     label?: undefined;
@@ -180,6 +186,7 @@ export type BottomSheetProps = ({
     initialFocus?: (() => HTMLElement | null) | undefined;
     size?: 'sm' | 'md' | undefined;
     scrim?: boolean | undefined;
+    lifted?: BottomSheetLifted | undefined;
 };
 
 // @public

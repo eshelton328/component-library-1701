@@ -21,7 +21,7 @@ export const bottomSheet = defineSlotRecipe({
   className: 'bottom-sheet',
   jsx: ['BottomSheet'],
   staticCss: ['*'],
-  slots: [...dialogAnatomy.keys(), 'grabber', 'header', 'headerLeading', 'headerActions'],
+  slots: [...dialogAnatomy.keys(), 'grabber', 'header', 'headerLeading', 'headerActions', 'lifted'],
   base: {
     // Open and close motion (screen review R13): the scrim fades in while the sheet slides up, and the close
     // reverses both. The close keeps its last frame, so nothing shows again before Ark unmounts the sheet.
@@ -31,6 +31,17 @@ export const bottomSheet = defineSlotRecipe({
       bg: 'overlay.scrim',
       _open: { animationName: 'fadeIn', animationDuration: 'sheetOpen', animationTimingFunction: 'sheet' },
       _closed: { animationName: 'fadeOut', animationDuration: 'sheetClose', animationTimingFunction: 'sheet', animationFillMode: 'forwards' },
+    },
+    // A copy of a page element over the scrim, at the element's place and size, which the component sets as
+    // custom properties (the Workspaces M9 held row, 146:252). It takes no pointer events, so a tap there reaches
+    // the scrim and closes the sheet; the caller draws its look.
+    lifted: {
+      position: 'fixed',
+      top: 'var(--bottom-sheet-lifted-top)',
+      left: 'var(--bottom-sheet-lifted-left)',
+      w: 'var(--bottom-sheet-lifted-width)',
+      h: 'var(--bottom-sheet-lifted-height)',
+      pointerEvents: 'none',
     },
     // The top padding keeps a strip of scrim above a tall sheet, so a click there can close it.
     positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', pt: '40' },

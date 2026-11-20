@@ -1,0 +1,95 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useRef, useState } from 'react'
+import { expect, within } from 'storybook/test'
+import { css } from '../../styled-system/css'
+import { BottomSheet } from './bottom-sheet'
+import { Button } from './button'
+import { motionDone, unmounted } from './bottom-sheet.testing'
+
+// The Workspaces M9 held row: holding a chat row (here, its Hold button) opens the chat's actions sheet, which lifts
+// a copy of the row over its scrim, bright where the rest of the list is dimmed (146:252).
+const phoneScreen = { m390: { name: 'Phone (390 x 844)', styles: { width: '390px', height: '844px' } } }
+const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '16', minH: 'dvh' })
+// The list, which the play function lifts with z-index 1 as the-bridge's list parts are (the library has no
+// z-index token, and a story may set no raw value).
+const list = css({ position: 'relative', bg: 'bg.canvas' })
+const row = css({ textStyle: 'body', color: 'fg.default', py: '12' })
+const liftedRow = css({ textStyle: 'body', color: 'fg.default', bg: 'surface.raised', borderWidth: 'default', borderStyle: 'solid', borderColor: 'border.accent', borderRadius: 'lg', px: '12' })
+
+const chats = Array.from({ length: 8 }, (_, i) => `Chat ${String(i + 1)} needs a review`)
+const heldChat = 'Chat 4 needs a review'
+
+function HeldRow() {
+  const [open, setOpen] = useState(false)
+  const held = useRef<HTMLDivElement>(null)
+  return (
+    <main className={page}>
+      <div className={list} data-list="">
+        {chats.map((c) => (
+          <div key={c} ref={c === heldChat ? held : undefined} className={row} data-row={c}>
+            {c}
+          </div>
+        ))}
+        <Button
+          onClick={() => {
+            setOpen(true)
+          }}
+        >
+          Hold Chat 4
+        </Button>
+      </div>
+      <BottomSheet title="Actions" open={open} onOpenChange={setOpen} lifted={{ content: <div className={liftedRow}>{heldChat}</div>, anchor: held }}>
+        <Button>Rename</Button>
+      </BottomSheet>
+    </main>
+  )
+}
+
+// A real pointer click by the test runner's browser at the centre of `el`, in viewport coordinates: it lands on
+// whatever is drawn at that point.
+async function press(el: Element) {
+  const { userEvent } = await import('vitest/browser')
+  const r = el.getBoundingClientRect()
+  // Move to the point, then press and release the left button there.
+  await userEvent.pointer([{ coords: { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) } }, '[MouseLeft]'])
+}
+
+const heldRowPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const listPart = canvasElement.querySelector('[data-list]')
+  const anchor = canvasElement.querySelector(`[data-row="${heldChat}"]`)
+  if (!(listPart instanceof HTMLElement) || !(anchor instanceof HTMLElement)) throw new Error('no list')
+  listPart.style.setProperty('z-index', '1')
+  const at = anchor.getBoundingClientRect()
+  await press(within(canvasElement).getByRole('button', { name: 'Hold Chat 4' }))
+  const sheet = await within(document.body).findByRole('dialog', { name: 'Actions' })
+  await motionDone(sheet)
+  // The copy lies at the row's place and size, in the sheet's layer after its scrim, so it paints over the scrim
+  // (it takes no pointer events, so the hit test cannot show it); the row keeps its place, hidden.
+  const lifted = document.querySelector('.bottom-sheet__lifted')
+  const scrim = document.querySelector('.bottom-sheet__backdrop')
+  if (!(lifted instanceof HTMLElement) || !(scrim instanceof HTMLElement)) throw new Error('no lifted row or scrim')
+  const box = lifted.getBoundingClientRect()
+  await expect([box.left, box.top, box.width, box.height].map(Math.round)).toEqual([at.left, at.top, at.width, at.height].map(Math.round))
+  await expect(scrim.compareDocumentPosition(lifted) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  await expect(scrim.parentElement).toBe(lifted.parentElement)
+  await expect(getComputedStyle(lifted).pointerEvents).toBe('none')
+  await expect(lifted).toHaveTextContent(heldChat)
+  await expect(getComputedStyle(anchor).visibility).toBe('hidden')
+  await expect(anchor.getBoundingClientRect().top).toBe(at.top)
+  // A tap on the lifted row reaches the scrim and closes the sheet; the row shows again.
+  await press(lifted)
+  await unmounted(sheet)
+  await expect(document.querySelector('.bottom-sheet__lifted')).toBeNull()
+  await expect(getComputedStyle(anchor).visibility).toBe('visible')
+}
+
+const meta = {
+  title: 'Overlays/Bottom sheet lifted row',
+  parameters: { viewport: { options: phoneScreen } },
+} satisfies Meta
+
+export default meta
+
+/** The held row of Workspaces M9: the actions sheet lifts a copy of the row over its scrim, at the row's place. */
+export const HeldRowDark: StoryObj<typeof meta> = { render: () => <HeldRow />, play: heldRowPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const HeldRowLight: StoryObj<typeof meta> = { render: () => <HeldRow />, play: heldRowPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }

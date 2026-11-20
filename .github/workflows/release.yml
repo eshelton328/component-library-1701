@@ -28,6 +28,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      issues: read # the PR timeline, for a changed base branch
       pull-requests: read
     outputs:
       reuse: ${{ steps.find.outputs.reuse }}

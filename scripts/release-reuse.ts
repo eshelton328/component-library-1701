@@ -13,13 +13,16 @@
 // It prints reuse=, worktree=, run= and reason= lines for $GITHUB_OUTPUT.
 import { spawnSync } from 'node:child_process'
 
-export interface Pull { number: number; merged_at: string | null; merge_commit_sha: string | null; head: { sha: string; repo: { full_name: string } | null } }
-export interface Run { id: number; event: string; head_sha: string; conclusion: string | null; created_at: string }
+export interface Pull { number: number; merged_at: string | null; merge_commit_sha: string | null; head: { sha: string; ref: string; repo: { full_name: string } | null } }
+export interface Run { id: number; event: string; head_sha: string; head_branch: string | null; conclusion: string | null; created_at: string }
 export interface Step { name: string; conclusion: string | null }
 export interface Job { name: string; steps?: Step[] }
 export interface Deps {
   repo: string
   pulls: (sha: string) => Promise<Pull[]>
+  // true when the PR's base branch changed after it opened: ci.yml does
+  // not run again then, so its last run may have checked another base.
+  retargeted: (pr: number) => Promise<boolean>
   runs: (headSha: string) => Promise<Run[]>
   jobs: (runId: number) => Promise<Job[]>
   tree: (rev: string) => string | undefined
@@ -37,12 +40,18 @@ export async function decide(sha: string, d: Deps): Promise<Decision> {
   if (pr === undefined || merged.length !== 1) return no(`${String(merged.length)} merged PRs have ${sha} as their merge commit`)
   if (pr.head.repo?.full_name !== d.repo) return no(`PR #${String(pr.number)} comes from another repository`)
   const head = pr.head.sha
+  // A run lists no PR once the PR has merged, so a run is matched to this PR
+  // by its head SHA and branch. Another PR with the same head could have a
+  // newer green run on another base, so a shared head never reuses.
+  const sharing = (await d.pulls(head)).filter((p) => p.head.sha === head)
+  if (sharing.length !== 1 || sharing[0]?.number !== pr.number) return no(`${String(sharing.length)} PRs have head ${head}`)
+  if (await d.retargeted(pr.number)) return no(`the base branch of PR #${String(pr.number)} changed after it opened`)
   if (!d.fetchHead(pr.number)) return no(`the head of PR #${String(pr.number)} could not be fetched`)
   const tree = d.tree(sha)
   if (tree === undefined || tree !== d.tree(head)) return no(`PR #${String(pr.number)} head ${head} has another tree`)
   const parent = d.parent(sha)
   if (parent === undefined || !d.isAncestor(parent, head)) return no(`the parent of ${sha} is not an ancestor of PR #${String(pr.number)} head ${head}`)
-  const runs = (await d.runs(head)).filter((r) => r.event === 'pull_request' && r.head_sha === head)
+  const runs = (await d.runs(head)).filter((r) => r.event === 'pull_request' && r.head_sha === head && r.head_branch === pr.head.ref)
   const newest = [...runs].sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
   if (newest === undefined) return no(`no ci run of PR #${String(pr.number)} head ${head}`)
   if (newest.conclusion !== 'success') return no(`the newest ci run ${String(newest.id)} of PR #${String(pr.number)} ended ${newest.conclusion ?? 'not yet'}`)
@@ -70,12 +79,13 @@ const isNullableString = (v: unknown): v is string | null => v === null || typeo
 export function isPull(v: unknown): v is Pull {
   if (!isRecord(v) || typeof v['number'] !== 'number' || !isNullableString(v['merged_at']) || !isNullableString(v['merge_commit_sha'])) return false
   const head = v['head']
-  if (!isRecord(head) || typeof head['sha'] !== 'string') return false
+  if (!isRecord(head) || typeof head['sha'] !== 'string' || typeof head['ref'] !== 'string') return false
   const repo = head['repo']
   return repo === null || (isRecord(repo) && typeof repo['full_name'] === 'string')
 }
 export function isRun(v: unknown): v is Run {
   return isRecord(v) && typeof v['id'] === 'number' && typeof v['event'] === 'string' && typeof v['head_sha'] === 'string' &&
+    isNullableString(v['head_branch']) &&
     isNullableString(v['conclusion']) && typeof v['created_at'] === 'string'
 }
 const isStep = (v: unknown): v is Step => isRecord(v) && typeof v['name'] === 'string' && isNullableString(v['conclusion'])
@@ -88,6 +98,7 @@ export function listOf<T>(v: unknown, guard: (x: unknown) => x is T, what: strin
   if (!Array.isArray(v) || !v.every(guard)) throw new Error(`the reply is not a list of ${what}`)
   return v
 }
+export const retargetedIn = (events: unknown[]): boolean => events.some((e) => isRecord(e) && e['event'] === 'base_ref_changed')
 const field = (v: unknown, key: string): unknown => (isRecord(v) ? v[key] : undefined)
 
 if (import.meta.main) {
@@ -97,6 +108,11 @@ if (import.meta.main) {
     repo,
     pulls: async (s) => listOf(await api(`/repos/${repo}/commits/${s}/pulls`), isPull, 'pulls'),
     runs: async (h) => listOf(field(await api(`/repos/${repo}/actions/workflows/ci.yml/runs?head_sha=${h}&event=pull_request&per_page=100`), 'workflow_runs'), isRun, 'runs'),
+    retargeted: async (n) => {
+      // One page of 100 events; a longer timeline counts as changed.
+      const events = await api(`/repos/${repo}/issues/${String(n)}/timeline?per_page=100`)
+      return !Array.isArray(events) || events.length >= 100 || retargetedIn(events)
+    },
     jobs: async (id) => listOf(field(await api(`/repos/${repo}/actions/runs/${String(id)}/jobs?per_page=100`), 'jobs'), isJob, 'jobs'),
     tree: (rev) => out(['rev-parse', '--verify', '--quiet', `${rev}^{tree}`]),
     parent: (s) => out(['rev-parse', '--verify', '--quiet', `${s}^`]),

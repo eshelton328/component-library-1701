@@ -156,7 +156,12 @@ function sandbox(data: Data, issues: Issue[]) {
   chmodSync(join(bin, 'gh'), 0o755)
   const script = stepScript()
   if (!script.includes(' --month-to-date ')) throw new Error('the counting step does not pass --month-to-date')
-  writeFileSync(join(dir, 'step.sh'), script.replace(' --month-to-date ', ` --month-to-date --today ${today} `))
+  // --today goes right after the command, not after the first " --month-to-date ":
+  // the script that the step embeds has that text in its usage too, so on
+  // 2026-11-20 --today went there and every test counted to the real date.
+  const command = 'python3 "$RUNNER_TEMP/minutes" '
+  if (script.split(command).length !== 2) throw new Error('the counting step does not run "$RUNNER_TEMP/minutes" once')
+  writeFileSync(join(dir, 'step.sh'), script.replace(command, `${command}--today ${today} `))
   const write = (d: Data) => { writeFileSync(join(dir, 'data.json'), JSON.stringify(d)) }
   write(data)
   writeFileSync(join(dir, 'state.json'), JSON.stringify({ issues }))
@@ -170,6 +175,11 @@ function sandbox(data: Data, issues: Issue[]) {
     assert.equal(p.status, 0, `the step failed:\n${p.stdout}\n${p.stderr}`)
     const result: unknown = JSON.parse(p.stdout)
     if (!isRecord(result)) throw new Error(`the step printed no JSON object: ${p.stdout}`)
+    // today is a past day, so the real clock is always later: a run that
+    // ignores --today counts past it and fails here.
+    const days = result['days']
+    assert.ok(Array.isArray(days) && days.at(-1) === today,
+      `the step counted to ${String(Array.isArray(days) ? days.at(-1) : days)}, not to --today ${today}`)
     return result
   }
   const issue = (n: number): Record<string, unknown> => {
@@ -190,6 +200,13 @@ function dayMinutes(result: Record<string, unknown>, on: string): unknown {
   const days = isRecord(mine) ? mine['days'] : undefined
   return isRecord(days) ? days[on] : undefined
 }
+
+void test('the counting step counts to --today, not to the real date', () => {
+  // The real clock is days past today here; the result must not follow it.
+  assert.ok(new Date().toISOString().slice(0, 10) > today, 'pick a fixed today in the past')
+  const result = sandbox({ runs: [], jobs: {}, fail_days: [] }, []).run()
+  assert.equal(String(result['now']).slice(0, 10), today)
+})
 
 void test('a re-run of a day 2 days back is counted after the ledger saved that day', () => {
   const d = day(2)

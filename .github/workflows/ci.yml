@@ -44,8 +44,7 @@ jobs:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -83,8 +82,7 @@ jobs:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -122,8 +120,7 @@ jobs:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -163,8 +160,7 @@ jobs:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -214,8 +210,7 @@ jobs:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:

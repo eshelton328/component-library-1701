@@ -718,26 +718,59 @@ const promptGrabberDragPlay: NonNullable<StoryObj<typeof meta>['play']> = async 
   await expect(onPrompt).toHaveBeenLastCalledWith(false)
 }
 
-// Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves these
-// stories out; the test runner still runs them.
-const mouseDrag = (play: NonNullable<StoryObj<typeof meta>['play']>, mode: 'dark' | 'light'): StoryObj<typeof meta> => ({
+/** With a mouse, a drag down from the sheet's text selects the text and leaves the sheet in place. */
+export const MouseDragTextDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
   tags: ['!dev'],
   render: () => <PromptSheet />,
-  play,
-  globals: { mode },
-})
-
-/** With a mouse, a drag down from the sheet's text selects the text and leaves the sheet in place. */
-export const MouseDragTextDark = mouseDrag(promptTextDragPlay, 'dark')
-export const MouseDragTextLight = mouseDrag(promptTextDragPlay, 'light')
+  play: promptTextDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragTextLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTextDragPlay,
+  globals: { mode: 'light' },
+}
 
 /** With a mouse, a drag of the title row selects too: only the grabber moves the sheet. */
-export const MouseDragTitleDark = mouseDrag(promptTitleDragPlay, 'dark')
-export const MouseDragTitleLight = mouseDrag(promptTitleDragPlay, 'light')
+export const MouseDragTitleDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTitleDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragTitleLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTitleDragPlay,
+  globals: { mode: 'light' },
+}
 
 /** A mouse drag of the grabber closes the sheet; a touch drag from the title row still closes it. */
-export const MouseDragGrabberDark = mouseDrag(promptGrabberDragPlay, 'dark')
-export const MouseDragGrabberLight = mouseDrag(promptGrabberDragPlay, 'light')
+export const MouseDragGrabberDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptGrabberDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragGrabberLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptGrabberDragPlay,
+  globals: { mode: 'light' },
+}
 
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }

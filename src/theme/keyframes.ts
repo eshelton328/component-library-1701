@@ -10,4 +10,6 @@ export const keyframes = {
   // The scrim, and the sheet itself under prefers-reduced-motion.
   fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
   fadeOut: { from: { opacity: '1' }, to: { opacity: '0' } },
+  // No change for a motion's duration, so Ark keeps a part while others close.
+  hold: { from: { opacity: '1' }, to: { opacity: '1' } },
 }

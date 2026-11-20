@@ -190,3 +190,30 @@ const lateRowPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 /** Each open of the sheet tries again to place the copy, also after an open whose row never came. */
 export const LateRowDark: StoryObj<typeof meta> = { render: () => <LateRow />, play: lateRowPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const LateRowLight: StoryObj<typeof meta> = { render: () => <LateRow />, play: lateRowPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+const closePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const anchor = canvasElement.querySelector(`[data-row="${heldChat}"]`)
+  if (anchor === null) throw new Error('no row')
+  await press(within(canvasElement).getByRole('button', { name: 'Hold Chat 4' }))
+  const sheet = await within(document.body).findByRole('dialog', { name: 'Actions' })
+  await motionDone(sheet)
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(sheet).toHaveAttribute('data-state', 'closed'))
+  // While the scrim fades out, the copy stays bright over it and the row stays hidden, so the row never shows
+  // dimmed under the scrim.
+  const scrim = document.querySelector('.bottom-sheet__backdrop')
+  const lifted = document.querySelector('.bottom-sheet__lifted')
+  await expect(scrim?.getAnimations().some((a) => a.playState === 'running')).toBe(true)
+  if (lifted === null) throw new Error('no copy while the scrim fades')
+  await expect(getComputedStyle(lifted).visibility).toBe('visible')
+  await expect(getComputedStyle(lifted).opacity).toBe('1')
+  await expect(getComputedStyle(anchor).visibility).toBe('hidden')
+  // When the sheet has gone, so have the copy, and the row shows.
+  await unmounted(sheet)
+  await expect(document.querySelector('.bottom-sheet__lifted')).toBeNull()
+  await expect(getComputedStyle(anchor).visibility).toBe('visible')
+}
+
+/** The copy stays over the row while the scrim fades out, and the row shows when the sheet has gone. */
+export const CloseDark: StoryObj<typeof meta> = { render: () => <HeldRow />, play: closePlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const CloseLight: StoryObj<typeof meta> = { render: () => <HeldRow />, play: closePlay, globals: { mode: 'light', viewport: { value: 'm390' } } }

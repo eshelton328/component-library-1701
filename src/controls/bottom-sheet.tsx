@@ -1,6 +1,7 @@
 import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
+import { usePresence } from '@ark-ui/react/presence'
 import { OverlayPortal } from './overlay-layer'
-import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
@@ -212,10 +213,20 @@ function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
     setTriedOpen(open)
     setTries(0)
   }
+  // The copy stays, and the anchor hidden, until the scrim has faded (`_closed` holds it for sheetClose).
+  const presence = usePresence({ present: open, lazyMount: true, unmountOnExit: true })
+  const { present: shown, ref: presenceRef } = presence
+  const setCopy = useCallback(
+    (node: HTMLDivElement | null) => {
+      ref.current = node
+      presenceRef(node)
+    },
+    [presenceRef],
+  )
   useLayoutEffect(() => {
     const target = anchor instanceof HTMLElement ? anchor : (anchor?.current ?? null)
     const copy = ref.current
-    if (!open || copy === null) return undefined
+    if (!shown || copy === null) return undefined
     if (target === null) {
       if (tries >= placeTries) return undefined
       const frame = requestAnimationFrame(() => {
@@ -246,10 +257,10 @@ function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
       if (visibility === '') target.style.removeProperty('visibility')
       else target.style.setProperty('visibility', visibility, priority)
     }
-  }, [open, anchor, tries])
-  if (!open) return null
+  }, [shown, anchor, tries])
+  if (presence.unmounted === true || !shown) return null
   return (
-    <Lifted ref={ref} aria-hidden="true">
+    <Lifted ref={setCopy} aria-hidden="true" data-state={open ? 'open' : 'closed'}>
       {lifted.content}
     </Lifted>
   )

@@ -194,6 +194,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let lastTargetAt = Number.NEGATIVE_INFINITY
     let lastDirection = 0
     let lastQuick = false
+    // Until when a report in the same direction as a frame step is one too, at any gap (see `stepping`).
+    let stepUntil = Number.NEGATIVE_INFINITY
     // When the dock's last frame of a move was drawn, and the time between its last two frames, for `keyboardStepGap`.
     let lastFrameAt = Number.NEGATIVE_INFINITY
     let frameGap = 0
@@ -262,7 +264,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // the keyboard. A single late report (iOS) or a turn (a close after a 1 px step) is not one.
       const direction = Math.sign(inset - previous)
       const quick = now - lastTargetAt < Math.min(keyboardStepGapMax, Math.max(keyboardStepGap, 3 * frameGap))
-      const stepping = quick && lastQuick && direction === lastDirection
+      // A device or a runner that is slow at random times leaves one gap of 100 ms in a keyboard's frame steps: a report
+      // in the same direction up to `keyboardStepGapMax` after a frame step is one too, so one gap does not make a new
+      // 250 ms move that ends after the keyboard (`Frame Steps Later` failed on CI with the composer 9 px under it).
+      const stepping = direction === lastDirection && direction !== 0 && ((quick && lastQuick) || now < stepUntil)
+      stepUntil = stepping ? now + keyboardStepGapMax : Number.NEGATIVE_INFINITY
       lastTargetAt = now
       lastDirection = direction
       lastQuick = quick

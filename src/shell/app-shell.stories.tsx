@@ -1789,6 +1789,45 @@ const busy = (ms: number) => {
   while (performance.now() < until) spins++
   return spins
 }
+// A loaded CI runner draws each frame in about 50 ms, so a keyboard that reports in each frame reports 50 ms or more
+// apart. The dock still follows it as frame by frame, as the limit grows with the frames it measured, and is on the
+// keyboard from its last report (`Frame Steps Later` failed on CI with the composer 2.4 px under it).
+const frameStepsSlow: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: async ({ canvasElement }) => {
+    const { field, composer } = threadParts(canvasElement)
+    let slow = true
+    const hold = () => {
+      if (!slow) return
+      busy(50)
+      requestAnimationFrame(hold)
+    }
+    requestAnimationFrame(hold)
+    try {
+      for (let open = 0; open < 2; open++) {
+        await userEvent.click(field)
+        await nextFrame()
+        await frameKeyboard(336, 'open')
+        const off: number[] = []
+        const until = performance.now() + 400
+        while (performance.now() < until) {
+          off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+          await nextFrame()
+        }
+        await expect(off.filter((v) => v > 0.5)).toEqual([])
+        field.blur()
+        await frameKeyboard(336, 'close')
+        await wait(400)
+      }
+    } finally {
+      slow = false
+    }
+  },
+}
+/** A keyboard that reports in each frame, on a device whose frames take 50 ms: the composer stays on the keyboard. */
+export const FrameStepsSlowDark: StoryObj<typeof meta> = { ...frameStepsSlow, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FrameStepsSlowLight: StoryObj<typeof meta> = { ...frameStepsSlow, globals: { mode: 'light', viewport: { value: 'm390' } } }
 const lateFirstFrame = (frameMs: number): StoryObj<typeof meta> => ({
   ...withMotion,
   render: () => <ThreadChat />,

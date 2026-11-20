@@ -48,7 +48,10 @@ function AddLink({ trigger }: { trigger: string }) {
 function SelectInDialog() {
   return (
     <main className={page}>
-      <AddLink trigger="Add a link" />
+      <Stack gap="12">
+        <AddLink trigger="Add a link" />
+        <Button>Page action</Button>
+      </Stack>
     </main>
   )
 }
@@ -246,6 +249,37 @@ const hydratePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   }
 }
 
+// With the Project list open in the dialog, the dialog stays modal: the focus stays in the dialog and its list, Tab
+// never reaches the page behind, and the page stays hidden from assistive technology. When the list closes, the
+// focus goes back to the Project field.
+const nestedFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const pageAction = within(canvasElement).getByRole('button', { name: 'Page action' })
+  await press(within(canvasElement).getByRole('button', { name: 'Add a link' }))
+  const dialog = await body().findByRole('dialog', { name: 'Add a link' })
+  const field = within(dialog).getByRole('button', { name: 'Project ncc-1701' })
+  await press(field)
+  const menu = await body().findByRole('menu')
+  await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true))
+  await expect(dialog).toHaveAttribute('aria-modal', 'true')
+  await expect(pageAction.closest('[aria-hidden="true"]')).not.toBeNull()
+  await expect(dialog.closest('[aria-hidden="true"]')).toBeNull()
+  await expect(menu.closest('[aria-hidden="true"]')).toBeNull()
+  // Tab never takes the focus out of the dialog and its list.
+  for (let i = 0; i < 6; i++) {
+    await key('{Tab}')
+    const active = document.activeElement
+    await expect(active !== null && (dialog.contains(active) || menu.contains(active))).toBe(true)
+    await expect(pageAction).not.toHaveFocus()
+  }
+  // Escape closes the list and gives the focus back to the field; the dialog stays.
+  await expect(body().getByRole('menu')).toBe(menu)
+  await key('{Escape}')
+  await waitFor(() => expect(body().queryByRole('menu')).toBeNull())
+  await waitFor(() => expect(field).toHaveFocus())
+  await expect(dialog).toHaveAttribute('aria-modal', 'true')
+  await expect(pageAction.closest('[aria-hidden="true"]')).not.toBeNull()
+}
+
 const meta = {
   title: 'Overlays/Overlay layers',
   parameters: { layout: 'fullscreen' },
@@ -275,3 +309,7 @@ export const SiblingOpenOrderLight: StoryObj<typeof meta> = { render: () => <Sib
 /** A server-rendered Menu and Popover hydrate with no mismatch, and text typed before hydration stays. */
 export const HydrateDark: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'dark' } }
 export const HydrateLight: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'light' } }
+
+/** A list open in a Dialog keeps the dialog modal: the focus stays in it, and Escape gives it back to the field. */
+export const NestedFocusDark: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: nestedFocusPlay, globals: { mode: 'dark' } }
+export const NestedFocusLight: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: nestedFocusPlay, globals: { mode: 'light' } }

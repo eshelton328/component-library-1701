@@ -649,9 +649,11 @@ function PromptSheet() {
   )
 }
 
-const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+// The Prompt sheet opened with a real mouse, through the test runner's Playwright session: only a real press and move
+// select text. Each mouse-drag story makes one drag, so that each Playwright drag has the whole test time; under load
+// one drag takes up to 12 s.
+async function promptDrag(canvasElement: HTMLElement) {
   onPrompt.mockClear()
-  // A real mouse, through the test runner's Playwright session: only a real press and move select text.
   const { userEvent: mouse } = await import('vitest/browser')
   const body = within(document.body)
   const trigger = within(canvasElement).getByRole('button', { name: 'Prompt' })
@@ -667,19 +669,27 @@ const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
     await expect(box.bottom - 4 - (from.getBoundingClientRect().top + at.y)).toBeGreaterThan(box.height * 0.3)
     await mouse.dragAndDrop(from, sheet, { sourcePosition: at, targetPosition: { x: box.width / 2, y: box.height - 4 }, steps: 10 })
   }
+  return { body, open, dragDown }
+}
 
-  let { sheet, top } = await open()
+// A mouse drag down from the prompt text selects the text; the sheet stays open and in place.
+const promptTextDragPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { body, open, dragDown } = await promptDrag(canvasElement)
+  const { sheet, top } = await open()
   const text = within(sheet).getByText(promptLines[0] ?? '')
   document.getSelection()?.removeAllRanges()
-  // A mouse drag down from the prompt text selects the text; the sheet stays open and in place.
   await dragDown(text, sheet, { x: 2, y: 4 })
   await expect(document.getSelection()?.toString() ?? '').toContain('Summarise the open pull requests')
   await expect(body.queryByRole('dialog', { name: 'Prompt' })).toBe(sheet)
   await expect(sheet.getBoundingClientRect().top).toBe(top)
   await expect(sheet).not.toHaveAttribute('data-dragging')
   await expect(onPrompt).not.toHaveBeenCalledWith(false)
+}
 
-  // A mouse drag of the title row selects too: with a mouse, only the grabber moves the sheet.
+// A mouse drag of the title row selects too: with a mouse, only the grabber moves the sheet.
+const promptTitleDragPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { body, open, dragDown } = await promptDrag(canvasElement)
+  const { sheet, top } = await open()
   const header = sheet.querySelector('.bottom-sheet__header')
   if (header === null) throw new Error('no title row')
   document.getSelection()?.removeAllRanges()
@@ -687,36 +697,80 @@ const promptDragPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
   await expect(body.queryByRole('dialog', { name: 'Prompt' })).toBe(sheet)
   await expect(sheet.getBoundingClientRect().top).toBe(top)
   await expect(onPrompt).not.toHaveBeenCalledWith(false)
+}
 
-  // A mouse drag down from the grabber closes the sheet.
+// A mouse drag down from the grabber closes the sheet, and a touch drag from the title row still closes it, as a
+// finger on a phone does.
+const promptGrabberDragPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const { body, open, dragDown } = await promptDrag(canvasElement)
+  const { sheet } = await open()
   const grabber = grabberOf(sheet)
   await dragDown(grabber, sheet, { x: grabber.getBoundingClientRect().width / 2, y: 2 })
   await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
   await expect(onPrompt).toHaveBeenLastCalledWith(false)
 
-  // A touch drag from the title row still closes it, as a finger on a phone does.
-  ;({ sheet, top } = await open())
-  const row = sheet.querySelector('.bottom-sheet__header')
+  const again = await open()
+  const row = again.sheet.querySelector('.bottom-sheet__header')
   if (row === null) throw new Error('no title row')
-  const far = Math.ceil((sheet.getBoundingClientRect().height * 0.3) / 20) * 20 + 20
-  await slowDrag(row, middleY(row), far, sheet, top)
+  const far = Math.ceil((again.sheet.getBoundingClientRect().height * 0.3) / 20) * 20 + 20
+  await slowDrag(row, middleY(row), far, again.sheet, again.top)
   await waitFor(() => expect(body.queryByRole('dialog')).toBeNull())
   await expect(onPrompt).toHaveBeenLastCalledWith(false)
 }
 
-/**
- * With a mouse, a drag down from the sheet's text selects the text and leaves the sheet in place; only a drag of the
- * grabber moves it. A touch drag from the title row still closes it.
- */
-export const MouseDragDark: StoryObj<typeof meta> = {
+/** With a mouse, a drag down from the sheet's text selects the text and leaves the sheet in place. */
+export const MouseDragTextDark: StoryObj<typeof meta> = {
   // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
-  // story out; the test runner still runs it.
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
   tags: ['!dev'],
   render: () => <PromptSheet />,
-  play: promptDragPlay,
+  play: promptTextDragPlay,
   globals: { mode: 'dark' },
 }
-export const MouseDragLight: StoryObj<typeof meta> = { tags: ['!dev'], ...MouseDragDark, globals: { mode: 'light' } }
+export const MouseDragTextLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTextDragPlay,
+  globals: { mode: 'light' },
+}
+
+/** With a mouse, a drag of the title row selects too: only the grabber moves the sheet. */
+export const MouseDragTitleDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTitleDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragTitleLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptTitleDragPlay,
+  globals: { mode: 'light' },
+}
+
+/** A mouse drag of the grabber closes the sheet; a touch drag from the title row still closes it. */
+export const MouseDragGrabberDark: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptGrabberDragPlay,
+  globals: { mode: 'dark' },
+}
+export const MouseDragGrabberLight: StoryObj<typeof meta> = {
+  // Only the story test runner has the Playwright session that moves a real mouse, so the Storybook UI leaves this
+  // story out; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
+  tags: ['!dev'],
+  render: () => <PromptSheet />,
+  play: promptGrabberDragPlay,
+  globals: { mode: 'light' },
+}
 
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }

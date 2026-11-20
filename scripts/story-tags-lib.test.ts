@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import { compare, parseIndex, tagsOf } from './story-tags-lib.ts'
 
@@ -49,4 +50,12 @@ void test('tagsOf reads only a string array', () => {
   assert.deepEqual(tagsOf({ tags: ['!dev'] }), ['!dev'])
   assert.deepEqual(tagsOf({ tags: [1] }), [])
   assert.deepEqual(tagsOf(undefined), [])
+})
+
+void test('the story-tags check loads the same story file extensions as .storybook/main.ts', () => {
+  const read = (p: string) => readFileSync(new URL(p, import.meta.url), 'utf8')
+  const main = /\*\.stories\.@\(([^)]+)\)/.exec(read('../.storybook/main.ts'))?.[1]
+  assert.ok(main !== undefined, 'no stories glob in .storybook/main.ts')
+  const loaded = [...read('./story-modules.ts').matchAll(/'\.\.\/src\/\*\*\/\*\.stories\.(\w+)'/g)].map((m) => m[1])
+  assert.deepEqual(loaded.sort(), main.split('|').sort())
 })

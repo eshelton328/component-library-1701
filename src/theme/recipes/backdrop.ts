@@ -32,6 +32,11 @@ export const backdrop = defineRecipe({
   staticCss: ['*'],
   base: {
     position: 'relative',
+    // The page's own stack ends here: a part the page lifts with a z-index (the-bridge lifts drop zones, readouts and
+    // a held row with 1) stays inside the backdrop, which comes before the overlays' layers in <body>. Dialogs,
+    // sheets, menus and popovers set no z-index (controls/overlay-layer.tsx), so they paint over the whole page by
+    // document order, the tab bar and a docked composer included.
+    isolation: 'isolate',
     display: 'flex',
     flexDirection: 'column',
     minW: '0',

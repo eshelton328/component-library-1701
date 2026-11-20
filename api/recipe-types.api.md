@@ -115,7 +115,7 @@ export type BottomSheetVariantProps = {
 
 export type BottomSheetVariantMap = RecipeVariantMap<BottomSheetVariant>
 
-export type BottomSheetSlot = "trigger" | "backdrop" | "positioner" | "content" | "title" | "description" | "closeTrigger" | "grabber" | "header" | "headerLeading" | "headerActions"
+export type BottomSheetSlot = "trigger" | "backdrop" | "positioner" | "content" | "title" | "description" | "closeTrigger" | "grabber" | "header" | "headerLeading" | "headerActions" | "lifted"
 
 export type BottomSheetRecipe = ConfigSlotRecipeRuntimeFn<BottomSheetSlot, BottomSheetVariantProps, BottomSheetVariantMap>
 

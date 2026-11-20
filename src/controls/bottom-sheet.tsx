@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
 import { OverlayPortal } from './overlay-layer'
-import { useEffect, useId, useLayoutEffect, useRef, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
@@ -18,6 +18,25 @@ const Title = withContext(ArkDialog.Title, 'title')
 const HeaderLeading = withContext('div', 'headerLeading')
 const HeaderActions = withContext('div', 'headerActions')
 const CloseTrigger = withContext(ArkDialog.CloseTrigger, 'closeTrigger')
+const Lifted = withContext('div', 'lifted')
+
+/**
+ * A copy of a page element that a sheet draws over its scrim, such as the held chat row of Workspaces M9 (146:252),
+ * bright where the rest of the page is dimmed.
+ */
+export type BottomSheetLifted = {
+  /**
+   * The copy to draw, such as the row in a `DragPreview`'s border. It takes no pointer events: a tap on it reaches
+   * the scrim and closes the sheet. It is hidden from assistive technology; the element it copies keeps its name.
+   */
+  content: ReactNode
+  /**
+   * The page element it lifts, or a ref to it. While the sheet is open, the copy takes the element's place and size,
+   * measured as the sheet opens and again when the visual viewport resizes or scrolls, and the element keeps its
+   * place with `visibility: hidden`, so the page does not move. The sheet's close shows it again.
+   */
+  anchor: HTMLElement | RefObject<HTMLElement | null> | null
+}
 
 /**
  * Give a sheet either a `title`, which shows in the title row and names the sheet for assistive technology, or a
@@ -55,6 +74,8 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
    * it closes it (the press does not reach the page under it) and gives the focus back.
    */
   scrim?: boolean | undefined
+  /** A copy of a page element to draw over the scrim, at that element's place, such as a held row (M9). */
+  lifted?: BottomSheetLifted | undefined
 }
 
 // Omit `size` from each member of the union, so the title or label choice stays.
@@ -101,7 +122,7 @@ type SizedBottomSheetProps = WithoutSize<BottomSheetProps> &
  * `md` are the sheets, `lg` the More drawer, with a larger title. The
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, scrim = true, focusSheet = false }: SizedBottomSheetProps) {
+export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, scrim = true, focusSheet = false, lifted }: SizedBottomSheetProps) {
   useInputModality()
   const hasLeading = present(leading)
   // The sheet's own id, so the focus can find it when it opens.
@@ -126,6 +147,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       {trigger === undefined ? null : <ArkDialog.Trigger asChild>{trigger}</ArkDialog.Trigger>}
       <OverlayPortal>
         {scrim ? <Backdrop /> : null}
+        {lifted === undefined ? null : <LiftedCopy lifted={lifted} />}
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
           <DraggableContent aria-label={title ?? label} returnToRef={returnToRef}>
@@ -170,6 +192,61 @@ function returnFocus(returnToRef: RefObject<HTMLElement | null>) {
   const active = document.activeElement
   if (target === null || !target.isConnected) return
   if (active === null || active === document.body) target.focus({ preventScroll: true })
+}
+
+// The copy of `lifted.anchor` over the scrim, while the sheet is open. It comes after the scrim in the sheet's layer,
+// so it paints over it, and before the sheet's box, which paints over it where they meet.
+const placeTries = 10
+
+function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
+  const { open } = useDialogContext()
+  const ref = useRef<HTMLDivElement>(null)
+  const { anchor } = lifted
+  // A ref to an element later in the tree than the sheet is set only after this effect runs in the sheet's first
+  // commit (a sheet open from the start). The effect then tries again on the next frames, at most `placeTries` times,
+  // so a ref that is never set does not render on each frame; the copy stays hidden until it is placed (`data-placed`).
+  const [tries, setTries] = useState(0)
+  useLayoutEffect(() => {
+    const target = anchor instanceof HTMLElement ? anchor : (anchor?.current ?? null)
+    const copy = ref.current
+    if (!open || copy === null) return undefined
+    if (target === null) {
+      if (tries >= placeTries) return undefined
+      const frame = requestAnimationFrame(() => {
+        setTries((n) => n + 1)
+      })
+      return () => {
+        cancelAnimationFrame(frame)
+      }
+    }
+    copy.setAttribute('data-placed', '')
+    const place = () => {
+      const box = target.getBoundingClientRect()
+      copy.style.setProperty('--bottom-sheet-lifted-top', `${String(box.top)}px`)
+      copy.style.setProperty('--bottom-sheet-lifted-left', `${String(box.left)}px`)
+      copy.style.setProperty('--bottom-sheet-lifted-width', `${String(box.width)}px`)
+      copy.style.setProperty('--bottom-sheet-lifted-height', `${String(box.height)}px`)
+    }
+    place()
+    const visibility = target.style.getPropertyValue('visibility')
+    const priority = target.style.getPropertyPriority('visibility')
+    target.style.setProperty('visibility', 'hidden')
+    const viewport = target.ownerDocument.defaultView?.visualViewport ?? null
+    viewport?.addEventListener('resize', place)
+    viewport?.addEventListener('scroll', place)
+    return () => {
+      viewport?.removeEventListener('resize', place)
+      viewport?.removeEventListener('scroll', place)
+      if (visibility === '') target.style.removeProperty('visibility')
+      else target.style.setProperty('visibility', visibility, priority)
+    }
+  }, [open, anchor, tries])
+  if (!open) return null
+  return (
+    <Lifted ref={ref} aria-hidden="true">
+      {lifted.content}
+    </Lifted>
+  )
 }
 
 function present(node: ReactNode) {

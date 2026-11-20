@@ -1,8 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { useRef, useState } from 'react'
+import { expect, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Backdrop } from './backdrop'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { BottomSheet } from '../controls/bottom-sheet'
+import { motionDone } from '../controls/bottom-sheet.testing'
+import { Button } from '../controls/button'
 
 const frame = css({ h: 'shell.dialogLg' })
 const label = css({ textStyle: 'body', color: 'fg.default', p: '24' })
@@ -159,3 +163,58 @@ export const Sizes: StoryObj<typeof meta> = {
     await expect(count('phone')).toBe(22)
   },
 }
+
+// A page that lifts its opaque list with z-index 1, as the-bridge's lists are, under a BottomSheet that lifts a copy
+// of one row over its scrim (Workspaces M9, 146:252).
+const list = css({ position: 'relative', bg: 'bg.canvas' })
+const copy = css({ textStyle: 'body', color: 'fg.default', bg: 'surface.raised' })
+
+function LiftedPage() {
+  const [open, setOpen] = useState(false)
+  const held = useRef<HTMLParagraphElement>(null)
+  return (
+    <div className={frame}>
+      <Backdrop>
+        <div className={list} data-list="">
+          <p className={label}>Chat 1</p>
+          <p ref={held} className={label} data-held="">
+            Chat 2
+          </p>
+          <Button
+            onClick={() => {
+              setOpen(true)
+            }}
+          >
+            Hold
+          </Button>
+        </div>
+      </Backdrop>
+      <BottomSheet title="Actions" open={open} onOpenChange={setOpen} lifted={{ content: <p className={copy}>Chat 2</p>, anchor: held }}>
+        <Button>Rename</Button>
+      </BottomSheet>
+    </div>
+  )
+}
+
+const liftedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const listPart = canvasElement.querySelector<HTMLElement>('[data-list]')
+  listPart?.style.setProperty('z-index', '1')
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Hold' }))
+  await motionDone(await within(document.body).findByRole('dialog', { name: 'Actions' }))
+  const held = canvasElement.querySelector('[data-held]')
+  const lifted = document.querySelector<HTMLElement>('.bottom-sheet__lifted')
+  if (held === null || lifted === null) throw new Error('no row or copy')
+  // The copy takes no pointer events, and the modal sheet turns them off on the page, so the hit test sees both
+  // only with them on: the top element at the row's centre is the copy, over the list's z-index, which the
+  // backdrop keeps inside the page's stack.
+  lifted.style.setProperty('pointer-events', 'auto')
+  listPart?.style.setProperty('pointer-events', 'auto')
+  const r = held.getBoundingClientRect()
+  const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+  lifted.style.removeProperty('pointer-events')
+  await expect(top !== null && lifted.contains(top)).toBe(true)
+}
+
+/** A page part lifted with a z-index stays under the overlays: a sheet's lifted row paints over a z-index 1 list. */
+export const LiftedOverPageDark: StoryObj<typeof meta> = { render: () => <LiftedPage />, play: liftedPlay, globals: { mode: 'dark' } }
+export const LiftedOverPageLight: StoryObj<typeof meta> = { render: () => <LiftedPage />, play: liftedPlay, globals: { mode: 'light' } }

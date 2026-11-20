@@ -175,3 +175,23 @@ void test('check:ci does not count a step under another if', () => {
   })
   assert.equal(status, 1)
 })
+
+void test('a reused job takes ubuntu-slim only when it reuses, and ubuntu-24.04 when it runs in full (issue #275)', () => {
+  const expr = "${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}"
+  const jobs = jobsOf(ci)
+  for (const name of REUSED) {
+    const job = jobs[name]
+    assert.ok(isRecord(job), name)
+    assert.equal(job['runs-on'], expr, name)
+  }
+  // The same condition as the reuse step: success and ran give reuse=true.
+  const pick = (result: string, ran: string) => (result === 'success' && ran === 'true' ? 'ubuntu-slim' : 'ubuntu-24.04')
+  for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
+    for (const ran of ['true', 'false', '']) {
+      const r = reuse(result, ran)
+      const reused = r.code === 0 && r.out.includes('reuse=true')
+      if (reused) assert.equal(pick(result, ran), 'ubuntu-slim', `${result}/${ran}`)
+      if (r.code === 0 && !reused) assert.equal(pick(result, ran), 'ubuntu-24.04', `${result}/${ran}`)
+    }
+  }
+})

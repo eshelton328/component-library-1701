@@ -37,13 +37,14 @@ jobs:
     needs: worktree
     # Runs after any end of the worktree job, except a cancelled run.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    # Only the reuse step runs when the worktree job ran pnpm verify and
+    # passed, so the job takes the 1-CPU runner at a third of the price.
+    runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -74,13 +75,14 @@ jobs:
     needs: worktree
     # Runs after any end of the worktree job, except a cancelled run.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    # Only the reuse step runs when the worktree job ran pnpm verify and
+    # passed, so the job takes the 1-CPU runner at a third of the price.
+    runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -111,13 +113,14 @@ jobs:
     needs: worktree
     # Runs after any end of the worktree job, except a cancelled run.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    # Only the reuse step runs when the worktree job ran pnpm verify and
+    # passed, so the job takes the 1-CPU runner at a third of the price.
+    runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -150,13 +153,14 @@ jobs:
     needs: worktree
     # Runs after any end of the worktree job, except a cancelled run.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    # Only the reuse step runs when the worktree job ran pnpm verify and
+    # passed, so the job takes the 1-CPU runner at a third of the price.
+    runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:
@@ -199,13 +203,14 @@ jobs:
     needs: worktree
     # Runs after any end of the worktree job, except a cancelled run.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    # Only the reuse step runs when the worktree job ran pnpm verify and
+    # passed, so the job takes the 1-CPU runner at a third of the price.
+    runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
       # this commit and passed, this job uses its result; when it skipped
-      # verify (a PR that changes only src/, api/ or Markdown), this job
-      # runs in full. Any other end of the worktree job fails this job.
+      # verify, this job runs in full. Any other end of the worktree job fails this job.
       - name: Use the worktree result when it ran pnpm verify
         id: reuse
         env:

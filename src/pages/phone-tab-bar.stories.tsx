@@ -188,6 +188,15 @@ class FakeViewport extends EventTarget {
   }
 }
 let fakeViewport = new FakeViewport()
+
+// A play takes the viewport its story's setup made, as its own `fakeViewport`, and never reads the global again: a
+// play that timed out runs on, and with the global it moved the next story's viewport (Keyboard Light failed under
+// load with the composer one screen down). Its writes now reach only its own viewport, which no shell reads.
+type PlayContext = Parameters<NonNullable<StoryObj<typeof meta>['play']>>[0]
+const viewportPlay =
+  (play: (context: PlayContext, viewport: FakeViewport) => Promise<void>) =>
+  (context: PlayContext): Promise<void> =>
+    play(context, fakeViewport)
 // Puts the fake in place of window.visualViewport for one story, on a device with a mouse and reduced motion, so each
 // change of the dock is there at once (as in the AppShell stories of the dock's rules).
 const replaceVisualViewport = (value: FakeViewport) => {
@@ -270,7 +279,7 @@ const tabRouteChange: StoryObj<typeof meta> = {
     fakeViewport = new FakeViewport()
     return replaceVisualViewport(fakeViewport)
   },
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = canvasElement.querySelector('.app-shell__root')
@@ -308,7 +317,7 @@ const tabRouteChange: StoryObj<typeof meta> = {
     await full()
     fakeViewport.move(844)
     await full()
-  },
+  }),
 }
 
 /** A tab press while the Inbox chat's keyboard is open swaps the page and unmounts the focused field (no focusout): the dock ends, the tab bar stays at the shell's foot, and no later shrink of the browser's bars docks anything. */
@@ -317,7 +326,7 @@ export const TabRouteChangeLight: StoryObj<typeof meta> = { ...tabRouteChange, g
 
 // The shell after a blur with no viewport event: the field loses the focus with no pointer down (the keyboard's Done,
 // the iOS form bar's check, or a blur from code), and the visual viewport stays at the keyboard's 544.
-const blurParts = async (canvasElement: HTMLElement) => {
+const blurParts = async (viewport: FakeViewport, canvasElement: HTMLElement) => {
   await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
   const canvas = within(canvasElement)
   const root = canvasElement.querySelector('.app-shell__root')
@@ -330,7 +339,7 @@ const blurParts = async (canvasElement: HTMLElement) => {
     await expect(Math.round(bar.bottom)).toBe(Math.round(root.getBoundingClientRect().bottom))
   }
   await userEvent.click(field)
-  fakeViewport.move(544)
+  viewport.move(544)
   await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
   field.blur()
   await expect(field).not.toHaveFocus()
@@ -347,11 +356,11 @@ const blurNoResize: StoryObj<typeof meta> = {
     fakeViewport = new FakeViewport()
     return replaceVisualViewport(fakeViewport)
   },
-  play: async ({ canvasElement }) => {
-    await blurParts(canvasElement)
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    await blurParts(fakeViewport, canvasElement)
     // The visual viewport never grows back (iOS standalone): nothing docks, and the bar stays at the shell's foot.
     await expect(fakeViewport.height).toBe(544)
-  },
+  }),
 }
 
 /** A blur with no pointer and no viewport resize after it: the dock ends after 300 ms, with the tab bar at the shell's foot. */
@@ -360,14 +369,14 @@ export const BlurNoResizeLight: StoryObj<typeof meta> = { ...blurNoResize, globa
 
 const blurLateResize: StoryObj<typeof meta> = {
   ...blurNoResize,
-  play: async ({ canvasElement }) => {
-    const { full } = await blurParts(canvasElement)
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { full } = await blurParts(fakeViewport, canvasElement)
     // The visual viewport grows back late and in steps, after the dock has ended: nothing docks through them.
     fakeViewport.move(700)
     await full()
     fakeViewport.move(844)
     await full()
-  },
+  }),
 }
 
 /** A blur whose viewport resize comes late and in steps (544, 700, 844): nothing docks at any step. */
@@ -376,7 +385,7 @@ export const BlurLateResizeLight: StoryObj<typeof meta> = { ...blurLateResize, g
 
 const blurThenPress: StoryObj<typeof meta> = {
   ...blurNoResize,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = canvasElement.querySelector('.app-shell__root')
@@ -413,7 +422,7 @@ const blurThenPress: StoryObj<typeof meta> = {
     await expect(dock()).toBe('')
     // The shell keeps its 844 all along.
     await expect(height()).toBe(844)
-  },
+  }),
 }
 
 /** A blur with no pointer, then a press on Send within the 300 ms that stays down past them: the composer stays docked until the release, the click lands on Send, and one frame later the dock ends. */
@@ -452,7 +461,7 @@ const searchKeyboard: StoryObj<typeof meta> = {
     fakeViewport = new FakeViewport()
     return replaceVisualViewport(fakeViewport)
   },
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = canvasElement.querySelector('.app-shell__root')
@@ -477,7 +486,7 @@ const searchKeyboard: StoryObj<typeof meta> = {
     field.blur()
     fakeViewport.move(844)
     await expect(places()).toEqual(before)
-  },
+  }),
 }
 
 /** The phone Inbox list with its search field focused and the keyboard open: there is no dock, so the keyboard covers the tab bar, which stays at the shell's foot, and nothing moves. */
@@ -570,7 +579,7 @@ const withTapDevice = {
 
 const tapOutsideField: StoryObj<typeof meta> = {
   ...withTapDevice,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { search, row, opened } = tapParts(canvasElement)
     await touchTap(search)
     await expect(search).toHaveFocus()
@@ -583,7 +592,7 @@ const tapOutsideField: StoryObj<typeof meta> = {
     fakeViewport.move(844)
     await touchTap(row(2))
     await expect(opened()).toBe('Opened 1')
-  },
+  }),
 }
 
 /** The phone Inbox list with its search field focused: a tap on a row closes the keyboard and opens nothing; the next tap opens the row. */
@@ -592,7 +601,7 @@ export const TapOutsideFieldLight: StoryObj<typeof meta> = { ...tapOutsideField,
 
 const tapSend: StoryObj<typeof meta> = {
   ...withTapDevice,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { canvas } = tapParts(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Open the chat' }))
     const message = canvas.getByRole('textbox', { name: 'Message' })
@@ -609,7 +618,7 @@ const tapSend: StoryObj<typeof meta> = {
     await expect(message).toHaveFocus()
     await expect(send.getBoundingClientRect().top).toBe(top)
     await expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe('300px')
-  },
+  }),
 }
 
 /** The phone chat with the keyboard open: a tap on the Composer's Send sends, and the keyboard stays open. */
@@ -618,7 +627,7 @@ export const TapSendLight: StoryObj<typeof meta> = { ...tapSend, globals: { mode
 
 const tapFieldToField: StoryObj<typeof meta> = {
   ...withTapDevice,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { canvas, search, opened } = tapParts(canvasElement)
     const owner = canvas.getByRole('textbox', { name: 'Filter by owner' })
     await touchTap(search)
@@ -630,7 +639,7 @@ const tapFieldToField: StoryObj<typeof meta> = {
     await expect(owner).toHaveFocus()
     await expect(clicks).toBe(1)
     await expect(opened()).toBe('Opened 0')
-  },
+  }),
 }
 
 /** The phone Inbox list with the keyboard open: a tap on another field moves the focus to it, as before. */
@@ -639,7 +648,7 @@ export const TapFieldToFieldLight: StoryObj<typeof meta> = { ...tapFieldToField,
 
 const tapScrollDrag: StoryObj<typeof meta> = {
   ...withTapDevice,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { canvas, search, row, opened } = tapParts(canvasElement)
     const list = canvas.getByRole('main')
     await touchTap(search)
@@ -667,7 +676,7 @@ const tapScrollDrag: StoryObj<typeof meta> = {
     // The next tap is not eaten: it opens its row.
     await touchTap(row(10))
     await expect(opened()).toBe('Opened 1')
-  },
+  }),
 }
 
 /** The phone Inbox list with the keyboard open: a touch drag over the rows still scrolls the list and closes the keyboard, and the next tap opens a row. */
@@ -676,7 +685,7 @@ export const TapScrollDragLight: StoryObj<typeof meta> = { ...tapScrollDrag, tag
 
 const tapLabel: StoryObj<typeof meta> = {
   ...withTapDevice,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { canvas, search, opened } = tapParts(canvasElement)
     const owner = canvas.getByRole('textbox', { name: 'Filter by owner' })
     const label = owner.closest('label')
@@ -687,7 +696,7 @@ const tapLabel: StoryObj<typeof meta> = {
     await touchTap(label)
     await expect(owner).toHaveFocus()
     await expect(opened()).toBe('Opened 0')
-  },
+  }),
 }
 
 /** The phone Inbox list with the keyboard open: a tap on another field's label moves the focus to that field. */

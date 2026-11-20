@@ -731,6 +731,15 @@ class FakeViewport extends EventTarget {
 
 let fakeViewport = new FakeViewport()
 
+// A play takes the viewport its story's setup made, as its own `fakeViewport`, and never reads the global again: a
+// play that timed out runs on, and with the global it moved the next story's viewport (Keyboard Light failed under
+// load with the composer one screen down). Its writes now reach only its own viewport, which no shell reads.
+type PlayContext = Parameters<NonNullable<StoryObj<typeof meta>['play']>>[0]
+const viewportPlay =
+  (play: (context: PlayContext, viewport: FakeViewport) => Promise<void>) =>
+  (context: PlayContext): Promise<void> =>
+    play(context, fakeViewport)
+
 // The device as the shell reads it through matchMedia: a touch screen (`coarse`) and reduced motion (`reduce`). The
 // stories of the dock's rules use a mouse and reduced motion, so each change is there at once; the motion stories
 // use a touch screen with motion.
@@ -807,7 +816,7 @@ const keyboard: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,
   parameters: { viewport: { options: phoneScreen } },
   beforeEach: () => fakeDevice(),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -849,7 +858,7 @@ const keyboard: StoryObj<typeof meta> = {
     await expect(Math.round(rect(root).height)).toBe(844)
     await expect(keyboardInset(root)).toBe('')
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
-  },
+  }),
 }
 
 /** Phone chat on iOS Safari: when the keyboard covers the bottom of the screen, the shell keeps its height and the composer rides on the keyboard's top. */
@@ -860,7 +869,7 @@ const focusZoom: StoryObj<typeof meta> = {
   render: () => <PhoneChat />,
   parameters: { viewport: { options: phoneScreen } },
   beforeEach: () => fakeDevice(),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -895,7 +904,7 @@ const focusZoom: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 422, offsetTop: 0, scale: 2 })
     await expect(Math.round(rect(root).height)).toBe(844)
     await expect(keyboardInset(root)).toBe('')
-  },
+  }),
 }
 
 /** Phone chat on iOS Safari with the keyboard open and the focus zoom of the 14 px message field: the dock keeps to the keyboard-free height, so the composer stays above the keyboard. */
@@ -910,7 +919,7 @@ const withFakeViewport = {
 const noFieldFocused: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const root = shellRoot(canvasElement)
     const composer = () => rect(within(canvasElement).getByRole('group', { name: 'Composer' }))
@@ -927,7 +936,7 @@ const noFieldFocused: StoryObj<typeof meta> = {
     await expect(Math.round(rect(root).height)).toBe(844)
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
     await expect(keyboardInset(root)).toBe('')
-  },
+  }),
 }
 
 /** Phone chat with no field focused: the browser's bars that show and hide on a scroll shrink the visual viewport, and the shell keeps its height. */
@@ -939,7 +948,7 @@ export const NoFieldFocusedLight: StoryObj<typeof meta> = { ...noFieldFocused, g
 const tallParent: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const root = shellRoot(canvasElement)
     const phone = within(canvasElement).getByTestId('phone')
     const composer = () => rect(within(canvasElement).getByRole('group', { name: 'Composer' }))
@@ -954,7 +963,7 @@ const tallParent: StoryObj<typeof meta> = {
     await expect(keyboardInset(root)).toBe('')
     await expect(Math.round(composer().bottom)).toBe(1000 - 34)
     phone.style.removeProperty('height')
-  },
+  }),
 }
 
 /** Phone chat in a parent taller than the screen, with no field focused: the composer stays at the shell's foot and nothing docks. */
@@ -964,7 +973,7 @@ export const TallParentLight: StoryObj<typeof meta> = { ...tallParent, globals: 
 const fieldBlurred: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -1009,7 +1018,7 @@ const fieldBlurred: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 844 })
     await expect(keyboardInset(root)).toBe('')
     await expect(Math.round(rect(root).height)).toBe(844)
-  },
+  }),
 }
 
 /** Phone chat: when the focus leaves the message field, the composer stays docked until the keyboard closes, or until a press that took the focus ends, then returns to its place. */
@@ -1072,7 +1081,7 @@ const tap = (el: Element, focus: 'button' | 'none') => {
 const sendTap: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <SendChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -1101,7 +1110,7 @@ const sendTap: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 844 })
     await expect(Math.round(rect(root).height)).toBe(844)
     await expect(keyboardInset(root)).toBe('')
-  },
+  }),
 }
 
 /** Phone chat with the keyboard open: a tap on Send takes the focus from the field, and the composer stays docked until the keyboard closes, so the tap lands on Send. */
@@ -1111,7 +1120,7 @@ export const SendTapLight: StoryObj<typeof meta> = { ...sendTap, globals: { mode
 const fieldToField: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat titled />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -1135,7 +1144,7 @@ const fieldToField: StoryObj<typeof meta> = {
     await expect(remove).not.toHaveBeenCalled()
     await expect(composer()).toBe(544)
     remove.mockRestore()
-  },
+  }),
 }
 
 /** Phone chat with two fields: moving the focus from one to the other while the keyboard is open keeps the dock. */
@@ -1221,7 +1230,7 @@ const removeFocusedField = async (canvasElement: HTMLElement) => {
 const fieldRemoved: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <RoutedChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -1260,7 +1269,7 @@ const fieldRemoved: StoryObj<typeof meta> = {
     fakeViewport.height = 844
     window.dispatchEvent(new Event('resize'))
     await unset()
-  },
+  }),
 }
 
 /** Phone chat as a route: the message field is unmounted while it has the focus (a route change, no focusout), and the dock ends and follows no later viewport change. */
@@ -1270,7 +1279,7 @@ export const FieldRemovedLight: StoryObj<typeof meta> = { ...fieldRemoved, globa
 const pageShow: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <PhoneChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const canvas = within(canvasElement)
     const root = shellRoot(canvasElement)
@@ -1294,7 +1303,7 @@ const pageShow: StoryObj<typeof meta> = {
     window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
     await expect(keyboardInset(root)).toBe('266px')
     await expect(composer()).toBe(544)
-  },
+  }),
 }
 
 /** Phone chat back from the back-forward cache (`pageshow`): a dock that no focused field needs is removed, and one a focused field needs is kept. */
@@ -1370,7 +1379,7 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
   render: () => <ClosingChat />,
   parameters: { viewport: { options: phoneScreen } },
   beforeEach: () => fakeDevice(),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const canvas = within(canvasElement)
     await expect([...fakeViewport.listening].sort()).toEqual(['resize', 'scroll'])
     const remove = spyOn(fakeViewport, 'removeEventListener')
@@ -1390,7 +1399,7 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
     // A keyboard after the unmount reaches nothing and throws nothing.
     fakeViewport.move({ height: 544 })
     await expect(canvasElement.querySelector('.app-shell__root')).toBeNull()
-  },
+  }),
 }
 
 // A chat thread long enough to scroll, with the composer docked as the ScrollFrame's footer, as the-bridge's Inbox
@@ -1456,9 +1465,9 @@ const recordFrames = (root: HTMLElement, footer: HTMLElement) => {
 }
 const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve))
 // Moves the visual viewport's height through `heights`, one resize a frame, as iOS reports a keyboard in steps.
-const stepViewport = async (heights: number[]) => {
+const stepViewport = async (viewport: FakeViewport, heights: number[]) => {
   for (const height of heights) {
-    fakeViewport.move({ height })
+    viewport.move({ height })
     await nextFrame()
   }
 }
@@ -1541,7 +1550,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta> => ({
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     const rise = real - 34
     const record = recordRise(footer)
@@ -1582,7 +1591,7 @@ const guessOff = (real: number, delay: number, frames = 0): StoryObj<typeof meta
     // The drawn dock is on the keyboard by that end, with one frame of slack (Codex review of #242).
     await expect(riseAfter(moved, endAfterReport)).toBe(rise)
     await expect(moved.filter((f) => f.rise > Math.max(rise, 346) + 1)).toEqual([])
-  },
+  }),
 })
 const phone = { viewport: { value: 'm390' } }
 /** First open, the real keyboard 50 px lower than the guess, reported during the move: one rise, on time. */
@@ -1636,7 +1645,7 @@ function MountFocusChat() {
 const mountFocus: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <MountFocusChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     await expect(field).toHaveFocus()
     // The dock starts toward the expected keyboard at once, before the browser reports one: it does not wait at the
@@ -1646,7 +1655,7 @@ const mountFocus: StoryObj<typeof meta> = {
     await expect(fakeViewport.height).toBe(844)
     fakeViewport.move({ height: 544 })
     await settled(footer, 266)
-  },
+  }),
 }
 /** Phone chat whose composer takes the focus as it mounts: the dock starts at once, before the keyboard is reported. */
 export const MountFocusDark: StoryObj<typeof meta> = { ...mountFocus, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -1667,7 +1676,7 @@ function RemountChat() {
 const remountMeasure: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <RemountChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const first = threadParts(canvasElement)
     await userEvent.click(first.field)
     fakeViewport.move({ height: 544 })
@@ -1685,7 +1694,7 @@ const remountMeasure: StoryObj<typeof meta> = {
     await waitFor(() => expect(riseOf(next.footer)).toBe(266))
     record.stop()
     await expect(Math.max(...record.frames.map((f) => f.rise))).toBe(266)
-  },
+  }),
 }
 /** Phone chat on a new page: the shell that mounts there expects the keyboard measured on the last page. */
 export const RemountMeasureDark: StoryObj<typeof meta> = { ...remountMeasure, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -1694,7 +1703,7 @@ export const RemountMeasureLight: StoryObj<typeof meta> = { ...remountMeasure, g
 const reopenFalling: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
@@ -1726,7 +1735,7 @@ const reopenFalling: StoryObj<typeof meta> = {
     // Every frame drawn in the rise, before its end, shows the dock on the way; a loaded runner may draw none.
     const during = timed.frames.filter((f) => f.at > start && f.at < riseEnd - 17)
     await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
-  },
+  }),
 }
 /** Phone chat: the field takes the focus again while the composer comes down; it rises on a full keyboard move. */
 export const ReopenFallingDark: StoryObj<typeof meta> = { ...reopenFalling, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -1748,13 +1757,13 @@ const curveAt = (ms: number) => {
   }
   return bezier(y1, y2, high)
 }
-const frameKeyboard = async (keyboard: number, direction: 'open' | 'close') => {
+const frameKeyboard = async (viewport: FakeViewport, keyboard: number, direction: 'open' | 'close') => {
   const from = performance.now()
   const duration = Number.parseFloat(token('durations.keyboard'))
   for (;;) {
     const ms = performance.now() - from
     const p = curveAt(ms)
-    fakeViewport.move({ height: 844 - Math.round(keyboard * (direction === 'open' ? p : 1 - p)) })
+    viewport.move({ height: 844 - Math.round(keyboard * (direction === 'open' ? p : 1 - p)) })
     if (ms >= duration) return
     await nextFrame()
   }
@@ -1762,12 +1771,12 @@ const frameKeyboard = async (keyboard: number, direction: 'open' | 'close') => {
 const frameSteps = (delay: number): StoryObj<typeof meta> => ({
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { field, composer } = threadParts(canvasElement)
     for (let open = 0; open < 2; open++) {
       await userEvent.click(field)
       for (let i = 0; i < delay; i++) await nextFrame()
-      await frameKeyboard(336, 'open')
+      await frameKeyboard(fakeViewport, 336, 'open')
       const off: number[] = []
       const until = performance.now() + 400
       while (performance.now() < until) {
@@ -1776,10 +1785,10 @@ const frameSteps = (delay: number): StoryObj<typeof meta> => ({
       }
       await expect(off.filter((v) => v > 0.5)).toEqual([])
       field.blur()
-      await frameKeyboard(336, 'close')
+      await frameKeyboard(fakeViewport, 336, 'close')
       await wait(400)
     }
-  },
+  }),
 })
 // iOS draws no frame of the page for about 100 ms after the focus (the iPhone traces of screen review R26), at 60 or
 // 30 fps. The story holds the main thread for 100 ms after the focus, and with `frameMs` 33 holds each frame to 33 ms.
@@ -1795,7 +1804,7 @@ const busy = (ms: number) => {
 const frameStepsSlow: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { field, composer } = threadParts(canvasElement)
     let slow = true
     const hold = () => {
@@ -1808,7 +1817,7 @@ const frameStepsSlow: StoryObj<typeof meta> = {
       for (let open = 0; open < 2; open++) {
         await userEvent.click(field)
         await nextFrame()
-        await frameKeyboard(336, 'open')
+        await frameKeyboard(fakeViewport, 336, 'open')
         const off: number[] = []
         const until = performance.now() + 400
         while (performance.now() < until) {
@@ -1817,13 +1826,13 @@ const frameStepsSlow: StoryObj<typeof meta> = {
         }
         await expect(off.filter((v) => v > 0.5)).toEqual([])
         field.blur()
-        await frameKeyboard(336, 'close')
+        await frameKeyboard(fakeViewport, 336, 'close')
         await wait(400)
       }
     } finally {
       slow = false
     }
-  },
+  }),
 }
 // A runner slow at random times: three frames in ten are held from 30 to 120 ms, from a fixed seed, so each run holds
 // the same frames. The focus waits 8 frames, as `Frame Steps Later` does, which failed on CI with the composer 9 px
@@ -1831,7 +1840,7 @@ const frameStepsSlow: StoryObj<typeof meta> = {
 const frameStepsJank: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { field, composer } = threadParts(canvasElement)
     let seed = 23
     const random = () => {
@@ -1849,7 +1858,7 @@ const frameStepsJank: StoryObj<typeof meta> = {
       for (let open = 0; open < 2; open++) {
         await userEvent.click(field)
         for (let i = 0; i < 8; i++) await nextFrame()
-        await frameKeyboard(336, 'open')
+        await frameKeyboard(fakeViewport, 336, 'open')
         const off: number[] = []
         const until = performance.now() + 400
         while (performance.now() < until) {
@@ -1858,13 +1867,13 @@ const frameStepsJank: StoryObj<typeof meta> = {
         }
         await expect(off.filter((v) => v > 0.5)).toEqual([])
         field.blur()
-        await frameKeyboard(336, 'close')
+        await frameKeyboard(fakeViewport, 336, 'close')
         await wait(400)
       }
     } finally {
       slow = false
     }
-  },
+  }),
 }
 /** A keyboard that reports in each frame, on a runner with random slow frames: the composer stays on the keyboard. */
 export const FrameStepsJankDark: StoryObj<typeof meta> = { ...frameStepsJank, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -1921,7 +1930,7 @@ export const LateFirstFrame30Light: StoryObj<typeof meta> = { ...lateFirstFrame(
 const lateFirstFrameCorrection: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     const timed = recordRise(footer, root)
     // The page draws nothing for 100 ms after the focus, and the report comes at the end of that time, before the first
@@ -1954,7 +1963,7 @@ const lateFirstFrameCorrection: StoryObj<typeof meta> = {
     const first = moved.find((f) => f.rise > 0)
     if (first === undefined) throw new Error('no frame with the dock up')
     await expect(first.rise).toBeLessThanOrEqual(Math.ceil(curveAt(17 + 17) * 296))
-  },
+  }),
 }
 /** Phone chat: the keyboard reports before the dock's late first frame; the composer only rises. */
 export const LateFirstFrameCorrectionDark: StoryObj<typeof meta> = { ...lateFirstFrameCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -1976,7 +1985,7 @@ export const FrameStepsLaterLight: StoryObj<typeof meta> = { ...frameSteps(8), g
 const reopenAboveOrigin: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // The keyboard settles at 300, and then grows by 1 px: the fall starts 1 px above the 300 the next open expects.
     await userEvent.click(field)
@@ -1995,7 +2004,7 @@ const reopenAboveOrigin: StoryObj<typeof meta> = {
     await expect(Number(root.dataset.keyboardEnd)).toBeGreaterThanOrEqual(start + 250)
     fakeViewport.move({ height: 544 })
     await settled(footer, 266)
-  },
+  }),
 }
 /** Phone chat: the field takes the focus again while the composer comes down from 1 px above the measured keyboard. */
 export const ReopenAboveOriginDark: StoryObj<typeof meta> = { ...reopenAboveOrigin, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2004,7 +2013,7 @@ export const ReopenAboveOriginLight: StoryObj<typeof meta> = { ...reopenAboveOri
 const quickClose: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // The focus starts the dock toward the 380 guess, the keyboard reports 330 a frame later, and the field loses the
     // focus as the keyboard closes a frame after that: three targets less than 50 ms apart. The close is a new move,
@@ -2018,7 +2027,7 @@ const quickClose: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 844 })
     await expect(Number(root.dataset.keyboardEnd)).toBeGreaterThanOrEqual(closed + 250)
     await settled(footer, 0)
-  },
+  }),
 }
 /** Phone chat whose keyboard closes a frame after its report: the composer comes down on the curve. */
 export const QuickCloseDark: StoryObj<typeof meta> = { ...quickClose, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2027,7 +2036,7 @@ export const QuickCloseLight: StoryObj<typeof meta> = { ...quickClose, globals: 
 const closeAfterCorrection: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // The real keyboard is 50 px over the guess and corrects the rise; the keyboard closes before the rise ends. The
     // fall is a new move on the curve from where the dock is, not the rest of the rise's (Codex review of #236).
@@ -2054,7 +2063,7 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
     timed.stop()
     const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
     await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / from))
-  },
+  }),
 }
 /** Phone chat: the keyboard closes during a corrected rise; the composer comes down on a full keyboard move. */
 export const CloseAfterCorrectionDark: StoryObj<typeof meta> = { ...closeAfterCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2063,7 +2072,7 @@ export const CloseAfterCorrectionLight: StoryObj<typeof meta> = { ...closeAfterC
 const lateStep: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // The keyboard reports its last small steps late in the dock's move and after it, as a keyboard that rises frame
     // by frame does (the-bridge keyboard:served on Workspaces, beta.80). A step late in the move keeps the move's end,
@@ -2090,7 +2099,7 @@ const lateStep: StoryObj<typeof meta> = {
     const after = record.frames.filter((f) => f.at >= atEnd).slice(1)
     await expect(after.length).toBeGreaterThan(0)
     await expect(after.filter((f) => f.inset !== '267px' && f.inset !== '268px')).toEqual([])
-  },
+  }),
 }
 /** Phone chat: the keyboard's last 1 px steps come late in the rise and after it; the composer stays on the keyboard. */
 export const LateStepDark: StoryObj<typeof meta> = { ...lateStep, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2107,10 +2116,10 @@ const shortenLayout = (height: number) => {
   }
 }
 // iOS reports the keyboard with the layout short for one frame.
-const shortReport = async () => {
+const shortReport = async (viewport: FakeViewport) => {
   const restore = shortenLayout(544)
   try {
-    fakeViewport.move({ height: 544 })
+    viewport.move({ height: 544 })
     await nextFrame()
   } finally {
     restore()
@@ -2119,12 +2128,12 @@ const shortReport = async () => {
 const shortLayoutFrame: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer, field } = threadParts(canvasElement)
     // iOS 18 shortens the layout viewport to the visible area for about one frame as it reports the keyboard, and
     // restores it with no event (the iPhone trace of screen review R25). The dock ends on the keyboard, and the measure is kept.
     await userEvent.click(field)
-    await shortReport()
+    await shortReport(fakeViewport)
     await settled(footer, 266)
     field.blur()
     fakeViewport.move({ height: 844 })
@@ -2135,9 +2144,9 @@ const shortLayoutFrame: StoryObj<typeof meta> = {
     await userEvent.click(field)
     await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0), { timeout: 2000 })
     await expect(fakeViewport.height).toBe(844)
-    await shortReport()
+    await shortReport(fakeViewport)
     await settled(footer, 266)
-  },
+  }),
 }
 /** Phone chat on iOS 18: the layout is short for one frame as the keyboard opens; the composer docks and docks again on the next open. */
 export const ShortLayoutFrameDark: StoryObj<typeof meta> = { ...shortLayoutFrame, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2146,7 +2155,7 @@ export const ShortLayoutFrameLight: StoryObj<typeof meta> = { ...shortLayoutFram
 const shortLayoutStays: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // A browser that resizes the layout for the keyboard with no VirtualKeyboard API (Firefox on Android): the layout
     // stays short, so after its frames of grace the shell docks nothing, and the next focus expects no keyboard.
@@ -2167,7 +2176,7 @@ const shortLayoutStays: StoryObj<typeof meta> = {
     await userEvent.click(field)
     for (let i = 0; i < 3; i++) await nextFrame()
     await expect(riseOf(footer)).toBe(0)
-  },
+  }),
 }
 /** Phone chat where the layout stays short for the keyboard: nothing docks, and the next open expects nothing. */
 export const ShortLayoutStaysDark: StoryObj<typeof meta> = { ...shortLayoutStays, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2181,7 +2190,7 @@ const scrolledReport: StoryObj<typeof meta> = {
       <div className={belowScreen} />
     </>
   ),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer, field } = threadParts(canvasElement)
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
@@ -2202,7 +2211,7 @@ const scrolledReport: StoryObj<typeof meta> = {
     }
     record.stop()
     await expect(record.frames.filter((f) => f.rise !== 266)).toEqual([])
-  },
+  }),
 }
 /** Phone chat on iOS: the keyboard is reported while iOS has scrolled the document; the composer stays on the keyboard. */
 export const ScrolledReportDark: StoryObj<typeof meta> = { ...scrolledReport, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2216,7 +2225,7 @@ const zoomScroll: StoryObj<typeof meta> = {
       <div className={belowScreen} />
     </>
   ),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer, field, composer } = threadParts(canvasElement)
     // Under a zoom the user scrolls the document with the keyboard open, and the shell leaves that scroll alone: the
     // composer stays on the keyboard's top at 544 and does not rise by the scroll (Codex review of #263).
@@ -2234,7 +2243,7 @@ const zoomScroll: StoryObj<typeof meta> = {
     await expect(window.scrollY).toBe(40)
     await expect(Math.abs(composer().bottom - 544)).toBeLessThanOrEqual(1)
     window.scrollTo(0, 0)
-  },
+  }),
 }
 /** Phone chat under a zoom with the keyboard open: a document scroll leaves the dock where it is. */
 export const ZoomScrollDark: StoryObj<typeof meta> = { ...zoomScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2243,7 +2252,7 @@ export const ZoomScrollLight: StoryObj<typeof meta> = { ...zoomScroll, globals: 
 const restReopen: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field } = threadParts(canvasElement)
     // The Workbench trace of screen review R25 (the Home Screen app): the keyboard is 403 px, and after each close the
     // visual viewport rests 68 px short. On the reopen the dock rises at once toward the 403 measured last, in one
@@ -2265,7 +2274,7 @@ const restReopen: StoryObj<typeof meta> = {
     await settled(footer, 403 - 34)
     record.stop()
     await expect(directions(record.frames.map((f) => ({ shell: 844, rise: f.rise })))).not.toContain(-1)
-  },
+  }),
 }
 /** Phone chat in the Home Screen app: the visual viewport rests 68 px short after a close; the reopen docks in one move. */
 export const RestReopenDark: StoryObj<typeof meta> = { ...restReopen, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2302,17 +2311,17 @@ const recordThread = (canvasElement: HTMLElement) => {
 const threadEnd: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer, field } = threadParts(canvasElement)
     // At its end, the thread stays at its end at every frame of the rise and the fall, so its latest message stays
     // above the composer (screen review R22: the Claude iOS app).
     scrollToEnd(slotOf(canvasElement, 'scroll-frame__body'))
     const end = recordThread(canvasElement)
     await userEvent.click(field)
-    await stepViewport(rising)
+    await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
     field.blur()
-    await stepViewport(falling)
+    await stepViewport(fakeViewport, falling)
     await settled(footer, 0)
     end.stop()
     await expect(end.frames.filter((f) => f.fromEnd > 1)).toEqual([])
@@ -2325,16 +2334,16 @@ const threadEnd: StoryObj<typeof meta> = {
     await nextFrame()
     const fromEnd = Math.round(up.body.scrollHeight - 200 - up.body.clientHeight)
     await userEvent.click(field)
-    await stepViewport(rising)
+    await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
     field.blur()
-    await stepViewport(falling)
+    await stepViewport(fakeViewport, falling)
     await settled(footer, 0)
     up.stop()
     // The first frame comes before the scroll to 200.
     await expect(up.frames.slice(1).filter((f) => Math.abs(f.fromEnd - fromEnd) > 1)).toEqual([])
     await expect(Math.round(up.body.scrollTop)).toBe(200)
-  },
+  }),
 }
 const backdropOf = (canvasElement: HTMLElement) => {
   const backdrop = canvasElement.querySelector('.app-shell__root')?.parentElement
@@ -2357,11 +2366,11 @@ export const SrLineInBodyLight: StoryObj<typeof meta> = { ...srLineStory, global
 const threadNearEnd: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer, field } = threadParts(canvasElement)
     const body = slotOf(canvasElement, 'scroll-frame__body')
     await userEvent.click(field)
-    await stepViewport(rising)
+    await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
     // Docked, 10 px from the end: as the keyboard closes, the view grows and the thread stays 10 px from its end at
     // every frame, with no jump (Codex review of #216).
@@ -2369,11 +2378,11 @@ const threadNearEnd: StoryObj<typeof meta> = {
     await nextFrame()
     const near = recordThread(canvasElement)
     field.blur()
-    await stepViewport(falling)
+    await stepViewport(fakeViewport, falling)
     await settled(footer, 0)
     near.stop()
     await expect(near.frames.filter((f) => Math.abs(f.fromEnd - 10) > 1)).toEqual([])
-  },
+  }),
 }
 /** Phone chat docked 10 px from its end: the thread keeps that distance through the keyboard's fall. */
 export const ThreadNearEndDark: StoryObj<typeof meta> = { ...threadNearEnd, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2411,7 +2420,7 @@ function BodyForm() {
 const bodyField: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <BodyForm />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { footer } = threadParts(canvasElement)
     const body = slotOf(canvasElement, 'scroll-frame__body')
     const title = within(canvasElement).getByRole('textbox', { name: 'Title' })
@@ -2422,7 +2431,7 @@ const bodyField: StoryObj<typeof meta> = {
     // The keyboard made the body scroll, and the field at its top is still in view.
     await expect(body.scrollHeight - body.clientHeight).toBeGreaterThan(1)
     await expect(Math.round(rect(title).top)).toBeGreaterThanOrEqual(Math.round(rect(body).top))
-  },
+  }),
 }
 /** Phone: a field at the top of a ScrollFrame body keeps its place when the keyboard opens; the body is not pinned. */
 export const BodyFieldDark: StoryObj<typeof meta> = { ...bodyField, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2435,7 +2444,7 @@ export const ThreadEndLight: StoryObj<typeof meta> = { ...threadEnd, globals: { 
 const keyboardRise: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field, composer } = threadParts(canvasElement)
     // The first open: the dock starts at once, before the browser reports a keyboard, toward Figma's 380 keyboard
@@ -2445,7 +2454,7 @@ const keyboardRise: StoryObj<typeof meta> = {
     await userEvent.click(field)
     await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0))
     await expect(fakeViewport.height).toBe(844)
-    await stepViewport(rising)
+    await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
     first.stop()
     await expect(first.frames.every((f) => f.shell === 844)).toBe(true)
@@ -2461,7 +2470,7 @@ const keyboardRise: StoryObj<typeof meta> = {
     await userEvent.click(field)
     await waitFor(() => expect(riseOf(footer)).toBeGreaterThan(0))
     await expect(fakeViewport.height).toBe(844)
-    await stepViewport(rising)
+    await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
     record.stop()
     timed.stop()
@@ -2476,7 +2485,7 @@ const keyboardRise: StoryObj<typeof meta> = {
     // within 1/64 px of the end of its 266 px.
     await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / 266))
     await expect(Math.round(composer().bottom)).toBe(544)
-  },
+  }),
 }
 
 const keyboardInsetOf = (root: HTMLElement) => root.style.getPropertyValue('--app-shell-keyboard')
@@ -2521,7 +2530,7 @@ const undockedWarning = (warn: { mock: { calls: unknown[][] } }) =>
 const nestedFooter: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <NestedThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
       const nested = within(canvasElement).getByRole('textbox', { name: 'Message' })
@@ -2535,7 +2544,7 @@ const nestedFooter: StoryObj<typeof meta> = {
     } finally {
       warn.mockRestore()
     }
-  },
+  }),
 }
 /** A chat ScrollFrame nested below the detail does not dock; AppShell warns once in the console. */
 export const NestedFooterDark: StoryObj<typeof meta> = { ...nestedFooter, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2546,7 +2555,7 @@ const onDiagnostic = fn<(diagnostic: AppShellDiagnostic) => void>()
 const nestedFooterReported: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <NestedThreadChat onDiagnostic={onDiagnostic} />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     onDiagnostic.mockClear()
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
@@ -2564,7 +2573,7 @@ const nestedFooterReported: StoryObj<typeof meta> = {
     } finally {
       warn.mockRestore()
     }
-  },
+  }),
 }
 // The page changes while the keyboard is open: in one commit the app passes a new `onDiagnostic` and draws a nested
 // chat whose field takes the focus as it mounts. The shell reports the undocked field to the new callback, not to the
@@ -2624,7 +2633,7 @@ function SwapChat() {
 const swappedDiagnostic: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <SwapChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     firstDiagnostic.mockClear()
     nextDiagnostic.mockClear()
     await userEvent.click(within(canvasElement).getByRole('textbox', { name: 'Message' }))
@@ -2636,7 +2645,7 @@ const swappedDiagnostic: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 544 })
     await waitFor(() => expect(nextDiagnostic).toHaveBeenCalledTimes(1))
     await expect(firstDiagnostic).not.toHaveBeenCalled()
-  },
+  }),
 }
 /** The callback changes in the commit that mounts an autofocus field in a nested chat: the new callback is called. */
 export const SwappedDiagnosticDark: StoryObj<typeof meta> = { ...swappedDiagnostic, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2647,7 +2656,7 @@ export const SwappedDiagnosticLight: StoryObj<typeof meta> = { ...swappedDiagnos
 const footerFoot: StoryObj<typeof meta> = {
   ...withFakeViewport,
   render: () => <ThreadChat foot="12" />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, field, composer } = threadParts(canvasElement)
     const frameBottom = () => rect(slotOf(canvasElement, 'scroll-frame__root')).bottom
     await expect(frameBottom() - composer().bottom).toBe(12)
@@ -2658,7 +2667,7 @@ const footerFoot: StoryObj<typeof meta> = {
     field.blur()
     fakeViewport.move({ height: 844 })
     await waitFor(() => expect(frameBottom() - composer().bottom).toBe(12))
-  },
+  }),
 }
 /** Phone chat whose reply box has a 12 px foot: 12 above the screen's foot, and on the keyboard's top when it opens. */
 export const FooterFootDark: StoryObj<typeof meta> = { ...footerFoot, globals: { mode: 'dark', viewport: { value: 'm390' } } }
@@ -2699,7 +2708,7 @@ const listKeyboard: StoryObj<typeof meta> = {
   ...withFakeViewport,
   parameters: { viewport: { options: wideTabletScreen } },
   render: () => <TabletSearch />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([1232, 900])
     const canvas = within(canvasElement)
     const list = canvas.getByRole('list', { name: 'Results' })
@@ -2713,7 +2722,7 @@ const listKeyboard: StoryObj<typeof meta> = {
     canvas.getByRole('textbox', { name: 'Search' }).blur()
     fakeViewport.move({ height: 900 })
     await waitFor(() => expect(Math.round(rect(list).bottom)).toBe(900))
-  },
+  }),
 }
 /** Tablet: a search field in the list pane opens the keyboard, and the results end above it (the-bridge #151 review). */
 export const ListKeyboardDark: StoryObj<typeof meta> = { ...listKeyboard, globals: { mode: 'dark', viewport: { value: 't1232' } } }
@@ -2727,7 +2736,7 @@ const focusScroll: StoryObj<typeof meta> = {
       <div className={belowScreen} />
     </>
   ),
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, field } = threadParts(canvasElement)
     const warn = spyOn(console, 'warn').mockImplementation(() => undefined)
     try {
@@ -2783,7 +2792,7 @@ const focusScroll: StoryObj<typeof meta> = {
       warn.mockRestore()
       window.scrollTo(0, 0)
     }
-  },
+  }),
 }
 /**
  * Phone chat: iOS scrolls the document for a focused field. While a field has the focus or the dock is set, the
@@ -2822,7 +2831,7 @@ export const PressAcrossSettleLight: StoryObj<typeof meta> = { ...pressAcrossSet
 const keyboardFall: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field, composer } = threadParts(canvasElement)
     await userEvent.click(field)
@@ -2834,7 +2843,7 @@ const keyboardFall: StoryObj<typeof meta> = {
     const timed = recordRise(footer, root)
     const start = performance.now()
     field.blur()
-    await stepViewport(falling)
+    await stepViewport(fakeViewport, falling)
     await settled(footer, 0)
     record.stop()
     timed.stop()
@@ -2855,7 +2864,7 @@ const keyboardFall: StoryObj<typeof meta> = {
     const during = timed.frames.filter((f) => f.at > start).slice(1).filter((f) => f.at < moveStart + curveTime(1 - 34 / 300))
     await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
-  },
+  }),
 }
 
 /** Phone chat: the keyboard falls in steps after a blur; the shell keeps its height and the composer comes down on the keyboard's curve, never back up. */
@@ -2873,7 +2882,7 @@ const keyboardReducedMotion: StoryObj<typeof meta> = {
     }
   },
   render: () => <ThreadChat />,
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field } = threadParts(canvasElement)
     // With reduced motion the dock has no transition: each change is there in the same task, and no frame shows a
@@ -2906,7 +2915,7 @@ const keyboardReducedMotion: StoryObj<typeof meta> = {
     record.stop()
     await expect([...new Set(record.frames.map((f) => f.rise))].sort((x, y) => x - y)).toEqual([0, 266])
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
-  },
+  }),
 }
 
 /** Phone chat with reduced motion: the composer docks and undocks at once, with no transition. */
@@ -2931,7 +2940,7 @@ const keyboardAndroid: StoryObj<typeof meta> = {
       await page.viewport(390, 844)
     }
   },
-  play: async ({ canvasElement }) => {
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     await expect([window.innerWidth, window.innerHeight]).toEqual([390, 844])
     const { root, footer, field, composer } = threadParts(canvasElement)
     const record = recordFrames(root, footer)
@@ -2948,7 +2957,7 @@ const keyboardAndroid: StoryObj<typeof meta> = {
     await expect(keyboardInset(root)).toBe('')
     await expect(record.frames.every((f) => f.rise === 0)).toBe(true)
     await expect(Math.round(composer().bottom)).toBe(544 - 34)
-  },
+  }),
 }
 
 /** Phone chat where the browser resizes the layout for the keyboard (Chrome on Android): the shell shrinks with its parent and the dock stays at 0. */

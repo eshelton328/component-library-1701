@@ -137,6 +137,18 @@ export const scrollFrame = defineSlotRecipe({
       true: {},
       false: { footer: { flexShrink: '0' } },
     },
+    // Space under the footer's content, inside the footer, as Figma draws a reply box above the screen's foot (the-bridge
+    // Inbox M8 346:10886, T5 346:6416). On the keyboard it shrinks by the dock's rise, down to 0, so the content sits
+    // on the keyboard's top as a footer with no foot does (screen review R21). A page's own bottom padding stays under
+    // the docked footer, so it would leave that gap above the keyboard.
+    foot: {
+      '0': {},
+      '4': { footer: { pb: 'max(0px, calc(token(spacing.4) - var(--scroll-frame-dock)))' } },
+      '6': { footer: { pb: 'max(0px, calc(token(spacing.6) - var(--scroll-frame-dock)))' } },
+      '8': { footer: { pb: 'max(0px, calc(token(spacing.8) - var(--scroll-frame-dock)))' } },
+      '12': { footer: { pb: 'max(0px, calc(token(spacing.12) - var(--scroll-frame-dock)))' } },
+      '16': { footer: { pb: 'max(0px, calc(token(spacing.16) - var(--scroll-frame-dock)))' } },
+    },
   },
-  defaultVariants: { gap: '0', footerShrink: true },
+  defaultVariants: { gap: '0', footerShrink: true, foot: '0' },
 })

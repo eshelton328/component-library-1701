@@ -113,11 +113,17 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * user can scroll up and read. The draft stays, and a tap on the field opens
  * the keyboard again. A scroll from code never closes it; with a mouse
  * nothing changes.
+ *
+ * `foot` (a spacing token, `0` by default) puts space under the footer's
+ * content, such as a reply box that Figma draws 12 above the screen's foot.
+ * On the keyboard that space shrinks by the footer's rise, down to 0, so the
+ * content sits on the keyboard's top. Use it in place of a bottom padding on
+ * the frame, which stays under a docked footer.
  */
-export function ScrollFrame({ header, footer, children, className, bodyClassName, gap, footerShrink }: ScrollFrameProps) {
+export function ScrollFrame({ header, footer, children, className, bodyClassName, gap, footerShrink, foot }: ScrollFrameProps) {
   const keyboardClose = useKeyboardClose()
   return (
-    <Root gap={gap} footerShrink={footerShrink} className={className}>
+    <Root gap={gap} footerShrink={footerShrink} foot={foot} className={className}>
       {header === undefined ? null : <Header>{header}</Header>}
       <Body tabIndex={0} className={bodyClassName} {...keyboardClose}>
         {children}

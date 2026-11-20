@@ -1462,6 +1462,7 @@ import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recip
 export type ScrollFrameVariant = {
   gap?: "0" | "4" | "8" | "12" | "16" | "24"
   footerShrink?: boolean
+  foot?: "0" | "4" | "6" | "8" | "12" | "16"
 }
 
 export type ScrollFrameVariantProps = {

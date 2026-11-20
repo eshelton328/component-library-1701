@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useRef, useState } from 'react'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet } from './bottom-sheet'
 import { Button } from './button'
@@ -93,3 +93,37 @@ export default meta
 /** The held row of Workspaces M9: the actions sheet lifts a copy of the row over its scrim, at the row's place. */
 export const HeldRowDark: StoryObj<typeof meta> = { render: () => <HeldRow />, play: heldRowPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const HeldRowLight: StoryObj<typeof meta> = { render: () => <HeldRow />, play: heldRowPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The sheet opens with the page (defaultOpen) and comes before the held row in the tree, so the row's ref is not
+// set yet when the sheet first measures it.
+function OpenFirst() {
+  const held = useRef<HTMLDivElement>(null)
+  return (
+    <main className={page}>
+      <BottomSheet title="Actions" defaultOpen lifted={{ content: <div className={liftedRow}>{heldChat}</div>, anchor: held }}>
+        <Button>Rename</Button>
+      </BottomSheet>
+      {chats.map((c) => (
+        <div key={c} ref={c === heldChat ? held : undefined} className={row} data-row={c}>
+          {c}
+        </div>
+      ))}
+    </main>
+  )
+}
+
+const openFirstPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const anchor = canvasElement.querySelector(`[data-row="${heldChat}"]`)
+  const lifted = document.querySelector('.bottom-sheet__lifted')
+  if (anchor === null || lifted === null) throw new Error('no row or copy')
+  // The copy shows only once it lies at the row's place; the row hides.
+  await waitFor(() => expect(getComputedStyle(anchor).visibility).toBe('hidden'))
+  const at = anchor.getBoundingClientRect()
+  const box = lifted.getBoundingClientRect()
+  await expect([box.left, box.top, box.width, box.height].map(Math.round)).toEqual([at.left, at.top, at.width, at.height].map(Math.round))
+  await expect(getComputedStyle(lifted).visibility).toBe('visible')
+}
+
+/** A sheet open from the start lifts a row that comes after it in the tree. */
+export const OpenFirstDark: StoryObj<typeof meta> = { render: () => <OpenFirst />, play: openFirstPlay, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const OpenFirstLight: StoryObj<typeof meta> = { render: () => <OpenFirst />, play: openFirstPlay, globals: { mode: 'light', viewport: { value: 'm390' } } }

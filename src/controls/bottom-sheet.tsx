@@ -1,6 +1,6 @@
 import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
 import { OverlayPortal } from './overlay-layer'
-import { useEffect, useId, useLayoutEffect, useRef, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { bottomSheet, type BottomSheetVariantProps } from '../../styled-system/recipes'
@@ -196,14 +196,30 @@ function returnFocus(returnToRef: RefObject<HTMLElement | null>) {
 
 // The copy of `lifted.anchor` over the scrim, while the sheet is open. It comes after the scrim in the sheet's layer,
 // so it paints over it, and before the sheet's box, which paints over it where they meet.
+const placeTries = 10
+
 function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
   const { open } = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const { anchor } = lifted
+  // A ref to an element later in the tree than the sheet is set only after this effect runs in the sheet's first
+  // commit (a sheet open from the start). The effect then tries again on the next frames, at most `placeTries` times,
+  // so a ref that is never set does not render on each frame; the copy stays hidden until it is placed (`data-placed`).
+  const [tries, setTries] = useState(0)
   useLayoutEffect(() => {
     const target = anchor instanceof HTMLElement ? anchor : (anchor?.current ?? null)
     const copy = ref.current
-    if (!open || target === null || copy === null) return undefined
+    if (!open || copy === null) return undefined
+    if (target === null) {
+      if (tries >= placeTries) return undefined
+      const frame = requestAnimationFrame(() => {
+        setTries((n) => n + 1)
+      })
+      return () => {
+        cancelAnimationFrame(frame)
+      }
+    }
+    copy.setAttribute('data-placed', '')
     const place = () => {
       const box = target.getBoundingClientRect()
       copy.style.setProperty('--bottom-sheet-lifted-top', `${String(box.top)}px`)
@@ -224,7 +240,7 @@ function LiftedCopy({ lifted }: { lifted: BottomSheetLifted }) {
       if (visibility === '') target.style.removeProperty('visibility')
       else target.style.setProperty('visibility', visibility, priority)
     }
-  }, [open, anchor])
+  }, [open, anchor, tries])
   if (!open) return null
   return (
     <Lifted ref={ref} aria-hidden="true">

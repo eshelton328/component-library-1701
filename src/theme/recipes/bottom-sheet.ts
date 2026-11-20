@@ -34,8 +34,10 @@ export const bottomSheet = defineSlotRecipe({
     },
     // A copy of a page element over the scrim, at the element's place and size, which the component sets as
     // custom properties (the Workspaces M9 held row, 146:252). It takes no pointer events, so a tap there reaches
-    // the scrim and closes the sheet; the caller draws its look.
+    // the scrim and closes the sheet; the caller draws its look. It shows only once the component has placed it.
     lifted: {
+      visibility: 'hidden',
+      '&[data-placed]': { visibility: 'visible' },
       position: 'fixed',
       top: 'var(--bottom-sheet-lifted-top)',
       left: 'var(--bottom-sheet-lifted-left)',

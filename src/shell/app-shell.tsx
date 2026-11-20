@@ -33,8 +33,13 @@ const blurEndDelay = 300
 const keyboardMotion = cssDuration(token('durations.keyboard'))
 // The time fraction of a move up to which a new target keeps the move's end.
 const keepEndUntil = 0.7
-// The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame (three frames at 60 Hz).
+// The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame: three of the frames
+// the dock measured in its last move, at least 50 (three at 60 Hz) and at most 150. On a device whose frames are slow
+// (60 ms on a loaded CI runner) the reports of such a keyboard come further apart than 50 ms, and a new move for each
+// left the dock under the keyboard after it stopped. A single report 152 ms after the focus (the Workbench trace of
+// screen review R25) still is not one.
 const keyboardStepGap = 50
+const keyboardStepGapMax = 150
 // One frame at 60 Hz, and the time after a move's start past which its first frame is late (two frames), in ms.
 const keyboardFrame = 1000 / 60
 const keyboardFrameLate = 2 * keyboardFrame
@@ -189,6 +194,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let lastTargetAt = Number.NEGATIVE_INFINITY
     let lastDirection = 0
     let lastQuick = false
+    // Until when a report in the same direction as a frame step is one too, at any gap (see `stepping`).
+    let stepUntil = Number.NEGATIVE_INFINITY
+    // When the dock's last frame of a move was drawn, and the time between its last two frames, for `keyboardStepGap`.
+    let lastFrameAt = Number.NEGATIVE_INFINITY
+    let frameGap = 0
     let start = 0
     let motion: number | undefined
     // Whether the move's next frame is its first, for `keyboardFrameLate`.
@@ -200,6 +210,9 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // R26: the first frame at +97 ms, at 30 fps). A move whose clock started at the focus was then 79 % done in its
       // first drawn frame, a jump. When the first frame of a move comes more than `keyboardFrameLate` after its start,
       // the move starts there, one 60 Hz frame back, so that frame shows the curve's first step.
+      const drawn = performance.now()
+      if (Number.isFinite(lastFrameAt)) frameGap = drawn - lastFrameAt
+      lastFrameAt = drawn
       if (firstFrame) {
         firstFrame = false
         const at = performance.now()
@@ -250,8 +263,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // keyboard is in that frame, so the dock follows it at once, in a move or after it, and the composer moves with
       // the keyboard. A single late report (iOS) or a turn (a close after a 1 px step) is not one.
       const direction = Math.sign(inset - previous)
-      const quick = now - lastTargetAt < keyboardStepGap
-      const stepping = quick && lastQuick && direction === lastDirection
+      const quick = now - lastTargetAt < Math.min(keyboardStepGapMax, Math.max(keyboardStepGap, 3 * frameGap))
+      // A device or a runner that is slow at random times leaves one gap of 100 ms in a keyboard's frame steps: a report
+      // in the same direction up to `keyboardStepGapMax` after a frame step is one too, so one gap does not make a new
+      // 250 ms move that ends after the keyboard (`Frame Steps Later` failed on CI with the composer 9 px under it).
+      const stepping = direction === lastDirection && direction !== 0 && ((quick && lastQuick) || now < stepUntil)
+      stepUntil = stepping ? now + keyboardStepGapMax : Number.NEGATIVE_INFINITY
       lastTargetAt = now
       lastDirection = direction
       lastQuick = quick
@@ -283,6 +300,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       root.dataset.keyboardEnd = String(start + keyboardMotion)
       if (motion === undefined) {
         firstFrame = true
+        lastFrameAt = Number.NEGATIVE_INFINITY
         motion = requestAnimationFrame(step)
       }
     }

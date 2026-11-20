@@ -27,6 +27,9 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   bottom padding on the frame (R21, `FooterFoot`).
 - A mistake the shell finds at run time goes to `onDiagnostic`, and to
   the console only without it (audit L-8, `NestedFooterReported`).
+- The dock's limit for a frame-by-frame keyboard grows with the frames it
+  measured, and one gap does not end it; test a dock change on slow
+  frames too (`FrameStepsSlow`, `FrameStepsJank`).
 - Read a token as a number only through `css-values.ts`, which throws
   on a form it does not know (audit L-2, `MotionTokens` story).
 - The tab bar stays in the shell's flow, never `position: fixed`. Its

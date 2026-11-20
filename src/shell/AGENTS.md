@@ -41,3 +41,7 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   Chromium.
 - Pages set nothing for the keyboard, the tab bar or the home indicator;
   the shell keeps that room.
+- The `Backdrop` root has `isolation: isolate`, so a z-index inside the
+  page stays under the overlays' layers, which come after it in
+  `<body>` and set no z-index. Keep it; `LiftedOverPage` in
+  `backdrop.stories.tsx` guards it.

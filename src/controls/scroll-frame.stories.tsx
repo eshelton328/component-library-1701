@@ -239,6 +239,55 @@ export const FooterKeptDark: StoryObj<typeof meta> = {
     await expect(shrunk.footer.scrollHeight).toBeGreaterThan(shrunk.footer.clientHeight)
   },
 }
+// A frame with `foot="12"` resized so only 8 px is left under its header (Codex review of #290): the footer and
+// its foot shrink to those 8 px and scroll inside, so nothing reaches past the frame.
+function ShortFootFrame() {
+  return (
+    <div className={half} data-testid="foot-box">
+      <ScrollFrame
+        gap="12"
+        foot="12"
+        header={<Button size="sm">Back to the inbox</Button>}
+        footer={
+          <div data-testid="foot-draft" className={clip}>
+            <TextArea label="Reply" labelHidden rows={1} defaultValue="Draft" />
+          </div>
+        }
+      >
+        {lines.map((text) => (
+          <p key={text} className={line}>
+            {text}
+          </p>
+        ))}
+      </ScrollFrame>
+    </div>
+  )
+}
+/** `foot` in a pane resized shorter than its header and footer: the footer, foot included, shrinks to the room left. */
+export const ShortFootDark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={page}>
+      <ShortFootFrame />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const footer = canvas.getByTestId('foot-draft').parentElement
+    const frame = footer?.parentElement
+    const header = frame?.firstElementChild
+    if (footer === null || frame === null || frame === undefined || !(header instanceof HTMLElement)) throw new Error('no frame')
+    const box = canvas.getByTestId('foot-box')
+    const pad = box.getBoundingClientRect().height - frame.getBoundingClientRect().height
+    // The header, the two 12 px gaps and 8 px left for the footer.
+    box.style.height = `${String(pad + header.getBoundingClientRect().height + 24 + 8)}px`
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    await expect(footer.getBoundingClientRect().height).toBeLessThanOrEqual(8 + 0.5)
+    await expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(frame.getBoundingClientRect().bottom + 0.5)
+    await expect(footer.scrollHeight).toBeGreaterThan(footer.clientHeight)
+  },
+}
+export const ShortFootLight: StoryObj<typeof meta> = { ...ShortFootDark, globals: { mode: 'light' } }
 export const FooterKeptLight: StoryObj<typeof meta> = { ...FooterKeptDark, globals: { mode: 'light' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 

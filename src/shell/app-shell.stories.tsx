@@ -1398,7 +1398,7 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
 const messages = Array.from({ length: 40 }, (_, i) => `Message ${String(i + 1)} of the thread`)
 // A line only screen readers read, positioned absolutely as Message's `message__srName` is.
 const srOnlyLine = css({ srOnly: true })
-function ThreadChat({ srLine = false }: { srLine?: boolean }) {
+function ThreadChat({ srLine = false, foot }: { srLine?: boolean; foot?: '12' | undefined }) {
   return (
     <div className={screenFrame}>
       <AppShell
@@ -1407,6 +1407,7 @@ function ThreadChat({ srLine = false }: { srLine?: boolean }) {
         detail={
           <ScrollFrame
             bodyClassName={frameBody}
+            foot={foot}
             footer={
               <div role="group" aria-label="Composer" className={composerBox}>
                 <textarea aria-label="Message" rows={1} className={messageField} />
@@ -2557,6 +2558,28 @@ const swappedDiagnostic: StoryObj<typeof meta> = {
 /** The callback changes in the commit that mounts an autofocus field in a nested chat: the new callback is called. */
 export const SwappedDiagnosticDark: StoryObj<typeof meta> = { ...swappedDiagnostic, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const SwappedDiagnosticLight: StoryObj<typeof meta> = { ...swappedDiagnostic, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// A reply box that Figma draws 12 above the screen's foot (the-bridge Inbox M8): ScrollFrame `foot="12"` keeps that
+// space off the keyboard, and on the keyboard the box sits on its top, as a footer with no foot does (screen review
+// R21; the Inbox reply box ended 12 above the keyboard with a bottom padding on the frame).
+const footerFoot: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <ThreadChat foot="12" />,
+  play: async ({ canvasElement }) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const frameBottom = () => rect(slotOf(canvasElement, 'scroll-frame__root')).bottom
+    await expect(frameBottom() - composer().bottom).toBe(12)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await waitFor(() => expect(composer().bottom).toBe(544))
+    await expect(root.style.getPropertyValue('--app-shell-keyboard')).not.toBe('')
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await waitFor(() => expect(frameBottom() - composer().bottom).toBe(12))
+  },
+}
+/** Phone chat whose reply box has a 12 px foot: 12 above the screen's foot, and on the keyboard's top when it opens. */
+export const FooterFootDark: StoryObj<typeof meta> = { ...footerFoot, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FooterFootLight: StoryObj<typeof meta> = { ...footerFoot, globals: { mode: 'light', viewport: { value: 'm390' } } }
 /** The nested chat with `onDiagnostic`: the app gets the diagnostic, and the console stays quiet. */
 export const NestedFooterReportedDark: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const NestedFooterReportedLight: StoryObj<typeof meta> = { ...nestedFooterReported, globals: { mode: 'light', viewport: { value: 'm390' } } }

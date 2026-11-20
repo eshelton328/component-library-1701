@@ -34,6 +34,9 @@ components (d-066).
   pane also `expectScrollsByWheelAndKeys` (`scroll-area.testing.ts`).
 - A `BottomSheet` play function awaits `motionDone` before it measures
   and awaits `unmounted` after a close (`bottom-sheet.testing.ts`).
+- A play that clicks outside an overlay right after an overlay opened
+  or closed first awaits `layerSettled()` (`layer.testing.ts`): Ark
+  ignores outside clicks until its layers settle (popover Behaviour).
 - A play function that reads an idle fill first calls `restPointerOn`
   (`pointer.testing.ts`) with a place that has no hover style, such as a
   sheet's title row or the story's canvas.

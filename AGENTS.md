@@ -89,6 +89,11 @@ declares the first stable contract.
 - In a new worktree, run `pnpm install --frozen-lockfile`. Never link
   `node_modules` from another checkout: Vite serves only files inside the
   repository and pnpm refuses to run. The guard hook blocks the link.
+- After a rebase that adds a story import, delete `node_modules/.vite`
+  and `node_modules/.cache/storybook` before a local verify: an old Vite
+  cache finds the import in the middle of the run, reloads and loads two
+  React copies (overlay-layers Hydrate, "Invalid hook call"). CI starts
+  with no cache.
 - Worktrees can run `pnpm verify` at the same time; the story tests pick
   a free port. `pnpm storybook` uses port 6006.
 

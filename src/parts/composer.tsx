@@ -71,10 +71,18 @@ export type ComposerAttachment = {
    * and the remove button. `uploading` adds a thin progress bar along the
    * chip's foot (`role="progressbar"`, named "Uploading <name>"), filled to
    * `progress`. `failed` draws a warning sign and a `status.danger` border,
-   * and a Retry button when the composer has `onRetryAttachment`. Every
-   * state keeps the remove button.
+   * and a Retry button when the composer has `onRetryAttachment` and
+   * `retry` is not false. Every state keeps the remove button.
    */
   status?: ComposerAttachmentStatus | undefined
+  /**
+   * Whether a `failed` chip offers Retry. `true` (the default) draws the
+   * Retry button when the composer has `onRetryAttachment`. `false` draws
+   * no Retry button, for a file that can never upload, such as one too
+   * large, empty or of a type the server does not take; the chip keeps its
+   * warning sign, its border and its remove button. Other states ignore it.
+   */
+  retry?: boolean | undefined
   /**
    * How much of an `uploading` file is sent, from 0 to 1, such as 0.3. The
    * bar's `aria-valuenow` is the whole per cent (30). Without it the bar is
@@ -97,13 +105,17 @@ export type ComposerProps = {
   /**
    * Called with the text when the user presses Enter or the send button.
    * The composer sends nothing itself. Shift+Enter adds a line. Text of
-   * only spaces is not submitted. Without `value`, the composer clears
-   * its text after the call.
+   * only spaces is not submitted, unless the message carries files: with
+   * at least one attachment and every one `ready` (or with no `status`),
+   * an empty text or one of only spaces is submitted as `''`, a message of
+   * files alone. An `uploading` or `failed` attachment holds that submit.
+   * Without `value`, the composer clears its text after the call.
    */
   onSubmit?: ((text: string) => void) | undefined
   /**
    * Called with the text when the user presses Enter or the send button,
-   * in place of `onSubmit`, for a send that can fail. Return `true` when
+   * in place of `onSubmit`, for a send that can fail. It gets `''` for a
+   * message of files alone, as `onSubmit` does. Return `true` when
    * the message was sent, or a promise of it. Without `value`, the
    * composer clears its text only on `true`, and only when the text has
    * not changed meanwhile; `false` or a rejected promise keeps the draft,
@@ -128,7 +140,11 @@ export type ComposerProps = {
   attachments?: readonly ComposerAttachment[] | undefined
   /** Called with the `id` of the attachment whose remove button the user presses. Without it, attachments have no remove button. */
   onRemoveAttachment?: ((id: string) => void) | undefined
-  /** Called with the `id` of a `failed` attachment whose Retry button the user presses. Without it, a failed chip has no Retry button. */
+  /**
+   * Called with the `id` of a `failed` attachment whose Retry button the
+   * user presses. Without it, a failed chip has no Retry button; an
+   * attachment with `retry: false` has none either.
+   */
   onRetryAttachment?: ((id: string) => void) | undefined
   /** Called when the user presses the attach button. Without it, there is no attach button. */
   onAttach?: (() => void) | undefined
@@ -201,7 +217,9 @@ export type ComposerProps = {
  * past that; at rest it keeps its full height in any frame.
  *
  * An attachment shows where its upload is (`status`, `progress`), and a
- * failed one a Retry button (`onRetryAttachment`). Many chips wrap and
+ * failed one a Retry button (`onRetryAttachment`, off per chip with
+ * `retry: false`). Send and Enter submit `''` for a message of files alone
+ * once every file is ready. Many chips wrap and
  * scroll inside the composer past two and a half rows, so Send stays in
  * view on a phone. `sendDisabled` turns Send off, such as while a file
  * uploads, and `onAddFiles` takes files dropped on the composer or pasted
@@ -250,24 +268,30 @@ export function Composer({
   const sent = (submitted: string) => {
     if (value === undefined && latest.current === submitted) change('')
   }
+  // A message of files alone: at least one file, and every file uploaded.
+  const filesReady = attachments.length > 0 && attachments.every((file) => (file.status ?? 'ready') === 'ready')
   const submit = () => {
-    if (disabled || sending || sendDisabled || text.trim() === '') return
+    if (disabled || sending || sendDisabled) return
+    const blank = text.trim() === ''
+    if (blank && !filesReady) return
+    // The text as typed, which a send clears, and the text submitted: '' for files alone.
+    const typed = text
+    const submitted = blank ? '' : text
     if (onSend === undefined) {
-      onSubmit?.(text)
+      onSubmit?.(submitted)
       if (value === undefined) change('')
       return
     }
-    const submitted = text
     const result = onSend(submitted)
     if (typeof result === 'boolean') {
-      if (result) sent(submitted)
+      if (result) sent(typed)
       return
     }
     setSending(true)
     result.then(
       (ok) => {
         setSending(false)
-        if (ok) sent(submitted)
+        if (ok) sent(typed)
       },
       () => {
         setSending(false)
@@ -342,7 +366,7 @@ export function Composer({
               <AttachmentName>
                 <TruncatedText>{file.name}</TruncatedText>
               </AttachmentName>
-              {status === 'failed' && onRetryAttachment !== undefined ? (
+              {status === 'failed' && file.retry !== false && onRetryAttachment !== undefined ? (
                 <AttachmentRetry
                   type="button"
                   aria-label={`Retry ${file.name}`}

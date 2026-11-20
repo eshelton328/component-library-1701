@@ -383,6 +383,7 @@ export type ComposerAttachment = {
     id: string;
     name: string;
     status?: ComposerAttachmentStatus | undefined;
+    retry?: boolean | undefined;
     progress?: number | undefined;
 };
 

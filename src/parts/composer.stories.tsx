@@ -11,6 +11,7 @@ import { PlusIcon } from '../foundations/icons'
 import { Composer, type ComposerAttachment } from './composer'
 import { ModelChip } from './model-chip'
 import { expectCutText } from '../controls/tooltip.testing'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', w: 'shell.dialogLg' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -22,6 +23,11 @@ const swatches = {
   accent: css({ bg: 'accent.default' }),
   muted: css({ bg: 'fg.muted' }),
   text: css({ bg: 'fg.default' }),
+  active: css({ bg: 'border.active' }),
+  dangerBorder: css({ bg: 'status.danger.border' }),
+  dangerFg: css({ bg: 'status.danger.fg' }),
+  link: css({ bg: 'fg.accent' }),
+  focus: css({ bg: 'border.focus' }),
 }
 const swatchRow = (
   <div hidden>
@@ -883,3 +889,323 @@ const iconSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 /** `attachIcon`, `attachLabel`, `sendIconSize` and `stopIconSize`: Workspaces D04's 12 px plus, D05's 12 px Send arrow and Inbox D05's 12 px Stop square, beside the defaults. */
 export const IconSizesDark: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'dark' }, play: iconSizesPlay }
 export const IconSizesLight: StoryObj<typeof meta> = { render: () => <IconSizes />, globals: { mode: 'light' }, play: iconSizesPlay }
+
+// Attachment states for the-bridge W1b (uploads of any file, up to 1 GB): an upload at 30 %, a ready file and a
+// failed one, beside a composer with no onRetryAttachment, whose failed chip has no Retry.
+const onRetry = fn<(id: string) => void>()
+const onStateRemove = fn<(id: string) => void>()
+const upload: readonly ComposerAttachment[] = [
+  { id: 'up', name: 'design-review.mov', status: 'uploading', progress: 0.3 },
+  { id: 'ok', name: 'notes.md', status: 'ready' },
+  { id: 'bad', name: 'build.log', status: 'failed' },
+]
+
+function AttachmentStates() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer label="Uploads" attachments={upload} onRemoveAttachment={onStateRemove} onRetryAttachment={onRetry} onAttach={() => undefined} />
+        <Composer label="No retry" attachments={[{ id: 'bad', name: 'trace.zip', status: 'failed' }]} onRemoveAttachment={() => undefined} />
+        <Composer label="Unsized" attachments={[{ id: 'big', name: 'disk.img', status: 'uploading' }]} />
+      </Stack>
+      {swatchRow}
+    </main>
+  )
+}
+
+const chipOf = (box: HTMLElement, name: string) => {
+  const chip = within(box).getByText(name).closest<HTMLElement>('.composer__attachment')
+  if (chip === null) throw new Error(`no chip ${name}`)
+  return chip
+}
+const composerOf = (canvasElement: HTMLElement, label: string) => {
+  const box = within(canvasElement).getByRole('textbox', { name: label }).closest<HTMLElement>('.composer__root')
+  if (box === null) throw new Error(`no composer ${label}`)
+  return box
+}
+
+const attachmentStatesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onRetry.mockClear()
+  onStateRemove.mockClear()
+  const box = composerOf(canvasElement, 'Uploads')
+  // Uploading at 0.3: a progressbar named after the file, valued 30 of 0 to 100, filled 30 % in the accent colour
+  // on a border.default track, 2 px high along the chip's foot.
+  const bar = within(box).getByRole('progressbar', { name: 'Uploading design-review.mov' })
+  await expect([bar.getAttribute('aria-valuemin'), bar.getAttribute('aria-valuemax'), bar.getAttribute('aria-valuenow')]).toEqual(['0', '100', '30'])
+  await expect(bar).toHaveAttribute('aria-valuetext', '30%')
+  const fill = bar.firstElementChild
+  if (!(fill instanceof HTMLElement)) throw new Error('no fill')
+  await expect(rect(fill).width / rect(bar).width).toBeCloseTo(0.3, 2)
+  await expect(rect(bar).height).toBe(2)
+  await expect(getComputedStyle(fill).backgroundColor).toBe(swatch(canvasElement, 'accent'))
+  await expect(getComputedStyle(bar).backgroundColor).toBe(swatch(canvasElement, 'border'))
+  const uploading = chipOf(box, 'design-review.mov')
+  await expect(rect(bar).bottom).toBeLessThanOrEqual(rect(uploading).bottom)
+  await expect(rect(bar).left).toBeGreaterThan(rect(uploading).left)
+  // The ready chip is drawn as before: no bar, a border.default border, an fg.default clip, 26 high.
+  const ready = chipOf(box, 'notes.md')
+  await expect(within(ready).queryByRole('progressbar')).toBeNull()
+  await expect(getComputedStyle(ready).borderTopColor).toBe(swatch(canvasElement, 'border'))
+  await expect(rect(ready).height).toBe(26)
+  await expect(rect(uploading).height).toBe(26)
+  const clip = ready.querySelector('svg')
+  if (clip === null) throw new Error('no clip')
+  await expect(getComputedStyle(clip).color).toBe(swatch(canvasElement, 'text'))
+  // Failed: a status.danger border, a warning sign named "Upload failed", and Retry in fg.accent, which reports
+  // the file's id; every chip keeps its remove button.
+  const failed = chipOf(box, 'build.log')
+  await expect(getComputedStyle(failed).borderTopColor).toBe(swatch(canvasElement, 'dangerBorder'))
+  const sign = within(failed).getByRole('img', { name: 'Upload failed' })
+  await expect(getComputedStyle(sign).color).toBe(swatch(canvasElement, 'dangerFg'))
+  const retry = within(failed).getByRole('button', { name: 'Retry build.log' })
+  await expect(retry).toHaveTextContent('Retry')
+  await expect(getComputedStyle(retry).color).toBe(swatch(canvasElement, 'link'))
+  await userEvent.click(retry)
+  await expect(onRetry).toHaveBeenCalledTimes(1)
+  await expect(onRetry).toHaveBeenLastCalledWith('bad')
+  for (const name of ['design-review.mov', 'notes.md', 'build.log'])
+    await expect(within(box).getByRole('button', { name: `Remove ${name}` })).toBeInTheDocument()
+  await userEvent.click(within(box).getByRole('button', { name: 'Remove design-review.mov' }))
+  await expect(onStateRemove).toHaveBeenLastCalledWith('up')
+  // The keyboard: Shift+Tab from the text reaches each new button, which draws the focus ring; Enter retries.
+  within(box).getByRole('textbox', { name: 'Uploads' }).focus()
+  const stops = ['Remove build.log', 'Retry build.log', 'Remove notes.md', 'Remove design-review.mov']
+  for (const name of stops) {
+    const button = within(box).getByRole('button', { name })
+    while (document.activeElement !== button) {
+      await userEvent.tab({ shift: true })
+      if (!box.contains(document.activeElement)) throw new Error(`Tab did not reach ${name}`)
+    }
+    await expect(getComputedStyle(button).outlineStyle).toBe('solid')
+    await expect(getComputedStyle(button).outlineColor).toBe(swatch(canvasElement, 'focus'))
+  }
+  within(box).getByRole('button', { name: 'Retry build.log' }).focus()
+  await userEvent.keyboard('{Enter}')
+  await expect(onRetry).toHaveBeenCalledTimes(2)
+  // A list of one row does not scroll and is no tab stop.
+  await expect(box.querySelector('.composer__attachments')).not.toHaveAttribute('tabindex')
+  // Without onRetryAttachment a failed chip has no Retry, and keeps remove.
+  const plain = composerOf(canvasElement, 'No retry')
+  await expect(within(plain).queryByRole('button', { name: /^Retry/ })).toBeNull()
+  await expect(within(plain).getByRole('button', { name: 'Remove trace.zip' })).toBeInTheDocument()
+  // An upload with no progress has a bar with no value, and an empty fill.
+  const unsized = within(composerOf(canvasElement, 'Unsized')).getByRole('progressbar', { name: 'Uploading disk.img' })
+  await expect(unsized).not.toHaveAttribute('aria-valuenow')
+  await expect(unsized.firstElementChild?.getBoundingClientRect().width).toBe(0)
+}
+
+/** Attachment states: uploading at 0.3 with its progress bar, ready, and failed with Retry (`onRetryAttachment`). */
+export const AttachmentStatesDark: StoryObj<typeof meta> = { render: () => <AttachmentStates />, globals: { mode: 'dark' }, play: attachmentStatesPlay }
+export const AttachmentStatesLight: StoryObj<typeof meta> = { render: () => <AttachmentStates />, globals: { mode: 'light' }, play: attachmentStatesPlay }
+
+// sendDisabled, as while an attachment uploads, beside a composer without it.
+const onHeldSubmit = fn<(text: string) => void>()
+
+function SendStates() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer
+          label="Held"
+          sendDisabled
+          defaultValue="Ready once the upload ends"
+          onSubmit={onHeldSubmit}
+          attachments={[{ id: 'up', name: 'design-review.mov', status: 'uploading', progress: 0.3 }]}
+        />
+        <Composer label="Open" defaultValue="Sent now" onSubmit={onHeldSubmit} />
+      </Stack>
+    </main>
+  )
+}
+
+const sendStatesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onHeldSubmit.mockClear()
+  // sendDisabled: Send is disabled and Enter sends nothing; the text stays editable.
+  const held = composerOf(canvasElement, 'Held')
+  const field = within(held).getByRole('textbox', { name: 'Held' })
+  await expect(within(held).getByRole('button', { name: 'Send' })).toBeDisabled()
+  await userEvent.click(field)
+  await userEvent.keyboard('{Enter}')
+  await expect(onHeldSubmit).not.toHaveBeenCalled()
+  await userEvent.type(field, '!')
+  await expect(field).toHaveValue('Ready once the upload ends!')
+  // The default leaves Send on.
+  const open = composerOf(canvasElement, 'Open')
+  const send = within(open).getByRole('button', { name: 'Send' })
+  await expect(send).toBeEnabled()
+  await userEvent.click(send)
+  await expect(onHeldSubmit).toHaveBeenCalledTimes(1)
+  await expect(onHeldSubmit).toHaveBeenLastCalledWith('Sent now')
+}
+
+/** `sendDisabled`: Send is off while an upload is pending; the default leaves it on. */
+export const SendDisabledDark: StoryObj<typeof meta> = { render: () => <SendStates />, globals: { mode: 'dark' }, play: sendStatesPlay }
+export const SendDisabledLight: StoryObj<typeof meta> = { render: () => <SendStates />, globals: { mode: 'light' }, play: sendStatesPlay }
+
+// Files from outside the attach button: a drop on the composer and a paste into it (onAddFiles), beside a
+// composer without onAddFiles.
+const onAddFiles = fn<(files: File[]) => void>()
+const fileList = (...names: readonly string[]) => {
+  const data = new DataTransfer()
+  for (const name of names) data.items.add(new File(['x'], name, { type: name.endsWith('.png') ? 'image/png' : 'text/plain' }))
+  return data
+}
+const textOnly = () => {
+  const data = new DataTransfer()
+  data.setData('text/plain', 'a dragged line')
+  return data
+}
+/** Sends a drag event of `type` with `data` to `target`; true when no handler prevented its default. */
+const drag = (target: Element, type: 'dragenter' | 'dragover' | 'dragleave' | 'drop', data: DataTransfer) =>
+  target.dispatchEvent(new DragEvent(type, { dataTransfer: data, bubbles: true, cancelable: true }))
+const addedNames = () => onAddFiles.mock.lastCall?.[0].map((file) => file.name)
+
+function FileDrop() {
+  return (
+    <main className={page}>
+      <Stack gap="16">
+        <Composer label="Drop" onAddFiles={onAddFiles} onAttach={() => undefined} attachments={files} onRemoveAttachment={() => undefined} />
+        <Composer label="No drop" onAttach={() => undefined} />
+      </Stack>
+      {swatchRow}
+    </main>
+  )
+}
+
+const fileDropPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onAddFiles.mockClear()
+  const box = composerOf(canvasElement, 'Drop')
+  const field = within(box).getByRole('textbox', { name: 'Drop' })
+  // A drop of files calls onAddFiles with them, and takes the browser's default (opening the file) away.
+  const two = fileList('trace.zip', 'screen.png')
+  drag(box, 'dragenter', two)
+  await expect(drag(field, 'dragover', two)).toBe(false)
+  await expect(drag(field, 'drop', two)).toBe(false)
+  await expect(onAddFiles).toHaveBeenCalledTimes(1)
+  await expect(addedNames()).toEqual(['trace.zip', 'screen.png'])
+  await expect(box).not.toHaveAttribute('data-drop-target')
+  // A drag of text is not a file drop: no drop state, its default kept, and no call.
+  await expect(drag(box, 'dragenter', textOnly())).toBe(true)
+  await expect(box).not.toHaveAttribute('data-drop-target')
+  await expect(drag(box, 'drop', textOnly())).toBe(true)
+  await expect(onAddFiles).toHaveBeenCalledTimes(1)
+  // A paste of files (a screenshot) calls onAddFiles and pastes no text.
+  await userEvent.click(field)
+  await userEvent.paste(fileList('Screenshot 2026-11-20.png'))
+  await expect(onAddFiles).toHaveBeenCalledTimes(2)
+  await expect(addedNames()).toEqual(['Screenshot 2026-11-20.png'])
+  await expect(field).toHaveValue('')
+  // A paste of text pastes the text and calls nothing.
+  await userEvent.paste('Pasted words')
+  await expect(field).toHaveValue('Pasted words')
+  await expect(onAddFiles).toHaveBeenCalledTimes(2)
+  // Without onAddFiles nothing changes: a file over it draws no drop state, and a drop or a paste keeps its default.
+  const plain = composerOf(canvasElement, 'No drop')
+  const plainField = within(plain).getByRole('textbox', { name: 'No drop' })
+  const one = fileList('trace.zip')
+  drag(plain, 'dragenter', one)
+  await expect(plain).not.toHaveAttribute('data-drop-target')
+  await expect(drag(plainField, 'dragover', one)).toBe(true)
+  await expect(drag(plainField, 'drop', one)).toBe(true)
+  await expect(plainField.dispatchEvent(new ClipboardEvent('paste', { clipboardData: fileList('a.png'), bubbles: true, cancelable: true }))).toBe(true)
+  await expect(onAddFiles).toHaveBeenCalledTimes(2)
+}
+
+/** `onAddFiles`: a drop of files and a paste of files call it; dragged text and pasted text work as before. */
+export const AddFilesDark: StoryObj<typeof meta> = { render: () => <FileDrop />, globals: { mode: 'dark' }, play: fileDropPlay }
+export const AddFilesLight: StoryObj<typeof meta> = { render: () => <FileDrop />, globals: { mode: 'light' }, play: fileDropPlay }
+
+const dropStatePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const box = composerOf(canvasElement, 'Drop')
+  const field = within(box).getByRole('textbox', { name: 'Drop' })
+  const one = fileList('trace.zip')
+  await expect(getComputedStyle(box).borderTopStyle).toBe('solid')
+  // A file over the composer dashes its border in border.active, also while the text has the focus; moving from
+  // the box onto the text inside keeps it, and leaving the box ends it.
+  field.focus()
+  drag(box, 'dragenter', one)
+  drag(field, 'dragenter', one)
+  drag(box, 'dragleave', one)
+  await waitFor(() => expect(box).toHaveAttribute('data-drop-target'))
+  await expect(getComputedStyle(box).borderTopStyle).toBe('dashed')
+  await expect(getComputedStyle(box).borderTopColor).toBe(swatch(canvasElement, 'active'))
+  drag(field, 'dragleave', one)
+  await waitFor(() => expect(box).not.toHaveAttribute('data-drop-target'))
+  await expect(getComputedStyle(box).borderTopStyle).toBe('solid')
+  field.blur()
+  // Leave a file over it, so the story shows the drop state.
+  drag(box, 'dragenter', one)
+  await waitFor(() => expect(getComputedStyle(box).borderTopStyle).toBe('dashed'))
+}
+
+/** The drop state: a file dragged over a composer with `onAddFiles`. */
+export const DropStateDark: StoryObj<typeof meta> = { render: () => <FileDrop />, globals: { mode: 'dark' }, play: dropStatePlay }
+export const DropStateLight: StoryObj<typeof meta> = { render: () => <FileDrop />, globals: { mode: 'light' }, play: dropStatePlay }
+
+// Many chips on a phone (390 wide, the chat padded 16): a long name is cut, the chips stop at two and a half
+// rows and scroll inside, and Send stays in view.
+const manyUploads: readonly ComposerAttachment[] = [
+  { id: 'long', name: longFile, status: 'uploading', progress: 0.3 },
+  ...Array.from({ length: 13 }, (_, i): ComposerAttachment => ({ id: `f${String(i)}`, name: `photo-${String(i + 1)}.heic`, status: i === 2 ? 'failed' : 'ready' })),
+]
+
+const manyChipsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(390)
+  await document.fonts.ready
+  const box = composerOf(canvasElement, 'Chat')
+  const list = box.querySelector('.composer__attachments')
+  if (!(list instanceof HTMLElement)) throw new Error('no chip list')
+  // The chips scroll inside a box of two and a half rows (70), with no scroll bar, in the page's flow.
+  await expectScrollAreas(box, 'none', '.composer__attachments')
+  await expect(rect(list).height).toBe(70)
+  await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight)
+  // A list that scrolls is a named tab stop, so the keyboard can scroll it; a short one is not.
+  await waitFor(() => expect(list).toHaveAttribute('tabindex', '0'))
+  await expect(list).toHaveAccessibleName('Attached files')
+  // Send and the composer stay inside the 390 px window.
+  const send = within(box).getByRole('button', { name: 'Send' })
+  await expect(rect(box).right).toBeLessThanOrEqual(390)
+  await expect(rect(send).right).toBeLessThanOrEqual(rect(box).right)
+  await expect(rect(send).bottom).toBeLessThanOrEqual(window.innerHeight)
+  // The long name is cut with an ellipsis and its chip stays inside the composer.
+  const long = chipOf(box, longFile)
+  await expect(rect(long).right).toBeLessThanOrEqual(rect(list).right)
+  const name = long.querySelector('.composer__attachmentName')
+  if (name === null) throw new Error('no long name')
+  await expectCutText(name, longFile)
+  // Tab reaches the last chip's remove button, and the list scrolls it into view.
+  const last = within(box).getByRole('button', { name: 'Remove photo-13.heic' })
+  within(box).getByRole('button', { name: `Remove ${longFile}` }).focus()
+  while (document.activeElement !== last) {
+    await userEvent.tab()
+    if (!list.contains(document.activeElement)) throw new Error('Tab left the chips')
+  }
+  await waitFor(() => expect(list.scrollTop).toBeGreaterThan(0))
+  await expect(rect(last).bottom).toBeLessThanOrEqual(rect(list).bottom + 1)
+}
+
+const manyChipsStory = (mode: 'dark' | 'light'): StoryObj<typeof meta> => ({
+  render: () => (
+    <div className={skillScreen}>
+      <main className={skillChatPhone}>
+        <Composer
+          label="Chat"
+          running
+          attachments={manyUploads}
+          onRemoveAttachment={() => undefined}
+          onRetryAttachment={() => undefined}
+          onAttach={() => undefined}
+          onAddFiles={() => undefined}
+          model={<ModelChip model="Opus 5.5" options={[]} />}
+        />
+      </main>
+    </div>
+  ),
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode, viewport: { value: 'phone' } },
+  play: manyChipsPlay,
+})
+
+/** Fourteen chips at 390 px: a long name is cut, the chips scroll inside the composer, and Send stays in view. */
+export const ManyAttachmentsPhoneDark = manyChipsStory('dark')
+export const ManyAttachmentsPhoneLight = manyChipsStory('light')

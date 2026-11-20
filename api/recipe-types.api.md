@@ -265,7 +265,7 @@ export type ComposerVariantProps = {
 
 export type ComposerVariantMap = RecipeVariantMap<ComposerVariant>
 
-export type ComposerSlot = "root" | "row" | "text" | "model" | "attachment" | "attachmentIcon" | "attachmentName" | "attachmentRemove"
+export type ComposerSlot = "root" | "row" | "text" | "model" | "attachments" | "attachment" | "attachmentIcon" | "attachmentName" | "attachmentRemove" | "attachmentRetry" | "attachmentProgress" | "attachmentProgressFill"
 
 export type ComposerRecipe = ConfigSlotRecipeRuntimeFn<ComposerSlot, ComposerVariantProps, ComposerVariantMap>
 

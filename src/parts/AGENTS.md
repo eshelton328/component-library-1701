@@ -9,5 +9,11 @@ under their purpose group, never under "Parts" (d-065).
   the composer calls `onSubmit` or `onSend` and sends nothing (d-068, d-069).
 - With `onSend`, the composer keeps the draft until the send succeeds
   (`SendResult` stories in `composer.stories.tsx`).
+- The composer uploads nothing: `onAddFiles` hands dropped or pasted
+  files to the page, and the page shows each upload through an
+  attachment's `status` and `progress` (`AttachmentStates` and `AddFiles`
+  stories). A story that drops or pastes sends a `DragEvent` or
+  `userEvent.paste` with a `DataTransfer`, and waits for the drop state:
+  React renders a drag's state change after the event returns.
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.

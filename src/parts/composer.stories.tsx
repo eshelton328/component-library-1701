@@ -821,7 +821,7 @@ export const SkillPickerTouchDark: StoryObj<typeof meta> = {
     await expect(Math.round(fine.text.getBoundingClientRect().height)).toBe(Math.round(fine.line))
   },
 }
-export const SkillPickerTouchLight: StoryObj<typeof meta> = { ...SkillPickerTouchDark, globals: { mode: 'light', viewport: { value: 'phone' } } }
+export const SkillPickerTouchLight: StoryObj<typeof meta> = { tags: ['!dev'], ...SkillPickerTouchDark, globals: { mode: 'light', viewport: { value: 'phone' } } }
 
 const onIconAttach = fn()
 

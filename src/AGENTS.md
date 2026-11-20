@@ -38,6 +38,9 @@ you add a file. `theme/` is not a tier.
 - A story that changes a DevTools emulation or puts its own `window` or
   `navigator` property adds it to `.storybook/story-reset.ts`, which puts
   it back before each story test, also after a timeout.
+- Write a story's `tags` as a literal on its own object: Storybook reads
+  tags without running the file, so a spread or a helper loses `!dev`
+  (`pnpm check:story-tags`, review of #296).
 - A play that moves a fake `visualViewport` takes it from `viewportPlay`,
   never from the global, so a play that timed out cannot move the next
   story's viewport (Keyboard Light, `expected 1654 to be 810`).

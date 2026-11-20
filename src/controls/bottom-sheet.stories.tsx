@@ -716,7 +716,7 @@ export const MouseDragDark: StoryObj<typeof meta> = {
   play: promptDragPlay,
   globals: { mode: 'dark' },
 }
-export const MouseDragLight: StoryObj<typeof meta> = { ...MouseDragDark, globals: { mode: 'light' } }
+export const MouseDragLight: StoryObj<typeof meta> = { tags: ['!dev'], ...MouseDragDark, globals: { mode: 'light' } }
 
 /** Swipe down to close: a short drag springs back, a long drag or a flick closes, a drag in scrolled content scrolls it. */
 export const SwipeDark: StoryObj<typeof meta> = { render: () => <SwipeSheet />, play: swipePlay, globals: { mode: 'dark' } }

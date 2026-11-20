@@ -172,7 +172,7 @@ export const InsetDark: StoryObj<typeof meta> = {
   },
   play: insetPlay(48),
 }
-export const InsetLight: StoryObj<typeof meta> = { ...InsetDark, globals: { mode: 'light', viewport: { value: 'm390' } } }
+export const InsetLight: StoryObj<typeof meta> = { tags: ['!dev'], ...InsetDark, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // A stand-in for window.visualViewport that the play test moves as iOS Safari does: the layout keeps its 844 and only
 // the visual viewport shrinks, for the keyboard or for the browser's bars (as in the AppShell stories).

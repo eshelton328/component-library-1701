@@ -195,6 +195,8 @@ jobs:
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm check:cycles
       - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm test:story-tags
+      - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm check:agents-md
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm check:ci
@@ -238,6 +240,8 @@ jobs:
         run: pnpm codegen
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm test
+      - if: steps.reuse.outputs.reuse != 'true'
+        run: pnpm check:story-tags
 
   build:
     runs-on: ubuntu-24.04

@@ -26,7 +26,7 @@
     "test": "vitest run --project=storybook --passWithNoTests",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm test:figma && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test:cycles && pnpm check:cycles && pnpm check:agents-md && pnpm test && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
+    "verify": "pnpm tokens:check && pnpm test:tokens && pnpm test:figma && pnpm codegen && pnpm typecheck && pnpm lint && pnpm test:hooks && pnpm checks && pnpm test:cycles && pnpm check:cycles && pnpm check:agents-md && pnpm test:story-tags && pnpm test && pnpm check:story-tags && pnpm check:api && pnpm test:release && pnpm check:pack && pnpm check:ci",
     "test:hooks": "node scripts/agent-hooks/test.ts",
     "tokens": "node tokens/build.ts",
     "tokens:check": "node tokens/build.ts --check",
@@ -46,6 +46,8 @@
     "check:release-api": "node scripts/check-release-api.ts",
     "check:release-registry": "node scripts/check-release-registry.ts",
     "check:cycles": "node scripts/check-cycles.ts",
+    "check:story-tags": "node scripts/check-story-tags.ts",
+    "test:story-tags": "node --test scripts/story-tags-lib.test.ts",
     "test:cycles": "node --test scripts/cycles.test.ts",
     "build:components": "node scripts/build-components.ts"
   },

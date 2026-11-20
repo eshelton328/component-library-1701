@@ -110,8 +110,8 @@ const scrolls: StoryObj<typeof meta> = {
     await expectScrollsByWheelAndKeys(within(canvasElement).getByRole('main'))
   },
 }
-export const ScrollsDark: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'dark' } }
-export const ScrollsLight: StoryObj<typeof meta> = { ...scrolls, globals: { mode: 'light' } }
+export const ScrollsDark: StoryObj<typeof meta> = { tags: ['!dev'], ...scrolls, globals: { mode: 'dark' } }
+export const ScrollsLight: StoryObj<typeof meta> = { tags: ['!dev'], ...scrolls, globals: { mode: 'light' } }
 
 /** The Workbench widths: the 330 sidebar and the 420 subagents pane; a slot left out takes no room. */
 export const Widths: StoryObj<typeof meta> = {

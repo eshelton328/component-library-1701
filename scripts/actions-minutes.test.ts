@@ -9,7 +9,11 @@
 // counted again is missing, and a workflow name with " / " stays whole.
 // The workflow now counts the month to date in USD, so the tests pass it a
 // fixed --today and use its monthly issue title, and a fake curl answers
-// its GitHub Packages storage count.
+// its GitHub Packages storage count. The last tests check the three fixes
+// from the Codex review of the-bridge #262 (brain dc3ae99): ubuntu-N-arm
+// and macos-N-intel runners get their own prices, a registry error at an
+// alert level is written into the issue, and a failed alert comment is
+// sent again by the next run.
 // Run with `pnpm test:release`; it needs bash and python3.
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -48,10 +52,13 @@ function stepScript(): string {
 
 // A fake gh: the runs, jobs and issues API of one repository, from
 // data.json, with the issues kept in state.json. A runs query for a day in
-// "fail_days" answers HTTP 403.
+// "fail_days" answers HTTP 403, and with FAKE_FAIL_COMMENT set an issue
+// comment answers HTTP 422.
 // A fake curl for the GitHub Packages registry: one package version of
 // 1,000 bytes, so the storage count never calls the real registry.
+// With FAKE_CURL_FAIL set, it fails as curl -f does on an HTTP error.
 const fakeCurl = `#!/usr/bin/env bash
+if [ -n "$FAKE_CURL_FAIL" ]; then exit 22; fi
 for a in "$@"; do
   if [ "$a" = -D ]; then printf 'HTTP/2 206\\r\\ncontent-range: bytes 0-0/1000\\r\\n\\r\\n'; exit 0; fi
 done
@@ -99,6 +106,8 @@ if rest == "issues" and method == "POST":
 k = re.fullmatch(r"issues/(\\d+)(/comments)?", rest)
 it = next(x for x in issues if x["number"] == int(k[1]))
 if k[2]:
+    if os.environ.get("FAKE_FAIL_COMMENT"):
+        sys.stderr.write("gh: Validation Failed (HTTP 422)\\n"); sys.exit(1)
     it["comments"].append(body["body"]); save(); out({})
 it.update(body); save(); out(it)
 `
@@ -134,12 +143,12 @@ function day(n: number): string {
   return d.toISOString().slice(0, 10)
 }
 
-function job(on: string, attempt: number, minutes: number): Job {
+function job(on: string, attempt: number, minutes: number, labels: string[] = ['ubuntu-24.04']): Job {
   const start = new Date(`${on}T10:00:00Z`)
   const end = new Date(start.getTime() + minutes * 60_000)
   const iso = (t: Date) => t.toISOString().replace(/\.\d{3}Z$/, 'Z')
   return { name: 'test', status: 'completed', conclusion: 'success', run_attempt: attempt,
-    labels: ['ubuntu-24.04'], started_at: iso(start), completed_at: iso(end) }
+    labels, started_at: iso(start), completed_at: iso(end) }
 }
 
 function openIssue(n: number, issueTitle: string): Issue {
@@ -165,14 +174,16 @@ function sandbox(data: Data, issues: Issue[]) {
   const write = (d: Data) => { writeFileSync(join(dir, 'data.json'), JSON.stringify(d)) }
   write(data)
   writeFileSync(join(dir, 'state.json'), JSON.stringify({ issues }))
-  const run = (): Record<string, unknown> => {
+  // env adds variables for the fake gh and curl; status is the exit code
+  // the step must give.
+  const run = (env: Record<string, string> = {}, status = 0): Record<string, unknown> => {
     const p = spawnSync('bash', ['-e', join(dir, 'step.sh')], {
       cwd: dir,
       encoding: 'utf8',
       env: { ...process.env, PATH: `${bin}:${process.env['PATH'] ?? ''}`, FAKE_DIR: dir,
-        RUNNER_TEMP: dir, GITHUB_REPOSITORY: repo, GH_TOKEN: 'fake' },
+        RUNNER_TEMP: dir, GITHUB_REPOSITORY: repo, GH_TOKEN: 'fake', ...env },
     })
-    assert.equal(p.status, 0, `the step failed:\n${p.stdout}\n${p.stderr}`)
+    assert.equal(p.status, status, `the step failed:\n${p.stdout}\n${p.stderr}`)
     const result: unknown = JSON.parse(p.stdout)
     if (!isRecord(result)) throw new Error(`the step printed no JSON object: ${p.stdout}`)
     // today is a past day, so the real clock is always later: a run that
@@ -296,4 +307,56 @@ void test('the alert issue is found and closed when 100 newer issues are open', 
   const result = box.run()
   assert.equal(result['partial'], false)
   assert.equal(box.issue(1)['state'], 'closed')
+})
+
+// The runs of one day, each with one job of the given minutes and runner label.
+function spend(on: string, jobs: [number, string][]): Data {
+  const runs: Data['runs'] = []
+  const byRun: Data['jobs'] = {}
+  jobs.forEach(([minutes, label], i) => {
+    runs.push({ id: i + 1, name: 'ci', status: 'completed', created_at: `${on}T10:00:00Z`, run_attempt: 1 })
+    byRun[String(i + 1)] = [job(on, 1, minutes, [label])]
+  })
+  return { runs, jobs: byRun, fail_days: [] }
+}
+
+function issueAction(result: Record<string, unknown>): unknown {
+  const issue = result['issue']
+  return isRecord(issue) ? issue['action'] : undefined
+}
+
+void test('ubuntu-N-arm runners cost the Linux arm64 price and macos-N-intel runners the macOS price', () => {
+  // 1,000 arm minutes at $0.005 and 100 Intel macOS minutes at $0.062: $11.20.
+  // The x64 Linux price for both gave $6.60 and left macos-15-intel unpriced.
+  const d = day(3)
+  const result = sandbox(spend(d, [[1000, 'ubuntu-24.04-arm'], [100, 'macos-15-intel']]), []).run()
+  const repos = result['repos']
+  const mine = isRecord(repos) ? repos[repo] : undefined
+  const usdDays = isRecord(mine) ? mine['usd_days'] : undefined
+  assert.equal(isRecord(usdDays) ? usdDays[d] : undefined, 11.2)
+  assert.deepEqual(isRecord(mine) ? mine['unpriced'] : undefined, [])
+})
+
+void test('a registry error at an alert level opens the issue and writes the error into it', () => {
+  // $72 is over 50 % of this repository's part of the budget, $140.40.
+  const box = sandbox(spend(day(3), [[12000, 'ubuntu-24.04']]), [])
+  const result = box.run({ FAKE_CURL_FAIL: '1' })
+  assert.equal(issueAction(result), 'opened')
+  const body = box.issue(1)['body']
+  assert.ok(typeof body === 'string' && body.includes('was not counted'), String(body))
+})
+
+void test('an alert comment that failed is sent again by the next run', () => {
+  // $120 is over 80 % of $140.40; the open issue recorded the 50 % level.
+  const box = sandbox(spend(day(3), [[20000, 'ubuntu-24.04']]),
+    [{ ...openIssue(1, title), body: '<!-- actions-minutes level=50 -->' }])
+  box.run({ FAKE_FAIL_COMMENT: '1' }, 3)
+  assert.deepEqual(box.issue(1)['comments'], [])
+  assert.equal(box.issue(1)['body'], '<!-- actions-minutes level=50 -->')
+  const result = box.run()
+  assert.equal(issueAction(result), 'raised')
+  const comments = box.issue(1)['comments']
+  assert.ok(Array.isArray(comments) && comments.length === 1, JSON.stringify(comments))
+  const body = box.issue(1)['body']
+  assert.ok(typeof body === 'string' && body.includes('level=80'), String(body))
 })

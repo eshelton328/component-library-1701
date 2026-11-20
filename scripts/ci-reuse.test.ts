@@ -87,13 +87,21 @@ void test('the reused jobs run only pnpm commands after the reuse step, so verif
 void test('the worktree job runs pnpm verify with the same setup, and reports whether it ran', () => {
   const w = jobOf(ci, 'worktree')
   assert.equal(w.outputs['ran'], '${{ steps.paths.outputs.run }}')
-  assert.equal(w.timeout, 30)
   const setup = w.steps.find((s) => s['uses'] === './.github/actions/setup')
   const withs = setup?.['with']
   assert.equal(isRecord(withs) ? withs['browser'] : undefined, 'true')
   assert.ok(w.steps.some((s) => str(s['run'])?.trim() === 'pnpm check:worktree'))
   const script = readFileSync(join(root, 'scripts/check-worktree.ts'), 'utf8')
   assert.match(script, /\['pnpm verify', \['verify'\]\]/)
+})
+
+void test('a hang in the worktree job ends the run and shows where it stopped (beta run 44638994455)', () => {
+  assert.equal(jobOf(ci, 'worktree').timeout, 25)
+  const script = readFileSync(join(root, 'scripts/check-worktree.ts'), 'utf8')
+  assert.match(script, /detached: true/)
+  assert.match(script, /process\.kill\(-child\.pid, 'SIGTERM'\)/)
+  assert.match(script, /lineWriter\(/)
+  assert.match(script, /::group::/)
 })
 
 void test('each reused job waits for worktree and skips its steps only on reuse', () => {

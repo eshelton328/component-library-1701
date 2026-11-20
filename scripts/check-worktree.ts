@@ -5,9 +5,11 @@
 // passes only in the main checkout does not count. CI runs it on each PR;
 // it is not part of pnpm verify, which it runs.
 //   node scripts/check-worktree.ts
-// Each step's output is printed line by line as it runs, with the step name
-// as a prefix, so the log of a step that hangs ends at its last line. The
-// summary at the end repeats the last lines of a failed step.
+// Each step's output is printed line by line as it runs, in a ::group:: per
+// step and with the step name as a prefix, so the log of a step that hangs
+// ends at its last line. The summary at the end repeats the last lines of a
+// failed step. Each step leads its own process group, so a signal stops
+// every process the step started, not only pnpm.
 // The worktree is removed on success, on failure and on SIGINT or SIGTERM,
 // and a failed removal fails the check.
 import { spawn, spawnSync } from 'node:child_process'
@@ -30,8 +32,9 @@ const step = (name: string, cmd: string, args: string[], cwd: string) =>
     let out = ''
     const print = (line: string) => { process.stdout.write(line) }
     const writers = [lineWriter(`[${name}] `, print), lineWriter(`[${name}] `, print)] as const
+    console.log(`::group::${name}`)
     console.log(`[${name}] $ ${[cmd, ...args].join(' ')}`)
-    child = spawn(cmd, args, { cwd, env: { ...process.env, CI: process.env['CI'] ?? '1' } })
+    child = spawn(cmd, args, { cwd, detached: true, env: { ...process.env, CI: process.env['CI'] ?? '1' } })
     const keep = (writer: (typeof writers)[number]) => (b: Buffer) => {
       const text = b.toString()
       out = (out + text).slice(-20000)
@@ -39,10 +42,11 @@ const step = (name: string, cmd: string, args: string[], cwd: string) =>
     }
     child.stdout?.on('data', keep(writers[0]))
     child.stderr?.on('data', keep(writers[1]))
-    child.on('error', (e) => { done({ name, ok: false, tail: e.message }) })
+    child.on('error', (e) => { console.log('::endgroup::'); done({ name, ok: false, tail: e.message }) })
     child.on('close', (code) => {
       child = undefined
       for (const w of writers) w.flush()
+      console.log('::endgroup::')
       done({ name, ok: code === 0, tail: tailOf(out) })
     })
   })
@@ -60,7 +64,11 @@ const cleanup = (): Step => {
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
-    child?.kill('SIGTERM')
+    // detached: the step leads its own process group, so -pid reaches every
+    // process that pnpm started.
+    if (child?.pid !== undefined) {
+      try { process.kill(-child.pid, 'SIGTERM') } catch { child.kill('SIGTERM') }
+    }
     const removed = cleanup()
     console.log(JSON.stringify({ ok: false, worktree: dir, interrupted: signal, cleanup: removed }, null, 1))
     process.exit(signal === 'SIGINT' ? 130 : 143)

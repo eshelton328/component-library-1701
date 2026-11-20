@@ -2,6 +2,7 @@ import type { Decorator, Preview } from '@storybook/react-vite'
 import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import '../src/index.css'
+import { resetStoryState } from './story-reset.ts'
 
 // The theme and mode the toolbar picks. Panda reads `data-panda-theme` for
 // the theme and the `dark` class for the mode. A story can fix either one
@@ -15,6 +16,8 @@ const withThemeAndMode: Decorator = (Story, { globals }) => {
 
 const preview: Preview = {
   decorators: [withThemeAndMode],
+  // Each story test starts from the browser's own state, also after a story that timed out (story-reset.ts).
+  beforeEach: resetStoryState,
   globalTypes: {
     theme: {
       description: 'Theme',

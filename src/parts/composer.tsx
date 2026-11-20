@@ -1,7 +1,7 @@
-import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { composer } from '../../styled-system/recipes'
-import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon } from '../foundations/icons'
+import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon, WarningIcon } from '../foundations/icons'
 import { Button } from '../controls/button'
 import { Inline } from '../controls/layout'
 import { TextArea } from '../controls/text-field'
@@ -12,17 +12,76 @@ const Root = withProvider('div', 'root')
 const Row = withContext('div', 'row')
 const Text = withContext('div', 'text')
 const Model = withContext('div', 'model')
+const Attachments = withContext('div', 'attachments')
 const Attachment = withContext('span', 'attachment')
 const AttachmentIcon = withContext('span', 'attachmentIcon')
 const AttachmentName = withContext('span', 'attachmentName')
 const AttachmentRemove = withContext('button', 'attachmentRemove')
+const AttachmentRetry = withContext('button', 'attachmentRetry')
+const AttachmentProgress = withContext('span', 'attachmentProgress')
+const AttachmentProgressFill = withContext('span', 'attachmentProgressFill')
+
+/** Where an attached file is: on its way up, ready to send, or failed. */
+export type ComposerAttachmentStatus = 'uploading' | 'ready' | 'failed'
+
+/** The share of an upload done, 0 to 1, as a whole per cent from 0 to 100. */
+function percentOf(progress: number | undefined): number | undefined {
+  if (progress === undefined || !Number.isFinite(progress)) return undefined
+  return Math.round(Math.min(1, Math.max(0, progress)) * 100)
+}
+
+/**
+ * Whether the chip list scrolls: its chips are taller than the box. It
+ * updates when the box or a chip changes size, and when the number of chips
+ * changes. One pixel of slack, for a zoomed page.
+ */
+function useScrollsY<T extends HTMLElement>(count: number) {
+  const ref = useRef<T>(null)
+  const [scrolls, setScrolls] = useState(false)
+  useLayoutEffect(() => {
+    const box = ref.current
+    if (box === null) return
+    const update = () => {
+      setScrolls(box.scrollHeight - box.clientHeight > 1)
+    }
+    update()
+    const sizes = new ResizeObserver(update)
+    sizes.observe(box)
+    for (const chip of Array.from(box.children)) sizes.observe(chip)
+    return () => {
+      sizes.disconnect()
+    }
+  }, [count])
+  return [ref, scrolls] as const
+}
+
+/** Whether a drag carries files from outside the page, such as from Finder or the Files app. */
+function carriesFiles(event: DragEvent<HTMLElement>): boolean {
+  return Array.from(event.dataTransfer.types).includes('Files')
+}
 
 /** A file attached to the message. */
 export type ComposerAttachment = {
   /** A key the composer passes back to `onRemoveAttachment`. */
   id: string
-  /** The file name the chip shows, such as "requirements.md". */
+  /** The file name the chip shows, such as "requirements.md". A long name is cut with an ellipsis and shown whole in a tooltip. */
   name: string
+  /**
+   * `ready` (the default) draws the chip as it was: a paperclip, the name
+   * and the remove button. `uploading` adds a thin progress bar along the
+   * chip's foot (`role="progressbar"`, named "Uploading <name>"), filled to
+   * `progress`. `failed` draws a warning sign and a `status.danger` border,
+   * and a Retry button when the composer has `onRetryAttachment`. Every
+   * state keeps the remove button.
+   */
+  status?: ComposerAttachmentStatus | undefined
+  /**
+   * How much of an `uploading` file is sent, from 0 to 1, such as 0.3. The
+   * bar's `aria-valuenow` is the whole per cent (30). Without it the bar is
+   * empty and has no value, for an upload whose size is not known yet.
+   * Other states ignore it.
+   */
+  progress?: number | undefined
 }
 
 export type ComposerProps = {
@@ -57,12 +116,33 @@ export type ComposerProps = {
   running?: boolean | undefined
   /** Called when the user presses Stop. */
   onStop?: (() => void) | undefined
+  /**
+   * Turns Send off while true, as `aria-disabled` is not enough for a
+   * keyboard user: the send button is disabled and Enter sends nothing. The
+   * text stays editable. Use it for a text the page will not send, such as
+   * one over the server's limit, or while an attachment uploads. The
+   * default, false, leaves Send as it was.
+   */
+  sendDisabled?: boolean | undefined
   /** The files attached to the message, shown above the text. */
   attachments?: readonly ComposerAttachment[] | undefined
   /** Called with the `id` of the attachment whose remove button the user presses. Without it, attachments have no remove button. */
   onRemoveAttachment?: ((id: string) => void) | undefined
+  /** Called with the `id` of a `failed` attachment whose Retry button the user presses. Without it, a failed chip has no Retry button. */
+  onRetryAttachment?: ((id: string) => void) | undefined
   /** Called when the user presses the attach button. Without it, there is no attach button. */
   onAttach?: (() => void) | undefined
+  /**
+   * Called with the files the user drops on the composer or pastes into it,
+   * such as a screenshot. With it, the whole composer is a drop target for
+   * files (not for dragged text or links): while a file is over it, its
+   * border is dashed in `border.active`. A paste that carries files calls it
+   * in place of pasting; a paste of only text pastes the text. The composer
+   * uploads nothing: add the files to `attachments`. Set `onAttach` too, so
+   * a keyboard or screen reader user can add a file without a drag. Without
+   * it, a drop or a paste works as before; `disabled` turns it off.
+   */
+  onAddFiles?: ((files: File[]) => void) | undefined
   /**
    * The glyph of the attach button. Without it, the button draws a 16 px
    * paperclip (`<ClipIcon size="16" />`). The button keeps the `size` the
@@ -119,6 +199,13 @@ export type ComposerProps = {
  * (d-068, d-069). A long draft grows the composer to at most 30% of the
  * nearest size container (or of the window), and the text scrolls inside
  * past that; at rest it keeps its full height in any frame.
+ *
+ * An attachment shows where its upload is (`status`, `progress`), and a
+ * failed one a Retry button (`onRetryAttachment`). Many chips wrap and
+ * scroll inside the composer past two and a half rows, so Send stays in
+ * view on a phone. `sendDisabled` turns Send off, such as while a file
+ * uploads, and `onAddFiles` takes files dropped on the composer or pasted
+ * into it.
  */
 export function Composer({
   label = 'Message',
@@ -130,9 +217,12 @@ export function Composer({
   onSend,
   running = false,
   onStop,
+  sendDisabled = false,
   attachments = [],
   onRemoveAttachment,
+  onRetryAttachment,
   onAttach,
+  onAddFiles,
   attachIcon,
   attachLabel = 'Attach a file',
   sendIconSize = '16',
@@ -144,6 +234,11 @@ export function Composer({
 }: ComposerProps) {
   const [draft, setDraft] = useState(defaultValue ?? '')
   const [sending, setSending] = useState(false)
+  // A file dragged over the composer, and how many of its elements the drag has entered, so a move from one
+  // child to the next does not end the drop state.
+  const [fileOver, setFileOver] = useState(false)
+  const dragDepth = useRef(0)
+  const [listRef, listScrolls] = useScrollsY<HTMLDivElement>(attachments.length)
   const text = value ?? draft
   // The draft as typed now, for a send that ends after the user typed on.
   const latest = useRef(defaultValue ?? '')
@@ -156,7 +251,7 @@ export function Composer({
     if (value === undefined && latest.current === submitted) change('')
   }
   const submit = () => {
-    if (disabled || sending || text.trim() === '') return
+    if (disabled || sending || sendDisabled || text.trim() === '') return
     if (onSend === undefined) {
       onSubmit?.(text)
       if (value === undefined) change('')
@@ -188,34 +283,109 @@ export function Composer({
     event.preventDefault()
     submit()
   }
+  const takesFiles = onAddFiles !== undefined && !disabled
+  const fileDrop = takesFiles
+    ? {
+        onDragEnter: (event: DragEvent<HTMLDivElement>) => {
+          if (!carriesFiles(event)) return
+          event.preventDefault()
+          dragDepth.current += 1
+          setFileOver(true)
+        },
+        onDragOver: (event: DragEvent<HTMLDivElement>) => {
+          if (!carriesFiles(event)) return
+          event.preventDefault()
+          event.dataTransfer.dropEffect = 'copy'
+        },
+        onDragLeave: (event: DragEvent<HTMLDivElement>) => {
+          if (!carriesFiles(event)) return
+          dragDepth.current = Math.max(0, dragDepth.current - 1)
+          if (dragDepth.current === 0) setFileOver(false)
+        },
+        onDrop: (event: DragEvent<HTMLDivElement>) => {
+          if (!carriesFiles(event)) return
+          event.preventDefault()
+          dragDepth.current = 0
+          setFileOver(false)
+          const files = Array.from(event.dataTransfer.files)
+          if (files.length > 0) onAddFiles(files)
+        },
+        onPaste: (event: ClipboardEvent<HTMLDivElement>) => {
+          const files = Array.from(event.clipboardData.files)
+          if (files.length === 0) return
+          event.preventDefault()
+          onAddFiles(files)
+        },
+        'data-drop-target': fileOver ? '' : undefined,
+      }
+    : {}
   const inline = layout === 'inline'
   const buttonSize = inline ? 'xs' : 'sm'
   const chips =
     attachments.length === 0 ? null : (
-      <Inline gap="6" wrap>
-        {attachments.map((file) => (
-          <Attachment key={file.id}>
-            <AttachmentIcon aria-hidden="true">
-              <ClipIcon size="12" />
-            </AttachmentIcon>
-            <AttachmentName>
-              <TruncatedText>{file.name}</TruncatedText>
-            </AttachmentName>
-            {onRemoveAttachment === undefined ? null : (
-              <AttachmentRemove
-                type="button"
-                aria-label={`Remove ${file.name}`}
-                disabled={disabled ? true : undefined}
-                onClick={() => {
-                  onRemoveAttachment(file.id)
-                }}
-              >
-                <CloseIcon size="12" />
-              </AttachmentRemove>
-            )}
-          </Attachment>
-        ))}
-      </Inline>
+      // A list that scrolls takes the focus, so the keyboard can scroll it (axe scrollable-region-focusable).
+      <Attachments ref={listRef} role="group" aria-label="Attached files" tabIndex={listScrolls ? 0 : undefined}>
+        {attachments.map((file) => {
+          const status = file.status ?? 'ready'
+          const percent = percentOf(file.progress)
+          return (
+            <Attachment key={file.id} data-status={status}>
+              {status === 'failed' ? (
+                <AttachmentIcon role="img" aria-label="Upload failed">
+                  <WarningIcon size="12" />
+                </AttachmentIcon>
+              ) : (
+                <AttachmentIcon aria-hidden="true">
+                  <ClipIcon size="12" />
+                </AttachmentIcon>
+              )}
+              <AttachmentName>
+                <TruncatedText>{file.name}</TruncatedText>
+              </AttachmentName>
+              {status === 'failed' && onRetryAttachment !== undefined ? (
+                <AttachmentRetry
+                  type="button"
+                  aria-label={`Retry ${file.name}`}
+                  disabled={disabled ? true : undefined}
+                  onClick={() => {
+                    onRetryAttachment(file.id)
+                  }}
+                >
+                  Retry
+                </AttachmentRetry>
+              ) : null}
+              {onRemoveAttachment === undefined ? null : (
+                <AttachmentRemove
+                  type="button"
+                  aria-label={`Remove ${file.name}`}
+                  disabled={disabled ? true : undefined}
+                  onClick={() => {
+                    onRemoveAttachment(file.id)
+                  }}
+                >
+                  <CloseIcon size="12" />
+                </AttachmentRemove>
+              )}
+              {status === 'uploading' ? (
+                <AttachmentProgress
+                  role="progressbar"
+                  aria-label={`Uploading ${file.name}`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={percent}
+                  aria-valuetext={percent === undefined ? undefined : `${String(percent)}%`}
+                  ref={(bar: HTMLSpanElement | null) => {
+                    // The fill's width; a recipe cannot know a value that changes as the file uploads.
+                    bar?.style.setProperty('--composer-progress', String((percent ?? 0) / 100))
+                  }}
+                >
+                  <AttachmentProgressFill />
+                </AttachmentProgress>
+              ) : null}
+            </Attachment>
+          )
+        })}
+      </Attachments>
     )
   const textArea = (
     <TextArea
@@ -244,13 +414,13 @@ export function Composer({
     </Button>
   ) : null
   const send = (
-    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" keepIconSize disabled={disabled || sending} onClick={submit}>
+    <Button data-keyboard-keep="" variant="primary" size={buttonSize} iconOnly aria-label="Send" keepIconSize disabled={disabled || sending || sendDisabled} onClick={submit}>
       <ArrowUpIcon size={sendIconSize} />
     </Button>
   )
   if (inline) {
     return (
-      <Root layout="inline">
+      <Root layout="inline" {...fileDrop}>
         {chips}
         <Row>
           {attach}
@@ -263,7 +433,7 @@ export function Composer({
     )
   }
   return (
-    <Root>
+    <Root {...fileDrop}>
       {chips}
       {textArea}
       <Inline justify="between" gap="6">

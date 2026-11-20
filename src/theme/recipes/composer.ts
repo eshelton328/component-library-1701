@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { scrollAreaNested } from './scroll-area'
 
 // The chat composer of Workbench (D2 105:889, composer states 402:8809,
 // phone 402:8962, side chat 105:948): a surface.raised box with radius.xl,
@@ -24,11 +25,39 @@ import { focusRing } from './focus'
 // stacked composer does, with 2 px above and below so its first line lines
 // up with the 24 px button. The button sits at the row's end and stays at
 // the bottom as the text wraps.
+//
+// Attachment states (the-bridge W1b, uploads of any file up to 1 GB; Figma
+// draws only the ready chip, 105:890, so each state takes library tokens):
+// an `uploading` chip draws a 2 px bar (spacing.2, radius.hair) along its
+// foot, inside its 8 px side padding: the track border.default and the fill
+// accent.default, as ContextMeter draws its empty and filled segments. The
+// component sets the fill's share in --composer-progress. A `failed` chip
+// draws its border in status.danger.border and a 12 px warning sign in
+// status.danger.fg, and a Retry text button in the chip's pill style and
+// fg.accent, with the focus ring the remove button has. Many chips wrap and
+// stop at two and a half 28 px rows (2.5 × control.sm, 70), so a sliver of
+// the third shows; past that they scroll inside the composer, which so keeps
+// Send in view at 390 px wide. With `onAddFiles`, a file dragged over the
+// composer dashes its border in border.active (a drop target), over the
+// focus colour.
 export const composer = defineSlotRecipe({
   className: 'composer',
   jsx: ['Composer'],
   staticCss: ['*'],
-  slots: ['root', 'row', 'text', 'model', 'attachment', 'attachmentIcon', 'attachmentName', 'attachmentRemove'],
+  slots: [
+    'root',
+    'row',
+    'text',
+    'model',
+    'attachments',
+    'attachment',
+    'attachmentIcon',
+    'attachmentName',
+    'attachmentRemove',
+    'attachmentRetry',
+    'attachmentProgress',
+    'attachmentProgressFill',
+  ],
   base: {
     root: {
       display: 'flex',
@@ -43,6 +72,8 @@ export const composer = defineSlotRecipe({
       borderStyle: 'solid',
       borderColor: 'border.default',
       _focusWithin: { borderColor: 'border.selected' },
+      // A file is over the composer (onAddFiles); it wins over the focus colour.
+      '&[data-drop-target], &[data-drop-target]:focus-within': { borderColor: 'border.active', borderStyle: 'dashed' },
       // The caret is the accent colour, as Workbench D1 105:240 draws it.
       // A long draft grows the text to at most 30% of the nearest size container (a pane, or the parent of a
       // ScrollFrame; with none, 30% of the window), less the composer's own padding, border, gap and button
@@ -61,9 +92,27 @@ export const composer = defineSlotRecipe({
     row: { display: 'flex', alignItems: 'flex-end', gap: '8', minW: '0' },
     text: { flex: '1', minW: '40%' },
     model: { display: 'flex', flexShrink: '1', minW: '0' },
+    // The chips: they wrap, and past two and a half rows they scroll inside the composer.
+    attachments: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '6',
+      minW: '0',
+      flexShrink: '0',
+      maxH: 'calc(2.5 * token(sizes.control.sm))',
+      overflowX: 'hidden',
+      overflowY: 'auto',
+      ...scrollAreaNested,
+      // A long name never widens the composer: the list takes its width from the composer, not from its chips.
+      contain: 'inline-size',
+      borderRadius: 'xs',
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+    },
     // An attached file (105:890): surface.overlay, a border.default border,
     // radius.sm, 4 × 8 padding and Medium 11 text.
     attachment: {
+      position: 'relative',
       display: 'inline-flex',
       alignItems: 'center',
       gap: '6',
@@ -78,9 +127,15 @@ export const composer = defineSlotRecipe({
       borderWidth: 'default',
       borderStyle: 'solid',
       borderColor: 'border.default',
+      '&[data-status="failed"]': { borderColor: 'status.danger.border' },
     },
     // The clip is fg.default and the remove icon fg.muted, as Figma draws them (105:891, 105:894).
-    attachmentIcon: { display: 'inline-flex', flexShrink: '0', color: 'fg.default' },
+    attachmentIcon: {
+      display: 'inline-flex',
+      flexShrink: '0',
+      color: 'fg.default',
+      '[data-status="failed"] > &': { color: 'status.danger.fg' },
+    },
     // TruncatedText inside cuts a long file name and shows it whole in a tooltip.
     attachmentName: { minW: '0' },
     attachmentRemove: {
@@ -95,6 +150,35 @@ export const composer = defineSlotRecipe({
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
       _disabled: { cursor: 'not-allowed' },
+    },
+    attachmentRetry: {
+      display: 'inline-flex',
+      flexShrink: '0',
+      p: '0',
+      color: 'fg.accent',
+      bg: 'transparent',
+      textStyle: 'pill',
+      borderWidth: '0',
+      borderRadius: 'xs',
+      cursor: 'pointer',
+      outline: 'none',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+      _disabled: { cursor: 'not-allowed' },
+    },
+    attachmentProgress: {
+      position: 'absolute',
+      insetInline: '8',
+      bottom: '0',
+      h: '2',
+      overflow: 'hidden',
+      borderRadius: 'hair',
+      bg: 'border.default',
+    },
+    attachmentProgressFill: {
+      display: 'block',
+      h: '100%',
+      w: 'calc(var(--composer-progress, 0) * 100%)',
+      bg: 'accent.default',
     },
   },
   variants: {

@@ -382,7 +382,12 @@ export function Composer(input: ComposerProps): JSX.Element;
 export type ComposerAttachment = {
     id: string;
     name: string;
+    status?: ComposerAttachmentStatus | undefined;
+    progress?: number | undefined;
 };
+
+// @public
+export type ComposerAttachmentStatus = 'uploading' | 'ready' | 'failed';
 
 // @public (undocumented)
 export type ComposerProps = {
@@ -395,9 +400,12 @@ export type ComposerProps = {
     onSend?: ((text: string) => boolean | Promise<boolean>) | undefined;
     running?: boolean | undefined;
     onStop?: (() => void) | undefined;
+    sendDisabled?: boolean | undefined;
     attachments?: readonly ComposerAttachment[] | undefined;
     onRemoveAttachment?: ((id: string) => void) | undefined;
+    onRetryAttachment?: ((id: string) => void) | undefined;
     onAttach?: (() => void) | undefined;
+    onAddFiles?: ((files: File[]) => void) | undefined;
     attachIcon?: ReactNode;
     attachLabel?: string | undefined;
     sendIconSize?: '12' | '16' | undefined;

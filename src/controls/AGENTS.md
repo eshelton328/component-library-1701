@@ -21,6 +21,13 @@ components (d-066).
   or override `_expanded` or `_pressed`.
 - A `Glyph` keeps its character in the inline flow; absolute, inline-block
   or flex stops Chromium's find in page at it.
+- An overlay (dialog, sheet, menu, popover, tooltip) portals its parts
+  with `OverlayPortal` (`overlay-layer.tsx`), never Ark's `Portal`, so
+  an overlay opened from another one stacks over it by document order,
+  with no z-index. Only the `Toaster` keeps Ark's `Portal`; Ark puts its
+  group on the top z-index. Stories in `overlay-layers.stories.tsx`
+  pick with a real pointer at a point (`userEvent.pointer` with
+  `coords`).
 - A popover that a composer opens uses `width="composer"` (R8). Typed
   text goes in a `PopoverSection`'s `query`, never its capitals `label`.
 - Stories of a scrolling box call `expectScrollAreas`, and of a scrolled

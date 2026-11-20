@@ -1,5 +1,5 @@
 import { Dialog as ArkDialog, useDialogContext } from '@ark-ui/react/dialog'
-import { Portal } from '@ark-ui/react/portal'
+import { OverlayPortal } from './overlay-layer'
 import { useEffect, useId, useLayoutEffect, useRef, type RefObject, type ComponentProps, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
@@ -124,7 +124,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
     >
       <FocusOrigin returnToRef={returnToRef} />
       {trigger === undefined ? null : <ArkDialog.Trigger asChild>{trigger}</ArkDialog.Trigger>}
-      <Portal>
+      <OverlayPortal>
         {scrim ? <Backdrop /> : null}
         <Positioner>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
@@ -145,7 +145,7 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
             {children}
           </DraggableContent>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }

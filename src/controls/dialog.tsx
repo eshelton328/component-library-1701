@@ -1,5 +1,5 @@
 import { Dialog as ArkDialog } from '@ark-ui/react/dialog'
-import { Portal } from '@ark-ui/react/portal'
+import { OverlayPortal } from './overlay-layer'
 import type { ReactElement, ReactNode } from 'react'
 import { CloseIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
@@ -89,7 +89,7 @@ export function Dialog({ title, meta, description, children, actions, trigger, o
       }}
     >
       {trigger === undefined ? null : <ArkDialog.Trigger asChild>{trigger}</ArkDialog.Trigger>}
-      <Portal>
+      <OverlayPortal>
         <Backdrop />
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
@@ -114,7 +114,7 @@ export function Dialog({ title, meta, description, children, actions, trigger, o
             {actions === undefined ? null : <Footer>{actions}</Footer>}
           </Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }

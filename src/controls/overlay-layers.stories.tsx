@@ -1,0 +1,277 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
+import { expect, waitFor, within } from 'storybook/test'
+import { css } from '../../styled-system/css'
+import { BottomSheet } from './bottom-sheet'
+import { Button } from './button'
+import { Dialog, DialogClose } from './dialog'
+import { Stack } from './layout'
+import { Menu } from './menu'
+import { Popover } from './popover'
+import { SelectField } from './select-field'
+import { motionDone } from './bottom-sheet.testing'
+
+const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
+
+const projects = [
+  { value: 'ncc-1701', label: 'ncc-1701' },
+  { value: 'pinpoint', label: 'pinpoint' },
+  { value: 'omni', label: 'omni' },
+] as const
+
+// The Artifacts Add a link dialog (D5) with its Project field: a SelectField whose list opens over the dialog.
+function AddLink({ trigger }: { trigger: string }) {
+  return (
+    <Dialog
+      size="lg"
+      padding="form"
+      title="Add a link"
+      trigger={<Button>{trigger}</Button>}
+      actions={
+        <>
+          <DialogClose>
+            <Button size="sm">Cancel</Button>
+          </DialogClose>
+          <Button size="sm" variant="primary">
+            Add link
+          </Button>
+        </>
+      }
+    >
+      <SelectField label="Project" options={projects} defaultValue="ncc-1701" />
+    </Dialog>
+  )
+}
+
+function SelectInDialog() {
+  return (
+    <main className={page}>
+      <AddLink trigger="Add a link" />
+    </main>
+  )
+}
+
+function MenuInSheet() {
+  const [picked, setPicked] = useState('none')
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <p>{`Picked: ${picked}`}</p>
+        <BottomSheet title="Chat" trigger={<Button>Open chat sheet</Button>}>
+          {/* The rows under the button make the sheet taller than the menu, so the whole menu opens over the sheet. */}
+          <Stack gap="12">
+            <Menu
+              trigger={<Button>Chat actions</Button>}
+              items={[
+                { value: 'pin', label: 'Pin to sidebar' },
+                { value: 'rename', label: 'Rename' },
+              ]}
+              onSelect={setPicked}
+            />
+            <p>Model: opus</p>
+            <p>Workspace: the-bridge</p>
+            <p>Started: today</p>
+            <p>Messages: 12</p>
+            <p>Context: 40%</p>
+          </Stack>
+        </BottomSheet>
+      </Stack>
+    </main>
+  )
+}
+
+function DialogFromSheet() {
+  return (
+    <main className={page}>
+      <BottomSheet title="Links" trigger={<Button>Open links sheet</Button>}>
+        <AddLink trigger="New link" />
+      </BottomSheet>
+    </main>
+  )
+}
+
+// A real pointer click by the test runner's browser at the centre of `el`, in viewport coordinates: it lands on
+// whatever is drawn at that point, as a mouse or a finger does. A synthetic click would reach `el` even under a
+// dialog that covers it.
+async function press(el: Element) {
+  const { userEvent } = await import('vitest/browser')
+  const r = el.getBoundingClientRect()
+  // Move to the point, then press and release the left button there.
+  await userEvent.pointer([{ coords: { x: Math.round(r.x + r.width / 2), y: Math.round(r.y + r.height / 2) } }, '[MouseLeft]'])
+}
+
+async function key(text: string) {
+  const { userEvent } = await import('vitest/browser')
+  await userEvent.keyboard(text)
+}
+
+const body = () => within(document.body)
+
+// Opens the Project list of the Add a link dialog with the pointer and picks pinpoint with the pointer.
+async function pickProject(dialog: HTMLElement) {
+  await press(within(dialog).getByRole('button', { name: 'Project ncc-1701' }))
+  const menu = await body().findByRole('menu')
+  await press(within(menu).getByRole('menuitemradio', { name: 'pinpoint' }))
+  await waitFor(() => expect(body().queryByRole('menu')).toBeNull())
+  await expect(within(dialog).getByRole('button', { name: 'Project pinpoint' })).toBeInTheDocument()
+}
+
+const selectInDialogPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await press(within(canvasElement).getByRole('button', { name: 'Add a link' }))
+  const dialog = await body().findByRole('dialog', { name: 'Add a link' })
+  await pickProject(dialog)
+  await expect(dialog).toBeInTheDocument()
+}
+
+const menuInSheetPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  await press(canvas.getByRole('button', { name: 'Open chat sheet' }))
+  const sheet = await body().findByRole('dialog', { name: 'Chat' })
+  await motionDone(sheet)
+  await press(within(sheet).getByRole('button', { name: 'Chat actions' }))
+  const menu = await body().findByRole('menu', { name: 'Chat actions' })
+  await press(within(menu).getByRole('menuitem', { name: 'Pin to sidebar' }))
+  await waitFor(() => expect(canvas.getByText('Picked: pin')).toBeInTheDocument())
+  await expect(body().getByRole('dialog', { name: 'Chat' })).toBeInTheDocument()
+}
+
+const dialogFromSheetPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await press(within(canvasElement).getByRole('button', { name: 'Open links sheet' }))
+  const sheet = await body().findByRole('dialog', { name: 'Links' })
+  await motionDone(sheet)
+  await press(within(sheet).getByRole('button', { name: 'New link' }))
+  const dialog = await body().findByRole('dialog', { name: 'Add a link' })
+  await pickProject(dialog)
+  // The sheet stays open under the dialog; the modal dialog hides it from assistive technology meanwhile.
+  await expect(body().getByRole('dialog', { name: 'Links', hidden: true })).toBeInTheDocument()
+}
+
+// Escape closes only the top overlay: the list first, then the dialog.
+const escapePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await press(within(canvasElement).getByRole('button', { name: 'Add a link' }))
+  const dialog = await body().findByRole('dialog', { name: 'Add a link' })
+  await press(within(dialog).getByRole('button', { name: 'Project ncc-1701' }))
+  const menu = await body().findByRole('menu')
+  await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true))
+  await key('{Escape}')
+  await waitFor(() => expect(body().queryByRole('menu')).toBeNull())
+  await expect(body().getByRole('dialog', { name: 'Add a link' })).toBeInTheDocument()
+  await key('{Escape}')
+  await waitFor(() => expect(body().queryByRole('dialog', { name: 'Add a link' })).toBeNull())
+}
+
+// Two sibling dialogs on the page, mounted A (the confirm) then B (the form). B opens A while B stays open, so A
+// opened last and must be on top, whatever their mount order.
+function SiblingDialogs() {
+  const [confirm, setConfirm] = useState(false)
+  const [done, setDone] = useState('no')
+  return (
+    <main className={page}>
+      <p>{`Confirmed: ${done}`}</p>
+      <Dialog role="alertdialog" title="Remove the link?" open={confirm} onOpenChange={setConfirm}>
+        <Button
+          onClick={() => {
+            setDone('yes')
+          }}
+        >
+          Yes, remove
+        </Button>
+      </Dialog>
+      <Dialog size="lg" title="Edit the link" trigger={<Button>Edit</Button>}>
+        <Button
+          onClick={() => {
+            setConfirm(true)
+          }}
+        >
+          Remove
+        </Button>
+      </Dialog>
+    </main>
+  )
+}
+
+const siblingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await press(within(canvasElement).getByRole('button', { name: 'Edit' }))
+  const edit = await body().findByRole('dialog', { name: 'Edit the link' })
+  await press(within(edit).getByRole('button', { name: 'Remove' }))
+  const confirm = await body().findByRole('alertdialog', { name: 'Remove the link?' })
+  // No part sets a z-index, so the one later in the document paints on top. Ark turns pointer events off on the
+  // dialog under a modal one, so a click alone would reach the confirm even where the form covers it.
+  await waitFor(() => expect(edit.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  await press(within(confirm).getByRole('button', { name: 'Yes, remove' }))
+  await waitFor(() => expect(within(canvasElement).getByText('Confirmed: yes')).toBeInTheDocument())
+}
+
+// A server-rendered page with a Menu and a Popover: the client's first render must match the server's, or React
+// throws the server HTML away and the text typed before hydration with it.
+function ServerPage() {
+  return (
+    <main className={page}>
+      <input aria-label="Note" />
+      <Menu trigger={<Button>Actions</Button>} items={[{ value: 'pin', label: 'Pin' }]} />
+      <Popover trigger={<Button>Filters</Button>} label="Filters">
+        <p>No filters</p>
+      </Popover>
+    </main>
+  )
+}
+
+const hydratePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const host = document.createElement('div')
+  canvasElement.append(host)
+  host.innerHTML = renderToString(<ServerPage />)
+  const note = within(host).getByRole('textbox', { name: 'Note' })
+  if (!(note instanceof HTMLInputElement)) throw new Error('no note')
+  note.value = 'typed before hydration'
+  const errors: unknown[] = []
+  const root = hydrateRoot(host, <ServerPage />, {
+    onRecoverableError: (error) => {
+      errors.push(error)
+    },
+  })
+  try {
+    await waitFor(() => expect(within(host).getByRole('button', { name: 'Actions' })).toHaveAttribute('aria-haspopup', 'menu'))
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await expect(errors).toEqual([])
+    await expect(note.isConnected).toBe(true)
+    await expect(within(host).getByRole('textbox', { name: 'Note' })).toHaveValue('typed before hydration')
+    // After hydration the menu opens as on a client page.
+    await press(within(host).getByRole('button', { name: 'Actions' }))
+    await expect(await body().findByRole('menu')).toBeInTheDocument()
+  } finally {
+    root.unmount()
+    host.remove()
+  }
+}
+
+const meta = {
+  title: 'Overlays/Overlay layers',
+  parameters: { layout: 'fullscreen' },
+} satisfies Meta
+
+export default meta
+
+/** A SelectField in a Dialog: its list opens over the dialog, and a pointer picks a project. */
+export const SelectInDialogDark: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: selectInDialogPlay, globals: { mode: 'dark' } }
+export const SelectInDialogLight: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: selectInDialogPlay, globals: { mode: 'light' } }
+
+/** A Menu in a BottomSheet: it opens over the sheet, and a pointer picks an action. */
+export const MenuInSheetDark: StoryObj<typeof meta> = { render: () => <MenuInSheet />, play: menuInSheetPlay, globals: { mode: 'dark' } }
+export const MenuInSheetLight: StoryObj<typeof meta> = { render: () => <MenuInSheet />, play: menuInSheetPlay, globals: { mode: 'light' } }
+
+/** A Dialog opened from a BottomSheet opens over the sheet, and its SelectField's list over the dialog. */
+export const DialogFromSheetDark: StoryObj<typeof meta> = { render: () => <DialogFromSheet />, play: dialogFromSheetPlay, globals: { mode: 'dark' } }
+export const DialogFromSheetLight: StoryObj<typeof meta> = { render: () => <DialogFromSheet />, play: dialogFromSheetPlay, globals: { mode: 'light' } }
+
+/** Escape closes the top overlay only: the open list, then the dialog. */
+export const EscapeClosesTop: StoryObj<typeof meta> = { render: () => <SelectInDialog />, play: escapePlay, globals: { mode: 'dark' } }
+
+/** A dialog opened from a sibling dialog that mounted after it is on top: a pointer reaches it. */
+export const SiblingOpenOrderDark: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'dark' } }
+export const SiblingOpenOrderLight: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'light' } }
+
+/** A server-rendered Menu and Popover hydrate with no mismatch, and text typed before hydration stays. */
+export const HydrateDark: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'dark' } }
+export const HydrateLight: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'light' } }

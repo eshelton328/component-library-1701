@@ -1,5 +1,5 @@
 import { Menu as ArkMenu, useMenu } from '@ark-ui/react/menu'
-import { Portal } from '@ark-ui/react/portal'
+import { OverlayPortal } from './overlay-layer'
 import { useEffect, useId, useState, type ReactElement, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { menu } from '../../styled-system/recipes'
@@ -154,13 +154,13 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       onSelect={select}
     >
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
-      <Portal>
+      <OverlayPortal>
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
             <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} iconTone={iconTone} onSelect={select} />
           </Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }
@@ -237,13 +237,13 @@ function Submenu({ triggerId, submenu, row, size, density, iconTone, onSelect }:
   return (
     <RootProvider value={{ api, service }} width="submenu" size={size} density={density} iconTone={iconTone}>
       <TriggerItem>{row}</TriggerItem>
-      <Portal>
+      <OverlayPortal>
         <Positioner>
           <Content>
             <Entries baseId={id} items={submenu.items} size={size} density={density} iconTone={iconTone} onSelect={onSelect} />
           </Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </RootProvider>
   )
 }
@@ -393,7 +393,7 @@ export function RadioMenu({ trigger, label, options, value, defaultValue, onValu
       }}
     >
       <ArkMenu.Trigger asChild>{trigger}</ArkMenu.Trigger>
-      <Portal>
+      <OverlayPortal>
         <Positioner>
           <Content
             {...dataAttributesOf(rest)}
@@ -444,7 +444,7 @@ export function RadioMenu({ trigger, label, options, value, defaultValue, onValu
             {shown(note) ? <Footer id={`${baseId}-note`}>{note}</Footer> : null}
           </Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }

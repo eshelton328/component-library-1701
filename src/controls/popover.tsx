@@ -1,5 +1,5 @@
 import { Popover as ArkPopover } from '@ark-ui/react/popover'
-import { Portal } from '@ark-ui/react/portal'
+import { OverlayPortal } from './overlay-layer'
 import type { ReactElement, ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { popover } from '../../styled-system/recipes'
@@ -101,7 +101,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
       }}
     >
       <ArkPopover.Trigger asChild>{trigger}</ArkPopover.Trigger>
-      <Portal>
+      <OverlayPortal>
         <Positioner>
           <Content {...dataAttributesOf(rest)} aria-label={label} {...(className === undefined ? {} : { className })}>
             {children}
@@ -113,7 +113,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
             )}
           </Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }

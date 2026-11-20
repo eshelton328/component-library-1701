@@ -1,4 +1,4 @@
-import { Portal } from '@ark-ui/react/portal'
+import { OverlayPortal } from './overlay-layer'
 import { Tooltip as ArkTooltip } from '@ark-ui/react/tooltip'
 import { type ReactElement, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createSlotRecipeContext, styled } from '../../styled-system/jsx'
@@ -45,11 +45,11 @@ function TooltipBase({ children, content, open, onOpenChange, placement = 'top',
       }}
     >
       <ArkTooltip.Trigger asChild>{children}</ArkTooltip.Trigger>
-      <Portal>
+      <OverlayPortal>
         <Positioner>
           <Content>{content}</Content>
         </Positioner>
-      </Portal>
+      </OverlayPortal>
     </Root>
   )
 }

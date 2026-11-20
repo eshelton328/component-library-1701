@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { type ReactNode, type RefObject, useEffect, useInsertionEffect, useRef } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { appShell, type AppShellVariantProps } from '../../styled-system/recipes'
 import { token } from '../../styled-system/tokens'
@@ -638,9 +638,11 @@ export type AppShellDiagnostic = {
  */
 export function AppShell({ size, listWidth, sideWidth, rail, list, detail, side, tabBar, view = 'list', tabBarOverlay = false, onDiagnostic }: AppShellProps) {
   useInputModality()
-  // The latest callback, read when a diagnostic comes, so a new callback does not restart the keyboard dock.
+  // The latest callback, read when a diagnostic comes, so a new callback does not restart the keyboard dock. It is
+  // copied in an insertion effect, which runs before any layout effect and before a field's autofocus in the same
+  // commit, so a field that takes the focus as the callback changes reports to the new one (Codex review of #284).
   const diagnostic = useRef(onDiagnostic)
-  useEffect(() => {
+  useInsertionEffect(() => {
     diagnostic.current = onDiagnostic
   })
   const fit = useVisualViewportFit(diagnostic)

@@ -15,7 +15,7 @@ const root = new URL('..', import.meta.url).pathname
 const REUSED = ['typecheck', 'lint', 'tokens', 'checks', 'test']
 
 type Step = Record<string, unknown>
-interface Job { needs: unknown; if: unknown; outputs: Record<string, unknown>; steps: Step[] }
+interface Job { needs: unknown; if: unknown; timeout: unknown; outputs: Record<string, unknown>; steps: Step[] }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -38,7 +38,7 @@ function jobOf(doc: unknown, name: string): Job {
   const steps = job['steps']
   if (!Array.isArray(steps) || !steps.every(isRecord)) throw new Error(`${name} has no list of steps`)
   const outputs = job['outputs']
-  return { needs: job['needs'], if: job['if'], outputs: isRecord(outputs) ? outputs : {}, steps }
+  return { needs: job['needs'], if: job['if'], timeout: job['timeout-minutes'], outputs: isRecord(outputs) ? outputs : {}, steps }
 }
 
 const ciText = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')
@@ -93,6 +93,15 @@ void test('the worktree job runs pnpm verify with the same setup, and reports wh
   assert.ok(w.steps.some((s) => str(s['run'])?.trim() === 'pnpm check:worktree'))
   const script = readFileSync(join(root, 'scripts/check-worktree.ts'), 'utf8')
   assert.match(script, /\['pnpm verify', \['verify'\]\]/)
+})
+
+void test('a hang in the worktree job ends the run and shows where it stopped (beta run 44638994455)', () => {
+  assert.equal(jobOf(ci, 'worktree').timeout, 25)
+  const script = readFileSync(join(root, 'scripts/check-worktree.ts'), 'utf8')
+  assert.match(script, /detached: true/)
+  assert.match(script, /process\.kill\(-child\.pid, 'SIGTERM'\)/)
+  assert.match(script, /lineWriter\(/)
+  assert.match(script, /::group::/)
 })
 
 void test('each reused job waits for worktree and skips its steps only on reuse', () => {

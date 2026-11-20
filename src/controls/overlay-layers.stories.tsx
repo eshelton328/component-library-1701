@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
 import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BottomSheet } from './bottom-sheet'
@@ -7,6 +9,7 @@ import { Button } from './button'
 import { Dialog, DialogClose } from './dialog'
 import { Stack } from './layout'
 import { Menu } from './menu'
+import { Popover } from './popover'
 import { SelectField } from './select-field'
 import { motionDone } from './bottom-sheet.testing'
 
@@ -201,6 +204,48 @@ const siblingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   await waitFor(() => expect(within(canvasElement).getByText('Confirmed: yes')).toBeInTheDocument())
 }
 
+// A server-rendered page with a Menu and a Popover: the client's first render must match the server's, or React
+// throws the server HTML away and the text typed before hydration with it.
+function ServerPage() {
+  return (
+    <main className={page}>
+      <input aria-label="Note" />
+      <Menu trigger={<Button>Actions</Button>} items={[{ value: 'pin', label: 'Pin' }]} />
+      <Popover trigger={<Button>Filters</Button>} label="Filters">
+        <p>No filters</p>
+      </Popover>
+    </main>
+  )
+}
+
+const hydratePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const host = document.createElement('div')
+  canvasElement.append(host)
+  host.innerHTML = renderToString(<ServerPage />)
+  const note = within(host).getByRole('textbox', { name: 'Note' })
+  if (!(note instanceof HTMLInputElement)) throw new Error('no note')
+  note.value = 'typed before hydration'
+  const errors: unknown[] = []
+  const root = hydrateRoot(host, <ServerPage />, {
+    onRecoverableError: (error) => {
+      errors.push(error)
+    },
+  })
+  try {
+    await waitFor(() => expect(within(host).getByRole('button', { name: 'Actions' })).toHaveAttribute('aria-haspopup', 'menu'))
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    await expect(errors).toEqual([])
+    await expect(note.isConnected).toBe(true)
+    await expect(within(host).getByRole('textbox', { name: 'Note' })).toHaveValue('typed before hydration')
+    // After hydration the menu opens as on a client page.
+    await press(within(host).getByRole('button', { name: 'Actions' }))
+    await expect(await body().findByRole('menu')).toBeInTheDocument()
+  } finally {
+    root.unmount()
+    host.remove()
+  }
+}
+
 const meta = {
   title: 'Overlays/Overlay layers',
   parameters: { layout: 'fullscreen' },
@@ -226,3 +271,7 @@ export const EscapeClosesTop: StoryObj<typeof meta> = { render: () => <SelectInD
 /** A dialog opened from a sibling dialog that mounted after it is on top: a pointer reaches it. */
 export const SiblingOpenOrderDark: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'dark' } }
 export const SiblingOpenOrderLight: StoryObj<typeof meta> = { render: () => <SiblingDialogs />, play: siblingPlay, globals: { mode: 'light' } }
+
+/** A server-rendered Menu and Popover hydrate with no mismatch, and text typed before hydration stays. */
+export const HydrateDark: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'dark' } }
+export const HydrateLight: StoryObj<typeof meta> = { render: () => <main className={page} />, play: hydratePlay, globals: { mode: 'light' } }

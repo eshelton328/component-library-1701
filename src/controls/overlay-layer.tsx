@@ -1,8 +1,19 @@
-import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 // The layer of the overlay a part renders in, or `undefined` on the page.
 const LayerContext = createContext<HTMLElement | undefined>(undefined)
+
+// The server and the first client render, which hydrates the server's HTML, render no portal, as Ark's Portal does:
+// React renders no portal on the server, and a client render that differs from the server's throws the server's
+// HTML away, with any text typed before hydration. A client render that does not hydrate has it at once.
+const noStore = () => () => undefined
+const useServerPass = () =>
+  useSyncExternalStore(
+    noStore,
+    () => false,
+    () => true,
+  )
 
 type Layer = { root: HTMLElement; parts: HTMLElement }
 
@@ -36,6 +47,7 @@ export function OverlayPortal({ children }: { children: ReactNode }) {
   const parent = useContext(LayerContext)
   const [layer] = useState(() => (typeof document === 'undefined' ? null : createLayer(document)))
   const runs = useRef(0)
+  const serverPass = useServerPass()
   useLayoutEffect(() => {
     if (layer === null) return undefined
     runs.current += 1
@@ -74,6 +86,6 @@ export function OverlayPortal({ children }: { children: ReactNode }) {
       leave()
     }
   }, [layer, parent])
-  if (layer === null) return null
+  if (layer === null || serverPass) return null
   return <LayerContext.Provider value={layer.root}>{createPortal(children, layer.parts)}</LayerContext.Provider>
 }

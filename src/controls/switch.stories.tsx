@@ -178,7 +178,7 @@ export const HintLight: Story = { args: { hint: 'Push alerts on this device' }, 
 const stackedPlay: Story['play'] = async ({ canvasElement }) => {
   onCheckedChange.mockClear()
   const { input, root, control, thumb, label } = parts(canvasElement, 'Notifications')
-  await expect(input).toHaveAccessibleDescription('On this device')
+  await expect(input).toHaveAccessibleDescription('Blocked in Settings')
   const box = root.getBoundingClientRect()
   const railBox = root.parentElement?.getBoundingClientRect()
   if (railBox === undefined) throw new Error('no rail')
@@ -188,14 +188,16 @@ const stackedPlay: Story['play'] = async ({ canvasElement }) => {
   await expect(c.left - box.left).toBeCloseTo(box.right - c.right, 1)
   await expect(c.top - box.top).toBe(6)
   await expect(label.getBoundingClientRect().top - c.bottom).toBe(4)
-  const hint = within(root).getByText('On this device')
+  const hint = within(root).getByText('Blocked in Settings')
   for (const el of [label, hint]) {
     const s = getComputedStyle(el)
     await expect([s.fontSize, s.fontWeight, s.color, s.textAlign]).toEqual(['9px', '500', swatch('muted'), 'center'])
     await expect(el.getBoundingClientRect().left).toBeGreaterThanOrEqual(railBox.left)
     await expect(el.getBoundingClientRect().right).toBeLessThanOrEqual(railBox.right)
   }
-  // "On this device" wraps to two lines in the rail.
+  // "Notifications" stays on one line, as the rail's "Workspaces" does; "Blocked in Settings" wraps between words.
+  await expect(label.getBoundingClientRect().height).toBeCloseTo(Number.parseFloat(getComputedStyle(label).lineHeight), 0)
+  // "Blocked in Settings" wraps to two lines in the rail.
   await expect(hint.getBoundingClientRect().height).toBeGreaterThan(Number.parseFloat(getComputedStyle(hint).lineHeight) * 1.5)
   await expectTrack(control, thumb, false)
   await userEvent.click(control)
@@ -258,5 +260,5 @@ const forcedPlay: Story['play'] = async ({ canvasElement }) => {
 }
 export const ForcedColours: Story = { args: { defaultChecked: true }, play: forcedPlay, globals: { mode: 'dark' } }
 
-export const StackedDark: Story = { args: { layout: 'stacked', hint: 'On this device' }, play: stackedPlay, globals: { mode: 'dark' } }
-export const StackedLight: Story = { args: { layout: 'stacked', hint: 'On this device' }, play: stackedPlay, globals: { mode: 'light' } }
+export const StackedDark: Story = { args: { layout: 'stacked', hint: 'Blocked in Settings' }, play: stackedPlay, globals: { mode: 'dark' } }
+export const StackedLight: Story = { args: { layout: 'stacked', hint: 'Blocked in Settings' }, play: stackedPlay, globals: { mode: 'light' } }

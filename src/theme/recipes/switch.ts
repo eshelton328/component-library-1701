@@ -78,7 +78,9 @@ export const switchRecipe = defineSlotRecipe({
       inline: {},
       stacked: {
         root: { flexDirection: 'column', justifyContent: 'center', gap: '4', py: '6', textAlign: 'center' },
-        text: { flex: 'none', alignItems: 'center', w: '100%', gap: '0' },
+        // As the rail's item labels, the text takes the rail's 6 px sides too (63 px in all), so a one-word label such as
+        // Notifications stays on one line and longer text wraps between words.
+        text: { flex: 'none', alignItems: 'center', alignSelf: 'stretch', mx: '-6', gap: '0' },
         label: { textStyle: 'railLabel', color: 'fg.muted', overflowWrap: 'anywhere' },
         hint: { textStyle: 'railLabel', color: 'fg.muted', overflowWrap: 'anywhere' },
       },

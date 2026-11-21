@@ -168,9 +168,13 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // stays at its end, and any other body scrolls by as much as its view shrinks or grows.
       // A body that holds the focused field is left to the browser, which keeps that field in view (Codex review of
       // #210): a form that fits its body would otherwise be pinned to its end, past the field.
+      // Only a field (`editable`) counts: a tap on the thread that closes the keyboard gives the focus to the body
+      // itself (its `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the fall (the-bridge's
+      // iPhone probe: 211 px on each open and close, `TapClosesKeyboard`).
       const focused = document.activeElement
+      const field = editable(focused) ? focused : null
       const bodies = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')]
-        .filter((body) => !body.contains(focused))
+        .filter((body) => field === null || !body.contains(field))
         .map((body) => ({ body, atEnd: body.scrollHeight - body.scrollTop - body.clientHeight <= 1, view: body.clientHeight, top: body.scrollTop }))
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).

@@ -21,6 +21,9 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   `../controls/editable.ts`, which `ScrollFrame` shares. Check
   `document.activeElement` on each fit too: WebKit fires no `focusout`
   when the focused field is removed.
+- The dock leaves a ScrollFrame body to the browser only while a field
+  in it has the focus. A tap on the thread focuses the body itself, and
+  the body must still keep the reader's place (`TapClosesKeyboard`).
 - A control that acts on the focused field and must keep the keyboard
   open carries `data-keyboard-keep` (R19).
 - Space under a docked footer comes from ScrollFrame `foot`, never a

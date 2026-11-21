@@ -130,7 +130,8 @@ export const listRow = defineSlotRecipe({
       // A finished row that is not open (Inbox D7 346:2940) draws its title in #8a97b8 (fg.muted) and fades its kind
       // tile: Figma to 0.6, here opacity.finished (0.75), the nearest value that keeps the kind icon at 3:1 (d-100).
       '&[data-finished]:not([data-selected]):not([data-running]) .list-row__title': { color: 'fg.muted' },
-      '&[data-finished]:not([data-selected]):not([data-running]) .list-row__leading': { opacity: 'finished' },
+      // A pressed row is on surface.selected too, where the faded tile falls under 3:1 (KindTile next, light), so it is whole.
+      '&[data-finished]:not([data-selected]):not([data-running]):not([data-pressed]) .list-row__leading': { opacity: 'finished' },
       // Figma draws the age and tags in #4a5675 (fg.subtle). On surface.selected (a selected, running or pressed row)
       // fg.subtle is not allowed, and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
       '&:is([data-selected], [data-running], [data-snoozed], [data-pressed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },

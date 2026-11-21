@@ -223,6 +223,7 @@ function PressedRows() {
             }
           />
           <ListRow title="A card row" meta="ncc-1701 · artifact" surface="card" trailing="3h" onSelect={() => undefined} />
+          <ListRow title="A finished row" meta="ncc-1701 · done" leading={<KindTile kind="next" />} trailing="1d" finished onSelect={() => undefined} />
         </Stack>
       </div>
       <span hidden data-swatch="subtle" className={css({ color: 'fg.subtle' })} />
@@ -305,6 +306,16 @@ const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   await expect(fill(card)).toBe(selected)
   await fireEvent.pointerUp(cardTitle, { button: 0, pointerType: 'touch' })
   await expect(fill(card)).toBe(swatch('pane').backgroundColor)
+  // A finished row's kind tile is faded, but whole while pressed: on surface.selected the faded tile is under 3:1.
+  const finished = rowOf('A finished row')
+  const finishedTile = finished.querySelector('.list-row__leading')
+  if (finishedTile === null) throw new Error('no leading')
+  const finishedTitle = canvas.getByRole('button', { name: 'A finished row' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('0.75')
+  await fireEvent.pointerDown(finishedTitle, { button: 0, pointerType: 'touch' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('1')
+  await fireEvent.pointerUp(finishedTitle, { button: 0, pointerType: 'touch' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('0.75')
   // A whole click (down, up, click) leaves no pressed fill.
   await userEvent.click(title)
   await expect(row).not.toHaveAttribute('data-pressed')

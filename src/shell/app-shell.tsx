@@ -22,15 +22,23 @@ const SafeArea = withContext('div', 'safeArea')
 
 // The custom property that the recipes read: how far the on-screen keyboard covers the bottom of the detail, in px.
 const keyboardInset = '--app-shell-keyboard'
-// How long the fit stays after the focus leaves the fields with no pointer down (the keyboard's Done, the iOS form
-// bar's check, a blur from code) when no viewport event ends it first. iOS animates the keyboard away in 250 ms and
-// reports the visual viewport's resize during it, so 300 lets that resize come first and end the fit in step with
-// the keyboard. Only an iOS standalone app that reports the resize late, in steps or never needs the timer.
+// How long the fit stays after the focus leaves the fields with no pointer down (a blur from code, the keyboard's Done)
+// when no viewport event ends it first, where no on-screen keyboard slides (a mouse; see `slides`), and how long the
+// keyboard's measure waits after its last resize to settle. Where iOS slides its keyboard, the fall starts with the
+// keyboard at the focusout instead (screen review R37).
 const blurEndDelay = 300
-// The dock moves as the iOS keyboard does: `durations.keyboard` (250ms) on `easings.keyboard`, a curve close to
-// UIKit's keyboard curve (cubic-bezier(0.38, 0.7, 0.125, 1)). The hook moves it frame by frame, so it reads both
-// tokens as numbers, through strict readers that throw on a form they do not know (audit L-2).
+// The dock moves as the iOS keyboard does: `durations.keyboard` on `easings.keyboard`, a cubic-bezier fitted to
+// the iOS 26 keyboard (screen review R37: a 60 fps recording of the iPad mini, where the keyboard moves as a
+// critically damped spring, 1 - (1 + wt) e^(-wt) with w about 23.5/s, up and down; the curve over 300 ms stays within
+// 1.1 % of it). The hook moves it frame by frame, so it reads both tokens as numbers, through strict readers that throw
+// on a form they do not know (audit L-2).
 const keyboardMotion = cssDuration(token('durations.keyboard'))
+// How long the iOS keyboard has been moving when Safari reports it. iOS reports an opening keyboard once, with its
+// whole height, in the frame that first draws it, and that frame already shows the keyboard 43 to 63 ms into its
+// motion (R37, the four opens fitted to the spring); a close is reported 25 to 80 ms after the focusout that started
+// it (the iPad mini and iPhone traces of 2026-11-19 to 21). A move that starts at a report starts its clock this far
+// back, not before the focus, so its first frame shows the dock where the keyboard is.
+const keyboardReportLag = 50
 // The time fraction of a move up to which a new target keeps the move's end.
 const keepEndUntil = 0.7
 // The most time between two keyboard reports, in ms, for a keyboard that moves frame by frame: three of the frames
@@ -40,9 +48,6 @@ const keepEndUntil = 0.7
 // screen review R25) still is not one.
 const keyboardStepGap = 50
 const keyboardStepGapMax = 150
-// One frame at 60 Hz, and the time after a move's start past which its first frame is late (two frames), in ms.
-const keyboardFrame = 1000 / 60
-const keyboardFrameLate = 2 * keyboardFrame
 // The frames a layout must stay short during an opening before the shell takes it as a browser that resizes it.
 const layoutFrames = 2
 // The largest keyboard step, in px, that the dock follows within its move, or at once after it: a frame's step of a
@@ -91,8 +96,13 @@ const pressedBefore = () => {
 }
 // Whether a field's focus will open an on-screen keyboard that only the visual viewport reports: a touch screen whose
 // browser has no VirtualKeyboard API (iOS Safari), on a page the user has pressed. Chromium has the API and resizes
-// the layout with `interactive-widget=resizes-content`, so it expects nothing.
-const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigator, 'virtualKeyboard') === undefined && pressedBefore()
+// the layout with `interactive-widget=resizes-content`, so it expects nothing. `slides` is the device part alone: an
+// on-screen keyboard that iOS slides in and out, which the dock follows in its motion, also with reduced motion (iOS
+// still slides its keyboard then, so following it adds no motion of the page's own; screen review R37).
+const slides = () => media('(pointer: coarse)') && Reflect.get(navigator, 'virtualKeyboard') === undefined
+const keyboardExpected = () => slides() && pressedBefore()
+// A press on one of these acts on its click, so the dock does not move from under it before the release (Send).
+const pressControl = 'a, button, input, select, textarea, label, summary, [role=button], [role=link], [contenteditable]'
 
 /**
  * Docks the foot of the page on the on-screen keyboard (the fit) when the browser does not resize the layout for
@@ -108,10 +118,13 @@ const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigat
  * the keyboard is open. The fit applies only while an editable field (`editable`: a textarea, a text-like input or
  * a contenteditable element) has the focus, the keyboard case: the browser's top and bottom bars also shrink the
  * visual viewport as they show and hide on a scroll, and following them would move the page under the user's
- * finger. With no focused field the property is removed. A `focusin` on a field starts the fit at once. When the focus leaves the fields (to a button, or to
- * nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the keyboard closing: a
- * tap on the composer's Send takes the focus on its press, and if the dock fell then, the button would move
- * from under the finger before the click and the tap would miss it. With no such event the fit ends on its own,
+ * finger. With no focused field the property is removed. A `focusin` on a field starts the fit at once, and the dock
+ * rises with the keyboard's first report, on the keyboard's clock. Where iOS slides its keyboard (a touch screen with
+ * no VirtualKeyboard API), a focusout to no field starts the dock's fall in the next frame, as the keyboard starts its
+ * own then, unless a press on a control is down (below). Elsewhere, or under such a press, when the focus leaves the
+ * fields (to a button, or to nowhere on a blur), the fit stays until the next visualViewport `resize` or `scroll`, the
+ * keyboard closing: a tap on the composer's Send takes the focus on its press, and if the dock fell then, the button
+ * would move from under the finger before the click and the tap would miss it. With no such event the fit ends on its own,
  * as iOS standalone may grow the visual viewport late, in steps or never: one frame after the release of the press
  * that took the focus (`pointerup` or `pointercancel`, after its click), or 300 ms after a focusout with no pointer
  * down (the keyboard's Done, a blur from code); a field taking the focus first cancels it. An end that comes while a
@@ -198,8 +211,10 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
     }
-    // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is; a new target
-    // during a move starts a new move from there. With reduced motion it is there at once.
+    // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is, on the keyboard's
+    // own clock: a move starts when the keyboard started (`since`), so each frame shows the dock where the keyboard is
+    // then, also a frame that comes late. A new target during a move starts a new move from there. With reduced
+    // motion and no keyboard that slides (a mouse), it is there at once.
     let shown = 0
     let target = 0
     let from = 0
@@ -215,32 +230,24 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let frameGap = 0
     let start = 0
     let motion: number | undefined
-    // Whether the move's next frame is its first, for `keyboardFrameLate`.
+    // Whether the move has drawn no frame yet: until then the dock is still where the move began.
     let firstFrame = false
     // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
-    // frame already moves.
+    // frame already moves. A frame that comes late (iOS draws no frame of the page for 100 ms or more at times, the
+    // iPhone traces of screen review R26) shows the dock where the keyboard is by then: the keyboard does not wait for
+    // the page's frames.
     const step = () => {
-      // iOS draws no frame of the page for 100 ms or more after a field's focus (the iPhone traces of screen review
-      // R26: the first frame at +97 ms, at 30 fps). A move whose clock started at the focus was then 79 % done in its
-      // first drawn frame, a jump. When the first frame of a move comes more than `keyboardFrameLate` after its start,
-      // the move starts there, one 60 Hz frame back, so that frame shows the curve's first step.
       const drawn = performance.now()
       if (Number.isFinite(lastFrameAt)) frameGap = drawn - lastFrameAt
       lastFrameAt = drawn
-      if (firstFrame) {
-        firstFrame = false
-        const at = performance.now()
-        if (at - start > keyboardFrameLate) {
-          start = at - keyboardFrame
-          root.dataset.keyboardEnd = String(start + keyboardMotion)
-        }
-      }
+      firstFrame = false
       const t = Math.min(1, Math.max(0, (performance.now() - start) / keyboardMotion))
       shown = t === 1 ? target : from + (target - from) * ease(t)
       paint(shown)
       motion = t === 1 ? undefined : requestAnimationFrame(step)
     }
-    const show = (inset: number) => {
+    // `since` is when the keyboard started the motion that this target ends (see `keyboardSince`); now by default.
+    const show = (inset: number, since = performance.now()) => {
       // The same inset again, as after a route change or a window resize, is painted again for the new layout.
       if (inset === target) {
         if (motion === undefined) paint(inset)
@@ -248,7 +255,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       const previous = target
       target = inset
-      if (media('(prefers-reduced-motion: reduce)')) {
+      if (media('(prefers-reduced-motion: reduce)') && !slides()) {
         if (motion !== undefined) cancelAnimationFrame(motion)
         motion = undefined
         shown = inset
@@ -301,16 +308,15 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         return
       }
       if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
-        // Before the move's first frame nothing is drawn, and a late first frame restarts the clock (see `step`), so
-        // the move still starts where the dock is (Codex review of #280).
+        // Before the move's first frame nothing is drawn, so the move still starts where the dock is (Codex review of
+        // #280).
         if (!firstFrame) from = (shown - inset * done) / (1 - done)
         return
       }
       from = shown
       origin = shown
-      start = now
-      // The time the move ends, for a test or a trace to read: a correction keeps it, a new move sets it, and a late
-      // first frame moves it (see `step`).
+      start = Math.min(now, since)
+      // The time the move ends, for a test or a trace to read: a correction keeps it and a new move sets it.
       root.dataset.keyboardEnd = String(start + keyboardMotion)
       if (motion === undefined) {
         firstFrame = true
@@ -319,10 +325,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
-    // measure settles, the dock rises at once to the expected inset and does not come down for a smaller step of the
-    // keyboard's rise. It takes the measure as it is `blurEndDelay` after the last resize (or `keyboardWait` after the
-    // focus with none), and keeps it for the next open. A layout that shrinks meanwhile is a browser that resizes it
-    // for the keyboard: nothing is expected there again.
+    // measure settles, the dock rises with the keyboard's first report, to the reported inset, or to the expected one
+    // for a report of an early step of the keyboard's rise, and does not come down for a smaller step of that rise.
+    // It does not rise at the focus: iOS starts the keyboard 60 to 120 ms later, and a dock that rose at the focus was
+    // up before the keyboard showed (screen review R37). It takes the measure as it is `blurEndDelay` after the last
+    // resize (or `keyboardWait` after the focus with none), and keeps it for the next open. A layout that shrinks
+    // meanwhile is a browser that resizes it for the keyboard: nothing is expected there again.
     const measured = keyboardMeasures
     const orientation = () => (document.documentElement.clientWidth > document.documentElement.clientHeight ? 'landscape' : 'portrait')
     // The visible area's shortfall with no field focused (see `measure`).
@@ -333,6 +341,18 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let expectedInset = 0
     let expectedMeasured = false
     let settleTimer: ReturnType<typeof setTimeout> | undefined
+    // When a field last took the focus, and when the focus last left the fields: the keyboard starts its motion no
+    // earlier than these, and a close starts at the focusout.
+    let focusedAt = Number.NEGATIVE_INFINITY
+    let closedAt = Number.NEGATIVE_INFINITY
+    // When the keyboard started the motion that a report shows: a close at its focusout (when that came within the
+    // keyboard's motion), and anything else `keyboardReportLag` before the report, but not before the focus that
+    // opened it.
+    const keyboardSince = () => {
+      const now = performance.now()
+      if (typing) return Math.max(focusedAt, now - keyboardReportLag)
+      return now - closedAt <= keyboardMotion ? closedAt : now - keyboardReportLag
+    }
     const settle = () => {
       settleTimer = undefined
       opening = false
@@ -372,15 +392,17 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     const fit = () => {
       const inset = measure()
       if (opening && typing && document.documentElement.clientHeight < openLayout - 1 && layoutCheck === undefined) checkLayout(layoutFrames)
-      // During the opening, a report under the expected keyboard is an early step of its rise and holds the dock up,
-      // when the expected keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at
-      // least three quarters of it is the whole keyboard and is taken at once, so the dock does not wait for the
-      // settle to come down (screen review R22). The settle then only stores the measure.
-      const early = opening && typing && inset < target && (expectedMeasured || inset < expectedInset * 0.75)
+      // During the opening, a report under the dock's target (the expected keyboard while the dock is still down) is an
+      // early step of the keyboard's rise: it takes the dock to that target, or holds it there, when the expected
+      // keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at least three quarters
+      // of it is the whole keyboard and is taken at once, so the dock does not wait for the settle to come down (screen
+      // review R22). The settle then only stores the measure.
+      const hold = target > 0 ? target : expectedInset
+      const early = opening && typing && inset > 1 && inset < hold && (expectedMeasured || inset < expectedInset * 0.75)
       // A report taken as the whole keyboard is kept for the next open at once: a blur before the settle (a press on
       // Send) would otherwise lose it.
       if (opening && typing && !early && inset > 1) measured.set(orientation(), inset)
-      show(early ? target : inset)
+      show(early ? hold : inset, keyboardSince())
     }
     // A layout that is shorter than at the focus during an opening: a browser that resizes the layout for the keyboard
     // (Firefox on Android) expects nothing again, but only when the layout is still short `layoutFrames` frames later.
@@ -425,7 +447,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       fit()
     }
     // A field takes the focus: the fit starts at once. Another element taking it fits nothing here.
-    // With no keyboard open yet, it rises to the expected keyboard before the browser reports one.
+    // With no keyboard open yet, an opening starts: the dock rises with the keyboard's first report (see `fit`).
     const focusIn = () => {
       const was = typing
       typing = editable(document.activeElement)
@@ -436,14 +458,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const expected = known ?? (orientation() === 'portrait' ? figmaKeyboard : 0)
       expectedInset = expected
       expectedMeasured = known !== undefined
+      if (!was) focusedAt = performance.now()
       if (!was && measure() <= rest + 1 && expected > 0 && keyboardExpected()) {
         opening = true
         openLayout = document.documentElement.clientHeight
         scheduleSettle(keyboardWait)
-        // With reduced motion the dock jumps, so a guess would make two jumps (to Figma's 346, then to the real 369: the
-        // iPhone recording of screen review R26). It waits for the keyboard's report instead, unless the keyboard
-        // was measured, and jumps once.
-        if (expectedMeasured || !media('(prefers-reduced-motion: reduce)')) show(expected)
       } else fit()
     }
     // During a focusout the focus is on no element yet; `relatedTarget` is the element that takes it next, if any.
@@ -457,9 +476,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // keyboard (the iPhone trace of screen review R25: a focusout of a div, then the focusin of the textarea, and no dock).
       if (!editable(event.target instanceof Element ? event.target : null)) return
       typing = editable(event.relatedTarget instanceof Element ? event.relatedTarget : null)
+      if (typing) return
       // A close is never a frame step of the opening keyboard, however soon it comes (Codex review of #274).
-      if (!typing) lastQuick = false
-      if (!typing) scheduleEnd()
+      lastQuick = false
+      closedAt = performance.now()
+      scheduleEnd()
     }
     // The end of the fit after the focus left the fields, when the browser reports no viewport change (iOS standalone
     // may grow the visual viewport late, in steps, or not at all). With a pointer down at the focusout (the press
@@ -470,11 +491,20 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // cancels the end. If the viewport is still short then, no fit starts again: with no field focused it is the
     // bars.
     let pressing = false
+    // Whether the press that is down is on a control that acts on its click (`pressControl`), and whether the shell
+    // blurs the field for a tap outside it, whose click it swallows.
+    let pressOnControl = false
+    let tapClosing = false
     let timer: ReturnType<typeof setTimeout> | undefined
     let frame: number | undefined
-    const press = () => {
+    const press = (event: PointerEvent) => {
       pressing = true
+      pressOnControl = event.target instanceof Element && event.target.closest(pressControl) !== null
     }
+    // Whether the dock must stay up for the press that is down: a press on a control, whose click must land where it
+    // started. A tap that the shell turns into a close swallows its click, and a press elsewhere (a drag of the thread)
+    // has no click to miss, so the dock falls with the keyboard under them.
+    const holdForPress = () => pressing && pressOnControl && !tapClosing
     const release = () => {
       pressing = false
     }
@@ -512,7 +542,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // With no on-screen keyboard docked (a hardware keyboard), the tap acts at once (Codex review of #213).
       if (root.style.getPropertyValue(keyboardInset) === '') return
       stopSwallow()
-      focused.blur()
+      tapClosing = true
+      try {
+        focused.blur()
+      } finally {
+        tapClosing = false
+      }
       document.addEventListener('click', swallow, true)
       document.addEventListener('pointerup', afterTap, true)
       document.addEventListener('pointercancel', stopSwallow, true)
@@ -543,10 +578,20 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       document.removeEventListener('pointerup', afterRelease)
       document.removeEventListener('pointercancel', afterRelease)
     }
+    // Where iOS slides its keyboard, the keyboard starts to fall at the focusout, and so does the dock, on the
+    // keyboard's clock from the focusout (`closedAt`), in its next frame, unless a field has the focus again once the
+    // task that blurred is done (a script that moves the focus with a blur and a focus). It does not wait for the
+    // visual viewport's report, which iOS sends 25 to 80 ms into the fall (screen review R37). Only a press on a
+    // control holds it until the release, as below.
     const scheduleEnd = () => {
       cancelEnd()
-      if (pressing) waitForRelease()
+      if (slides() && !holdForPress()) timer = setTimeout(fall, 0)
+      else if (pressing) waitForRelease()
       else timer = setTimeout(end, blurEndDelay)
+    }
+    const fall = () => {
+      timer = undefined
+      if (!editable(document.activeElement)) refit()
     }
     // The window resizes or turns, the page comes back from the back-forward cache, or the installed app comes
     // back on screen: these may change the viewport with no visualViewport event, and they end a tap, so they

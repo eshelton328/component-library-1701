@@ -257,6 +257,7 @@ import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recip
 
 export type ComposerVariant = {
   layout?: "stacked" | "inline"
+  collapsed?: boolean
 }
 
 export type ComposerVariantProps = {

@@ -197,6 +197,26 @@ export const composer = defineSlotRecipe({
         },
       },
     },
+    // `collapsed` (screen review R31): the stacked composer at rest on a phone, one row at the same width, as the
+    // Claude iOS app draws its message box with the keyboard closed. The paperclip, the text on one line with its
+    // placeholder, then Send; the model and Stop are not drawn. The composer keeps its DOM: the button rows lay out
+    // their buttons in the root's own row (`display: contents`), and the start row's buttons come before the text.
+    // The root's padding and its 8 px gap stay, so the row is 50 high (10 + control.sm 28 + 10 and the border).
+    // The text keeps one line: it stops at one 20 px line (`body`) and scrolls past it.
+    collapsed: {
+      true: {
+        root: {
+          flexDirection: 'row',
+          alignItems: 'center',
+          // The text field: the rest of the row.
+          '& > [data-scope="field"]': { flex: '1', minW: '0' },
+          '& > [data-composer-controls], & > [data-composer-controls] > div': { display: 'contents' },
+          '& [data-composer-group="start"] > *': { order: '-1' },
+          '& textarea': { maxH: 'token(spacing.20)' },
+        },
+      },
+      false: {},
+    },
   },
-  defaultVariants: { layout: 'stacked' },
+  defaultVariants: { layout: 'stacked', collapsed: false },
 })

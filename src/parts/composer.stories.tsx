@@ -1328,3 +1328,215 @@ const manyChipsStory = (mode: 'dark' | 'light'): StoryObj<typeof meta> => ({
 /** Fourteen chips at 390 px: a long name is cut, the chips scroll inside the composer, and Send stays in view. */
 export const ManyAttachmentsPhoneDark = manyChipsStory('dark')
 export const ManyAttachmentsPhoneLight = manyChipsStory('light')
+
+// The collapsed composer (screen review R31): on a phone with the keyboard closed, the composer is one row at the
+// same width, the paperclip, the placeholder and Send, as the Claude iOS app draws its message box. The stacked
+// composer is the expanded state. Each story is a 390 px phone with a chat column padded 16.
+const onCollapsedAttach = fn<() => void>()
+const onCollapsedSubmit = fn<(text: string) => void>()
+const onCollapsedFocus = fn<(focused: boolean) => void>()
+
+function CollapsedScreen() {
+  return (
+    <div className={skillScreen}>
+      <main className={skillChatPhone}>
+        <Stack gap="16">
+          <Composer
+            label="Collapsed"
+            collapsed
+            running
+            onAttach={onCollapsedAttach}
+            onSubmit={onCollapsedSubmit}
+            onFocusChange={onCollapsedFocus}
+            model={<ModelChip model="Opus 5.5" options={[]} />}
+          />
+          <Composer label="Expanded" running onAttach={() => undefined} model={<ModelChip model="Opus 5.5" options={[]} />} />
+          <Composer label="With files" collapsed onAttach={() => undefined} attachments={files} onRemoveAttachment={() => undefined} />
+        </Stack>
+      </main>
+    </div>
+  )
+}
+
+/** The middle of an element, and whether that point hits the element (nothing covers it). */
+const hitsOwnMiddle = (el: Element) => {
+  const box = rect(el)
+  const top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+  return top !== null && el.contains(top)
+}
+
+const collapsedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onCollapsedAttach.mockClear()
+  onCollapsedSubmit.mockClear()
+  onCollapsedFocus.mockClear()
+  await expect(window.innerWidth).toBe(390)
+  await document.fonts.ready
+  const box = composerOf(canvasElement, 'Collapsed')
+  const expanded = composerOf(canvasElement, 'Expanded')
+  const area = within(box).getByRole('textbox', { name: 'Collapsed' })
+  const attach = within(box).getByRole('button', { name: 'Attach a file' })
+  const send = within(box).getByRole('button', { name: 'Send' })
+  // One row at the expanded composer's width: 10 + 28 + 10 and the 1 px border, 50 high; the expanded one is 78.
+  await expect(rect(box).width).toBe(rect(expanded).width)
+  await expect(rect(box).width).toBe(358)
+  await expect(rect(box).height).toBe(50)
+  await expect(rect(expanded).height).toBe(78)
+  // The paperclip at the start, the text in the middle with its placeholder, Send at the end, centred on one line.
+  await expect(rect(attach).right).toBeLessThan(rect(area).left)
+  await expect(rect(area).right).toBeLessThan(rect(send).left)
+  await expect(rect(area).height).toBe(20)
+  const middle = (el: Element) => rect(el).top + rect(el).height / 2
+  await expect(middle(attach)).toBe(middle(send))
+  await expect(middle(area)).toBe(middle(send))
+  await expect(area).toHaveAttribute('placeholder', 'Message, or / for a skill')
+  // The other controls are not drawn: no model, no Stop.
+  await expect(within(box).queryByRole('button', { name: 'Model: Opus 5.5' })).toBeNull()
+  await expect(within(box).queryByRole('button', { name: 'Stop' })).toBeNull()
+  await expect(within(expanded).getByRole('button', { name: 'Stop' })).toBeInTheDocument()
+  // The paperclip and Send keep their 28 px tap targets, inside the box, and nothing covers them.
+  for (const button of [attach, send]) {
+    await expect([rect(button).width, rect(button).height]).toEqual([28, 28])
+    await expect(hitsOwnMiddle(button)).toBe(true)
+  }
+  await expect(rect(send).right).toBeLessThanOrEqual(rect(box).right)
+  await expect(hitsOwnMiddle(area)).toBe(true)
+  // Send with no text and no files submits nothing, as in the expanded composer.
+  await userEvent.click(send)
+  await expect(onCollapsedSubmit).not.toHaveBeenCalled()
+  // Send keeps its own handler: it does not focus the text.
+  await expect(area).not.toHaveFocus()
+  await expect(onCollapsedFocus).not.toHaveBeenCalled()
+  // A tap on the row outside the buttons focuses the text and reports it.
+  await userEvent.click(box)
+  await expect(area).toHaveFocus()
+  await expect(onCollapsedFocus).toHaveBeenLastCalledWith(true)
+  // The paperclip keeps its own handler; the focus moves to it, still inside the composer, so no `false` comes.
+  await userEvent.click(attach)
+  await expect(onCollapsedAttach).toHaveBeenCalledTimes(1)
+  await expect(area).not.toHaveFocus()
+  await expect(onCollapsedFocus).toHaveBeenCalledTimes(1)
+  // The text stays one line: a long draft scrolls in it, and Send submits it.
+  await userEvent.click(area)
+  await userEvent.type(area, 'A draft long enough to wrap past the first line of the collapsed composer')
+  await waitFor(() => expect(rect(area).height).toBe(20))
+  await expect(rect(box).height).toBe(50)
+  await userEvent.click(send)
+  await expect(onCollapsedSubmit).toHaveBeenLastCalledWith('A draft long enough to wrap past the first line of the collapsed composer')
+  await expect(area).toHaveValue('')
+  // With files, `collapsed` draws expanded: the chips win.
+  const withFiles = composerOf(canvasElement, 'With files')
+  await expect(withFiles).not.toHaveAttribute('data-collapsed')
+  await expect(within(withFiles).getByText('theme-ideas.md')).toBeInTheDocument()
+  await expect(rect(within(withFiles).getByRole('textbox', { name: 'With files' })).width).toBe(rect(withFiles).width - 22)
+}
+
+/** `collapsed`: one row at a 390 px phone's width, the paperclip, the placeholder and Send; files keep it expanded. */
+export const CollapsedPhoneDark: StoryObj<typeof meta> = {
+  render: () => <CollapsedScreen />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' } },
+  play: collapsedPlay,
+}
+export const CollapsedPhoneLight: StoryObj<typeof meta> = {
+  render: () => <CollapsedScreen />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'light', viewport: { value: 'phone' } },
+  play: collapsedPlay,
+}
+
+// A caller that expands the composer when the text gets the focus and collapses it when the text loses the focus
+// with nothing typed, as the-bridge does when the phone's keyboard opens and closes.
+const onExpandStop = fn<() => void>()
+
+function ExpandOnFocus() {
+  const [focused, setFocused] = useState(false)
+  const [text, setText] = useState('')
+  return (
+    <div className={skillScreen}>
+      <main className={skillChatPhone}>
+        <Stack gap="16">
+          <Composer
+            label="Chat"
+            collapsed={!focused && text === ''}
+            onFocusChange={setFocused}
+            value={text}
+            onValueChange={setText}
+            onAttach={() => undefined}
+            onSubmit={() => {
+              setText('')
+            }}
+            running
+            onStop={onExpandStop}
+            model={<ModelChip model="Opus 5.5" options={[]} />}
+          />
+          <Button>Elsewhere</Button>
+        </Stack>
+      </main>
+    </div>
+  )
+}
+
+const expandOnFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(390)
+  await document.fonts.ready
+  const box = composerOf(canvasElement, 'Chat')
+  const area = within(box).getByRole('textbox', { name: 'Chat' })
+  if (!(area instanceof HTMLTextAreaElement)) throw new Error('no text area')
+  await expect(box).toHaveAttribute('data-collapsed')
+  await expect(rect(box).height).toBe(50)
+  const width = rect(box).width
+  // A tap on the row focuses the text; the caller expands, and the same text area keeps the focus.
+  await userEvent.click(box)
+  await waitFor(() => expect(box).not.toHaveAttribute('data-collapsed'))
+  await expect(within(box).getByRole('textbox', { name: 'Chat' })).toBe(area)
+  await expect(area).toHaveFocus()
+  await expect(rect(box).height).toBe(78)
+  await expect(rect(box).width).toBe(width)
+  await expect(within(box).getByRole('button', { name: 'Model: Opus 5.5' })).toBeInTheDocument()
+  // The caret stays where the user put it as the text grows.
+  await userEvent.type(area, 'Hello')
+  area.setSelectionRange(2, 2)
+  await userEvent.keyboard('X')
+  await expect(area).toHaveValue('HeXllo')
+  await expect(area.selectionStart).toBe(3)
+  // With a draft, the composer stays expanded when the text loses the focus.
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Elsewhere' }))
+  await expect(box).not.toHaveAttribute('data-collapsed')
+  // Empty and without the focus, it collapses again.
+  await userEvent.clear(area)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Elsewhere' }))
+  await waitFor(() => expect(box).toHaveAttribute('data-collapsed'))
+  await expect(rect(box).height).toBe(50)
+  // A press on Stop blurs the text before its click; the composer stays expanded until the press ends, so Stop
+  // still gets its click (Codex review of #307).
+  onExpandStop.mockClear()
+  await userEvent.click(box)
+  await waitFor(() => expect(box).not.toHaveAttribute('data-collapsed'))
+  await userEvent.click(within(box).getByRole('button', { name: 'Stop' }))
+  await expect(onExpandStop).toHaveBeenCalledTimes(1)
+  // Safari and iOS do not focus a pressed button, so the focus leaves the composer: the click still lands, and
+  // the composer collapses after it.
+  await userEvent.click(area)
+  const stop = within(box).getByRole('button', { name: 'Stop' })
+  stop.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+  area.blur()
+  await expect(within(box).getByRole('button', { name: 'Stop' })).toBe(stop)
+  stop.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+  stop.click()
+  await expect(onExpandStop).toHaveBeenCalledTimes(2)
+  await waitFor(() => expect(box).toHaveAttribute('data-collapsed'))
+}
+
+/** A caller sets `collapsed` from `onFocusChange`: a tap expands the composer and the text keeps the focus. */
+export const CollapsedExpandOnFocusPhoneDark: StoryObj<typeof meta> = {
+  render: () => <ExpandOnFocus />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' } },
+  play: expandOnFocusPlay,
+}
+export const CollapsedExpandOnFocusPhoneLight: StoryObj<typeof meta> = {
+  render: () => <ExpandOnFocus />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'light', viewport: { value: 'phone' } },
+  play: expandOnFocusPlay,
+}

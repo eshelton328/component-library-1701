@@ -19,5 +19,10 @@ under their purpose group, never under "Parts" (d-065).
   files alone; an `uploading` or `failed` file holds it (`FilesOnly`
   stories). `retry: false` takes Retry off one failed chip
   (`RetryPerFile` stories).
+- `collapsed` draws the stacked composer as one row (attach, text, Send)
+  in the same DOM, so the text area never remounts and keeps the focus
+  and caret as the caller expands it from `onFocusChange(true)`.
+  Attachments keep it expanded (`CollapsedPhone` and
+  `CollapsedExpandOnFocusPhone` stories, screen review R31).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.

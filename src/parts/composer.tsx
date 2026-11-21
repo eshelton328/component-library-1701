@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { composer } from '../../styled-system/recipes'
 import { ArrowUpIcon, ClipIcon, CloseIcon, StopIcon, WarningIcon } from '../foundations/icons'
@@ -53,6 +53,68 @@ function useScrollsY<T extends HTMLElement>(count: number) {
     }
   }, [count])
   return [ref, scrolls] as const
+}
+
+/**
+ * Reports the composer's focus to `onFocusChange`: `true` when the text gets
+ * the focus, `false` once the focus has left the composer and no press on
+ * it is still going. A press on Stop, Send or the model blurs the text
+ * first; a caller that collapses on that blur would take the button away
+ * before its click (Codex review of #307). So the report waits for the
+ * press to end, and the focus that moves to a button, or into a menu that
+ * a control portals out (React focus events bubble through portals), keeps
+ * the composer focused.
+ */
+function useFocusReport(onFocusChange: ((focused: boolean) => void) | undefined) {
+  const report = useRef(onFocusChange)
+  useLayoutEffect(() => {
+    report.current = onFocusChange
+  })
+  const state = useRef({ reported: false, inside: false, pressing: false, timer: 0 })
+  useEffect(() => {
+    const current = state.current
+    return () => {
+      window.clearTimeout(current.timer)
+    }
+  }, [])
+  if (onFocusChange === undefined) return {}
+  const settle = () => {
+    const now = state.current
+    window.clearTimeout(now.timer)
+    now.timer = window.setTimeout(() => {
+      if (now.inside || now.pressing || !now.reported) return
+      now.reported = false
+      report.current?.(false)
+    }, 0)
+  }
+  return {
+    onFocus: (event: FocusEvent<HTMLDivElement>) => {
+      const now = state.current
+      now.inside = true
+      if (now.reported || !(event.target instanceof HTMLTextAreaElement)) return
+      now.reported = true
+      report.current?.(true)
+    },
+    onBlur: () => {
+      state.current.inside = false
+      settle()
+    },
+    onPointerDown: (event: PointerEvent<HTMLDivElement>) => {
+      state.current.pressing = true
+      const doc = event.currentTarget.ownerDocument
+      // After the release, and after the click that follows it in the same task.
+      const end = () => {
+        doc.removeEventListener('pointerup', end, true)
+        doc.removeEventListener('pointercancel', end, true)
+        window.setTimeout(() => {
+          state.current.pressing = false
+          settle()
+        }, 0)
+      }
+      doc.addEventListener('pointerup', end, true)
+      doc.addEventListener('pointercancel', end, true)
+    },
+  }
 }
 
 /** Whether a drag carries files from outside the page, such as from Finder or the Files app. */
@@ -205,6 +267,30 @@ export type ComposerProps = {
    * Attachments show above the row in both layouts.
    */
   layout?: 'stacked' | 'inline' | undefined
+  /**
+   * Draws the stacked composer in one row at the same width, for a phone
+   * with its keyboard closed (screen review R31): the attach button, the
+   * text on one line with its placeholder, then Send. The model and Stop
+   * are not drawn. The text stays mounted and focusable, and does not grow
+   * past one line; a longer draft scrolls in that line. A tap anywhere on
+   * the row except the attach button and Send focuses the text. The
+   * composer does not expand itself: set `collapsed` to false in
+   * `onFocusChange(true)`, and back to true on `onFocusChange(false)` when
+   * the composer is empty. The text keeps its caret when it expands,
+   * and the change has no animation. With attachments the composer draws
+   * expanded, even when `collapsed` is true: the chips need the room.
+   * `false` (the default) draws the composer as before. `layout="inline"`
+   * is already one row and ignores it.
+   */
+  collapsed?: boolean | undefined
+  /**
+   * Called with `true` when the text gets the focus, such as to expand a
+   * `collapsed` composer, and with `false` when the focus has left the
+   * composer (its text, its buttons and a menu its model opens) and no
+   * press on it is still going. A press on Stop, Send or the model so
+   * never reports `false` before its click.
+   */
+  onFocusChange?: ((focused: boolean) => void) | undefined
 }
 
 /**
@@ -224,6 +310,10 @@ export type ComposerProps = {
  * view on a phone. `sendDisabled` turns Send off, such as while a file
  * uploads, and `onAddFiles` takes files dropped on the composer or pasted
  * into it.
+ *
+ * `collapsed` draws the stacked composer in one row (attach, text, Send)
+ * for a phone with its keyboard closed; the caller expands it from
+ * `onFocusChange(true)`. Attachments keep it expanded.
  */
 export function Composer({
   label = 'Message',
@@ -249,7 +339,11 @@ export function Composer({
   model,
   disabled = false,
   layout = 'stacked',
+  collapsed = false,
+  onFocusChange,
 }: ComposerProps) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const focusChange = useFocusReport(onFocusChange)
   const [draft, setDraft] = useState(defaultValue ?? '')
   const [sending, setSending] = useState(false)
   // A file dragged over the composer, and how many of its elements the drag has entered, so a move from one
@@ -344,6 +438,19 @@ export function Composer({
       }
     : {}
   const inline = layout === 'inline'
+  // Chips win over `collapsed`: a composer with files draws expanded.
+  const folded = collapsed && !inline && attachments.length === 0
+  // A tap on the collapsed row, outside the attach button and Send, focuses the text in the same tap, so iOS opens
+  // the keyboard.
+  const tapToFocus = folded
+    ? {
+        onClick: (event: MouseEvent<HTMLDivElement>) => {
+          if (event.target instanceof Element && event.target.closest('button') !== null) return
+          const area = rootRef.current?.querySelector('textarea')
+          if (area !== null && area !== undefined && document.activeElement !== area) area.focus()
+        },
+      }
+    : {}
   const buttonSize = inline ? 'xs' : 'sm'
   const chips =
     attachments.length === 0 ? null : (
@@ -444,7 +551,7 @@ export function Composer({
   )
   if (inline) {
     return (
-      <Root layout="inline" {...fileDrop}>
+      <Root layout="inline" {...fileDrop} {...focusChange}>
         {chips}
         <Row>
           {attach}
@@ -457,16 +564,16 @@ export function Composer({
     )
   }
   return (
-    <Root {...fileDrop}>
+    <Root ref={rootRef} {...(folded ? { collapsed: true, 'data-collapsed': '' } : {})} {...fileDrop} {...focusChange} {...tapToFocus}>
       {chips}
       {textArea}
-      <Inline justify="between" gap="6">
-        <Inline gap="6">
+      <Inline data-composer-controls="" justify="between" gap="6">
+        <Inline data-composer-group="start" gap="6">
           {attach}
-          {model}
+          {folded ? null : model}
         </Inline>
-        <Inline gap="6">
-          {stop}
+        <Inline data-composer-group="end" gap="6">
+          {folded ? null : stop}
           {send}
         </Inline>
       </Inline>

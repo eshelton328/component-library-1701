@@ -415,6 +415,8 @@ export type ComposerProps = {
     model?: ReactNode;
     disabled?: boolean | undefined;
     layout?: 'stacked' | 'inline' | undefined;
+    collapsed?: boolean | undefined;
+    onFocusChange?: ((focused: boolean) => void) | undefined;
 };
 
 // @public

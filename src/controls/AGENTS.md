@@ -37,6 +37,9 @@ components (d-066).
 - A play that clicks outside an overlay right after an overlay opened
   or closed first awaits `layerSettled()` (`layer.testing.ts`): Ark
   ignores outside clicks until its layers settle (popover Behaviour).
+  The same holds for a click in an overlay that just opened over
+  another: until zag tracks the new layer, the click is outside the
+  one under it and closes it (overlay-layers Menu In Sheet).
 - A play function that reads an idle fill first calls `restPointerOn`
   (`pointer.testing.ts`) with a place that has no hover style, such as a
   sheet's title row or the story's canvas.

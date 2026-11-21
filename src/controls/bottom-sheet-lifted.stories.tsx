@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { BottomSheet } from './bottom-sheet'
 import { Button } from './button'
 import { motionDone, unmounted } from './bottom-sheet.testing'
+import { layerSettled } from './layer.testing'
 
 // The Workspaces M9 held row: holding a chat row (here, its Hold button) opens the chat's actions sheet, which lifts
 // a copy of the row over its scrim, bright where the rest of the list is dimmed (146:252).
@@ -77,8 +78,11 @@ const heldRowPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   await expect(getComputedStyle(anchor).visibility).toBe('hidden')
   await expect(anchor.getBoundingClientRect().top).toBe(at.top)
   // A tap on the lifted row reaches the scrim and closes the sheet; the row shows again.
+  await layerSettled()
   await press(lifted)
   await unmounted(sheet)
+  // The copy has its own presence (LiftedCopy), so it can unmount a frame after the sheet.
+  await unmounted(lifted)
   await expect(document.querySelector('.bottom-sheet__lifted')).toBeNull()
   await expect(getComputedStyle(anchor).visibility).toBe('visible')
 }
@@ -210,6 +214,7 @@ const closePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   await expect(getComputedStyle(anchor).visibility).toBe('hidden')
   // When the sheet has gone, so have the copy, and the row shows.
   await unmounted(sheet)
+  await unmounted(lifted)
   await expect(document.querySelector('.bottom-sheet__lifted')).toBeNull()
   await expect(getComputedStyle(anchor).visibility).toBe('visible')
 }

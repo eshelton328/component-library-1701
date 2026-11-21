@@ -12,6 +12,7 @@ import { Menu } from './menu'
 import { Popover } from './popover'
 import { SelectField } from './select-field'
 import { motionDone } from './bottom-sheet.testing'
+import { layerSettled } from './layer.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 
@@ -116,6 +117,8 @@ const body = () => within(document.body)
 async function pickProject(dialog: HTMLElement) {
   await press(within(dialog).getByRole('button', { name: 'Project ncc-1701' }))
   const menu = await body().findByRole('menu')
+  // A press in the new menu before zag tracks it is outside the dialog's layer, and dismisses the dialog.
+  await layerSettled()
   await press(within(menu).getByRole('menuitemradio', { name: 'pinpoint' }))
   await waitFor(() => expect(body().queryByRole('menu')).toBeNull())
   await expect(within(dialog).getByRole('button', { name: 'Project pinpoint' })).toBeInTheDocument()
@@ -135,6 +138,7 @@ const menuInSheetPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
   await motionDone(sheet)
   await press(within(sheet).getByRole('button', { name: 'Chat actions' }))
   const menu = await body().findByRole('menu', { name: 'Chat actions' })
+  await layerSettled()
   await press(within(menu).getByRole('menuitem', { name: 'Pin to sidebar' }))
   await waitFor(() => expect(canvas.getByText('Picked: pin')).toBeInTheDocument())
   await expect(body().getByRole('dialog', { name: 'Chat' })).toBeInTheDocument()
@@ -203,6 +207,7 @@ const siblingPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
   // No part sets a z-index, so the one later in the document paints on top. Ark turns pointer events off on the
   // dialog under a modal one, so a click alone would reach the confirm even where the form covers it.
   await waitFor(() => expect(edit.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+  await layerSettled()
   await press(within(confirm).getByRole('button', { name: 'Yes, remove' }))
   await waitFor(() => expect(within(canvasElement).getByText('Confirmed: yes')).toBeInTheDocument())
 }

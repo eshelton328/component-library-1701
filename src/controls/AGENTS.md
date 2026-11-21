@@ -43,3 +43,7 @@ components (d-066).
 - A play function that reads an idle fill first calls `restPointerOn`
   (`pointer.testing.ts`) with a place that has no hover style, such as a
   sheet's title row or the story's canvas.
+- `Switch` turns a setting on or off at once (the Notifications row of
+  d-118); a choice in a list or a form stays a `Checkbox`. `layout`
+  picks the drawer row (`inline`) or the rail's stacked form, never a
+  window measure.

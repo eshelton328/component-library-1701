@@ -1261,6 +1261,7 @@ export type MoreDrawerProps = {
     open?: boolean | undefined;
     defaultOpen?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
+    footer?: ReactNode;
 };
 
 // @public
@@ -1288,6 +1289,7 @@ export type NavRailProps = {
     onSelect?: ((value: string) => void) | undefined;
     logo?: ReactNode;
     label?: string | undefined;
+    footer?: ReactNode;
 };
 
 // @public
@@ -1689,6 +1691,20 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 
 // @public
 export function StopIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Switch(input: SwitchProps): JSX.Element;
+
+// @public (undocumented)
+export type SwitchProps = {
+    label: string;
+    hint?: string | undefined;
+    checked?: boolean | undefined;
+    defaultChecked?: boolean | undefined;
+    onCheckedChange?: ((checked: boolean) => void) | undefined;
+    disabled?: boolean | undefined;
+    layout?: 'inline' | 'stacked' | undefined;
+};
 
 // @public
 export function TabBar(input: TabBarProps): JSX.Element;

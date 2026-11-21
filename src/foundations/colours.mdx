@@ -11,7 +11,7 @@ these names, for example `css({ color: 'fg.muted' })`.
 ## accent
 
 <ColorPalette>
-  <ColorItem title={"accent.default"} subtitle={"Fill of the primary button, checked checkboxes and meter fills. Text on it uses fg.onAccent."} colors={{"dark":"#5ee1ff","light":"#0e7490"}} />
+  <ColorItem title={"accent.default"} subtitle={"Fill of the primary button, checked checkboxes, the track of a Switch that is on, and meter fills. Text on it uses fg.onAccent."} colors={{"dark":"#5ee1ff","light":"#0e7490"}} />
   <ColorItem title={"accent.discuss"} subtitle={"The Discuss action, update proposals, the composer caret, the checked box of a Checkbox with tone discuss (the new tasks a discussion proposes) and the border of a pressed Button with pressedBorder discuss (the Discuss toggle while its discussion is open, Inbox 403:943, Artifacts 452:2341), drawn over its surface.discuss fill."} colors={{"dark":"#9e8fff","light":"#5b4bd6"}} />
   <ColorItem title={"accent.faint"} subtitle={"The faintest accent tint, behind hovered or highlighted rows."} colors={{"dark":"rgba(94, 225, 255, 0.08)","light":"rgba(14, 116, 144, 0.06)"}} />
   <ColorItem title={"accent.subtle"} subtitle={"Tint behind an accent item."} colors={{"dark":"rgba(94, 225, 255, 0.14)","light":"rgba(14, 116, 144, 0.12)"}} />
@@ -44,7 +44,7 @@ these names, for example `css({ color: 'fg.muted' })`.
 <ColorPalette>
   <ColorItem title={"border.accent"} subtitle={"The border of a toast that confirms an action, such as a move with Undo (Workbench D20 417:2135). Not for selected items, which use border.selected."} colors={{"dark":"rgba(94, 225, 255, 0.5)","light":"rgba(14, 116, 144, 0.5)"}} />
   <ColorItem title={"border.active"} subtitle={"The border of an open menu trigger, a pressed Button, a drop target or a lifted row. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha."} colors={{"dark":"rgba(94, 225, 255, 0.7)","light":"rgba(14, 116, 144, 0.75)"}} />
-  <ColorItem title={"border.control"} subtitle={"The border of an unchecked checkbox or other small control. Not for pane or card borders, which use border.default."} colors={{"dark":"rgba(138, 151, 184, 0.7)","light":"rgba(74, 86, 117, 0.7)"}} />
+  <ColorItem title={"border.control"} subtitle={"The border of an unchecked checkbox or other small control, and the track of a Switch that is off. Not for pane or card borders, which use border.default."} colors={{"dark":"rgba(138, 151, 184, 0.7)","light":"rgba(74, 86, 117, 0.7)"}} />
   <ColorItem title={"border.default"} subtitle={"Every 1px border and divider, and empty meter segments."} colors={{"dark":"#24314f","light":"#d3d9e6"}} />
   <ColorItem title={"border.discuss"} subtitle={"The border of a toast that confirms an action taken from a discussion, such as tasks created from one (Inbox D18 403:2943). Not for text, and not for the border of a pressed Discuss button, which needs 3:1 and uses accent.discuss."} colors={{"dark":"rgba(158, 143, 255, 0.5)","light":"rgba(91, 75, 214, 0.5)"}} />
   <ColorItem title={"border.focus"} subtitle={"The keyboard focus ring, drawn at borderWidths.strong."} colors={{"dark":"#5ee1ff","light":"#0e7490"}} />
@@ -76,7 +76,7 @@ these names, for example `css({ color: 'fg.muted' })`.
   <ColorItem title={"fg.accent"} subtitle={"Links and selected labels, and the icon of a highlighted row in a compact menu (Workbench D1 105:449, D2b)."} colors={{"dark":"#5ee1ff","light":"#0e6a85"}} />
   <ColorItem title={"fg.default"} subtitle={"Primary text."} colors={{"dark":"#e6ecff","light":"#0b1222"}} />
   <ColorItem title={"fg.muted"} subtitle={"Secondary text: meta, descriptions, idle labels."} colors={{"dark":"#8a97b8","light":"#4a5675"}} />
-  <ColorItem title={"fg.onAccent"} subtitle={"Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg."} colors={{"dark":"#070b14","light":"#ffffff"}} />
+  <ColorItem title={"fg.onAccent"} subtitle={"Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg, and the thumb of a Switch, on or off."} colors={{"dark":"#070b14","light":"#ffffff"}} />
   <ColorItem title={"fg.subtle"} subtitle={"Third-level text: counts, placeholders, section labels, ages. Only on bg.canvas, surface.pane, surface.chrome, surface.overlay, surface.inset or surface.well."} colors={{"dark":"#7986a6","light":"#5d6886"}} />
 </ColorPalette>
 

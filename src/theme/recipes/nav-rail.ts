@@ -5,11 +5,15 @@ import { scrollArea } from './scroll-area'
 // The desktop nav rail: Inbox rail 346:105. Selected item 346:114, idle item
 // 346:123, label 346:122 and 346:131, icon frame 346:115, logo wrapper
 // 346:106 and divider 346:112.
+// `footer` holds content at the rail's end, such as the stacked Notifications
+// `Switch` of d-118 (no Figma frame: an owner-approved exception). Its
+// `mt: auto` pushes it to the bottom of the rail; when the items fill the
+// rail it follows them at the rail's gap and scrolls with them.
 export const navRail = defineSlotRecipe({
   className: 'nav-rail',
   jsx: ['NavRail'],
   staticCss: ['*'],
-  slots: ['root', 'logo', 'divider', 'list', 'item', 'icon', 'label', 'hint'],
+  slots: ['root', 'logo', 'divider', 'list', 'item', 'icon', 'label', 'hint', 'footer'],
   base: {
     root: {
       display: 'flex',
@@ -64,6 +68,7 @@ export const navRail = defineSlotRecipe({
     icon: { position: 'relative', display: 'inline-flex', w: 'icon.24', h: 'icon.24', '& > svg': { w: 'icon.24!', h: 'icon.24!' } },
     // The badge count for screen readers; the badge itself is hidden from them.
     hint: { srOnly: true },
+    footer: { display: 'flex', flexDirection: 'column', alignItems: 'stretch', flexShrink: '0', mt: 'auto', w: '100%' },
     // As in Figma, a one-word label wider than its item ("Workspaces" is 55 px) extends past the item, centred.
     // The negative margin gives the label the rail's padding on both sides (63 px in all), so longer labels wrap
     // between words inside the rail, and a word wider than the rail breaks.

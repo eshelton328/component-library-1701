@@ -15,11 +15,17 @@ import { focusRing } from './focus'
 // `label` (Medium 14/20) keeps Figma's 20 px line, where `labelLg` (Medium
 // 16/24, d-074) made each item 6 px taller and the title wider; 15 lies
 // between the two sizes, and the line decides (d-100).
+//
+// `footer` holds content below the groups that is not a page, such as the
+// Notifications `Switch` of d-118 (no Figma frame: an owner-approved
+// exception). It is separated as a labelled group is, 16 above it (the group
+// label's `pt`), and pads 12 at the sides, as an item does, so its text lines
+// up with the items' tiles.
 export const moreDrawer = defineSlotRecipe({
   className: 'more-drawer',
   jsx: ['MoreDrawer'],
   staticCss: ['*'],
-  slots: ['group', 'groupLabel', 'list', 'item', 'tile', 'body', 'label', 'description', 'count', 'chevron'],
+  slots: ['group', 'groupLabel', 'list', 'item', 'tile', 'body', 'label', 'description', 'count', 'chevron', 'footer'],
   base: {
     group: { display: 'flex', flexDirection: 'column', gap: '4' },
     // Figma pt 14 takes `16`, the larger of 12 and 16 (d-072).
@@ -61,5 +67,6 @@ export const moreDrawer = defineSlotRecipe({
     description: { textStyle: 'small', color: 'fg.muted' },
     count: { flexShrink: '0', textStyle: 'mono', color: 'fg.muted' },
     chevron: { flexShrink: '0', w: 'icon.16', h: 'icon.16', color: 'fg.muted' },
+    footer: { display: 'flex', flexDirection: 'column', pt: '16', px: '12' },
   },
 })

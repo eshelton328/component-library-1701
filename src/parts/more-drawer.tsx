@@ -14,6 +14,7 @@ const Label = withContext('span', 'label')
 const Description = withContext('span', 'description')
 const Count = withContext('span', 'count')
 const Chevron = withContext('svg', 'chevron')
+const Footer = withProvider('div', 'footer')
 
 /** A page in the drawer, such as Artifacts or Toolkit. */
 export type MoreDrawerItem = {
@@ -49,6 +50,12 @@ export type MoreDrawerProps = {
   open?: boolean | undefined
   defaultOpen?: boolean | undefined
   onOpenChange?: ((open: boolean) => void) | undefined
+  /**
+   * Content below the groups, such as a `Switch` for the Notifications setting (d-118). It sits 16 below the last
+   * group, as a labelled group does, and is not a page item: a control in it does not close the drawer, and
+   * `onSelect` is not called. No footer when not set.
+   */
+  footer?: ReactNode
 }
 
 function DrawerGroup({ group, selected, onSelect }: { group: MoreDrawerGroup; selected: string | undefined; onSelect: ((value: string) => void) | undefined }) {
@@ -95,7 +102,8 @@ function DrawerGroup({ group, selected, onSelect }: { group: MoreDrawerGroup; se
  * itself takes the focus, so no item draws a focus ring (Figma M4 draws
  * none); Tab moves to the first item.
  */
-export function MoreDrawer({ groups, selected, onSelect, title = 'More', trigger, open, defaultOpen, onOpenChange }: MoreDrawerProps) {
+export function MoreDrawer({ groups, selected, onSelect, title = 'More', trigger, open, defaultOpen, onOpenChange, footer }: MoreDrawerProps) {
+  const hasFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean' && footer !== ''
   return (
     <SizedBottomSheet
       size="lg"
@@ -110,6 +118,7 @@ export function MoreDrawer({ groups, selected, onSelect, title = 'More', trigger
         // Labels need not be unique, so the position is the key; the items inside have their values as keys.
         <DrawerGroup key={`group-${String(i)}`} group={group} selected={selected} onSelect={onSelect} />
       ))}
+      {hasFooter ? <Footer>{footer}</Footer> : null}
     </SizedBottomSheet>
   )
 }

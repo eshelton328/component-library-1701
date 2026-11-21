@@ -81,7 +81,7 @@
       "lg": {
         "$type": "dimension",
         "$value": { "value": 36, "unit": "px" },
-        "$description": "Tablet and phone controls."
+        "$description": "Tablet and phone controls, and the width of a Switch track."
       },
       "form": {
         "$type": "dimension",
@@ -91,7 +91,7 @@
       "xl": {
         "$type": "dimension",
         "$value": { "value": 44, "unit": "px" },
-        "$description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303)."
+        "$description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303), and the least height of a Switch row, for touch."
       }
     },
     "icon": {
@@ -113,7 +113,7 @@
       "20": {
         "$type": "dimension",
         "$value": { "value": 20, "unit": "px" },
-        "$description": "A 20px icon."
+        "$description": "A 20px icon, and the height of a Switch track."
       },
       "24": {
         "$type": "dimension",

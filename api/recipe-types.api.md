@@ -759,6 +759,7 @@ export * from './scroll-frame.js';
 export * from './search-field.js';
 export * from './select-field.js';
 export * from './splitter.js';
+export * from './switch-recipe.js';
 export * from './tab-bar.js';
 export * from './tags-line.js';
 export * from './terminal-lines.js';
@@ -1230,7 +1231,7 @@ export type MoreDrawerVariantProps = {
 
 export type MoreDrawerVariantMap = RecipeVariantMap<MoreDrawerVariant>
 
-export type MoreDrawerSlot = "group" | "groupLabel" | "list" | "item" | "tile" | "body" | "label" | "description" | "count" | "chevron"
+export type MoreDrawerSlot = "group" | "groupLabel" | "list" | "item" | "tile" | "body" | "label" | "description" | "count" | "chevron" | "footer"
 
 export type MoreDrawerRecipe = ConfigSlotRecipeRuntimeFn<MoreDrawerSlot, MoreDrawerVariantProps, MoreDrawerVariantMap>
 
@@ -1264,7 +1265,7 @@ export type NavRailVariantProps = {
 
 export type NavRailVariantMap = RecipeVariantMap<NavRailVariant>
 
-export type NavRailSlot = "root" | "logo" | "divider" | "list" | "item" | "icon" | "label" | "hint"
+export type NavRailSlot = "root" | "logo" | "divider" | "list" | "item" | "icon" | "label" | "hint" | "footer"
 
 export type NavRailRecipe = ConfigSlotRecipeRuntimeFn<NavRailSlot, NavRailVariantProps, NavRailVariantMap>
 
@@ -1559,6 +1560,26 @@ export type StatusPillVariantMap = RecipeVariantMap<StatusPillVariant>
 export type StatusPillRecipe = ConfigRecipeRuntimeFn<StatusPillVariantProps, StatusPillVariantMap>
 
 export declare const statusPill: StatusPillRecipe;
+
+// switch-recipe.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type SwitchRecipeVariant = {
+  layout?: "inline" | "stacked"
+}
+
+export type SwitchRecipeVariantProps = {
+  [K in keyof SwitchRecipeVariant]?: ConditionalValue<SwitchRecipeVariant[K]>
+}
+
+export type SwitchRecipeVariantMap = RecipeVariantMap<SwitchRecipeVariant>
+
+export type SwitchRecipeSlot = "root" | "label" | "control" | "thumb" | "text" | "hint"
+
+export type SwitchRecipeRecipe = ConfigSlotRecipeRuntimeFn<SwitchRecipeSlot, SwitchRecipeVariantProps, SwitchRecipeVariantMap>
+
+export declare const switchRecipe: SwitchRecipeRecipe;
 
 // tab-bar.d.ts
 import type { ConditionalValue } from '../types/system.js';

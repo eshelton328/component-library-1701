@@ -2920,6 +2920,28 @@ const pressAcrossSettle: StoryObj<typeof meta> = {
 /** Phone chat: a press on Send held across the keyboard's settle keeps the composer under the finger until its release. */
 export const PressAcrossSettleDark: StoryObj<typeof meta> = { ...pressAcrossSettle, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const PressAcrossSettleLight: StoryObj<typeof meta> = { ...pressAcrossSettle, globals: { mode: 'light', viewport: { value: 'm390' } } }
+const refocusAfterFall: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { footer, field } = threadParts(canvasElement)
+    await userEvent.click(field)
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    // The field loses the focus, and the dock starts down with the keyboard before iOS reports the close.
+    field.blur()
+    for (let i = 0; i < 3; i++) await nextFrame()
+    await expect(riseOf(footer)).toBeLessThan(266)
+    // The field takes the focus again before any report, and the keyboard stays: the dock goes back up to it at once,
+    // well before the opening's 1 s settle (Codex review of #312).
+    field.focus()
+    await wait(motionMs + 100)
+    await expect(riseOf(footer)).toBe(266)
+  }),
+}
+/** Phone chat: the field takes the focus again as the composer starts down; the composer goes back up to the keyboard. */
+export const RefocusAfterFallDark: StoryObj<typeof meta> = { ...refocusAfterFall, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const RefocusAfterFallLight: StoryObj<typeof meta> = { ...refocusAfterFall, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 const keyboardFall: StoryObj<typeof meta> = {
   ...withMotion,

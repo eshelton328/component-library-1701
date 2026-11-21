@@ -591,9 +591,15 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       else if (pressing) waitForRelease()
       else timer = setTimeout(end, blurEndDelay)
     }
+    // The fall does not measure: iOS has not reported the close yet, so the visual viewport is still short by the
+    // keyboard, and a measure with no field focused would keep that as the rest shortfall. A field focused again before
+    // the report would then count no keyboard as open and leave the dock down until the settle (Codex review of #312).
+    // The report that comes later measures and fits as usual.
     const fall = () => {
       timer = undefined
-      if (!editable(document.activeElement)) refit()
+      if (editable(document.activeElement)) return
+      typing = false
+      show(0, keyboardSince())
     }
     // The window resizes or turns, the page comes back from the back-forward cache, or the installed app comes
     // back on screen: these may change the viewport with no visualViewport event, and they end a tap, so they

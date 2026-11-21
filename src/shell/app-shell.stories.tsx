@@ -1572,6 +1572,8 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 // The dock's move, from the tokens, and how far back a move that starts at a keyboard's report starts its clock: iOS
 // reports an opening keyboard that has moved for about 50 ms (AppShell's `keyboardReportLag`, screen review R37).
 const motionMs = cssDuration(token('durations.keyboard'))
+// The time after the keyboard's last report at which its measure settles (`blurEndDelay` in app-shell.tsx).
+const settleMs = 300
 const reportLag = 50
 // A first open where the real keyboard is 50 px off the 380 guess, reported `delay` ms after the focus. Before the
 // report the composer stays down: iOS starts its keyboard 60 to 120 ms after the focus, and a dock that rose at the
@@ -2904,12 +2906,16 @@ const pressAcrossSettle: StoryObj<typeof meta> = {
     const { canvas, footer, field } = threadParts(canvasElement)
     // The first open: the keyboard reports 380, the dock rises to 346, and the measure settles 300 ms after the report.
     await userEvent.click(field)
+    const reported = performance.now()
     fakeViewport.move({ height: 844 - 380 })
-    await settled(footer, 346)
-    // A press on Send blurs the field and is held across that settle: the dock stays where the finger pressed, as Send
-    // acts on its click.
+    await nextFrame()
+    await nextFrame()
+    // A press on Send blurs the field while that settle is still to come, and is held across it: the dock goes on to
+    // where the keyboard is and stays there under the finger, as Send acts on its click (Codex review of #312: a press
+    // after the settle would not test it).
     canvas.getByRole('button', { name: 'Send' }).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
     field.blur()
+    await expect(performance.now() - reported).toBeLessThan(settleMs)
     await new Promise((resolve) => setTimeout(resolve, 1200))
     await expect(riseOf(footer)).toBe(346)
     // The press's release: the dock comes down after it.

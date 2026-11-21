@@ -120,15 +120,20 @@ export const listRow = defineSlotRecipe({
       // The keyboard focus of the title button rings the whole row.
       '&:has(.list-row__title:focus-visible)': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus' },
       '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
-      // A selected or running row is not dimmed: its text must keep 4.5:1 on the selected colour.
-      '&[data-snoozed]:not([data-selected]):not([data-running])': { opacity: 'snoozed' },
+      // A row with onSelect while a finger or the mouse is down on it (screen review R38): the selected fill, with no
+      // selected border, so a tap on a phone or tablet shows for as long as the press and leaves no row highlighted.
+      // ListRow sets data-pressed only on a row with onSelect, from pointerdown to pointerup, pointercancel or
+      // pointerleave. A selected or running row keeps its colours. No transition, so nothing moves under Reduce Motion.
+      '&[data-pressed]:not([data-selected]):not([data-running])': { bg: 'surface.selected' },
+      // A selected, running or pressed row is not dimmed: its text must keep 4.5:1 on the selected colour.
+      '&[data-snoozed]:not([data-selected]):not([data-running]):not([data-pressed])': { opacity: 'snoozed' },
       // A finished row that is not open (Inbox D7 346:2940) draws its title in #8a97b8 (fg.muted) and fades its kind
       // tile: Figma to 0.6, here opacity.finished (0.75), the nearest value that keeps the kind icon at 3:1 (d-100).
       '&[data-finished]:not([data-selected]):not([data-running]) .list-row__title': { color: 'fg.muted' },
       '&[data-finished]:not([data-selected]):not([data-running]) .list-row__leading': { opacity: 'finished' },
-      // Figma draws the age and tags in #4a5675 (fg.subtle). On surface.selected fg.subtle is not allowed,
-      // and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
-      '&:is([data-selected], [data-running], [data-snoozed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },
+      // Figma draws the age and tags in #4a5675 (fg.subtle). On surface.selected (a selected, running or pressed row)
+      // fg.subtle is not allowed, and on a snoozed row's 0.85 opacity it falls under 4.5:1, so those rows keep fg.muted.
+      '&:is([data-selected], [data-running], [data-snoozed], [data-pressed]) :is(.list-row__trailing, .tags-line__root)': { color: 'fg.muted' },
     },
     // Level 2 has no Figma frame: its ↳ moves one step in, under the kind
     // mark of a level 1 row (24 + 13 + 10 = 47, so 23 more; nearest token 24).
@@ -148,6 +153,9 @@ export const listRow = defineSlotRecipe({
       outline: 'none',
       '&:is(button)': {
         cursor: 'pointer',
+        // The pressed fill is the tap's feedback, so iOS draws no grey tap box over the row as well. Panda's preflight
+        // clears it on html; the button clears it again for a page that loads the recipes without the preflight.
+        WebkitTapHighlightColor: 'transparent',
         _after: { content: '""', position: 'absolute', inset: '0', borderRadius: 'inherit' },
       },
     },
@@ -188,12 +196,13 @@ export const listRow = defineSlotRecipe({
     },
     surface: {
       default: {},
-      // The base's selected colours lose to a variant, so the card sets them again.
+      // The base's selected and pressed colours lose to a variant, so the card sets them again.
       card: {
         root: {
           bg: 'surface.pane',
           borderColor: 'border.default',
           '&[data-selected], &[data-running]': { bg: 'surface.selected', borderColor: 'border.selected' },
+          '&[data-pressed]:not([data-selected]):not([data-running])': { bg: 'surface.selected' },
         },
       },
     },

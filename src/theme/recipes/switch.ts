@@ -16,6 +16,11 @@ import { focusRing } from './focus'
 // `fg.onAccent` in both states: 4.5:1 on accent.default (contrast.json) and
 // 3.5:1 or more on the off track. The focus ring sits on the track, as the
 // Checkbox's sits on its box.
+// In forced-colours mode the browser paints every background as Canvas, so the
+// track and the thumb would merge. There the thumb keeps CanvasText and the
+// track that is on takes Highlight (forcedColorAdjust none), so the thumb
+// shows at its end and on reads apart from off; the track keeps its edge from
+// the transparent outline that `outline: none` writes.
 // `layout="inline"` (the default) is a full-width row for the drawer: the
 // label in `label` (Medium 14/20, fg.default), as the drawer's item titles,
 // and the hint in `small` (fg.muted), as their descriptions, 2 apart; the
@@ -50,11 +55,20 @@ export const switchRecipe = defineSlotRecipe({
       p: '2',
       borderRadius: 'full',
       bg: 'border.control',
-      _checked: { justifyContent: 'flex-end', bg: 'accent.default' },
+      _checked: { justifyContent: 'flex-end', bg: 'accent.default', _highContrast: { bg: 'Highlight' } },
+      _highContrast: { forcedColorAdjust: 'none', bg: 'Canvas' },
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
-    thumb: { display: 'block', flexShrink: '0', w: 'icon.16', h: 'icon.16', borderRadius: 'full', bg: 'fg.onAccent' },
+    thumb: {
+      display: 'block',
+      flexShrink: '0',
+      w: 'icon.16',
+      h: 'icon.16',
+      borderRadius: 'full',
+      bg: 'fg.onAccent',
+      _highContrast: { forcedColorAdjust: 'none', bg: 'CanvasText' },
+    },
     text: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     label: { textStyle: 'label', color: 'fg.default' },
     hint: { textStyle: 'small', color: 'fg.muted' },

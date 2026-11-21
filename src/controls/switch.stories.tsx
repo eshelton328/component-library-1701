@@ -202,5 +202,31 @@ const stackedPlay: Story['play'] = async ({ canvasElement }) => {
   await expect(onCheckedChange).toHaveBeenLastCalledWith(true)
   await expectTrack(control, thumb, true)
 }
+/** The declarations a `(forced-colors: active)` rule of this page's styles sets on elements with `className`. */
+function forcedColours(className: string) {
+  const found: Record<string, string> = {}
+  const visit = (rules: CSSRuleList, forced: boolean) => {
+    for (const rule of Array.from(rules)) {
+      if (rule instanceof CSSMediaRule) visit(rule.cssRules, forced || rule.conditionText.includes('forced-colors: active'))
+      else if (rule instanceof CSSLayerBlockRule || rule instanceof CSSSupportsRule) visit(rule.cssRules, forced)
+      else if (forced && rule instanceof CSSStyleRule && rule.selectorText.includes(className)) {
+        for (const name of Array.from(rule.style)) found[`${rule.selectorText.includes('checked') ? 'checked ' : ''}${name}`] = rule.style.getPropertyValue(name)
+      }
+    }
+  }
+  for (const sheet of Array.from(document.styleSheets)) visit(sheet.cssRules, false)
+  return found
+}
+
+// Forced colours (Windows High Contrast): the browser paints every background as Canvas, which would hide the thumb on
+// its track. The thumb keeps CanvasText and the track that is on takes Highlight, so the state still shows.
+const forcedPlay: Story['play'] = async ({ canvasElement }) => {
+  const { thumb } = parts(canvasElement, 'Notifications')
+  await expect(thumb).toBeVisible()
+  await expect(forcedColours('switch__thumb')).toMatchObject({ 'forced-color-adjust': 'none', 'background-color': 'canvastext' })
+  await expect(forcedColours('switch__control')).toMatchObject({ 'forced-color-adjust': 'none', 'checked background-color': 'highlight' })
+}
+export const ForcedColours: Story = { args: { defaultChecked: true }, play: forcedPlay, globals: { mode: 'dark' } }
+
 export const StackedDark: Story = { args: { layout: 'stacked', hint: 'On this device' }, play: stackedPlay, globals: { mode: 'dark' } }
 export const StackedLight: Story = { args: { layout: 'stacked', hint: 'On this device' }, play: stackedPlay, globals: { mode: 'light' } }

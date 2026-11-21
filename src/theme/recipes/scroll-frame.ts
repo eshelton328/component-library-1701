@@ -41,7 +41,10 @@ import { scrollArea } from './scroll-area'
 // keyboard's top, and the body gets a clear bottom border as tall, so its
 // view ends at the raised footer's top (with no footer, its end spacer
 // ends above the keyboard). The border lies under the footer and the
-// keyboard, so no band of blank page shows.
+// keyboard, so no band of blank page shows. --scroll-frame-dock is public
+// too: content in the footer reads it for space over the keyboard (the-bridge
+// ChatPane's composer, var(--scroll-frame-dock, 0px)). Keep its name and
+// meaning; ScrollFrame's doc comment describes it.
 export const scrollFrame = defineSlotRecipe({
   className: 'scroll-frame',
   jsx: ['ScrollFrame'],

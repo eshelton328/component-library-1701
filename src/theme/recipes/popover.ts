@@ -42,6 +42,11 @@ import { scrollArea } from './scroll-area'
 // M10 147:72, the D01 skill list's pattern): `sectionQuery` takes monoSm,
 // the mono style at the eyebrow's 11/16, with no capitals, so "/wri" keeps
 // the case it was typed in. It keeps the label's fg.muted.
+// `maxHeight` caps the box: `available` (the default) at the room Ark
+// measures beside the trigger (--available-height), `picker` also at
+// shell.pickerHeight (288), so a long skill list after "/" scrolls in a
+// short box over the composer and leaves the chat header and the thread
+// clear (review R34). The box scrolls its content in either case.
 export const popover = defineSlotRecipe({
   className: 'popover',
   jsx: ['Popover'],
@@ -112,7 +117,11 @@ export const popover = defineSlotRecipe({
       default: {},
       wide: { content: { p: '12' } },
     },
+    maxHeight: {
+      available: {},
+      picker: { content: { maxH: 'min(var(--available-height), token(sizes.shell.pickerHeight))' } },
+    },
   },
   compoundVariants: [{ density: 'compact', inset: 'wide', css: { content: { p: '12' } } }],
-  defaultVariants: { width: 'md', surface: 'overlay', density: 'default', inset: 'default' },
+  defaultVariants: { width: 'md', surface: 'overlay', density: 'default', inset: 'default', maxHeight: 'available' },
 })

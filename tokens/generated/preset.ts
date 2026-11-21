@@ -145,6 +145,10 @@ export default definePreset({
               "value": "1448px",
               "description": "Largest width of a Toolkit full page (Container size page), padding included: 1384 of content and 32 sides, the whole detail of the 1512 px Figma frames (map D02 426:53, Activity D11 444:153, workflow D13 446:153). It applies only when the space (the AppShell detail) is at least detailWideFrom wide; the page then sits in the middle. Below that the page fills its space. Not for an open item, which takes itemWide, or for a pane or a dialog."
             },
+            "pickerHeight": {
+              "value": "288px",
+              "description": "Most height of a composer's picker list, such as the skill list after \"/\" (review R34: a chat with 60 skills covered the phone's chat header): Popover maxHeight picker caps the box at this, or less where the room beside the trigger is less, and the list scrolls inside. At Popover density compact it holds the label row and five and a half 44 px rows, so the cut row shows the list goes on. Not for a menu or a filter popover, which keep the room beside the trigger (maxHeight available), or for a width."
+            },
             "pickerMax": {
               "value": "400px",
               "description": "Most width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least pickerMin and at most this, so it stays a list and not a pane on a wide screen (screen review R8). Not for a popover of a fixed width, such as the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."

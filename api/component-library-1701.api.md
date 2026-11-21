@@ -1410,6 +1410,7 @@ export type PopoverProps = {
     surface?: 'overlay' | 'raised' | undefined;
     density?: 'default' | 'compact' | undefined;
     inset?: 'default' | 'wide' | undefined;
+    maxHeight?: 'available' | 'picker' | undefined;
     autoFocus?: boolean | undefined;
     className?: string | undefined;
 } & PopoverDataAttributes;

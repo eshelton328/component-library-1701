@@ -107,6 +107,19 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * `bottom: 'var(--scroll-frame-inset, 0px)'`, so it sticks above the bar;
  * the body's end spacer keeps its last line above that element.
  *
+ * As that child, the frame also docks its footer on an on-screen keyboard
+ * that the AppShell measures (`--app-shell-keyboard`, how far the keyboard
+ * covers the detail's bottom). `--scroll-frame-dock` holds how far the
+ * footer moves up for it, the keyboard's reach above the space already
+ * under the footer:
+ * `max(0px, --app-shell-keyboard - --scroll-frame-inset)`,
+ * `0px` with the keyboard closed or anywhere else. It is
+ * public, and moves with the keyboard frame by frame. Content in the footer
+ * may read it to keep space over the keyboard that grows as the footer
+ * rises, as `var(--scroll-frame-dock, 0px)`, such as
+ * `pb: '[min(token(spacing.8), var(--scroll-frame-dock, 0px))]'` for 8 px
+ * over the keyboard and none with it closed.
+ *
  * On a touch screen, a drag of the body by more than 10 px, or a tap on it
  * that is not on a link, button or field, blurs a focused text field (such
  * as the `Composer` in the footer), so the on-screen keyboard closes and the

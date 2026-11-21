@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { motionDone } from '../controls/bottom-sheet.testing'
 import { restPointerOn } from '../controls/pointer.testing'
+import { Switch } from '../controls/switch'
 import { MoreDrawer, type MoreDrawerGroup } from './more-drawer'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -145,6 +146,8 @@ const meta = {
     await expect(getComputedStyle(label).textTransform).toBe('uppercase')
     await expect(getComputedStyle(label).fontSize).toBe('11px')
     await expect(getComputedStyle(label).paddingTop).toBe('16px')
+    // No footer when none is given.
+    await expect(drawer.querySelector('.more-drawer__footer')).toBeNull()
   },
 } satisfies Meta<typeof OpenDrawer>
 export default meta
@@ -264,3 +267,70 @@ const spacingPlay: StoryObj<typeof meta>['play'] = async () => {
 /** The drawer's spacing (Toolkit M4) and its first focus: the drawer itself, with no focus ring on an item. */
 export const SpacingDark: StoryObj<typeof meta> = { play: spacingPlay, globals: { mode: 'dark' } }
 export const SpacingLight: StoryObj<typeof meta> = { play: spacingPlay, globals: { mode: 'light' } }
+
+const onNotifications = fn<(checked: boolean) => void>()
+
+function NotificationsDrawer() {
+  const [on, setOn] = useState(false)
+  return (
+    <main className={page}>
+      <MoreDrawer
+        groups={groups}
+        selected="artifacts"
+        onSelect={onSelect}
+        onOpenChange={onOpenChange}
+        open
+        footer={
+          <Switch
+            label="Notifications"
+            hint="Push alerts on this device"
+            checked={on}
+            onCheckedChange={(next) => {
+              setOn(next)
+              onNotifications(next)
+            }}
+          />
+        }
+      />
+    </main>
+  )
+}
+
+// The Notifications setting of d-118 in the drawer's footer: 16 below the last group, padded 12 at the sides as
+// the items are, so the label lines up with their tiles. Toggling it reports the state and leaves the drawer open,
+// and picks no page.
+const footerPlay: StoryObj<typeof meta>['play'] = async () => {
+  onSelect.mockClear()
+  onOpenChange.mockClear()
+  onNotifications.mockClear()
+  const body = within(document.body)
+  const drawer = await body.findByRole('dialog', { name: 'More' })
+  await motionDone(drawer)
+  const toggle = within(drawer).getByRole('switch', { name: 'Notifications' })
+  await expect(toggle).toHaveAccessibleDescription('Push alerts on this device')
+  const footer = drawer.querySelector('.more-drawer__footer')
+  if (!(footer instanceof HTMLElement)) throw new Error('no footer')
+  const last = item(drawer, /^Workflows/).getBoundingClientRect()
+  const row = toggle.closest('label')
+  if (row === null) throw new Error('no switch row')
+  const r = row.getBoundingClientRect()
+  // The sheet's 4 px gap and the footer's 16.
+  await expect(r.top - last.bottom).toBe(20)
+  const tile = item(drawer, /^Toolkit/).querySelector('.more-drawer__tile')
+  if (tile === null) throw new Error('no tile')
+  await expect(r.left).toBe(tile.getBoundingClientRect().left)
+  await expect(Math.round(r.right)).toBe(Math.round(last.right - 12))
+  await userEvent.click(within(row).getByText('Notifications'))
+  await expect(onNotifications).toHaveBeenLastCalledWith(true)
+  await expect(toggle).toBeChecked()
+  toggle.focus()
+  await userEvent.keyboard(' ')
+  await expect(onNotifications).toHaveBeenLastCalledWith(false)
+  await expect(body.getByRole('dialog', { name: 'More' })).toBeInTheDocument()
+  await expect(onOpenChange).not.toHaveBeenCalled()
+  await expect(onSelect).not.toHaveBeenCalled()
+}
+
+/** A footer below the groups, such as the Notifications switch (d-118); a control in it does not close the drawer. */
+export const FooterDark: StoryObj<typeof meta> = { render: () => <NotificationsDrawer />, play: footerPlay, globals: { mode: 'dark' } }
+export const FooterLight: StoryObj<typeof meta> = { render: () => <NotificationsDrawer />, play: footerPlay, globals: { mode: 'light' } }

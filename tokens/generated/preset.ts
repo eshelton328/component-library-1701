@@ -39,7 +39,7 @@ export default definePreset({
             },
             "lg": {
               "value": "36px",
-              "description": "Tablet and phone controls."
+              "description": "Tablet and phone controls, and the width of a Switch track."
             },
             "md": {
               "value": "32px",
@@ -51,7 +51,7 @@ export default definePreset({
             },
             "xl": {
               "value": "44px",
-              "description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303)."
+              "description": "Sheet rows, full-width phone buttons and the rows of a large menu, such as the Inbox Snooze menu (D12 346:5303), and the least height of a Switch row, for touch."
             },
             "xs": {
               "value": "24px",
@@ -83,7 +83,7 @@ export default definePreset({
             },
             "20": {
               "value": "20px",
-              "description": "A 20px icon."
+              "description": "A 20px icon, and the height of a Switch track."
             },
             "24": {
               "value": "24px",
@@ -316,7 +316,7 @@ export default definePreset({
                 "base": "#0e7490",
                 "_dark": "#5ee1ff"
               },
-              "description": "Fill of the primary button, checked checkboxes and meter fills. Text on it uses fg.onAccent."
+              "description": "Fill of the primary button, checked checkboxes, the track of a Switch that is on, and meter fills. Text on it uses fg.onAccent."
             },
             "discuss": {
               "value": {
@@ -415,7 +415,7 @@ export default definePreset({
                 "base": "rgba(74, 86, 117, 0.7)",
                 "_dark": "rgba(138, 151, 184, 0.7)"
               },
-              "description": "The border of an unchecked checkbox or other small control. Not for pane or card borders, which use border.default."
+              "description": "The border of an unchecked checkbox or other small control, and the track of a Switch that is off. Not for pane or card borders, which use border.default."
             },
             "default": {
               "value": {
@@ -544,7 +544,7 @@ export default definePreset({
                 "base": "#ffffff",
                 "_dark": "#070b14"
               },
-              "description": "Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg."
+              "description": "Text and icons on accent.default, a solid status.danger fill, or the needs-you count badge on status.needsYou.fg, and the thumb of a Switch, on or off."
             },
             "subtle": {
               "value": {
@@ -1620,7 +1620,7 @@ export default definePreset({
           }
         },
         "label": {
-          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81), and the label of a TextField with labelStyle label (the Artifacts Add a link fields, D5 403:7551, M6 408:716).",
+          "description": "Buttons, tabs, chips and row titles, and the titles of the phone More drawer items (Figma Medium 15/20, Toolkit M4 424:6950), where the 20 px line keeps each item 62 high, the name of the open item on the Links graph (MapNode labelStyle label, Toolkit D19 493:81), and the label of a TextField with labelStyle label (the Artifacts Add a link fields, D5 403:7551, M6 408:716), and the label of a Switch with layout inline (the Notifications row of the More drawer, d-118).",
           "value": {
             "fontFamily": "text.label",
             "fontSize": "text.label",
@@ -1751,7 +1751,7 @@ export default definePreset({
           }
         },
         "railLabel": {
-          "description": "Labels under the icons of the desktop nav rail, as Figma draws them at 9 px.",
+          "description": "Labels under the icons of the desktop nav rail, as Figma draws them at 9 px, and the label and hint of a Switch with layout stacked in the footer of the rail (d-118).",
           "value": {
             "fontFamily": "text.railLabel",
             "fontSize": "text.railLabel",
@@ -1761,7 +1761,7 @@ export default definePreset({
           }
         },
         "small": {
-          "description": "Captions, helper text and diff lines, the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px), and the meta line of a ListRow with metaStyle small (the time and place in the Toolkit Activity list). Not for the descriptions and note of a RadioMenu with density compact, which use smallXs.",
+          "description": "Captions, helper text and diff lines, the text label of a Checkbox with size sm (the Inbox Filter menu, 12 px), the meta line of a ListRow with metaStyle small (the time and place in the Toolkit Activity list), and the hint of a Switch with layout inline (d-118). Not for the descriptions and note of a RadioMenu with density compact, which use smallXs.",
           "value": {
             "fontFamily": "text.small",
             "fontSize": "text.small",

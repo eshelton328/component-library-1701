@@ -392,12 +392,14 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     const fit = () => {
       const inset = measure()
       if (opening && typing && document.documentElement.clientHeight < openLayout - 1 && layoutCheck === undefined) checkLayout(layoutFrames)
-      // During the opening, a report under the dock's target (the expected keyboard while the dock is still down) is an
-      // early step of the keyboard's rise: it takes the dock to that target, or holds it there, when the expected
-      // keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at least three quarters
-      // of it is the whole keyboard and is taken at once, so the dock does not wait for the settle to come down (screen
-      // review R22). The settle then only stores the measure.
-      const hold = target > 0 ? target : expectedInset
+      // During the opening, a report under the dock's target (while the dock is still down, the keyboard measured before
+      // on this screen) is an early step of the keyboard's rise: it takes the dock to that target, or holds it there,
+      // when the expected keyboard is one measured before on this screen. A Figma guess can be wrong: a report of at
+      // least three quarters of it is the whole keyboard and is taken at once, so the dock does not wait for the settle
+      // to come down (screen review R22). With the dock down and only a guess, a report is followed as it is: a
+      // keyboard that reports in each frame starts under three quarters of the guess for several frames, and a move to
+      // the guess would turn back on its next reports (`FrameStepsJank` on CI). The settle then only stores the measure.
+      const hold = target > 0 ? target : expectedMeasured ? expectedInset : 0
       const early = opening && typing && inset > 1 && inset < hold && (expectedMeasured || inset < expectedInset * 0.75)
       // A report taken as the whole keyboard is kept for the next open at once: a blur before the settle (a press on
       // Send) would otherwise lose it.

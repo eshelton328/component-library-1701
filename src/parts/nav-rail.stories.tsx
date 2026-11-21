@@ -7,6 +7,7 @@ import { Logo } from './logo'
 import type { NavItem } from './nav-item'
 import { NavRail } from './nav-rail'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { Switch } from '../controls/switch'
 
 const page = css({ display: 'flex', overflow: 'hidden', bg: 'bg.canvas', color: 'fg.default', w: 'shell.dialogLg', h: 'shell.dialogLg' })
 // Content as wide as the page, so the rail must keep its own width.
@@ -199,6 +200,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     // No logo, no line.
     await expect(nav.querySelector('.nav-rail__divider')).toBeNull()
     await expect(nav.querySelector('.nav-rail__logo')).toBeNull()
+    // No footer when none is given.
+    await expect(nav.querySelector('.nav-rail__footer')).toBeNull()
     const inbox = canvas.getByRole('button', { name: /^Inbox ?, 1 needs you$/ })
     await userEvent.click(inbox)
     await expect(onSelect).toHaveBeenCalledWith('inbox')
@@ -222,3 +225,44 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(nav.scrollWidth).toBe(nav.clientWidth)
   },
 }
+
+const onNotifications = fn<(checked: boolean) => void>()
+
+function RailWithFooter() {
+  return (
+    <main className={page}>
+      <NavRail items={items} selected="inbox" logo={<Logo title="Span" />} footer={<Switch layout="stacked" label="Notifications" hint="This device" onCheckedChange={onNotifications} />} />
+      <div className={wide} />
+      <Swatches />
+    </main>
+  )
+}
+
+// The Notifications setting of d-118 at the rail's end: below the items and outside their list, pushed to the
+// bottom of the rail (16 above its end, the rail's padding), as wide as the items, inside the 64 px rail.
+const railFooterPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onNotifications.mockClear()
+  const canvas = within(canvasElement)
+  const nav = canvas.getByRole('navigation', { name: 'Main' })
+  const toggle = within(nav).getByRole('switch', { name: 'Notifications' })
+  await expect(toggle).toHaveAccessibleDescription('This device')
+  const list = nav.querySelector('ul')
+  if (list === null) throw new Error('no list')
+  await expect(list.contains(toggle)).toBe(false)
+  const footer = slot(nav, 'footer')
+  const navBox = nav.getBoundingClientRect()
+  const f = footer.getBoundingClientRect()
+  await expect(navBox.width).toBe(64)
+  await expect(Math.round(navBox.bottom - f.bottom)).toBe(16)
+  await expect(f.top).toBeGreaterThan(list.getBoundingClientRect().bottom + 16)
+  const home = canvas.getByRole('button', { name: 'Home' }).getBoundingClientRect()
+  await expect([f.left, f.width]).toEqual([home.left, home.width])
+  await expect(nav.scrollWidth).toBe(nav.clientWidth)
+  await userEvent.click(within(footer).getByText('Notifications'))
+  await expect(onNotifications).toHaveBeenLastCalledWith(true)
+  await expect(toggle).toBeChecked()
+}
+
+/** A footer at the rail's end, such as the stacked Notifications switch (d-118). */
+export const FooterDark: StoryObj<typeof meta> = { render: () => <RailWithFooter />, play: railFooterPlay, globals: { mode: 'dark' } }
+export const FooterLight: StoryObj<typeof meta> = { render: () => <RailWithFooter />, play: railFooterPlay, globals: { mode: 'light' } }

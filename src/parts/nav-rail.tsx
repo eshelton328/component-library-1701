@@ -12,6 +12,7 @@ const Item = withContext('button', 'item')
 const Icon = withContext('span', 'icon')
 const Label = withContext('span', 'label')
 const Hint = withContext('span', 'hint')
+const Footer = withContext('div', 'footer')
 
 export type NavRailProps = {
   /** The pages, in order. More comes last (d-047). */
@@ -27,6 +28,12 @@ export type NavRailProps = {
   logo?: ReactNode
   /** The accessible name of the navigation landmark; "Main" when not set. */
   label?: string | undefined
+  /**
+   * Content at the rail's end, below the items and outside their list, such as a `Switch` with
+   * `layout="stacked"` for the Notifications setting (d-118). It is pushed to the bottom of the rail and is as
+   * wide as the items. No footer when not set.
+   */
+  footer?: ReactNode
 }
 
 /**
@@ -34,8 +41,9 @@ export type NavRailProps = {
  * label, with the needs-you badge on an icon when the page has a count.
  * Picking an item calls `onSelect`; the rail does no routing (d-068).
  */
-export function NavRail({ items, selected, onSelect, logo, label = 'Main' }: NavRailProps) {
+export function NavRail({ items, selected, onSelect, logo, label = 'Main', footer }: NavRailProps) {
   const hasLogo = logo !== undefined && logo !== null && logo !== false
+  const hasFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean' && footer !== ''
   return (
     <Root aria-label={label}>
       {hasLogo ? (
@@ -68,6 +76,7 @@ export function NavRail({ items, selected, onSelect, logo, label = 'Main' }: Nav
           )
         })}
       </List>
+      {hasFooter ? <Footer>{footer}</Footer> : null}
     </Root>
   )
 }

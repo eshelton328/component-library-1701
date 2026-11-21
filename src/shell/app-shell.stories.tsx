@@ -2441,6 +2441,36 @@ export const BodyFieldLight: StoryObj<typeof meta> = { ...bodyField, globals: { 
 export const ThreadEndDark: StoryObj<typeof meta> = { ...threadEnd, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const ThreadEndLight: StoryObj<typeof meta> = { ...threadEnd, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// The reader closes the keyboard with a tap on the thread: the tap gives the focus to the ScrollFrame body (its
+// `tabIndex` 0), not to a field. The body is not left to the browser then, so the thread scrolls back by as much as its
+// view grows and the reader's line stays where it was (the-bridge's iPhone probe: a net 211 px, about 10 lines, lost
+// on each open and close while scrolled up).
+const tapClosesKeyboard: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { footer, field } = threadParts(canvasElement)
+    const up = recordThread(canvasElement)
+    up.body.scrollTop = 200
+    await nextFrame()
+    const fromEnd = Math.round(up.body.scrollHeight - 200 - up.body.clientHeight)
+    await userEvent.click(field)
+    await stepViewport(fakeViewport, rising)
+    await settled(footer, 266)
+    up.body.focus()
+    await expect(document.activeElement).toBe(up.body)
+    await stepViewport(fakeViewport, falling)
+    await settled(footer, 0)
+    up.stop()
+    // The first frame comes before the scroll to 200.
+    await expect(up.frames.slice(1).filter((f) => Math.abs(f.fromEnd - fromEnd) > 1)).toEqual([])
+    await expect(Math.round(up.body.scrollTop)).toBe(200)
+  }),
+}
+/** Phone chat scrolled up: a tap on the thread that closes the keyboard (and focuses the body) keeps the reader's place. */
+export const TapClosesKeyboardDark: StoryObj<typeof meta> = { ...tapClosesKeyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TapClosesKeyboardLight: StoryObj<typeof meta> = { ...tapClosesKeyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 const keyboardRise: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <ThreadChat />,

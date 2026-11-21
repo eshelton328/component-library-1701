@@ -9,8 +9,8 @@ export default definePreset({
       "tokens": {
         "durations": {
           "keyboard": {
-            "value": "250ms",
-            "description": "How long the composer dock takes to follow the on-screen keyboard up or down (screen review R18, Workbench M10 147:97). Use with easing.keyboard. Not for sheets or other overlays."
+            "value": "300ms",
+            "description": "How long the composer dock takes to follow the on-screen keyboard up or down: the iOS 26 keyboard's own motion, measured at 60 fps on the iPad mini (screen review R37). Use with easing.keyboard. Not for sheets or other overlays."
           },
           "sheetClose": {
             "value": "250ms",
@@ -23,8 +23,8 @@ export default definePreset({
         },
         "easings": {
           "keyboard": {
-            "value": "cubic-bezier(0.38, 0.7, 0.125, 1)",
-            "description": "The curve of the composer dock as it follows the on-screen keyboard, close to the iOS keyboard curve (screen review R18). Use with duration.keyboard. Not for sheets; use easing.sheet."
+            "value": "cubic-bezier(0.22, 0.17, 0.15, 1)",
+            "description": "The curve of the composer dock as it follows the on-screen keyboard: the iOS 26 keyboard's spring (1 - (1 + wt) e^(-wt), w about 23.5/s), fitted within 1.1 % over duration.keyboard (screen review R37). Use with duration.keyboard. Not for sheets; use easing.sheet."
           },
           "sheet": {
             "value": "cubic-bezier(0.38, 0.7, 0.125, 1)",

@@ -10,6 +10,7 @@ import { Popover } from './popover'
 import { Stack } from './layout'
 import { OptionList } from './option-list'
 import { motionDone, unmounted } from './bottom-sheet.testing'
+import { layerSettled } from './layer.testing'
 import { expectScrollAreas } from './scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
@@ -279,6 +280,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     // A click on the scrim above the sheet closes it.
     await userEvent.click(trigger)
     const scrimmed = await body.findByRole('dialog', { name: 'Sort by' })
+    // Ark takes an outside click only after its layers settle (layer.testing.ts); until then the click is lost.
+    await layerSettled()
     const above = document.elementFromPoint(20, 10)
     if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
     await userEvent.click(above)

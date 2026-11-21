@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import { useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { listRow, type ListRowVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -62,7 +62,11 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
    * matters. Defaults to `0`, a top-level row.
    */
   level?: 0 | 1 | 2 | undefined
-  /** Called when the user clicks the row or presses Enter on it. Without it, the row is not a button. */
+  /**
+   * Called when the user clicks the row or presses Enter on it. Without it, the row is not a button.
+   * With it, the row takes the selected fill while a finger or the mouse is down on it (not on a button in
+   * `actions`), and drops it when the press ends, so a tap shows without leaving the row highlighted.
+   */
   onSelect?: (() => void) | undefined
   /** What a screen reader reads for the `dot`, such as "New". Without it the dot is hidden from screen readers. */
   dotLabel?: string | undefined
@@ -135,6 +139,16 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
   const selectFromText = (event: MouseEvent<HTMLElement>) => {
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()
   }
+  // The pressed fill (screen review R38): from a primary press on the row, not on a button in `actions`, to its end.
+  // Touch fires pointercancel when the press becomes a scroll, so a scroll drops the fill too.
+  const [pressed, setPressed] = useState(false)
+  const press = (event: PointerEvent<HTMLElement>) => {
+    if (event.button === 0 && event.target instanceof Element && event.target.closest('.list-row__actions') === null) setPressed(true)
+  }
+  const release = () => {
+    setPressed(false)
+  }
+  const pressable = onSelect !== undefined
   const trailingNode = trailing === undefined ? null : <Trailing>{trailing}</Trailing>
   const trailingInTitle = trailingPlacement === 'title'
   const titleNode =
@@ -146,7 +160,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
       </TitleButton>
     )
   return (
-    <Root variant={variant} density={density} padding={padding} metaStyle={metaStyle} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} onClick={onSelect === undefined ? undefined : selectFromText}>
+    <Root variant={variant} density={density} padding={padding} metaStyle={metaStyle} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} data-pressed={pressable && pressed ? '' : undefined} onClick={pressable ? selectFromText : undefined} onPointerDown={pressable ? press : undefined} onPointerUp={pressable ? release : undefined} onPointerCancel={pressable ? release : undefined} onPointerLeave={pressable ? release : undefined}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>

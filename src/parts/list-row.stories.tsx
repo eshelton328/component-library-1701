@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Inline, Stack } from '../controls/layout'
@@ -194,6 +194,136 @@ export const Behaviour: StoryObj<typeof meta> = {
     await expect(getComputedStyle(row).outlineStyle).toBe('solid')
   },
 }
+
+/**
+ * A row with onSelect takes the selected fill while it is pressed and drops it when the press ends (screen review
+ * R38: on a phone or tablet a tapped row shows the tap and does not stay highlighted). A static row, a press on a
+ * button in the row and a selected row show no pressed fill.
+ */
+function PressedRows() {
+  return (
+    <main className={page}>
+      <div className={inboxList}>
+        <Stack gap="2">
+          <ListRow title="Tap this row" meta="ncc-1701 · review" leading={<span className={tile} />} trailing="2m" snoozed onSelect={() => undefined}>
+            <TagsLine tags={['global/planning']} />
+          </ListRow>
+          <ListRow title="A static row" meta="ncc-1701 · read only" leading={<span className={tile} />} trailing="5m" />
+          <ListRow title="The open row" meta="ncc-1701 · question" leading={<span className={tile} />} trailing="9m" selected onSelect={() => undefined} />
+          <ListRow
+            title="A row with actions"
+            meta="ncc-1701 · approval"
+            leading={<span className={tile} />}
+            trailing="1h"
+            onSelect={() => undefined}
+            actions={
+              <Button size="sm" variant="primary">
+                Approve
+              </Button>
+            }
+          />
+          <ListRow title="A card row" meta="ncc-1701 · artifact" surface="card" trailing="3h" onSelect={() => undefined} />
+          <ListRow title="A finished row" meta="ncc-1701 · done" leading={<KindTile kind="next" />} trailing="1d" finished onSelect={() => undefined} />
+        </Stack>
+      </div>
+      <span hidden data-swatch="subtle" className={css({ color: 'fg.subtle' })} />
+      <span hidden data-swatch="muted" className={css({ color: 'fg.muted' })} />
+      <span hidden data-swatch="selected" className={css({ bg: 'surface.selected' })} />
+      <span hidden data-swatch="pane" className={css({ bg: 'surface.pane' })} />
+    </main>
+  )
+}
+
+const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const swatch = (name: string) => {
+    const el = canvasElement.querySelector(`[data-swatch="${name}"]`)
+    if (el === null) throw new Error(`no swatch ${name}`)
+    return getComputedStyle(el)
+  }
+  const rowOf = (name: string) => {
+    const row = canvas.getByText(name).closest('.list-row__root')
+    if (!(row instanceof HTMLElement)) throw new Error(`no row ${name}`)
+    return row
+  }
+  const fill = (row: HTMLElement) => getComputedStyle(row).backgroundColor
+  const selected = swatch('selected').backgroundColor
+  const clear = 'rgba(0, 0, 0, 0)'
+  const row = rowOf('Tap this row')
+  const title = canvas.getByRole('button', { name: 'Tap this row' })
+  const colourOf = (el: Element | null) => {
+    if (el === null) throw new Error('no element')
+    return getComputedStyle(el).color
+  }
+  await expect(fill(row)).toBe(clear)
+  await expect(getComputedStyle(row).opacity).toBe('0.85')
+  // Down: the selected fill, with no selected border; the age and tags turn fg.muted (fg.subtle is not allowed on
+  // surface.selected), and the snoozed row is not dimmed, so its text keeps 4.5:1.
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'touch' })
+  await expect(fill(row)).toBe(selected)
+  await expect(getComputedStyle(row).borderTopColor).toBe(clear)
+  await expect(getComputedStyle(row).opacity).toBe('1')
+  await expect([colourOf(row.querySelector('.list-row__trailing')), colourOf(row.querySelector('.tags-line__root'))]).toEqual([swatch('muted').color, swatch('muted').color])
+  // Up: the fill is gone and the row is as before, so a tap leaves nothing highlighted.
+  await fireEvent.pointerUp(title, { button: 0, pointerType: 'touch' })
+  await expect(fill(row)).toBe(clear)
+  await expect(getComputedStyle(row).opacity).toBe('0.85')
+  // A press that becomes a scroll (pointercancel) or leaves the row (React's pointerleave, from pointerout) drops the fill too.
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'touch' })
+  await expect(fill(row)).toBe(selected)
+  await fireEvent.pointerCancel(title, { pointerType: 'touch' })
+  await expect(fill(row)).toBe(clear)
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'mouse' })
+  await fireEvent.pointerOut(title, { pointerType: 'mouse', relatedTarget: canvasElement })
+  await expect(fill(row)).toBe(clear)
+  // A secondary button does not press the row.
+  await fireEvent.pointerDown(title, { button: 2, pointerType: 'mouse' })
+  await expect(fill(row)).toBe(clear)
+  await fireEvent.pointerUp(title, { button: 2, pointerType: 'mouse' })
+  // A row without onSelect is not pressable: no fill.
+  const staticRow = rowOf('A static row')
+  await fireEvent.pointerDown(canvas.getByText('A static row'), { button: 0, pointerType: 'touch' })
+  await expect(staticRow).not.toHaveAttribute('data-pressed')
+  await expect(fill(staticRow)).toBe(clear)
+  await fireEvent.pointerUp(canvas.getByText('A static row'), { button: 0, pointerType: 'touch' })
+  // A selected row keeps its own colours while pressed.
+  const open = rowOf('The open row')
+  const openBefore = [fill(open), getComputedStyle(open).borderTopColor]
+  await fireEvent.pointerDown(canvas.getByRole('button', { name: 'The open row' }), { button: 0, pointerType: 'mouse' })
+  await expect([fill(open), getComputedStyle(open).borderTopColor]).toEqual(openBefore)
+  await fireEvent.pointerUp(canvas.getByRole('button', { name: 'The open row' }), { button: 0, pointerType: 'mouse' })
+  // A press on a button in `actions` presses that button, not the row.
+  const actionsRow = rowOf('A row with actions')
+  const approve = within(actionsRow).getByRole('button', { name: 'Approve' })
+  await fireEvent.pointerDown(approve, { button: 0, pointerType: 'touch' })
+  await expect(fill(actionsRow)).toBe(clear)
+  await fireEvent.pointerUp(approve, { button: 0, pointerType: 'touch' })
+  // A card row (surface.pane) takes the same fill while pressed and goes back to surface.pane.
+  const card = rowOf('A card row')
+  const cardTitle = canvas.getByRole('button', { name: 'A card row' })
+  await expect(fill(card)).toBe(swatch('pane').backgroundColor)
+  await fireEvent.pointerDown(cardTitle, { button: 0, pointerType: 'touch' })
+  await expect(fill(card)).toBe(selected)
+  await fireEvent.pointerUp(cardTitle, { button: 0, pointerType: 'touch' })
+  await expect(fill(card)).toBe(swatch('pane').backgroundColor)
+  // A finished row's kind tile is faded, but whole while pressed: on surface.selected the faded tile is under 3:1.
+  const finished = rowOf('A finished row')
+  const finishedTile = finished.querySelector('.list-row__leading')
+  if (finishedTile === null) throw new Error('no leading')
+  const finishedTitle = canvas.getByRole('button', { name: 'A finished row' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('0.75')
+  await fireEvent.pointerDown(finishedTitle, { button: 0, pointerType: 'touch' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('1')
+  await fireEvent.pointerUp(finishedTitle, { button: 0, pointerType: 'touch' })
+  await expect(getComputedStyle(finishedTile).opacity).toBe('0.75')
+  // A whole click (down, up, click) leaves no pressed fill.
+  await userEvent.click(title)
+  await expect(row).not.toHaveAttribute('data-pressed')
+  await expect(fill(row)).toBe(clear)
+}
+
+export const PressedDark: StoryObj<typeof meta> = { render: () => <PressedRows />, globals: { mode: 'dark' }, play: pressedPlay }
+export const PressedLight: StoryObj<typeof meta> = { render: () => <PressedRows />, globals: { mode: 'light' }, play: pressedPlay }
 
 const longMeta = 'opus 5.5 · high effort · 42% of the context window'
 

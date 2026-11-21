@@ -24,6 +24,11 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
 - The dock leaves a ScrollFrame body to the browser only while a field
   in it has the focus. A tap on the thread focuses the body itself, and
   the body must still keep the reader's place (`TapClosesKeyboard`).
+- The dock rises to an expected keyboard at a focus only on a page the
+  user has pressed (`navigator.userActivation.hasBeenActive`): iOS opens
+  no keyboard for a field focused at load, so there it waits for the
+  viewport's report (`LoadFocus`). A story that focuses a field with
+  motion sets the activation it needs (`fakeActivation`).
 - A control that acts on the focused field and must keep the keyboard
   open carries `data-keyboard-keep` (R19).
 - Space under a docked footer comes from ScrollFrame `foot`, never a

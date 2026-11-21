@@ -80,10 +80,19 @@ const ease = (t: number) => {
   return bezier(y1, y2, (low + high) / 2)
 }
 const media = (query: string) => typeof window.matchMedia === 'function' && window.matchMedia(query).matches
+// Whether the page has had a user's press (`navigator.userActivation.hasBeenActive`); true where the browser does not
+// say. iOS opens no keyboard for a focus that no press started, so a page that loads with its composer focused
+// (the-bridge's Workspaces chat, autofocused) has none until the user taps: a guess there drew the footer 346 px up for
+// the settle's second with no keyboard (the iPad mini in the iOS 26.5 Simulator, beta.98, `LoadFocus`).
+const pressedBefore = () => {
+  const activation: unknown = Reflect.get(navigator, 'userActivation')
+  if (typeof activation !== 'object' || activation === null) return true
+  return Reflect.get(activation, 'hasBeenActive') !== false
+}
 // Whether a field's focus will open an on-screen keyboard that only the visual viewport reports: a touch screen whose
-// browser has no VirtualKeyboard API (iOS Safari). Chromium has it and resizes the layout with
-// `interactive-widget=resizes-content`, so it expects nothing.
-const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigator, 'virtualKeyboard') === undefined
+// browser has no VirtualKeyboard API (iOS Safari), on a page the user has pressed. Chromium has the API and resizes
+// the layout with `interactive-widget=resizes-content`, so it expects nothing.
+const keyboardExpected = () => media('(pointer: coarse)') && Reflect.get(navigator, 'virtualKeyboard') === undefined && pressedBefore()
 
 /**
  * Docks the foot of the page on the on-screen keyboard (the fit) when the browser does not resize the layout for
@@ -134,7 +143,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let top = 0
     // Whether a field that opens the keyboard has the focus; only then does the shell follow the visual viewport.
     // A field focused before this effect ran (a page that focuses its composer as it mounts, R23) is taken by the
-    // focus path below, as if its focus came now.
+    // focus path below, as if its focus came now. On a page with no press yet (a load with an autofocused field) no
+    // keyboard opens, so that path expects none and only a reported keyboard docks (`keyboardExpected`).
     let typing = false
     // A field in a ScrollFrame footer docks only where that ScrollFrame is the detail's direct child: the recipes read
     // the keyboard there and reset it deeper down. A page that nests the frame deeper loses the dock with no other

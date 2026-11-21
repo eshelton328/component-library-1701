@@ -1,6 +1,7 @@
 // Puts back, before each story test, every browser state a story may change for itself: the DevTools emulations
 // (media features such as prefers-reduced-motion, touch, safe-area insets, CPU speed) and the own properties a story
-// puts on window or navigator in place of the browser's (matchMedia, visualViewport, virtualKeyboard). A story still
+// puts on window or navigator in place of the browser's (matchMedia, visualViewport, virtualKeyboard,
+// userActivation). A story still
 // undoes its own changes in the cleanup that its beforeEach returns, but a story that times out never runs that
 // cleanup, and the next story would start in its state. Only the story test runner (Vitest Browser Mode) has the
 // DevTools session; the Storybook UI runs nothing here.
@@ -11,6 +12,7 @@ const faked = ([
   [window, 'matchMedia'],
   [window, 'visualViewport'],
   [navigator, 'virtualKeyboard'],
+  [navigator, 'userActivation'],
 ] as const).map(([target, key]) => ({ target, key, own: Object.getOwnPropertyDescriptor(target, key) }))
 
 export async function resetStoryState(): Promise<void> {

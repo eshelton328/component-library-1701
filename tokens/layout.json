@@ -283,6 +283,11 @@
         "$value": { "value": 400, "unit": "px" },
         "$description": "Most width of a composer's picker list, such as the skill list after \"/\": Popover width composer is 40% of the composer's width, at least pickerMin and at most this, so it stays a list and not a pane on a wide screen (screen review R8). Not for a popover of a fixed width, such as the Run in picker (popoverPicker), or for the phone, whose list takes the composer's whole width (Popover width trigger)."
       },
+      "pickerHeight": {
+        "$type": "dimension",
+        "$value": { "value": 288, "unit": "px" },
+        "$description": "Most height of a composer's picker list, such as the skill list after \"/\" (review R34: a chat with 60 skills covered the phone's chat header): Popover maxHeight picker caps the box at this, or less where the room beside the trigger is less, and the list scrolls inside. At Popover density compact it holds the label row and five and a half 44 px rows, so the cut row shows the list goes on. Not for a menu or a filter popover, which keep the room beside the trigger (maxHeight available), or for a width."
+      },
       "dialog": {
         "$type": "dimension",
         "$value": { "value": 440, "unit": "px" },

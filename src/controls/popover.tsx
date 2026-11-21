@@ -65,6 +65,12 @@ export type PopoverProps = {
    */
   inset?: 'default' | 'wide' | undefined
   /**
+   * The box's most height: `available` (the default) is the room beside the trigger; `picker` is also at most 288
+   * (`shell.pickerHeight`), for a long list over a composer, such as the skill list after "/", so it never covers the
+   * chat header or the whole thread. The box scrolls its content inside either cap.
+   */
+  maxHeight?: 'available' | 'picker' | undefined
+  /**
    * Whether opening the popover moves the focus to its first control; `true` when not set. With `false` the focus
    * stays where it was, such as in the message box that opened the skill picker with "/", so typing goes on there.
    */
@@ -85,7 +91,7 @@ export type PopoverDataAttributes = { [key: `data-${string}`]: string | number |
  * click outside it or Escape closes it, and Escape returns the focus to
  * the trigger.
  */
-export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, inset, autoFocus = true, className, ...rest }: PopoverProps) {
+export function Popover({ trigger, label, children, note, actions, open, onOpenChange, placement = 'bottom-end', width, flip = true, surface, density, inset, maxHeight, autoFocus = true, className, ...rest }: PopoverProps) {
   useInputModality()
   return (
     <Root
@@ -93,6 +99,7 @@ export function Popover({ trigger, label, children, note, actions, open, onOpenC
       surface={surface}
       density={density}
       inset={inset}
+      maxHeight={maxHeight}
       autoFocus={autoFocus}
       positioning={{ placement, gutter: 6, flip }}
       {...(open === undefined ? {} : { open })}

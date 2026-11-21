@@ -656,6 +656,9 @@ const overlayOpaque: StoryObj<typeof meta> = {
 export const OverlayOpaqueDark: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'dark' } }
 export const OverlayOpaqueLight: StoryObj<typeof meta> = { ...overlayOpaque, globals: { mode: 'light' } }
 
+// A box in the footer as tall as the public --scroll-frame-dock, read as the-bridge's composer reads it, out of the flow
+// so it moves nothing.
+const dockProbe = css({ position: 'absolute', top: '0', h: 'var(--scroll-frame-dock, 0px)' })
 // The keyboard dock with --app-shell-keyboard set by hand, as AppShell sets it while a keyboard covers the detail's
 // 300 px foot: the ScrollFrame's footer rises by the part above the space under it (the tab bar's 77 under the
 // overlay, 0 below it), its body's view ends at the raised footer, and nothing in the layout moves.
@@ -670,10 +673,16 @@ const dockByHand = (overlay: boolean): StoryObj<typeof meta> => ({
     const boxes = () => [frame, body, footer, canvas.getByRole('navigation', { name: 'Tabs' })].map((el) => Math.round(el.offsetTop + el.offsetHeight))
     const before = { boxes: boxes(), start: rect(canvas.getByRole('button', { name: 'Start' })), view: body.clientHeight }
     const rise = overlay ? 300 - 77 : 300
+    const probe = document.createElement('div')
+    probe.className = dockProbe
+    footer.append(probe)
     // Unset, nothing is moved and nothing is reserved.
+    await expect(probe.offsetHeight).toBe(0)
     await expect(getComputedStyle(footer).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
     await expect(getComputedStyle(body).borderBottomWidth).toBe('0px')
     root.style.setProperty('--app-shell-keyboard', '300px')
+    // --scroll-frame-dock holds the footer's rise: the keyboard's reach less the space under the footer.
+    await expect(probe.offsetHeight).toBe(rise)
     await expect(getComputedStyle(footer).transform).toBe(`matrix(1, 0, 0, 1, 0, ${String(-rise)})`)
     await expect(Math.round(rect(canvas.getByRole('button', { name: 'Start' })).bottom)).toBe(Math.round(before.start.bottom) - rise)
     await expect(getComputedStyle(body).borderBottomWidth).toBe(`${String(rise)}px`)
@@ -686,6 +695,8 @@ const dockByHand = (overlay: boolean): StoryObj<typeof meta> => ({
     // Deeper in the page the value is reset, so a nested frame does not dock.
     await expect(getComputedStyle(canvas.getByText('Line 1 of the task')).getPropertyValue('--app-shell-keyboard')).toBe('0px')
     root.style.removeProperty('--app-shell-keyboard')
+    await expect(probe.offsetHeight).toBe(0)
+    probe.remove()
     await expect(getComputedStyle(footer).transform).toBe('matrix(1, 0, 0, 1, 0, 0)')
     await expect(boxes()).toEqual(before.boxes)
   },
@@ -1486,6 +1497,12 @@ const threadParts = (canvasElement: HTMLElement) => {
   }
 }
 
+// Whether the page has had a user's press, as `navigator.userActivation` tells it: a story fixes it, as the story test
+// runner's own clicks in earlier stories leave the document active.
+const fakeActivation = (active: boolean) => {
+  Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { hasBeenActive: active, isActive: active } })
+}
+
 // A touch screen with motion and no VirtualKeyboard API, as iOS Safari: a field's focus starts the dock at once, to
 // the expected keyboard, and each move runs on the keyboard's curve.
 const withMotion = {
@@ -1497,7 +1514,10 @@ const withMotion = {
     const restoreViewport = replaceVisualViewport(fakeViewport)
     const restoreMedia = emulateMedia({ coarse: true, reduce: false })
     Object.defineProperty(navigator, 'virtualKeyboard', { configurable: true, value: undefined })
+    // The user has pressed on the page before, so a focus may open the keyboard; `LoadFocus` takes this back.
+    fakeActivation(true)
     return () => {
+      Reflect.deleteProperty(navigator, 'userActivation')
       Reflect.deleteProperty(navigator, 'virtualKeyboard')
       restoreMedia()
       restoreViewport()
@@ -1660,6 +1680,37 @@ const mountFocus: StoryObj<typeof meta> = {
 /** Phone chat whose composer takes the focus as it mounts: the dock starts at once, before the keyboard is reported. */
 export const MountFocusDark: StoryObj<typeof meta> = { ...mountFocus, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const MountFocusLight: StoryObj<typeof meta> = { ...mountFocus, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A page that loads with its composer focused (the-bridge's Workspaces chat, autofocused): iOS opens no keyboard for a
+// focus that no user's press started, and the page has had none. The dock must stay down until a keyboard is reported,
+// not rise to Figma's guess for the settle's second (the iPad mini in the iOS 26.5 Simulator, beta.98: 346 px for
+// about 1 s at load). A real keyboard then docks as before.
+const loadFocus: StoryObj<typeof meta> = {
+  ...withMotion,
+  beforeEach: () => {
+    const restore = withMotion.beforeEach()
+    fakeActivation(false)
+    return restore
+  },
+  render: () => <MountFocusChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    await expect(field).toHaveFocus()
+    const record = recordRise(footer, root)
+    // Past the settle's wait (1000 ms after the focus) with no report: nothing moves and nothing is set.
+    await wait(1200)
+    record.stop()
+    await expect(record.frames.filter((f) => f.rise !== 0 || f.inset !== '')).toEqual([])
+    await expect(root.dataset.keyboardEnd).toBeUndefined()
+    // A keyboard that does show (a later press on the field) is reported and docked as before.
+    fakeViewport.move({ height: 544 })
+    await settled(footer, 266)
+    await expect(keyboardInset(root)).toBe('266px')
+  }),
+}
+/** Phone chat that loads with its composer focused and no press on the page yet: no keyboard, so the dock stays down until one is reported. */
+export const LoadFocusDark: StoryObj<typeof meta> = { ...loadFocus, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LoadFocusLight: StoryObj<typeof meta> = { ...loadFocus, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // The Inbox opens a chat: a new AppShell mounts after the keyboard was measured in another one. The play function
 // turns the page with `pages.next`; a button would sit above the shell and move it down the screen.

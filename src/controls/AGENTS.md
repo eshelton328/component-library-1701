@@ -30,6 +30,9 @@ components (d-066).
   `coords`).
 - A popover that a composer opens uses `width="composer"` (R8). Typed
   text goes in a `PopoverSection`'s `query`, never its capitals `label`.
+  A list there that can grow long takes `maxHeight="picker"`, so it
+  scrolls in a 288 px box and leaves the chat header clear (R34,
+  `LongSkills`).
 - Stories of a scrolling box call `expectScrollAreas`, and of a scrolled
   pane also `expectScrollsByWheelAndKeys` (`scroll-area.testing.ts`).
 - A `BottomSheet` play function awaits `motionDone` before it measures

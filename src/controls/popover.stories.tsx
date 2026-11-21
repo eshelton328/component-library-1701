@@ -477,6 +477,62 @@ const skillQueryPlay: StoryObj<typeof meta>['play'] = async () => {
 export const SkillQueryDark: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'dark' }, play: skillQueryPlay }
 export const SkillQueryLight: StoryObj<typeof meta> = { render: () => <SkillQuery />, globals: { mode: 'light' }, play: skillQueryPlay }
 
+// A live chat's "/" list on the phone (review R34): 60 skills over a composer at the screen's foot, under a chat
+// header. `maxHeight="picker"` caps the box at 288 (`shell.pickerHeight`), so it leaves the header clear and the list
+// scrolls inside; `available` would grow it to the screen's top.
+const longSkills = Array.from({ length: 60 }, (_, i) => ({ value: `skill-${String(i + 1)}`, label: `/skill-${String(i + 1)}`, description: `What skill ${String(i + 1)} does` }))
+const chatHeader = css({ textStyle: 'body', p: '12', borderBottomWidth: 'default', borderColor: 'border.default' })
+function LongSkills() {
+  return (
+    <main className={page}>
+      <header className={chatHeader}>Chat header</header>
+      <div className={foot}>
+        <Popover
+          trigger={<Button>Composer</Button>}
+          label="Long skills"
+          placement="top-start"
+          flip={false}
+          width="trigger"
+          density="compact"
+          maxHeight="picker"
+          autoFocus={false}
+          open
+        >
+          <PopoverSection label="Skills">
+            <OptionList label="Skills" items={longSkills} value="skill-1" labelStyle="mono" check={false} selectedFill density="compact" />
+          </PopoverSection>
+        </Popover>
+      </div>
+    </main>
+  )
+}
+
+/** `maxHeight="picker"`: a 60-skill list over the composer is at most 288 high, under the header, and scrolls inside. */
+const longSkillsPlay: StoryObj<typeof meta>['play'] = async () => {
+  const body = within(document.body)
+  const box = await body.findByRole('dialog', { name: 'Long skills' })
+  const trigger = body.getByRole('button', { name: 'Composer' })
+  const header = body.getByText('Chat header')
+  await waitFor(() => expect(Math.round(trigger.getBoundingClientRect().top - box.getBoundingClientRect().bottom)).toBe(6))
+  // The room above the composer is more than the cap here, so the box is the cap's 288 and the header stays clear.
+  const positioner = box.parentElement
+  if (positioner === null) throw new Error('no positioner')
+  const room = parseFloat(getComputedStyle(positioner).getPropertyValue('--available-height'))
+  await expect(room).toBeGreaterThan(288)
+  await expect(box.getBoundingClientRect().height).toBe(288)
+  await expect(box.getBoundingClientRect().top).toBeGreaterThan(header.getBoundingClientRect().bottom)
+  // The list scrolls inside the box, with no scroll bar and no scroll of the page past its end.
+  await expect(box.scrollHeight).toBeGreaterThan(box.clientHeight)
+  await expectScrollAreas(document.body, 'both', '.popover__content')
+  const last = within(box).getByText('/skill-60')
+  last.scrollIntoView({ block: 'end' })
+  await waitFor(() => expect(Math.round(last.getBoundingClientRect().bottom)).toBeLessThanOrEqual(Math.round(box.getBoundingClientRect().bottom)))
+  await expect(box.getBoundingClientRect().height).toBe(288)
+}
+
+export const LongSkillsDark: StoryObj<typeof meta> = { render: () => <LongSkills />, globals: { mode: 'dark' }, play: longSkillsPlay }
+export const LongSkillsLight: StoryObj<typeof meta> = { render: () => <LongSkills />, globals: { mode: 'light' }, play: longSkillsPlay }
+
 // The Artifacts Filter menu (D3 403:6852, 320 wide): `inset="wide"` pads the box 12, so its rows (403:6857 to
 // 403:6955) sit 13 in from the box edge and are 294 wide; with `density="compact"` rows they are 30 apart.
 function WideInset() {

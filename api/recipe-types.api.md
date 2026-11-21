@@ -1385,6 +1385,7 @@ export type PopoverVariant = {
   surface?: "overlay" | "raised"
   density?: "default" | "compact"
   inset?: "default" | "wide"
+  maxHeight?: "available" | "picker"
 }
 
 export type PopoverVariantProps = {

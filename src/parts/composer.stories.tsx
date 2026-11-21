@@ -1410,11 +1410,11 @@ const collapsedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   await userEvent.click(box)
   await expect(area).toHaveFocus()
   await expect(onCollapsedFocus).toHaveBeenLastCalledWith(true)
-  // The paperclip keeps its own handler and does not focus the text.
+  // The paperclip keeps its own handler; the focus moves to it, still inside the composer, so no `false` comes.
   await userEvent.click(attach)
   await expect(onCollapsedAttach).toHaveBeenCalledTimes(1)
   await expect(area).not.toHaveFocus()
-  await expect(onCollapsedFocus).toHaveBeenLastCalledWith(false)
+  await expect(onCollapsedFocus).toHaveBeenCalledTimes(1)
   // The text stays one line: a long draft scrolls in it, and Send submits it.
   await userEvent.click(area)
   await userEvent.type(area, 'A draft long enough to wrap past the first line of the collapsed composer')
@@ -1446,6 +1446,8 @@ export const CollapsedPhoneLight: StoryObj<typeof meta> = {
 
 // A caller that expands the composer when the text gets the focus and collapses it when the text loses the focus
 // with nothing typed, as the-bridge does when the phone's keyboard opens and closes.
+const onExpandStop = fn<() => void>()
+
 function ExpandOnFocus() {
   const [focused, setFocused] = useState(false)
   const [text, setText] = useState('')
@@ -1463,6 +1465,8 @@ function ExpandOnFocus() {
             onSubmit={() => {
               setText('')
             }}
+            running
+            onStop={onExpandStop}
             model={<ModelChip model="Opus 5.5" options={[]} />}
           />
           <Button>Elsewhere</Button>
@@ -1503,6 +1507,24 @@ const expandOnFocusPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
   await userEvent.click(within(canvasElement).getByRole('button', { name: 'Elsewhere' }))
   await waitFor(() => expect(box).toHaveAttribute('data-collapsed'))
   await expect(rect(box).height).toBe(50)
+  // A press on Stop blurs the text before its click; the composer stays expanded until the press ends, so Stop
+  // still gets its click (Codex review of #307).
+  onExpandStop.mockClear()
+  await userEvent.click(box)
+  await waitFor(() => expect(box).not.toHaveAttribute('data-collapsed'))
+  await userEvent.click(within(box).getByRole('button', { name: 'Stop' }))
+  await expect(onExpandStop).toHaveBeenCalledTimes(1)
+  // Safari and iOS do not focus a pressed button, so the focus leaves the composer: the click still lands, and
+  // the composer collapses after it.
+  await userEvent.click(area)
+  const stop = within(box).getByRole('button', { name: 'Stop' })
+  stop.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+  area.blur()
+  await expect(within(box).getByRole('button', { name: 'Stop' })).toBe(stop)
+  stop.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+  stop.click()
+  await expect(onExpandStop).toHaveBeenCalledTimes(2)
+  await waitFor(() => expect(box).toHaveAttribute('data-collapsed'))
 }
 
 /** A caller sets `collapsed` from `onFocusChange`: a tap expands the composer and the text keeps the focus. */

@@ -1,5 +1,5 @@
 import { Switch as ArkSwitch } from '@ark-ui/react/switch'
-import { useId } from 'react'
+import { useId, useLayoutEffect, useRef } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { switchRecipe } from '../../styled-system/recipes'
 
@@ -42,6 +42,14 @@ export type SwitchProps = {
  */
 export function Switch({ label, hint, checked, defaultChecked, onCheckedChange, disabled, layout }: SwitchProps) {
   const hintId = useId()
+  // A controlled switch keeps its input at `checked`. The browser toggles the input on a click before the caller
+  // answers; when the caller refuses the change (a setting that failed to turn on), nothing renders again, so the
+  // input is set back after the change, or a screen reader would hear "on" from a switch that is off.
+  const input = useRef<HTMLInputElement>(null)
+  const latest = useRef(checked)
+  useLayoutEffect(() => {
+    latest.current = checked
+  })
   const hinted = hint !== undefined && hint !== ''
   const control = (
     <Control>
@@ -63,11 +71,14 @@ export function Switch({ label, hint, checked, defaultChecked, onCheckedChange, 
       {...(defaultChecked === undefined ? {} : { defaultChecked })}
       onCheckedChange={(details) => {
         onCheckedChange?.(details.checked)
+        requestAnimationFrame(() => {
+          if (latest.current !== undefined && input.current !== null) input.current.checked = latest.current
+        })
       }}
     >
       {stacked ? control : text}
       {stacked ? text : control}
-      <ArkSwitch.HiddenInput role="switch" {...(hinted ? { 'aria-describedby': hintId } : {})} />
+      <ArkSwitch.HiddenInput ref={input} role="switch" {...(hinted ? { 'aria-describedby': hintId } : {})} />
     </Root>
   )
 }

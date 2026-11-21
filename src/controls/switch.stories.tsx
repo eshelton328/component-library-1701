@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Switch, type SwitchProps } from './switch'
 
@@ -202,6 +202,36 @@ const stackedPlay: Story['play'] = async ({ canvasElement }) => {
   await expect(onCheckedChange).toHaveBeenLastCalledWith(true)
   await expectTrack(control, thumb, true)
 }
+/** A controlled switch whose caller refuses every change, as a setting that fails to turn on. */
+function Refusing(props: SwitchProps) {
+  return (
+    <main className={page}>
+      <div className={drawer}>
+        <Switch {...props} checked={false} onCheckedChange={onCheckedChange} />
+      </div>
+      <div hidden>
+        {Object.entries(swatches).map(([name, className]) => (
+          <span key={name} data-swatch={name} className={className} />
+        ))}
+      </div>
+    </main>
+  )
+}
+
+// A refused change: the caller keeps `checked` false, so the switch and its input stay off after a click and Space.
+const refusedPlay: Story['play'] = async ({ canvasElement }) => {
+  onCheckedChange.mockClear()
+  const { input, control, thumb, label } = parts(canvasElement, 'Notifications')
+  await userEvent.click(label)
+  await expect(onCheckedChange).toHaveBeenLastCalledWith(true)
+  await waitFor(() => expect(input).not.toBeChecked())
+  await expectTrack(control, thumb, false)
+  await userEvent.keyboard(' ')
+  await expect(onCheckedChange).toHaveBeenCalledTimes(2)
+  await waitFor(() => expect(input).not.toBeChecked())
+}
+export const Refused: Story = { render: (args) => <Refusing {...args} />, play: refusedPlay, globals: { mode: 'dark' } }
+
 /** The declarations a `(forced-colors: active)` rule of this page's styles sets on elements with `className`. */
 function forcedColours(className: string) {
   const found: Record<string, string> = {}

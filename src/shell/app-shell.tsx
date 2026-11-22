@@ -216,6 +216,24 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     }
     // A body's view's bottom in the layout: where a footer above the keyboard ends its view, or the keyboard its spacer.
     const viewBottom = (body: HTMLElement) => body.getBoundingClientRect().top + body.clientTop + body.clientHeight
+    // A footer's content's bottom: its box's bottom less the space under its content, which the keyboard's inset may
+    // size and which then changes at a move's edge (ScrollFrame `foot`, or a page's padding that reads
+    // `--scroll-frame-dock`). The dock moves the content's bottom, so that change does not move the content (Codex review
+    // of #314). The space is the footer's bottom padding and border, its `foot` spacer (`::after`), and its last
+    // child's bottom margin, padding and border.
+    const px = (value: string) => Number.parseFloat(value) || 0
+    const footerBase = (footer: HTMLElement) => {
+      const own = getComputedStyle(footer)
+      const spacer = getComputedStyle(footer, '::after')
+      const last = footer.lastElementChild
+      const child = last === null ? null : getComputedStyle(last)
+      const under =
+        px(own.paddingBottom) +
+        px(own.borderBottomWidth) +
+        (spacer.display === 'none' ? 0 : px(spacer.height)) +
+        (child === null ? 0 : px(child.marginBottom) + px(child.paddingBottom) + px(child.borderBottomWidth))
+      return footer.getBoundingClientRect().bottom - under
+    }
     const atEndOf = (body: HTMLElement) => body.scrollHeight - body.scrollTop - body.clientHeight <= 1
     const translateOf = (el: Element) => {
       const transform = getComputedStyle(el).transform
@@ -244,9 +262,9 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       target: number
       clock: Animation
       animations: Animation[]
-      // Where each footer's bottom is drawn, and each body's view's bottom and scroll position as drawn, through the move.
-      // A footer's bottom, not its top: a footer that grows or shrinks during the move does so at its top, as in the
-      // layout, and stays on the keyboard.
+      // Where each footer's content's bottom is drawn (`footerBase`), and each body's view's bottom and scroll position
+      // as drawn, through the move. The bottom, not the top: a footer that grows or shrinks during the move does so at
+      // its top, as in the layout, and stays on the keyboard.
       footers: Map<HTMLElement, Track>
       // `real` is the scroll position the move set or kept: a scroll by the reader or the page during the move moves
       // the end's by as much.
@@ -269,7 +287,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const move = moving
       const footerBottom = (footer: HTMLElement) => {
         const track = move?.footers.get(footer)
-        return move === undefined || track === undefined ? footer.getBoundingClientRect().bottom : valueAt(move, track, now)
+        return move === undefined || track === undefined ? footerBase(footer) : valueAt(move, track, now)
       }
       const body = (el: HTMLElement) => {
         const tracks = move?.bodies.get(el)
@@ -365,7 +383,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // Measured once, at the target's layout: where each footer and each view's bottom end.
       if (applied !== target) lay(target)
       const ends = {
-        footers: footersNow.map(({ el }) => el.getBoundingClientRect().bottom),
+        footers: footersNow.map(({ el }) => footerBase(el)),
         bodies: bodiesNow.map(({ el }) => ({ bottom: viewBottom(el), view: el.clientHeight, height: el.scrollHeight })),
       }
       if (layout !== target) lay(layout)
@@ -424,9 +442,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         const steps = track(el.parentElement, bottom, ends.footers[i] ?? bottom)
         move.footers.set(el, steps)
         // The layout's own place for the footer, without its transform: the animation's transform replaces it.
-        const box = el.getBoundingClientRect()
-        const place = box.bottom - translateOf(el)
-        sizes.set(el, box.height)
+        const place = footerBase(el) - translateOf(el)
+        sizes.set(el, el.getBoundingClientRect().height)
         if (resized !== undefined && !watched.has(el)) {
           watched.add(el)
           resized.observe(el)

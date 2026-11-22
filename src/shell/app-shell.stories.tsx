@@ -3768,3 +3768,55 @@ const tabletFooters: StoryObj<typeof meta> = {
 export const TabletFootersDark: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'dark', viewport: { value: 't02b' } } }
 export const TabletFootersLight: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'light', viewport: { value: 't02b' } } }
 
+// A footer with the `foot` space under its content (R21): the space shrinks by the dock's rise, so it changes at a move's
+// edge. The composer does not move with it in that frame (Codex review of #314): it is on the keyboard at the open's end
+// and at the close's start, within 1 px, and no frame of the open's last 60 ms steps by more than 1 px.
+const footEdges: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat foot="12" />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const keyboard = 336
+    const foot = 12
+    const off: string[] = []
+    const opening = recordBoxes(root, composer, [])
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await wait(motionMs + 150)
+    opening.stop()
+    await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
+    // The frames around the open's end, where the layout takes the inset (and the space goes): the composer is on the
+    // keyboard's curve within 1 px (the space is 0 there).
+    const end = Number(root.dataset.keyboardEnd)
+    const around = opening.frames.filter((f) => f.drawn >= end - 50 && f.drawn <= end + 50)
+    if (around.length < 2) off.push(`open end: ${String(around.length)} frames`)
+    for (const f of around) {
+      const want = 844 - keyboard * curveAt(f.drawn - (end - motionMs))
+      if (Math.abs(f.composer.bottom - want) > 1) off.push(`open end @${f.drawn.toFixed(0)}: composer ${f.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    const closing = recordBoxes(root, composer, [])
+    await nextFrame()
+    await nextFrame()
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    closing.stop()
+    // The close's first frame: the composer is where the keyboard's curve has it at that time (the space is 0 there).
+    const started = closing.moves[0] ?? 0
+    const closeStart = Number(root.dataset.keyboardEnd) - motionMs
+    const first = closing.frames.find((f) => f.at > started)
+    if (first === undefined) off.push('close: no frame')
+    else {
+      const want = 844 - keyboard * (1 - curveAt(Math.max(first.drawn, started) - closeStart))
+      if (Math.abs(first.composer.bottom - want) > 1) off.push(`close start: composer ${first.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    await expect(composer().bottom).toBe(844 - 34 - foot)
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS with a 12 px `foot`: the composer does not jump as the space changes at a move's edge. */
+export const FootEdgesDark: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+

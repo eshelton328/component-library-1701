@@ -3504,8 +3504,10 @@ const dockTurns: StoryObj<typeof meta> = {
     const riseOn = (from: number, to: number, start: number) => (t: number) =>
       Math.max(0, from + (to - from) * curveAt(t - start) - safe)
     const off: string[] = []
-    const check = (name: string, frames: { drawn: number; rise: number }[], rise: (t: number) => number) => {
-      if (frames.length < 4) off.push(`${name}: ${String(frames.length)} frames`)
+    // `least` frames at least, so a check cannot pass on none: 2 for the 70 ms of a close that an open turns back, which
+    // a slow runner draws in 3 frames.
+    const check = (name: string, frames: { drawn: number; rise: number }[], rise: (t: number) => number, least = 4) => {
+      if (frames.length < least) off.push(`${name}: ${String(frames.length)} frames`)
       for (const f of frames) {
         const want = rise(f.drawn)
         if (Math.abs(f.rise - want) > 1) off.push(`${name} @${String(Math.round(f.drawn))}: rise ${f.rise.toFixed(1)}, curve ${want.toFixed(1)}`)
@@ -3569,7 +3571,7 @@ const dockTurns: StoryObj<typeof meta> = {
     const falling = riseOn(keyboard, 0, fallStart)
     const fallen = keyboard * (1 - curveAt(back - fallStart))
     const rising = riseOn(fallen, keyboard, riseStart)
-    check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), falling)
+    check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), falling, 2)
     check('open during close', second.frames.filter((f) => f.drawn >= riseStart), (t) => (t < back ? falling(t) : rising(t)))
     await expect(off).toEqual([])
   }),
@@ -3694,3 +3696,4 @@ const growOnDock: StoryObj<typeof meta> = {
 /** Phone chat on iOS: a composer that grows with the dock's event grows on the keyboard's curve, with no jump. */
 export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+

@@ -68,6 +68,14 @@ export type AppShellDiagnostic = {
     message: string;
 };
 
+// @public
+export type AppShellDockDetail = {
+    inset: number;
+};
+
+// @public
+export const appShellDockEvent = "app-shell-dock";
+
 // @public (undocumented)
 export type AppShellProps = Scalar<AppShellVariantProps> & {
     rail?: ReactNode;

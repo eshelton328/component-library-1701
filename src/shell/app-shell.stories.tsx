@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test'
-import { css } from '../../styled-system/css'
+import { css, cx } from '../../styled-system/css'
 import { token } from '../../styled-system/tokens'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
-import { AppShell, type AppShellDiagnostic, type AppShellProps } from './app-shell'
+import { AppShell, type AppShellDiagnostic, type AppShellProps, appShellDockEvent } from './app-shell'
 import { cssCubicBezier, cssDuration, cssPx } from './css-values'
 import { keyboardMeasures } from './keyboard-measures'
 
@@ -1531,12 +1531,19 @@ const withMotion = {
 }
 const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
 
-// The dock's rise at every frame, with the time of the frame, until `stop`.
+// The time a frame draws: the document timeline's, at which the browser samples the dock's animations. A busy main
+// thread starts a frame late, and its timeline time is then earlier than `performance.now()` in it (97 ms after a
+// 100 ms hold in Chromium); the compositor draws the animations on its own clock (screen review R39).
+const drawnTime = () => {
+  const time = document.timeline.currentTime
+  return typeof time === 'number' ? time : performance.now()
+}
+// The dock's rise at every frame, with the time of the frame and the time it draws, until `stop`.
 const recordRise = (footer: HTMLElement, root?: HTMLElement) => {
-  const frames: { at: number; rise: number; inset: string }[] = []
+  const frames: { at: number; drawn: number; rise: number; inset: string }[] = []
   let id = 0
   const tick = () => {
-    frames.push({ at: performance.now(), rise: riseOf(footer), inset: root?.style.getPropertyValue('--app-shell-keyboard') ?? '' })
+    frames.push({ at: performance.now(), drawn: drawnTime(), rise: riseOf(footer), inset: root?.style.getPropertyValue('--app-shell-keyboard') ?? '' })
     id = requestAnimationFrame(tick)
   }
   tick()
@@ -1796,6 +1803,10 @@ const reopenFalling: StoryObj<typeof meta> = {
     // its end: no frame shows it before then.
     const distance = 266 - (timed.frames[0]?.rise ?? 0)
     await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / distance))
+    // The layout takes the inset at the move's end (screen review R39), so the drawn rise tells the curve too: no frame
+    // draws the dock within half a px of its end before the curve gets there.
+    const shownUp = timed.frames.find((f) => f.at >= start && f.rise >= 266 - 0.5)?.at ?? 0
+    await expect(shownUp - start).toBeGreaterThanOrEqual(curveTime(1 - 0.5 / distance))
     // Every frame drawn in the rise, before its end, shows the dock on the way; a loaded runner may draw none.
     const during = timed.frames.filter((f) => f.at > start && f.at < riseEnd - 17)
     await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
@@ -1841,12 +1852,15 @@ const frameSteps = (delay: number): StoryObj<typeof meta> => ({
       await userEvent.click(field)
       for (let i = 0; i < delay; i++) await nextFrame()
       await frameKeyboard(fakeViewport, 336, 'open')
+      // Each frame that draws a time after the keyboard stopped (`drawnTime`: a slow frame draws a time before it starts).
+      const stopped = performance.now()
       const off: number[] = []
       const until = performance.now() + 400
       while (performance.now() < until) {
-        off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+        if (drawnTime() >= stopped) off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
         await nextFrame()
       }
+      await expect(off.length).toBeGreaterThan(0)
       await expect(off.filter((v) => v > 0.5)).toEqual([])
       field.blur()
       await frameKeyboard(fakeViewport, 336, 'close')
@@ -1882,12 +1896,15 @@ const frameStepsSlow: StoryObj<typeof meta> = {
         await userEvent.click(field)
         await nextFrame()
         await frameKeyboard(fakeViewport, 336, 'open')
+        // Each frame that draws a time after the keyboard stopped, as in Frame Steps.
+        const stopped = performance.now()
         const off: number[] = []
         const until = performance.now() + 400
         while (performance.now() < until) {
-          off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+          if (drawnTime() >= stopped) off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
           await nextFrame()
         }
+        await expect(off.length).toBeGreaterThan(0)
         await expect(off.filter((v) => v > 0.5)).toEqual([])
         field.blur()
         await frameKeyboard(fakeViewport, 336, 'close')
@@ -1923,12 +1940,15 @@ const frameStepsJank: StoryObj<typeof meta> = {
         await userEvent.click(field)
         for (let i = 0; i < 8; i++) await nextFrame()
         await frameKeyboard(fakeViewport, 336, 'open')
+        // Each frame that draws a time after the keyboard stopped, as in Frame Steps.
+        const stopped = performance.now()
         const off: number[] = []
         const until = performance.now() + 400
         while (performance.now() < until) {
-          off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+          if (drawnTime() >= stopped) off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
           await nextFrame()
         }
+        await expect(off.length).toBeGreaterThan(0)
         await expect(off.filter((v) => v > 0.5)).toEqual([])
         field.blur()
         await frameKeyboard(fakeViewport, 336, 'close')
@@ -1981,11 +2001,12 @@ const lateFirstFrame = (frameMs: number): StoryObj<typeof meta> => ({
     const moveStart = Number(root.dataset.keyboardEnd) - motionMs
     await expect(moveStart).toBeGreaterThanOrEqual(reported - reportLag)
     await expect(moveStart).toBeLessThanOrEqual(heldUntil - 100 - reportLag)
-    // So the first frame with the dock up shows it where the keyboard is by then, at least the curve at the hold's end
-    // (the 380 keyboard less the 34 safe area under it).
+    // So the first frame with the dock up shows it where the keyboard is at the time it draws, at least the curve at
+    // that time (the 380 keyboard less the 34 safe area under it). The frame after the hold draws a time from before
+    // its end (`drawnTime`), so that time is the one to check, not the hold's end.
     const first = timed.frames.find((f) => f.rise > 0)
     if (first === undefined) throw new Error('no frame with the dock up')
-    await expect(first.rise).toBeGreaterThanOrEqual(Math.floor(curveAt(heldUntil - moveStart) * 380 - 34))
+    await expect(first.rise).toBeGreaterThanOrEqual(Math.floor(curveAt(first.drawn - moveStart) * 380 - 34))
   }),
 })
 /**
@@ -2125,9 +2146,12 @@ const closeAfterCorrection: StoryObj<typeof meta> = {
     await expect(fallEnd).toBeLessThanOrEqual(closed + motionMs)
     // A wait, not a check: a loaded runner can draw no frame for seconds.
     await waitFor(() => expect(root.style.getPropertyValue('--app-shell-keyboard')).toBe(''), { timeout: 10000 })
+    // The layout drops the inset at the fall's start (screen review R39), so the wait is also for the drawn dock.
+    await waitFor(() => expect(riseOf(footer)).toBe(0), { timeout: 10000 })
     await nextFrame()
     timed.stop()
-    const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
+    // The first frame that draws the dock down (the layout drops the inset at the fall's start, screen review R39).
+    const down = timed.frames.find((f) => f.at >= start && f.rise <= 0)?.at ?? 0
     await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / from))
   }),
 }
@@ -2578,6 +2602,9 @@ const keyboardRise: StoryObj<typeof meta> = {
     // The layout rounds the inset to 1/64 px, as in Reopen Falling: no frame shows the last one before the curve is
     // within 1/64 px of the end of its 266 px.
     await expect(up - start).toBeGreaterThanOrEqual(curveTime(1 - 1 / 64 / 266))
+    // And the drawn rise, as in Reopen Falling.
+    const shownUp = timed.frames.find((f) => f.at >= start && f.rise >= 266 - 0.5)?.at ?? 0
+    await expect(shownUp - start).toBeGreaterThanOrEqual(curveTime(1 - 0.5 / 266))
     await expect(Math.round(composer().bottom)).toBe(544)
   }),
 }
@@ -2970,10 +2997,11 @@ const keyboardFall: StoryObj<typeof meta> = {
     timed.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)
     await expect(directions(record.frames)).not.toContain(1)
-    // The dock moves on the keyboard's curve, not at once: the keyboard leaves the detail (the inset leaves the root)
-    // when the 300 keyboard is down to the 34 safe area, and no frame shows that before the curve gets there. The time
-    // comes from the frames, so a slow runner that draws fewer frames still passes.
-    const down = timed.frames.find((f) => f.at >= start && f.inset === '')?.at ?? 0
+    // The dock moves on the keyboard's curve, not at once: the keyboard leaves the detail when the 300 keyboard is down
+    // to the 34 safe area, and no frame shows the dock down before the curve gets there. The time comes from the
+    // frames, so a slow runner that draws fewer frames still passes. The layout drops the inset at the fall's start
+    // (screen review R39: a move is the compositor's), so the drawn rise tells it.
+    const down = timed.frames.find((f) => f.at >= start && f.rise <= 0)?.at ?? 0
     await expect(down - start).toBeGreaterThanOrEqual(curveTime(1 - 34 / 300))
     // And it moves on the way (Codex review of #236): the fall is a move of the keyboard's time by the dock's own end,
     // from the blur, and every frame drawn before that end shows the dock between the keyboard's top and the bottom. A
@@ -2986,6 +3014,7 @@ const keyboardFall: StoryObj<typeof meta> = {
     const during = timed.frames.filter((f) => f.at > start).slice(1).filter((f) => f.at < moveStart + curveTime(1 - 34 / 300))
     await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
     await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    await expect(keyboardInset(root)).toBe('')
   }),
 }
 
@@ -3057,16 +3086,17 @@ const iosCloseReport = 40
 const frameMs = 1000 / 60
 const fitPx = 4
 // The composer's bottom and the thread's last line in each drawn frame, read after the frame's own callbacks (the
-// shell's among them) and before the next, with the time of the frame.
+// shell's among them) and before the next, with the time of the frame and the time its animations show (`drawnTime`,
+// read with the boxes: a slow runner starts a frame late, and the shell's animations show the frame's begin time).
 const recordFollow = (composer: () => DOMRect, line: () => DOMRect) => {
-  const frames: { at: number; bottom: number; gap: number }[] = []
+  const frames: { at: number; drawn: number; bottom: number; gap: number }[] = []
   let id = 0
   let on = true
   const tick = () => {
     const at = performance.now()
     setTimeout(() => {
       if (!on) return
-      frames.push({ at, bottom: composer().bottom, gap: composer().top - line().bottom })
+      frames.push({ at, drawn: drawnTime(), bottom: composer().bottom, gap: composer().top - line().bottom })
     }, 0)
     id = requestAnimationFrame(tick)
   }
@@ -3109,10 +3139,12 @@ const keyboardFollow = (reduce: boolean): StoryObj<typeof meta> => ({
     // its own place at rest (the safe area under it stays under the keyboard).
     const place = (progress: number) => Math.min(rest, 844 - keyboard * progress)
     const off: string[] = []
-    const check = (frames: { at: number; bottom: number; gap: number }[], progressAt: (ms: number) => number, name: string) => {
+    // The keyboard within one frame of the time the frame shows (screen review R39: the dock's animations show the
+    // frame's begin time, which a slow runner's late frame puts before its callbacks).
+    const check = (frames: { at: number; drawn: number; bottom: number; gap: number }[], progressAt: (ms: number) => number, name: string) => {
       for (const f of frames) {
-        const a = place(progressAt(f.at - frameMs))
-        const b = place(progressAt(f.at + frameMs))
+        const a = place(progressAt(f.drawn - frameMs))
+        const b = place(progressAt(f.drawn + frameMs))
         const low = Math.min(a, b) - fitPx
         const high = Math.max(a, b) + fitPx
         if (f.bottom < low || f.bottom > high)
@@ -3232,3 +3264,687 @@ export const MotionTokens: StoryObj<typeof meta> = {
       await expect(() => cssCubicBezier(bad)).toThrow(`"${bad}"`)
   },
 }
+
+// The work the dock gives the page in each frame of a keyboard move (screen review R39: on the iPad mini the page drew
+// its frames 19 to 60 ms apart while the dock moved, and the screen showed the composer's last steps 33 to 133 ms
+// apart). A move is the compositor's: the dock writes no style and no scroll position, and changes no box, between its
+// first frame and its last, so an app that works on each resize or scroll of the transcript (the-bridge's pin,
+// usePinnedEnd) has nothing to do mid-move. `busyMs` stands in for that app's work on each change.
+const busyMs = 20
+const recordDockWork = (root: HTMLElement, body: HTMLElement, footer: HTMLElement) => {
+  const work: { at: number; what: string }[] = []
+  const frames: number[] = []
+  const busy = (what: string) => {
+    work.push({ at: performance.now(), what })
+    const until = performance.now() + busyMs
+    while (performance.now() < until) {
+      // The app's work on the change.
+    }
+  }
+  const styles = new MutationObserver((records) => {
+    for (const r of records) work.push({ at: performance.now(), what: `style of ${r.target instanceof Element ? r.target.className.split(' ')[0] ?? '' : ''}` })
+  })
+  styles.observe(root, { attributes: true, attributeFilter: ['style'], subtree: true })
+  // The first report of each observed box comes at once; only a later one is a change.
+  const seen = new Set<Element>()
+  const sizes = new ResizeObserver((entries) => {
+    const changed = entries.filter((e) => seen.has(e.target))
+    for (const e of entries) seen.add(e.target)
+    if (changed.length > 0) busy('resize')
+  })
+  for (const el of [body, footer, ...body.children]) sizes.observe(el)
+  const onScroll = () => {
+    busy('scroll')
+  }
+  body.addEventListener('scroll', onScroll)
+  // When each move of the dock starts.
+  const moves: number[] = []
+  const onMove = () => {
+    moves.push(performance.now())
+  }
+  root.addEventListener('app-shell-dock', onMove)
+  const own = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop')
+  Object.defineProperty(body, 'scrollTop', {
+    configurable: true,
+    get: (): unknown => own?.get?.call(body),
+    set: (value: number) => {
+      work.push({ at: performance.now(), what: 'scrollTop write' })
+      own?.set?.call(body, value)
+    },
+  })
+  let id = requestAnimationFrame(function tick() {
+    frames.push(performance.now())
+    id = requestAnimationFrame(tick)
+  })
+  return {
+    frames,
+    // The work from the move's first frame to the frame before its last: the move's own frames. The move starts in
+    // the task of its `app-shell-dock` event and may change the layout there once (a fall), and the browser reports
+    // that change once in a later frame, a resize and a scroll; only a second one is the dock's work mid-move.
+    midMove: (from: number, to: number) => {
+      const started = moves.filter((at) => at >= from && at < to).at(-1) ?? from
+      const first = frames.find((f) => f > started) ?? started
+      const during = work.filter((w) => w.at > first && w.at < to - frameMs)
+      const once = new Set<string>()
+      return during.filter((w) => {
+        if ((w.what === 'resize' || w.what === 'scroll') && !once.has(w.what)) {
+          once.add(w.what)
+          return false
+        }
+        return true
+      })
+    },
+    stop: () => {
+      cancelAnimationFrame(id)
+      styles.disconnect()
+      sizes.disconnect()
+      body.removeEventListener('scroll', onScroll)
+      root.removeEventListener('app-shell-dock', onMove)
+      Reflect.deleteProperty(body, 'scrollTop')
+    },
+  }
+}
+// iOS's keyboard opened and closed over the thread at its end and scrolled up: in no frame between the move's first and
+// its last does the dock change a style, a scroll position or a box, so no frame mid-move carries the app's 20 ms, and
+// each step of the composer is the compositor's.
+const dockFrameWork = (reduce: boolean): StoryObj<typeof meta> => ({
+  ...withMotion,
+  beforeEach: () => {
+    const restore = withMotion.beforeEach()
+    const restoreMedia = emulateMedia({ coarse: true, reduce })
+    return () => {
+      restoreMedia()
+      restore()
+    }
+  },
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field, composer } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const keyboard = 336
+    const found: string[] = []
+    for (const scrolled of [false, true]) {
+      if (scrolled) body.scrollTop = 200
+      else body.scrollTop = body.scrollHeight
+      await nextFrame()
+      const rest = composer().bottom
+      const record = recordDockWork(root, body, footer)
+      await userEvent.click(field)
+      await wait(110)
+      const reported = performance.now()
+      fakeViewport.move({ height: 844 - keyboard })
+      await wait(motionMs + 150)
+      const openEnd = Number(root.dataset.keyboardEnd)
+      const closed = performance.now()
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await wait(motionMs + 150)
+      const closeEnd = Number(root.dataset.keyboardEnd)
+      record.stop()
+      for (const w of record.midMove(reported, openEnd)) found.push(`open${scrolled ? ' (scrolled up)' : ''} +${String(Math.round(w.at - reported))}: ${w.what}`)
+      for (const w of record.midMove(closed, closeEnd)) found.push(`close${scrolled ? ' (scrolled up)' : ''} +${String(Math.round(w.at - closed))}: ${w.what}`)
+      await expect(composer().bottom).toBe(rest)
+    }
+    await expect(found).toEqual([])
+  }),
+})
+/** Phone chat on iOS: each frame of the keyboard's move is the compositor's; the dock writes no style or scroll mid-move. */
+export const DockFrameWorkDark: StoryObj<typeof meta> = { ...dockFrameWork(false), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFrameWorkLight: StoryObj<typeof meta> = { ...dockFrameWork(false), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** The same with Reduce Motion on, as on the owner's iPad mini (R39). */
+export const DockFrameWorkReducedDark: StoryObj<typeof meta> = { ...dockFrameWork(true), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFrameWorkReducedLight: StoryObj<typeof meta> = { ...dockFrameWork(true), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// Each frame's composer and thread lines, read in the frame with the time it draws (`drawnTime`), and when each move of
+// the dock started (its `app-shell-dock` event).
+// With `resizing`, a frame in which that element changes its size is read again after the shell's own ResizeObserver
+// (made before this one, so its callback comes first): the shell restarts its move there, before the frame paints, so
+// the read in the frame's callbacks saw a layout that the screen never shows.
+const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[], resizing?: Element) => {
+  const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[] }[] = []
+  const moves: number[] = []
+  const onMove = () => {
+    moves.push(performance.now())
+  }
+  root.addEventListener('app-shell-dock', onMove)
+  const read = () => ({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)) })
+  let id = requestAnimationFrame(function tick() {
+    frames.push(read())
+    id = requestAnimationFrame(tick)
+  })
+  const sized = new ResizeObserver(() => {
+    const now = read()
+    const last = frames.at(-1)
+    if (last !== undefined && last.drawn === now.drawn) frames[frames.length - 1] = now
+  })
+  if (resizing !== undefined) sized.observe(resizing)
+  return {
+    frames,
+    moves,
+    stop: () => {
+      cancelAnimationFrame(id)
+      sized.disconnect()
+      root.removeEventListener('app-shell-dock', onMove)
+    },
+  }
+}
+// The edges of a move, where the layout changes (screen review R39): a fall lays the page out for its end at its start,
+// with the drawn parts held where they were, and a rise at its end, as its animations end. In the frame of each, no box
+// moves on screen by more than 1 px from where the keyboard's curve puts it: the composer is on the curve at the time
+// the frame draws, and each thread line moves by as much as the composer, at the thread's end and scrolled up.
+const dockEdges: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const canvas = within(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const lines = [40, 35, 30, 25, 20].map((n) => canvas.getByText(`Message ${String(n)} of the thread`))
+    const keyboard = 336
+    const rest = 844 - 34
+    // The composer's bottom on the keyboard: the inset `inset(t)` less the safe area, never under its rest.
+    const bottomAt = (inset: number) => Math.min(rest, 844 - inset)
+    const off: string[] = []
+    // The frame before an edge and the edge's frame: the composer within 1 px of the curve in the edge's frame, and each
+    // line visible in both moved by the composer's step within 1 px.
+    const checkEdge = (name: string, frames: ReturnType<typeof recordBoxes>['frames'], edge: number, expected: (drawn: number) => number) => {
+      const at = frames.findIndex((f) => f.drawn >= edge)
+      const before = frames[at - 1]
+      const after = frames[at]
+      if (before === undefined || after === undefined) {
+        off.push(`${name}: no frames around the edge`)
+        return
+      }
+      const want = expected(after.drawn)
+      if (Math.abs(after.composer.bottom - want) > 1) off.push(`${name}: composer ${after.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+      const step = after.composer.top - before.composer.top
+      after.lines.forEach((line, i) => {
+        const was = before.lines[i]
+        if (line === null || was === undefined || was === null) return
+        const visible = (box: DOMRect) => box.bottom > 0 && box.top < after.composer.top
+        if (!visible(line) && !visible(was)) return
+        if (Math.abs(line.top - was.top - step) > 1) off.push(`${name}: line ${String(i)} moved ${(line.top - was.top).toFixed(1)}, composer ${step.toFixed(1)}`)
+      })
+    }
+    for (const scrolled of [false, true]) {
+      body.scrollTop = scrolled ? 200 : body.scrollHeight
+      await nextFrame()
+      // The open's end: the layout takes the inset in the frame the animations end.
+      const opening = recordBoxes(root, composer, lines)
+      await userEvent.click(field)
+      await wait(110)
+      fakeViewport.move({ height: 844 - keyboard })
+      await wait(motionMs + 150)
+      opening.stop()
+      const openEnd = Number(root.dataset.keyboardEnd)
+      checkEdge(`open end${scrolled ? ' (scrolled up)' : ''}`, opening.frames, openEnd, () => bottomAt(keyboard))
+      // The close's start: the layout drops the inset in the move's first task, and the composer starts down the curve.
+      const closing = recordBoxes(root, composer, lines)
+      await nextFrame()
+      await nextFrame()
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await wait(motionMs + 150)
+      closing.stop()
+      const closeStart = Number(root.dataset.keyboardEnd) - motionMs
+      const started = closing.moves[0] ?? closeStart
+      checkEdge(`close start${scrolled ? ' (scrolled up)' : ''}`, closing.frames, started, (drawn) =>
+        bottomAt(keyboard * (1 - curveAt(Math.max(drawn, started) - closeStart))),
+      )
+      await expect(composer().bottom).toBe(rest)
+    }
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS: no box jumps in the frame where a fall starts or a rise ends, where the layout changes. */
+export const DockEdgesDark: StoryObj<typeof meta> = { ...dockEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockEdgesLight: StoryObj<typeof meta> = { ...dockEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A keyboard that turns back during its move: a close during an open, and an open during a close. The dock starts the
+// new move from where it is drawn, on the keyboard's clock: every frame shows the composer within 1 px of the first
+// move's curve until the turn (a frame drawn and read before the turn shows the first move), and after it within 1 px
+// of the new move's curve from the place the dock was drawn at the turn, which the keyboard started at its own start
+// (a report comes after the keyboard started).
+const dockTurns: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    const keyboard = 336
+    const safe = 34
+    // The rise on a curve in the keyboard's inset, from `from` to `to`, started at `start`, at the time `t`.
+    const riseOn = (from: number, to: number, start: number) => (t: number) =>
+      Math.max(0, from + (to - from) * curveAt(t - start) - safe)
+    const off: string[] = []
+    const moves: number[] = []
+    // The time a frame shows: its drawn time, or, for a frame read after a move (re)started and drawn before it, the
+    // move's start. A move holds the place of its start before that time (as in `GrowOnDock`), so such a frame shows
+    // the new move at its start (CI and a busy runner: a frame drawn at 5151 and read at 5158, the turn at 5154).
+    const shows = (f: { at: number; drawn: number }) => Math.max(f.drawn, moves.filter((at) => at <= f.at).at(-1) ?? f.drawn)
+    // `least` frames at least, so a check cannot pass on none: 2 for the 70 ms of a close that an open turns back, which
+    // a slow runner draws in 3 frames.
+    const check = (name: string, frames: { at: number; drawn: number; rise: number }[], rise: (t: number) => number, least = 4) => {
+      if (frames.length < least) off.push(`${name}: ${String(frames.length)} frames`)
+      for (const f of frames) {
+        const want = rise(shows(f))
+        if (Math.abs(f.rise - want) > 1) off.push(`${name} @${String(Math.round(f.drawn))}: rise ${f.rise.toFixed(1)}, curve ${want.toFixed(1)}`)
+      }
+    }
+    root.addEventListener('app-shell-dock', () => moves.push(performance.now()))
+    // The start of the move that the last report or focus change started: its end once it has changed, less its time.
+    const newStart = async (was: string | undefined) => {
+      await waitFor(() => expect(root.dataset.keyboardEnd).not.toBe(was), { timeout: 2000 })
+      return Number(root.dataset.keyboardEnd) - motionMs
+    }
+    // A close during an open: the keyboard reports, and 90 ms later the field is blurred.
+    const first = recordRise(footer, root)
+    await userEvent.click(field)
+    await wait(110)
+    const reported = performance.now()
+    let was = root.dataset.keyboardEnd
+    fakeViewport.move({ height: 844 - keyboard })
+    const openStart = await newStart(was)
+    await wait(90)
+    was = root.dataset.keyboardEnd
+    const blurred = performance.now()
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    const closeStart = await newStart(was)
+    await settled(footer, 0)
+    await wait(motionMs)
+    first.stop()
+    const turn = moves.find((at) => at >= blurred) ?? closeStart
+    const opening = riseOn(0, keyboard, openStart)
+    // The inset drawn at the turn, from which the fall starts.
+    const turned = Math.max(0, keyboard * curveAt(turn - openStart))
+    const closing = riseOn(turned, 0, closeStart)
+    // From the report: before it the composer is down, as the keyboard has not shown.
+    check('open', first.frames.filter((f) => f.drawn >= reported && f.drawn < closeStart), opening)
+    check('close during open', first.frames.filter((f) => f.drawn >= closeStart), (t) => (t < turn ? opening(t) : closing(t)))
+    // An open during a close: the keyboard closes, and 70 ms later the field takes the focus and the keyboard reports.
+    await userEvent.click(field)
+    fakeViewport.move({ height: 844 - keyboard })
+    await settled(footer, keyboard - safe)
+    await wait(motionMs)
+    const second = recordRise(footer, root)
+    was = root.dataset.keyboardEnd
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    const fallStart = await newStart(was)
+    await wait(70 - iosCloseReport)
+    const reopened = performance.now()
+    await userEvent.click(field)
+    was = root.dataset.keyboardEnd
+    fakeViewport.move({ height: 844 - keyboard })
+    const riseStart = await newStart(was)
+    await settled(footer, keyboard - safe)
+    await wait(motionMs)
+    second.stop()
+    // The rise's start (a later event lays the same inset out again).
+    const back = moves.find((at) => at >= reopened) ?? riseStart
+    const falling = riseOn(keyboard, 0, fallStart)
+    const fallen = keyboard * (1 - curveAt(back - fallStart))
+    const rising = riseOn(fallen, keyboard, riseStart)
+    check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), falling, 2)
+    check('open during close', second.frames.filter((f) => f.drawn >= riseStart), (t) => (t < back ? falling(t) : rising(t)))
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a close during an open, and an open during a close, each start from where the composer is drawn. */
+export const DockTurnsDark: StoryObj<typeof meta> = { ...dockTurns, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockTurnsLight: StoryObj<typeof meta> = { ...dockTurns, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A chat whose composer grows by a 28 px row while the keyboard is open, as the-bridge's collapsed composer (R31): it
+// listens for `appShellDockEvent` and sets its state there, as React renders it, in a later task.
+const growRow = css({ pt: '24', pb: '4' })
+// `late`: the ms after the dock's event at which the composer grows or shrinks, as React commits a state update a frame
+// or more late on a slow runner (CI's GrowOnDock: the thread jumped 28 px at a close).
+function GrowingChat({ late = 0 }: { late?: number }) {
+  const [grown, setGrown] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = ref.current?.closest('.app-shell__root')
+    if (root === null || root === undefined) return undefined
+    const onDock = (event: Event) => {
+      if (!(event instanceof CustomEvent)) return
+      const detail: unknown = event.detail
+      if (typeof detail === 'object' && detail !== null && 'inset' in detail) {
+        const grow = Number(detail.inset) > 0
+        if (late === 0) setGrown(grow)
+        else setTimeout(() => { setGrown(grow); }, late)
+      }
+    }
+    root.addEventListener(appShellDockEvent, onDock)
+    return () => {
+      root.removeEventListener(appShellDockEvent, onDock)
+    }
+  }, [late])
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div ref={ref} role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+                {grown ? <div data-testid="grow-row" className={growRow} /> : null}
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+// A composer that grows as the keyboard opens and shrinks as it closes, from the dock's event (screen review R39: it grew
+// at the tap, a 28 px step before the keyboard moved). The growth comes in the move: in every frame the composer's
+// bottom is on the keyboard's curve, its height changes once, at or after the move's start, and the thread's last line
+// moves with the composer's bottom within 8 px a 60 Hz frame, so neither the composer nor the thread jumps by the row.
+const growOnDock = (late: number): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <GrowingChat late={late} />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const last = within(canvasElement).getByText('Message 40 of the thread')
+    const composerBox = within(canvasElement).getByRole('group', { name: 'Composer' })
+    const keyboard = 336
+    const rest = 844 - 34
+    const bottomAt = (inset: number) => Math.min(rest, 844 - inset)
+    const off: string[] = []
+    // The frames from the first that the move draws (one that comes after its first event) on.
+    const check = (name: string, record: ReturnType<typeof recordBoxes>, start: number, inset: (t: number) => number) => {
+      const { frames } = record
+      const moved = record.moves[0] ?? start
+      const during = frames.filter((f) => f.at > moved && f.drawn >= start)
+      if (during.length < 4) off.push(`${name}: ${String(during.length)} frames`)
+      const heights = new Set(frames.map((f) => Math.round(f.composer.height)))
+      if (heights.size !== 2) off.push(`${name}: composer heights ${[...heights].join(', ')}`)
+      const changed = frames.findIndex((f, i) => i > 0 && Math.abs(f.composer.height - (frames[i - 1]?.composer.height ?? 0)) > 0.5)
+      const at = frames[changed]
+      if (at !== undefined && at.at < moved) off.push(`${name}: the composer changed at ${at.drawn.toFixed(0)}, before the move at ${start.toFixed(0)}`)
+      during.forEach((f, i) => {
+        // A move (re)started in a frame holds the place of its start for a frame time before it: a frame whose time came
+        // before the growth's restart, drawn after it, shows the composer where the restart found it.
+        const restarted = record.moves.filter((m) => m < f.at).at(-1) ?? moved
+        const want = bottomAt(inset(Math.max(f.drawn, restarted)))
+        if (Math.abs(f.composer.bottom - want) > 1) off.push(`${name} @${f.drawn.toFixed(0)}: composer bottom ${f.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+        const before = during[i - 1]
+        const line = f.lines[0]
+        const was = before?.lines[0]
+        if (before === undefined || line === null || line === undefined || was === null || was === undefined) return
+        const step = line.bottom - was.bottom - (f.composer.bottom - before.composer.bottom)
+        // 8 px over a 60 Hz frame, and as much more over a longer one: the line and the composer move on the same curve
+        // over different spans, so their difference in a frame grows with its time.
+        const bound = 8 * Math.max(1, (f.drawn - before.drawn) / frameMs)
+        if (Math.abs(step) > bound) off.push(`${name} @${f.drawn.toFixed(0)}: the last line moved ${step.toFixed(1)} px off the composer`)
+      })
+    }
+    body.scrollTop = body.scrollHeight
+    await nextFrame()
+    const opening = recordBoxes(root, composer, [last], composerBox)
+    await nextFrame()
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await waitFor(() => expect(root.dataset.keyboardEnd).not.toBeUndefined())
+    const openStart = Number(root.dataset.keyboardEnd) - motionMs
+    await wait(motionMs + 150)
+    opening.stop()
+    check('open', opening, openStart, (t) => keyboard * curveAt(t - openStart))
+    await expect(within(canvasElement).getByTestId('grow-row')).toBeVisible()
+    const closing = recordBoxes(root, composer, [last], composerBox)
+    await nextFrame()
+    const blurred = performance.now()
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await waitFor(() => expect(Number(root.dataset.keyboardEnd)).toBeGreaterThan(blurred))
+    const closeStart = Number(root.dataset.keyboardEnd) - motionMs
+    await wait(motionMs + 150)
+    closing.stop()
+    check('close', closing, closeStart, (t) => keyboard * (1 - curveAt(t - closeStart)))
+    await expect(within(canvasElement).queryByTestId('grow-row')).toBeNull()
+    await expect(off).toEqual([])
+  }),
+})
+/** Phone chat on iOS: a composer that grows with the dock's event grows on the keyboard's curve, with no jump. */
+export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock(0), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock(0), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/**
+ * The same with the growth 50 ms into the move, as React commits it on a slow runner: the thread at its end keeps its
+ * line in the frame the composer shrinks, and ends on the composer.
+ */
+export const GrowLateDark: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const GrowLateLight: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// An iPad in the desktop layout, with a chat in the detail and a list pane with its own ScrollFrame footer (the phone and
+// tablet layouts show one pane): the keyboard's inset lifts both
+// footers (Codex review of #314), so the list's footer moves with the composer in every frame of a move, and neither
+// jumps at the move's end or start.
+function TabletFooters() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="desktop"
+        view="detail"
+        list={
+          <ScrollFrame bodyClassName={frameBody} footer={<div role="group" aria-label="List footer" className={composerBox}>New chat</div>}>
+            {listLines.map((line) => (
+              <p key={line} className={text}>
+                {line}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const tabletFooters: StoryObj<typeof meta> = {
+  ...withMotion,
+  parameters: { viewport: { options: tabletScreen } },
+  render: () => <TabletFooters />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
+    const listFooter = () => rect(canvas.getByRole('group', { name: 'List footer' }))
+    await expect(Math.round(listFooter().bottom)).toBe(Math.round(composer().bottom))
+    const frames: { composer: number; list: number }[] = []
+    let id = requestAnimationFrame(function tick() {
+      frames.push({ composer: composer().bottom, list: listFooter().bottom })
+      id = requestAnimationFrame(tick)
+    })
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 1133 - 400 })
+    await wait(motionMs + 150)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 1133 })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    const off = frames.filter((f) => Math.abs(f.list - f.composer) > 1).map((f) => `list ${f.list.toFixed(1)}, composer ${f.composer.toFixed(1)}`)
+    await expect(frames.some((f) => f.composer <= 1133 - 400 + 0.5)).toBe(true)
+    await expect(off).toEqual([])
+  }),
+}
+/** iPad: the list pane's footer moves with the composer on the keyboard. */
+export const TabletFootersDark: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const TabletFootersLight: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'light', viewport: { value: 't02b' } } }
+
+// A footer with the `foot` space under its content (R21): the space shrinks by the dock's rise, so it changes at a move's
+// edge. The composer does not move with it in that frame (Codex review of #314): it is on the keyboard at the open's end
+// and at the close's start, within 1 px, and no frame of the open's last 60 ms steps by more than 1 px.
+const footEdges: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat foot="12" />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const keyboard = 336
+    const foot = 12
+    const off: string[] = []
+    const opening = recordBoxes(root, composer, [])
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await wait(motionMs + 150)
+    opening.stop()
+    await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
+    // The frames around the open's end, where the layout takes the inset (and the space goes): the composer is on the
+    // keyboard's curve within 1 px (the space is 0 there).
+    const end = Number(root.dataset.keyboardEnd)
+    const around = opening.frames.filter((f) => f.drawn >= end - 50 && f.drawn <= end + 50)
+    if (around.length < 2) off.push(`open end: ${String(around.length)} frames`)
+    for (const f of around) {
+      const want = 844 - keyboard * curveAt(f.drawn - (end - motionMs))
+      if (Math.abs(f.composer.bottom - want) > 1) off.push(`open end @${f.drawn.toFixed(0)}: composer ${f.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    const closing = recordBoxes(root, composer, [])
+    await nextFrame()
+    await nextFrame()
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    closing.stop()
+    // The close's first frame: the composer is where the keyboard's curve has it at that time (the space is 0 there).
+    const started = closing.moves[0] ?? 0
+    const closeStart = Number(root.dataset.keyboardEnd) - motionMs
+    const first = closing.frames.find((f) => f.at > started)
+    if (first === undefined) off.push('close: no frame')
+    else {
+      const want = 844 - keyboard * (1 - curveAt(Math.max(first.drawn, started) - closeStart))
+      if (Math.abs(first.composer.bottom - want) > 1) off.push(`close start: composer ${first.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    await expect(composer().bottom).toBe(844 - 34 - foot)
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS with a 12 px `foot`: the composer does not jump as the space changes at a move's edge. */
+export const FootEdgesDark: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A thread whose lines carry their own transform (a list row moved aside): the dock's move adds its own to it, so each
+// line keeps its offset in every frame of a move (Codex review of #314).
+const shifted = css({ transform: 'translateX(12px)' })
+function ShiftedThread() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m, i) => (
+              <p key={m} className={i % 2 === 0 ? cx(text, shifted) : text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const keepsTransform: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ShiftedThread />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const moved = canvas.getByText('Message 39 of the thread')
+    const plain = canvas.getByText('Message 40 of the thread')
+    const lefts: number[] = []
+    let id = requestAnimationFrame(function tick() {
+      lefts.push(rect(moved).left - rect(plain).left)
+      id = requestAnimationFrame(tick)
+    })
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - 336 })
+    await wait(motionMs + 150)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    await expect(lefts.filter((left) => Math.abs(left - 12) > 0.5)).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a thread line's own transform stays through the dock's move. */
+export const KeepsTransformDark: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeepsTransformLight: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The dock's animations draw the keyboard's curve itself between their keyframes, not a straight line under it: with
+// its animations held at each time of an open, the composer is within 0.02 px of the curve (a line between two of 48
+// points was up to 0.1 px under it, and CI's `LateFirstFrame` found the composer 0.05 px under the keyboard).
+const dockOnCurve: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { footer, field, composer } = threadParts(canvasElement)
+    const keyboard = 336
+    const rest = 844 - 34
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await nextFrame()
+    await nextFrame()
+    const animations = footer.getAnimations()
+    await expect(animations.length).toBeGreaterThan(0)
+    for (const animation of animations) animation.pause()
+    const off: string[] = []
+    // From 120 ms on: the move starts at the keyboard's start, and holds its start place until its first frame.
+    for (let ms = 120; ms <= motionMs; ms += 3.7) {
+      for (const animation of animations) animation.currentTime = ms
+      const want = Math.min(rest, 844 - keyboard * curveAt(ms))
+      const bottom = composer().bottom
+      if (Math.abs(bottom - want) > 0.02) off.push(`@${ms.toFixed(1)}: composer ${bottom.toFixed(3)}, curve ${want.toFixed(3)}`)
+    }
+    for (const animation of animations) animation.finish()
+    await wait(100)
+    await expect(off).toEqual([])
+    await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
+  }),
+}
+/** Phone chat on iOS: between its keyframes, the dock's animation draws the keyboard's curve, not a line under it. */
+export const DockOnCurveDark: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockOnCurveLight: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'light', viewport: { value: 'm390' } } }

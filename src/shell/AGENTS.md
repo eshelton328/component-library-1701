@@ -42,6 +42,17 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
 - The dock's limit for a frame-by-frame keyboard grows with the frames it
   measured, and one gap does not end it; test a dock change on slow
   frames too (`FrameStepsSlow`, `FrameStepsJank`).
+- A keyboard move is the compositor's (R39): transform animations started
+  once per move, and no style, scroll or box change between its first and
+  last frame (`DockFrameWork`). The layout changes only at a close's start
+  and an open's end (`DockEdges`), and a turn starts from where the dock is
+  drawn (`DockTurns`). A story reads the drawn dock from transforms and
+  rects at the frame's `document.timeline` time (`drawnTime`), not
+  `--app-shell-keyboard`: a busy frame draws a time from before it ran.
+- A page changes its layout for a keyboard move in `appShellDockEvent`
+  (a composer that grows), never at the focus; a footer that changes its
+  height during a move restarts the move from where it is drawn
+  (`GrowOnDock`).
 - Read a token as a number only through `css-values.ts`, which throws
   on a form it does not know (audit L-2, `MotionTokens` story).
 - The tab bar stays in the shell's flow, never `position: fixed`. Its

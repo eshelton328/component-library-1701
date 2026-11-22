@@ -3884,3 +3884,39 @@ const keepsTransform: StoryObj<typeof meta> = {
 /** Phone chat on iOS: a thread line's own transform stays through the dock's move. */
 export const KeepsTransformDark: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeepsTransformLight: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The dock's animations draw the keyboard's curve itself between their keyframes, not a straight line under it: with
+// its animations held at each time of an open, the composer is within 0.02 px of the curve (a line between two of 48
+// points was up to 0.1 px under it, and CI's `LateFirstFrame` found the composer 0.05 px under the keyboard).
+const dockOnCurve: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { footer, field, composer } = threadParts(canvasElement)
+    const keyboard = 336
+    const rest = 844 - 34
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await nextFrame()
+    await nextFrame()
+    const animations = footer.getAnimations()
+    await expect(animations.length).toBeGreaterThan(0)
+    for (const animation of animations) animation.pause()
+    const off: string[] = []
+    // From 120 ms on: the move starts at the keyboard's start, and holds its start place until its first frame.
+    for (let ms = 120; ms <= motionMs; ms += 3.7) {
+      for (const animation of animations) animation.currentTime = ms
+      const want = Math.min(rest, 844 - keyboard * curveAt(ms))
+      const bottom = composer().bottom
+      if (Math.abs(bottom - want) > 0.02) off.push(`@${ms.toFixed(1)}: composer ${bottom.toFixed(3)}, curve ${want.toFixed(3)}`)
+    }
+    for (const animation of animations) animation.finish()
+    await wait(100)
+    await expect(off).toEqual([])
+    await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
+  }),
+}
+/** Phone chat on iOS: between its keyframes, the dock's animation draws the keyboard's curve, not a line under it. */
+export const DockOnCurveDark: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockOnCurveLight: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'light', viewport: { value: 'm390' } } }

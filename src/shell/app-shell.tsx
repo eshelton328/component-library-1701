@@ -73,16 +73,40 @@ const fieldSelector = 'input, textarea, [contenteditable]'
 
 // The curve's progress at the time fraction `t`: the bezier's y where its x is `t`, found by bisection.
 const bezier = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3
-const ease = (t: number) => {
-  const [x1, y1, x2, y2] = keyboardCurve
+// The curve's own parameter where its x (the time fraction) is `t`.
+const paramAt = (t: number) => {
+  const [x1, , x2] = keyboardCurve
   let low = 0
   let high = 1
-  for (let i = 0; i < 24; i += 1) {
+  for (let i = 0; i < 40; i += 1) {
     const mid = (low + high) / 2
     if (bezier(x1, x2, mid) < t) low = mid
     else high = mid
   }
-  return bezier(y1, y2, (low + high) / 2)
+  return (low + high) / 2
+}
+const ease = (t: number) => {
+  const [, y1, , y2] = keyboardCurve
+  return bezier(y1, y2, paramAt(t))
+}
+// The keyboard's curve between its parameters `from` and `to`, as a CSS easing over that part: the part of a cubic
+// bezier is a cubic bezier (its control points are the curve's blossom at the two ends), scaled to the part's time and
+// progress. A keyframe with it moves on the curve itself, not on a straight line between two points of it (a line
+// under the curve put the composer 0.05 px under the keyboard on CI, `LateFirstFrame`).
+const partEasing = (from: number, to: number) => {
+  const [x1, y1, x2, y2] = keyboardCurve
+  const blossom = (a: number, b: number, u: number, v: number, w: number) =>
+    a * (u * (1 - v) * (1 - w) + (1 - u) * v * (1 - w) + (1 - u) * (1 - v) * w) +
+    b * (u * v * (1 - w) + u * (1 - v) * w + (1 - u) * v * w) +
+    u * v * w
+  const xs = [blossom(x1, x2, from, from, from), blossom(x1, x2, from, from, to), blossom(x1, x2, from, to, to), blossom(x1, x2, to, to, to)]
+  const ys = [blossom(y1, y2, from, from, from), blossom(y1, y2, from, from, to), blossom(y1, y2, from, to, to), blossom(y1, y2, to, to, to)]
+  const [x0 = 0, xa = 0, xb = 0, x3 = 1] = xs
+  const [y0 = 0, ya = 0, yb = 0, y3 = 1] = ys
+  if (x3 - x0 < 1e-9 || Math.abs(y3 - y0) < 1e-9) return 'linear'
+  const time = (x: number) => Math.min(1, Math.max(0, (x - x0) / (x3 - x0)))
+  const progress = (y: number) => (y - y0) / (y3 - y0)
+  return `cubic-bezier(${String(time(xa))}, ${String(progress(ya))}, ${String(time(xb))}, ${String(progress(yb))})`
 }
 const media = (query: string) => typeof window.matchMedia === 'function' && window.matchMedia(query).matches
 // Whether the page has had a user's press (`navigator.userActivation.hasBeenActive`); true where the browser does not
@@ -252,11 +276,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // A part moves as the keyboard covers its frame: not while the keyboard is under the detail's foot (the safe area)
     // or the space under the footer (a tab bar), and with each px of it above that. So each animation holds the
     // curve's values at `motionSteps` points, even in the curve's own parameter, and at the bend where the keyboard
-    // comes over the frame, on a straight line between two of them (within 0.2 px of the curve on a 380 px keyboard).
+    // comes over the frame, each with the curve's part up to the next point as its easing (`partEasing`).
     // Before the time of its start (`now`, which a busy frame can draw: its time is when the frame began) a part holds
     // where it starts.
     const motionSteps = 48
-    type Track = { from: number; to: number; offsets: number[]; values: number[] }
+    // At each point: its time (`offsets`), the part's value, the curve's progress and the easing to the next point.
+    type Track = { from: number; to: number; offsets: number[]; values: number[]; progress: number[]; easings: string[] }
     type Motion = {
       start: number
       target: number
@@ -271,16 +296,18 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       bodies: Map<HTMLElement, { bottom: Track; scroll: Track; atEnd: boolean; real: number }>
     }
     let moving: Motion | undefined
-    // A track's value at `now`: between its values at the two points around that time.
+    // A track's value at `now`: between its values at the two points around that time, at the curve's progress then
+    // (a part's value is a straight line in the progress between two points, as its animation draws it).
     const valueAt = (move: Motion, track: Track, now: number) => {
       const time = Math.min(1, Math.max(0, (now - move.start) / keyboardMotion))
       const next = track.offsets.findIndex((offset) => offset >= time)
       if (next <= 0) return next === 0 ? (track.values[0] ?? track.to) : track.to
-      const a = track.offsets[next - 1] ?? 0
-      const b = track.offsets[next] ?? 1
+      const a = track.progress[next - 1] ?? 0
+      const b = track.progress[next] ?? 1
       const low = track.values[next - 1] ?? track.to
       const high = track.values[next] ?? track.to
-      return b - a < 1e-9 ? high : low + ((high - low) * (time - a)) / (b - a)
+      const progress = Math.min(Math.max(ease(time), Math.min(a, b)), Math.max(a, b))
+      return Math.abs(b - a) < 1e-9 ? high : low + ((high - low) * (progress - a)) / (b - a)
     }
     // Where a part is drawn now: on its move's track, or where the layout has it.
     const drawn = (now: number) => {
@@ -400,11 +427,16 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // drawn inset, to its value at the end, in step with the keyboard's reach over its frame.
       const [x1, y1, x2, y2] = keyboardCurve
       const begun = Math.min(1, Math.max(0, (now - start) / keyboardMotion))
-      const curve = Array.from({ length: motionSteps + 1 }, (_, i) => ({ time: bezier(x1, x2, i / motionSteps), progress: bezier(y1, y2, i / motionSteps) }))
+      const curve = Array.from({ length: motionSteps + 1 }, (_, i) => ({
+        param: i / motionSteps,
+        time: bezier(x1, x2, i / motionSteps),
+        progress: bezier(y1, y2, i / motionSteps),
+      }))
       const track = (frame: Element | null, valueNow: number, to: number): Track => {
         const over = reach(frame)
         const span = over(target) - over(drawnInset)
-        const points = [...curve, { time: begun, progress: ease(begun) }]
+        const begunParam = paramAt(begun)
+        const points = [...curve, { param: begunParam, time: begun, progress: bezier(y1, y2, begunParam) }]
         // The bend: the progress at which the keyboard comes over the frame, and its time on the curve.
         const under = frame === null ? below : below + frameInset(frame)
         const bend = target === fromInset ? -1 : (under - fromInset) / (target - fromInset)
@@ -416,25 +448,31 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
             if (bezier(y1, y2, mid) < bend) lowS = mid
             else highS = mid
           }
-          points.push({ time: bezier(x1, x2, highS), progress: bend })
+          points.push({ param: highS, time: bezier(x1, x2, highS), progress: bezier(y1, y2, highS) })
         }
-        points.sort((a, b) => a.time - b.time)
-        const startProgress = ease(begun)
+        points.sort((a, b) => a.param - b.param)
+        const startProgress = bezier(y1, y2, begunParam)
         const value = (progress: number) => {
           const inset = fromInset + (target - fromInset) * Math.max(progress, startProgress)
           return Math.abs(span) < 0.01 ? to : valueNow + ((to - valueNow) * (over(inset) - over(drawnInset))) / span
         }
         const offsets = points.map((point) => point.time)
         const values = points.map((point) => value(point.progress))
-        return { from: values[0] ?? valueNow, to, offsets, values }
+        // Before the start's point a part holds still, so the easing there does not matter.
+        const easings = points.map((point, i) => partEasing(point.param, points[i + 1]?.param ?? point.param))
+        return { from: values[0] ?? valueNow, to, offsets, values, progress: points.map((point) => point.progress), easings }
       }
       const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map() }
       const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
       // A footer's animation replaces its transform, the dock's own; a body's child's adds to the child's own transform
       // (Codex review of #314).
-      const animate = (el: HTMLElement, offsets: number[], values: number[], composite: CompositeOperation = 'replace') => {
+      const animate = (el: HTMLElement, steps: Track, values: number[], composite: CompositeOperation = 'replace') => {
         const animation = el.animate(
-          values.map((value, i) => ({ offset: offsets[i] ?? 1, transform: `translateY(${String(value)}px)` })),
+          values.map((value, i) => ({
+            offset: steps.offsets[i] ?? 1,
+            easing: steps.easings[i] ?? 'linear',
+            transform: `translateY(${String(value)}px)`,
+          })),
           { ...timing, composite },
         )
         animation.startTime = start
@@ -492,13 +530,13 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         }
         animate(
           el,
-          steps.offsets,
+          steps,
           steps.values.map((value) => value - place),
         )
       }
       for (const { el, tracks, shifts, children } of bodyShifts) {
         move.bodies.set(el, tracks)
-        for (const child of children) animate(child, tracks.scroll.offsets, shifts, 'add')
+        for (const child of children) animate(child, tracks.scroll, shifts, 'add')
       }
       move.clock.startTime = start
       moving = move

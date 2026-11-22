@@ -2,10 +2,10 @@
 // Runs tokens/build.ts on changed copies of tokens/ and checks each result.
 // Each case is a defect the build must catch or an output it must write.
 // Prints one JSON object and exits 1 on any mismatch.
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 
 const here = new URL('.', import.meta.url).pathname
 const theme = 'themes/viewscreen.json'
@@ -54,7 +54,64 @@ const remove = (data: Data, path: string) => {
   Reflect.deleteProperty(node, key)
 }
 
-function run(mutate: Mutate): Result {
+// A build takes about 0.1 s. Two CI runs hung in one build.ts child with
+// no output (#315), so a build past the limit prints a Node report to
+// stderr, is killed and fails its case. No retry.
+const limitMs = 60_000
+const reportWaitMs = 5_000
+const sleep = (ms: number) => new Promise<void>((resolve) => { setTimeout(resolve, ms) })
+// The report is written after SIGUSR2; a file that does not parse yet is still being written.
+const readReport = async (reports: string): Promise<unknown> => {
+  for (let waited = 0; waited < reportWaitMs; waited += 100) {
+    const name = readdirSync(reports).find((f) => f.endsWith('.json'))
+    if (name !== undefined) {
+      try {
+        const data: unknown = JSON.parse(readFileSync(join(reports, name), 'utf8'))
+        return data
+      } catch (error) {
+        // A SyntaxError means the file is not complete yet; read it again after the next wait.
+        if (!(error instanceof SyntaxError)) throw error
+      }
+    }
+    await sleep(100)
+  }
+  return undefined
+}
+const describeReport = (report: unknown) => {
+  if (!isRecord(report)) return `no Node report in ${String(reportWaitMs / 1000)} s`
+  const native = report['nativeStack']
+  const frames: unknown[] = Array.isArray(native) ? native.slice(0, 30) : []
+  return JSON.stringify({ javascriptStack: report['javascriptStack'], nativeStack: frames, libuv: report['libuv'] }, null, 1)
+}
+type Build = { stdout: string; stderr: string; hung: boolean }
+async function build(name: string, dir: string): Promise<Build> {
+  const reports = mkdtempSync(join(tmpdir(), 'tokens-report-'))
+  const child = spawn('node', ['--report-on-signal', '--report-signal=SIGUSR2', '--report-directory', reports, join(here, 'build.ts'), '--dir', dir], { stdio: ['ignore', 'pipe', 'pipe'] })
+  let stdout = ''
+  let stderr = ''
+  child.stdout.setEncoding('utf8').on('data', (s: string) => { stdout += s })
+  child.stderr.setEncoding('utf8').on('data', (s: string) => { stderr += s })
+  const closed = new Promise<void>((resolve) => {
+    child.on('close', () => { resolve() })
+    child.on('error', (error) => { stderr += String(error); resolve() })
+  })
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const limit = new Promise<boolean>((resolve) => { timer = setTimeout(() => { resolve(true) }, limitMs) })
+  const hung = await Promise.race([closed.then(() => false), limit])
+  clearTimeout(timer)
+  if (hung) {
+    child.kill('SIGUSR2')
+    const report = await readReport(reports)
+    console.error(`${name}: build.ts did not end in ${String(limitMs / 1000)} s\n${describeReport(report)}`)
+    child.kill('SIGKILL')
+    await closed
+  }
+  rmSync(reports, { recursive: true, force: true })
+  return { stdout, stderr, hung }
+}
+
+// hung: the build passed the limit, so the case loop stops after this case.
+async function run(name: string, mutate: Mutate): Promise<Result & { hung: boolean }> {
   const dir = mkdtempSync(join(tmpdir(), 'tokens-'))
   cpSync(here, dir, { recursive: true, filter: (p) => !p.includes('/generated') && !p.endsWith('.ts') })
   const edit: Edit = (file, fn) => {
@@ -65,10 +122,10 @@ function run(mutate: Mutate): Result {
     writeFileSync(path, JSON.stringify(data, null, 2))
   }
   mutate(edit, dir)
-  const r = spawnSync('node', [join(here, 'build.ts'), '--dir', dir], { encoding: 'utf8' })
-  const out = parseBuild(r.stdout, r.stderr)
+  const r = await build(name, dir)
+  const out = r.hung ? crash(`build.ts did not end in ${String(limitMs / 1000)} s`) : parseBuild(r.stdout, r.stderr)
   const read = (f: string) => { try { return readFileSync(join(dir, 'generated', f), 'utf8') } catch { return '' } }
-  const result = { ...out, preset: read('preset.ts'), docs: read('colours.mdx') }
+  const result = { ...out, preset: read('preset.ts'), docs: read('colours.mdx'), hung: r.hung }
   rmSync(dir, { recursive: true, force: true })
   return result
 }
@@ -118,10 +175,18 @@ const cases: [string, Mutate, (r: Result) => boolean][] = [
   ['a missing description fails', (e) => { e(theme, (d) => { remove(d, 'radius.md.$description') }) }, has('described', 'radius.md')],
 ]
 
-const results = cases.map(([name, mutate, expect]) => {
-  const r = run(mutate)
-  return { name, ok: expect(r), problems: r.ok ? [] : r.problems.slice(0, 3) }
-})
+const results: { name: string; ok: boolean; problems: Problem[] }[] = []
+// A hung build makes each later case wait the full limit too, so the run
+// stops at the first hung build and counts the cases it did not run.
+for (const [i, [name, mutate, expect]] of cases.entries()) {
+  const r = await run(name, mutate)
+  results.push({ name, ok: !r.hung && expect(r), problems: r.ok ? [] : r.problems.slice(0, 3) })
+  if (r.hung) {
+    const left = cases.length - i - 1
+    results.push({ name: `stopped after the first hung build; ${String(left)} cases not run`, ok: false, problems: [] })
+    break
+  }
+}
 const failed = results.filter((r) => !r.ok)
 console.log(JSON.stringify({ ok: failed.length === 0, passed: results.length - failed.length, failed }, null, 1))
 process.exit(failed.length ? 1 : 0)

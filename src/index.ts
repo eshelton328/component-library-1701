@@ -160,6 +160,7 @@ export {
   ReviewIcon,
   RuleIcon,
   SearchIcon,
+  SettingsIcon,
   SkillIcon,
   SnoozeIcon,
   SortDescIcon,

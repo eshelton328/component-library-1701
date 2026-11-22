@@ -3086,16 +3086,17 @@ const iosCloseReport = 40
 const frameMs = 1000 / 60
 const fitPx = 4
 // The composer's bottom and the thread's last line in each drawn frame, read after the frame's own callbacks (the
-// shell's among them) and before the next, with the time of the frame.
+// shell's among them) and before the next, with the time of the frame and the time its animations show (`drawnTime`,
+// read with the boxes: a slow runner starts a frame late, and the shell's animations show the frame's begin time).
 const recordFollow = (composer: () => DOMRect, line: () => DOMRect) => {
-  const frames: { at: number; bottom: number; gap: number }[] = []
+  const frames: { at: number; drawn: number; bottom: number; gap: number }[] = []
   let id = 0
   let on = true
   const tick = () => {
     const at = performance.now()
     setTimeout(() => {
       if (!on) return
-      frames.push({ at, bottom: composer().bottom, gap: composer().top - line().bottom })
+      frames.push({ at, drawn: drawnTime(), bottom: composer().bottom, gap: composer().top - line().bottom })
     }, 0)
     id = requestAnimationFrame(tick)
   }
@@ -3138,10 +3139,12 @@ const keyboardFollow = (reduce: boolean): StoryObj<typeof meta> => ({
     // its own place at rest (the safe area under it stays under the keyboard).
     const place = (progress: number) => Math.min(rest, 844 - keyboard * progress)
     const off: string[] = []
-    const check = (frames: { at: number; bottom: number; gap: number }[], progressAt: (ms: number) => number, name: string) => {
+    // The keyboard within one frame of the time the frame shows (screen review R39: the dock's animations show the
+    // frame's begin time, which a slow runner's late frame puts before its callbacks).
+    const check = (frames: { at: number; drawn: number; bottom: number; gap: number }[], progressAt: (ms: number) => number, name: string) => {
       for (const f of frames) {
-        const a = place(progressAt(f.at - frameMs))
-        const b = place(progressAt(f.at + frameMs))
+        const a = place(progressAt(f.drawn - frameMs))
+        const b = place(progressAt(f.drawn + frameMs))
         const low = Math.min(a, b) - fitPx
         const high = Math.max(a, b) + fitPx
         if (f.bottom < low || f.bottom > high)
@@ -3628,7 +3631,7 @@ function GrowingChat() {
 // A composer that grows as the keyboard opens and shrinks as it closes, from the dock's event (screen review R39: it grew
 // at the tap, a 28 px step before the keyboard moved). The growth comes in the move: in every frame the composer's
 // bottom is on the keyboard's curve, its height changes once, at or after the move's start, and the thread's last line
-// moves with the composer's bottom within 8 px a frame, so neither the composer nor the thread jumps by the row.
+// moves with the composer's bottom within 8 px a 60 Hz frame, so neither the composer nor the thread jumps by the row.
 const growOnDock: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <GrowingChat />,
@@ -3662,7 +3665,10 @@ const growOnDock: StoryObj<typeof meta> = {
         const was = before?.lines[0]
         if (before === undefined || line === null || line === undefined || was === null || was === undefined) return
         const step = line.bottom - was.bottom - (f.composer.bottom - before.composer.bottom)
-        if (Math.abs(step) > 8) off.push(`${name} @${f.drawn.toFixed(0)}: the last line moved ${step.toFixed(1)} px off the composer`)
+        // 8 px over a 60 Hz frame, and as much more over a longer one: the line and the composer move on the same curve
+        // over different spans, so their difference in a frame grows with its time.
+        const bound = 8 * Math.max(1, (f.drawn - before.drawn) / frameMs)
+        if (Math.abs(step) > bound) off.push(`${name} @${f.drawn.toFixed(0)}: the last line moved ${step.toFixed(1)} px off the composer`)
       })
     }
     body.scrollTop = body.scrollHeight

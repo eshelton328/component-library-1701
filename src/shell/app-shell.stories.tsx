@@ -1530,6 +1530,15 @@ const withMotion = {
   },
 }
 const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
+// An open from rest has docked: the footer is at `rise`, and the page has its layout. A rise lays the page out only at
+// its end (R39), in the clock's finish, which can come after a frame that draws the footer at `rise` already. At rest
+// the root has no `--app-shell-keyboard` (the move's start lays the page out for its target and back in one task), so
+// the property is set only by this open's end. A story that reads the layout (a body's scroll height, a rect) after an
+// open waits with this, not with `settled` alone.
+const opened = async (root: HTMLElement, footer: HTMLElement, rise: number) => {
+  await settled(footer, rise)
+  await waitFor(() => expect(keyboardInset(root)).not.toBe(''), { timeout: 2000 })
+}
 
 // The time a frame draws: the document timeline's, at which the browser samples the dock's animations. A busy main
 // thread starts a frame late, and its timeline time is then earlier than `performance.now()` in it (97 ms after a
@@ -1785,6 +1794,8 @@ const reopenFalling: StoryObj<typeof meta> = {
     // the rest of the fall's, so it takes the keyboard's full time and does not jump. Wait for the dock to be halfway down, whatever the runner's frame rate.
     await waitFor(() => expect(riseOf(footer)).toBeLessThan(133), { timeout: 2000 })
     const timed = recordRise(footer, root)
+    const moves: number[] = []
+    root.addEventListener('app-shell-dock', () => moves.push(performance.now()))
     const start = performance.now()
     await userEvent.click(field)
     fakeViewport.move({ height: 544 })
@@ -1807,9 +1818,18 @@ const reopenFalling: StoryObj<typeof meta> = {
     // draws the dock within half a px of its end before the curve gets there.
     const shownUp = timed.frames.find((f) => f.at >= start && f.rise >= 266 - 0.5)?.at ?? 0
     await expect(shownUp - start).toBeGreaterThanOrEqual(curveTime(1 - 0.5 / distance))
-    // Every frame drawn in the rise, before its end, shows the dock on the way; a loaded runner may draw none.
-    const during = timed.frames.filter((f) => f.at > start && f.at < riseEnd - 17)
-    await expect(during.filter((f) => !(f.rise > 0 && f.rise < 266))).toEqual([])
+    // Every frame read in the rise, before its end, shows the dock on the way; a loaded runner may draw none. The rise
+    // starts at its move, not at the click: a slow click lets the fall end first, so a frame before the move shows 0.
+    // The move back-dates the rise to the focus, and a busy frame draws a time from before it ran.
+    const rose = moves.find((at) => at >= start) ?? start
+    const riseStart = riseEnd - motionMs
+    // From inset 0 (a slow click lets the fall end), the footer stays down until the keyboard is over the 34 safe area,
+    // so a frame drawn before `overSafe` can show 0. From a higher inset the footer is up sooner. The 300 keyboard is
+    // the screen's 844 less its 544 top.
+    const overSafe = riseStart + curveTime(34 / (844 - 544))
+    const during = timed.frames.filter((f) => f.at > rose && f.at < riseEnd - 17)
+    await expect(during.filter((f) => !(f.rise >= 0 && f.rise < 266))).toEqual([])
+    await expect(during.filter((f) => f.drawn >= overSafe && !(f.rise > 0))).toEqual([])
   }),
 }
 /** Phone chat: the field takes the focus again while the composer comes down; it rises on a full keyboard move. */
@@ -2510,13 +2530,13 @@ const bodyField: StoryObj<typeof meta> = {
   ...withMotion,
   render: () => <BodyForm />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
-    const { footer } = threadParts(canvasElement)
+    const { root, footer } = threadParts(canvasElement)
     const body = slotOf(canvasElement, 'scroll-frame__body')
     const title = within(canvasElement).getByRole('textbox', { name: 'Title' })
     await expect(body.scrollHeight - body.clientHeight).toBeLessThanOrEqual(1)
     await userEvent.click(title)
     fakeViewport.move({ height: 544 })
-    await settled(footer, 266)
+    await opened(root, footer, 266)
     // The keyboard made the body scroll, and the field at its top is still in view.
     await expect(body.scrollHeight - body.clientHeight).toBeGreaterThan(1)
     await expect(Math.round(rect(title).top)).toBeGreaterThanOrEqual(Math.round(rect(body).top))
@@ -3571,6 +3591,7 @@ const dockTurns: StoryObj<typeof meta> = {
     await wait(motionMs)
     const second = recordRise(footer, root)
     was = root.dataset.keyboardEnd
+    const closed = performance.now()
     field.blur()
     await wait(iosCloseReport)
     fakeViewport.move({ height: 844 })
@@ -3589,7 +3610,10 @@ const dockTurns: StoryObj<typeof meta> = {
     const falling = riseOn(keyboard, 0, fallStart)
     const fallen = keyboard * (1 - curveAt(back - fallStart))
     const rising = riseOn(fallen, keyboard, riseStart)
-    check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), falling, 2)
+    // The close starts in the fall's task, back-dated to the blur: until that task the dock holds where it is (a loaded
+    // runner runs the task late), and from it the dock is on the curve from the blur.
+    const fell = moves.find((at) => at >= closed) ?? fallStart
+    check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), (t) => (t < fell ? keyboard - safe : falling(t)), 2)
     check('open during close', second.frames.filter((f) => f.drawn >= riseStart), (t) => (t < back ? falling(t) : rising(t)))
     await expect(off).toEqual([])
   }),

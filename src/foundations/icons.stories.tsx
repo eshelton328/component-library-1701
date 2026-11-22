@@ -64,6 +64,7 @@ import {
   ReviewIcon,
   RuleIcon,
   SearchIcon,
+  SettingsIcon,
   SkillIcon,
   SnoozeIcon,
   SortDescIcon,
@@ -127,6 +128,7 @@ const groups: { title: string; icons: Entry[] }[] = [
       { name: 'toolkit', Icon: ToolkitIcon },
       { name: 'artifacts', Icon: ArtifactsIcon },
       { name: 'brain', Icon: BrainIcon },
+      { name: 'settings', Icon: SettingsIcon },
       { name: 'more', Icon: MoreIcon },
     ],
   },
@@ -319,7 +321,7 @@ const meta = {
       }
       // The paint is checked on each path, so a path cannot override it.
       const text = getComputedStyle(cellEl).color
-      const nav = ['home', 'inbox', 'workspaces', 'projects', 'toolkit', 'artifacts', 'brain'].includes(name)
+      const nav = ['home', 'inbox', 'workspaces', 'projects', 'toolkit', 'artifacts', 'brain', 'settings'].includes(name)
       for (const path of paths) {
         const style = getComputedStyle(path)
         if (filled.includes(name)) {
@@ -365,6 +367,11 @@ const meta = {
     }
     const thin = svgIn(canvas.getByTestId('icon-close')).querySelector('path')?.getBBox()
     await expect([thin?.x, thin?.y, thin?.width, thin?.height]).toEqual([6, 6, 12, 12])
+    // Settings is a gear centred on the 24 grid, its teeth from 3.14 to 20.86, with a round hole of radius 3.
+    const [gear, hole] = Array.from(svgIn(canvas.getByTestId('icon-settings')).querySelectorAll('path')).map((p) => p.getBBox())
+    if (gear === undefined || hole === undefined) throw new Error('settings needs a gear and a hole')
+    await expect([gear.x, gear.y, gear.width, gear.height].map((v) => Math.round(v * 100) / 100)).toEqual([3.14, 3.14, 17.73, 17.73])
+    await expect([hole.x, hole.y, hole.width, hole.height]).toEqual([9, 9, 6, 6])
     // The size prop maps to the sizes.icon tokens.
     const sized = Array.from(canvas.getByTestId('sizes').querySelectorAll('svg'))
     await expect(sized.map((s) => s.getBoundingClientRect().width)).toEqual([12, 16, 20, 24])

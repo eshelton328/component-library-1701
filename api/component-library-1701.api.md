@@ -1621,6 +1621,9 @@ export type SelectFieldProps = Scalar<SelectFieldVariantProps> & {
 };
 
 // @public
+export function SettingsIcon(props: IconProps): JSX.Element;
+
+// @public
 export function SkillIcon(props: IconProps): JSX.Element;
 
 // @public

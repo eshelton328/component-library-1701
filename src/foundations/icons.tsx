@@ -693,6 +693,21 @@ export function FeatureIcon(props: IconProps) {
   )
 }
 
+/**
+ * Settings, in the nav rail and the More drawer: a gear with eight teeth
+ * and a round hole. Figma has no drawing of it; it is drawn on the 24 grid
+ * in the nav icons' style (stroke 1.8, round caps and joins), the teeth
+ * from 3.14 to 20.86 and the hole of radius 3 at the centre.
+ */
+export function SettingsIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="1.8">
+      <path d="M10.183 5.447L10.437 3.137L13.563 3.137L13.817 5.447A6.8 6.8 0 0 1 15.348 6.082L17.162 4.628L19.372 6.838L17.918 8.652A6.8 6.8 0 0 1 18.553 10.183L20.863 10.437L20.863 13.563L18.553 13.817A6.8 6.8 0 0 1 17.918 15.348L19.372 17.162L17.162 19.372L15.348 17.918A6.8 6.8 0 0 1 13.817 18.553L13.563 20.863L10.437 20.863L10.183 18.553A6.8 6.8 0 0 1 8.652 17.918L6.838 19.372L4.628 17.162L6.082 15.348A6.8 6.8 0 0 1 5.447 13.817L3.137 13.563L3.137 10.437L5.447 10.183A6.8 6.8 0 0 1 6.082 8.652L4.628 6.838L6.838 4.628L8.652 6.082A6.8 6.8 0 0 1 10.183 5.447Z" />
+      <path d="M12 15C13.657 15 15 13.657 15 12C15 10.343 13.657 9 12 9C10.343 9 9 10.343 9 12C9 13.657 10.343 15 12 15Z" />
+    </Svg>
+  )
+}
+
 /** Toolkit, in the navigation: a wrench. Figma node 425:7, drawn at 20 px and scaled to 24. */
 export function ToolkitIcon(props: IconProps) {
   return (

@@ -175,19 +175,24 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       if (report === undefined) console.warn(message, frame)
       else report({ code: 'undocked-field', message })
     }
-    // The detail's ScrollFrame parts that the dock moves: each footer, and each body that does not hold the focused
-    // field. A body that holds the focused field is left to the browser, which keeps that field in view (Codex review
-    // of #210): a form that fits its body would otherwise be pinned to its end, past the field. Only a field
-    // (`editable`) counts: a tap on the thread that closes the keyboard gives the focus to the body itself (its
-    // `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the fall (the-bridge's iPhone probe:
-    // 211 px on each open and close, `TapClosesKeyboard`).
+    // The ScrollFrame parts that the dock moves: each footer in the shell (the keyboard's inset lifts every frame's
+    // footer, also in the list or side pane of the desktop layout on an iPad: Codex review of #314), and each body of
+    // the detail that does not hold the focused field. A body that holds the focused field is left to the browser,
+    // which keeps that field in view (Codex review of #210): a form that fits its body would otherwise be pinned to its
+    // end, past the field. Only a field (`editable`) counts: a tap on the thread that closes the keyboard gives the
+    // focus to the body itself (its `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the
+    // fall (the-bridge's iPhone probe: 211 px on each open and close, `TapClosesKeyboard`).
     const dockedParts = () => {
       const focused = document.activeElement
       const field = editable(focused) ? focused : null
-      const frames = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root')]
-      const slots = (name: string) =>
-        frames.flatMap((frame) => [...frame.querySelectorAll(`:scope > .scroll-frame__${name}`)]).filter((el) => el instanceof HTMLElement)
-      return { footers: slots('footer'), bodies: slots('body').filter((body) => field === null || !body.contains(field)) }
+      const slots = (frames: string, name: string) =>
+        [...root.querySelectorAll(frames)]
+          .flatMap((frame) => [...frame.querySelectorAll(`:scope > .scroll-frame__${name}`)])
+          .filter((el) => el instanceof HTMLElement)
+      return {
+        footers: slots('.scroll-frame__root', 'footer'),
+        bodies: slots(':scope > .app-shell__detail > .scroll-frame__root', 'body').filter((body) => field === null || !body.contains(field)),
+      }
     }
     // The inset the layout shows now: the property is set for it.
     let applied = 0

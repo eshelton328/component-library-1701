@@ -3696,4 +3696,75 @@ const growOnDock: StoryObj<typeof meta> = {
 /** Phone chat on iOS: a composer that grows with the dock's event grows on the keyboard's curve, with no jump. */
 export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// An iPad in the desktop layout, with a chat in the detail and a list pane with its own ScrollFrame footer (the phone and
+// tablet layouts show one pane): the keyboard's inset lifts both
+// footers (Codex review of #314), so the list's footer moves with the composer in every frame of a move, and neither
+// jumps at the move's end or start.
+function TabletFooters() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="desktop"
+        view="detail"
+        list={
+          <ScrollFrame bodyClassName={frameBody} footer={<div role="group" aria-label="List footer" className={composerBox}>New chat</div>}>
+            {listLines.map((line) => (
+              <p key={line} className={text}>
+                {line}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const tabletFooters: StoryObj<typeof meta> = {
+  ...withMotion,
+  parameters: { viewport: { options: tabletScreen } },
+  render: () => <TabletFooters />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
+    const listFooter = () => rect(canvas.getByRole('group', { name: 'List footer' }))
+    await expect(Math.round(listFooter().bottom)).toBe(Math.round(composer().bottom))
+    const frames: { composer: number; list: number }[] = []
+    let id = requestAnimationFrame(function tick() {
+      frames.push({ composer: composer().bottom, list: listFooter().bottom })
+      id = requestAnimationFrame(tick)
+    })
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 1133 - 400 })
+    await wait(motionMs + 150)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 1133 })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    const off = frames.filter((f) => Math.abs(f.list - f.composer) > 1).map((f) => `list ${f.list.toFixed(1)}, composer ${f.composer.toFixed(1)}`)
+    await expect(frames.some((f) => f.composer <= 1133 - 400 + 0.5)).toBe(true)
+    await expect(off).toEqual([])
+  }),
+}
+/** iPad: the list pane's footer moves with the composer on the keyboard. */
+export const TabletFootersDark: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const TabletFootersLight: StoryObj<typeof meta> = { ...tabletFooters, globals: { mode: 'light', viewport: { value: 't02b' } } }
 

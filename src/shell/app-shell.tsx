@@ -318,14 +318,19 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       const body = (el: HTMLElement) => {
         const tracks = move?.bodies.get(el)
-        return move === undefined || tracks === undefined
-          ? { bottom: viewBottom(el), scroll: el.scrollTop, atEnd: atEndOf(el) }
-          : {
-              bottom: valueAt(move, tracks.bottom, now),
-              // A scroll by the reader or the page during the move moves the drawn place by as much, and leaves the end.
-              scroll: valueAt(move, tracks.scroll, now) + el.scrollTop - tracks.real,
-              atEnd: tracks.atEnd && Math.abs(el.scrollTop - tracks.real) <= 1,
-            }
+        if (move === undefined || tracks === undefined) return { bottom: viewBottom(el), scroll: el.scrollTop, atEnd: atEndOf(el) }
+        // A view that grew at its end (a footer that shrank during the move) pulls a body at its end back by as much:
+        // that is no scroll by the reader, and the body stays at its end, drawn where it was, so the thread's last line
+        // keeps its place in that frame and the move closes the gap (GrowOnDock, with the growth a frame late, as React
+        // commits it on a slow runner: the line jumped 28 px and the thread ended 28 px under the composer).
+        const moved = el.scrollTop - tracks.real
+        const pulled = tracks.atEnd && Math.abs(moved) > 1 && atEndOf(el)
+        return {
+          bottom: valueAt(move, tracks.bottom, now),
+          // A scroll by the reader or the page during the move moves the drawn place by as much, and leaves the end.
+          scroll: valueAt(move, tracks.scroll, now) + (pulled ? 0 : moved),
+          atEnd: tracks.atEnd && (Math.abs(moved) <= 1 || pulled),
+        }
       }
       return { footerBottom, body }
     }

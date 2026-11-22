@@ -3398,22 +3398,33 @@ export const DockFrameWorkReducedLight: StoryObj<typeof meta> = { ...dockFrameWo
 
 // Each frame's composer and thread lines, read in the frame with the time it draws (`drawnTime`), and when each move of
 // the dock started (its `app-shell-dock` event).
-const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[]) => {
+// With `resizing`, a frame in which that element changes its size is read again after the shell's own ResizeObserver
+// (made before this one, so its callback comes first): the shell restarts its move there, before the frame paints, so
+// the read in the frame's callbacks saw a layout that the screen never shows.
+const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[], resizing?: Element) => {
   const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[] }[] = []
   const moves: number[] = []
   const onMove = () => {
     moves.push(performance.now())
   }
   root.addEventListener('app-shell-dock', onMove)
+  const read = () => ({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)) })
   let id = requestAnimationFrame(function tick() {
-    frames.push({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)) })
+    frames.push(read())
     id = requestAnimationFrame(tick)
   })
+  const sized = new ResizeObserver(() => {
+    const now = read()
+    const last = frames.at(-1)
+    if (last !== undefined && last.drawn === now.drawn) frames[frames.length - 1] = now
+  })
+  if (resizing !== undefined) sized.observe(resizing)
   return {
     frames,
     moves,
     stop: () => {
       cancelAnimationFrame(id)
+      sized.disconnect()
       root.removeEventListener('app-shell-dock', onMove)
     },
   }
@@ -3590,7 +3601,9 @@ export const DockTurnsLight: StoryObj<typeof meta> = { ...dockTurns, globals: { 
 // A chat whose composer grows by a 28 px row while the keyboard is open, as the-bridge's collapsed composer (R31): it
 // listens for `appShellDockEvent` and sets its state there, as React renders it, in a later task.
 const growRow = css({ pt: '24', pb: '4' })
-function GrowingChat() {
+// `late`: the ms after the dock's event at which the composer grows or shrinks, as React commits a state update a frame
+// or more late on a slow runner (CI's GrowOnDock: the thread jumped 28 px at a close).
+function GrowingChat({ late = 0 }: { late?: number }) {
   const [grown, setGrown] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -3599,13 +3612,17 @@ function GrowingChat() {
     const onDock = (event: Event) => {
       if (!(event instanceof CustomEvent)) return
       const detail: unknown = event.detail
-      if (typeof detail === 'object' && detail !== null && 'inset' in detail) setGrown(Number(detail.inset) > 0)
+      if (typeof detail === 'object' && detail !== null && 'inset' in detail) {
+        const grow = Number(detail.inset) > 0
+        if (late === 0) setGrown(grow)
+        else setTimeout(() => { setGrown(grow); }, late)
+      }
     }
     root.addEventListener(appShellDockEvent, onDock)
     return () => {
       root.removeEventListener(appShellDockEvent, onDock)
     }
-  }, [])
+  }, [late])
   return (
     <div className={screenFrame}>
       <AppShell
@@ -3636,13 +3653,14 @@ function GrowingChat() {
 // at the tap, a 28 px step before the keyboard moved). The growth comes in the move: in every frame the composer's
 // bottom is on the keyboard's curve, its height changes once, at or after the move's start, and the thread's last line
 // moves with the composer's bottom within 8 px a 60 Hz frame, so neither the composer nor the thread jumps by the row.
-const growOnDock: StoryObj<typeof meta> = {
+const growOnDock = (late: number): StoryObj<typeof meta> => ({
   ...withMotion,
-  render: () => <GrowingChat />,
+  render: () => <GrowingChat late={late} />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, field, composer } = threadParts(canvasElement)
     const body = slotOf(canvasElement, 'scroll-frame__body')
     const last = within(canvasElement).getByText('Message 40 of the thread')
+    const composerBox = within(canvasElement).getByRole('group', { name: 'Composer' })
     const keyboard = 336
     const rest = 844 - 34
     const bottomAt = (inset: number) => Math.min(rest, 844 - inset)
@@ -3677,7 +3695,7 @@ const growOnDock: StoryObj<typeof meta> = {
     }
     body.scrollTop = body.scrollHeight
     await nextFrame()
-    const opening = recordBoxes(root, composer, [last])
+    const opening = recordBoxes(root, composer, [last], composerBox)
     await nextFrame()
     await userEvent.click(field)
     await wait(110)
@@ -3688,7 +3706,7 @@ const growOnDock: StoryObj<typeof meta> = {
     opening.stop()
     check('open', opening, openStart, (t) => keyboard * curveAt(t - openStart))
     await expect(within(canvasElement).getByTestId('grow-row')).toBeVisible()
-    const closing = recordBoxes(root, composer, [last])
+    const closing = recordBoxes(root, composer, [last], composerBox)
     await nextFrame()
     const blurred = performance.now()
     field.blur()
@@ -3702,10 +3720,16 @@ const growOnDock: StoryObj<typeof meta> = {
     await expect(within(canvasElement).queryByTestId('grow-row')).toBeNull()
     await expect(off).toEqual([])
   }),
-}
+})
 /** Phone chat on iOS: a composer that grows with the dock's event grows on the keyboard's curve, with no jump. */
-export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
-export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock(0), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock(0), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/**
+ * The same with the growth 50 ms into the move, as React commits it on a slow runner: the thread at its end keeps its
+ * line in the frame the composer shrinks, and ends on the composer.
+ */
+export const GrowLateDark: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const GrowLateLight: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // An iPad in the desktop layout, with a chat in the detail and a list pane with its own ScrollFrame footer (the phone and
 // tablet layouts show one pane): the keyboard's inset lifts both

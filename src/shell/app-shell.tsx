@@ -30,8 +30,8 @@ const blurEndDelay = 300
 // The dock moves as the iOS keyboard does: `durations.keyboard` on `easings.keyboard`, a cubic-bezier fitted to
 // the iOS 26 keyboard (screen review R37: a 60 fps recording of the iPad mini, where the keyboard moves as a
 // critically damped spring, 1 - (1 + wt) e^(-wt) with w about 23.5/s, up and down; the curve over 300 ms stays within
-// 1.1 % of it). The hook moves it frame by frame, so it reads both tokens as numbers, through strict readers that throw
-// on a form they do not know (audit L-2).
+// 1.1 % of it). The hook animates it on that curve and also places it on the curve by hand (a correction, a new
+// target), so it reads both tokens as numbers, through strict readers that throw on a form they do not know (audit L-2).
 const keyboardMotion = cssDuration(token('durations.keyboard'))
 // How long the iOS keyboard has been moving when Safari reports it. iOS reports an opening keyboard once, with its
 // whole height, in the frame that first draws it, and that frame already shows the keyboard 43 to 63 ms into its
@@ -175,8 +175,25 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       if (report === undefined) console.warn(message, frame)
       else report({ code: 'undocked-field', message })
     }
-    // Paints a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
-    const paint = (inset: number) => {
+    // The detail's ScrollFrame parts that the dock moves: each footer, and each body that does not hold the focused
+    // field. A body that holds the focused field is left to the browser, which keeps that field in view (Codex review
+    // of #210): a form that fits its body would otherwise be pinned to its end, past the field. Only a field
+    // (`editable`) counts: a tap on the thread that closes the keyboard gives the focus to the body itself (its
+    // `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the fall (the-bridge's iPhone probe:
+    // 211 px on each open and close, `TapClosesKeyboard`).
+    const dockedParts = () => {
+      const focused = document.activeElement
+      const field = editable(focused) ? focused : null
+      const frames = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root')]
+      const slots = (name: string) =>
+        frames.flatMap((frame) => [...frame.querySelectorAll(`:scope > .scroll-frame__${name}`)]).filter((el) => el instanceof HTMLElement)
+      return { footers: slots('footer'), bodies: slots('body').filter((body) => field === null || !body.contains(field)) }
+    }
+    // The inset the layout shows now: the property is set for it.
+    let applied = 0
+    // Lays the page out for a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
+    const lay = (inset: number) => {
+      applied = inset
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
       // The detail's foot where it is with the document at its top: iOS scrolls the document as it reports the
@@ -186,36 +203,283 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // detail's foot is where it is (Codex review of #263).
       const scrolled = viewport.scale === 1 ? window.scrollY : 0
       const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom + scrolled - keyboardTop)
-      // A docked thread (the ScrollFrame body that is the detail's child) keeps the line above the composer where it
-      // is through the whole move, as in the Claude iOS app (screen review R22): a body at its end before this frame
-      // stays at its end, and any other body scrolls by as much as its view shrinks or grows.
-      // A body that holds the focused field is left to the browser, which keeps that field in view (Codex review of
-      // #210): a form that fits its body would otherwise be pinned to its end, past the field.
-      // Only a field (`editable`) counts: a tap on the thread that closes the keyboard gives the focus to the body
-      // itself (its `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the fall (the-bridge's
-      // iPhone probe: 211 px on each open and close, `TapClosesKeyboard`).
-      const focused = document.activeElement
-      const field = editable(focused) ? focused : null
-      const bodies = [...root.querySelectorAll(':scope > .app-shell__detail > .scroll-frame__root > .scroll-frame__body')]
-        .filter((body) => field === null || !body.contains(field))
-        .map((body) => ({ body, atEnd: body.scrollHeight - body.scrollTop - body.clientHeight <= 1, view: body.clientHeight, top: body.scrollTop }))
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
+      if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
+    }
+    // A body's view's bottom in the layout: where a footer above the keyboard ends its view, or the keyboard its spacer.
+    const viewBottom = (body: HTMLElement) => body.getBoundingClientRect().top + body.clientTop + body.clientHeight
+    const atEndOf = (body: HTMLElement) => body.scrollHeight - body.scrollTop - body.clientHeight <= 1
+    const translateOf = (el: Element) => {
+      const transform = getComputedStyle(el).transform
+      return transform === '' || transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42
+    }
+    // A move of the dock is the compositor's (screen review R39: on the iPad mini a dock that laid the page out in
+    // each frame drew its frames 19 to 60 ms apart, and the screen showed the composer's last steps 33 to 133 ms
+    // apart). It starts once, as transform animations on the keyboard's curve and clock: each footer moves from where
+    // it is drawn to where the move's end docks it, and the content of each docked body moves with its view's bottom,
+    // so the thread keeps its line above the composer through the whole move, as in the Claude iOS app (screen review
+    // R22): a body at its end stays at its end, and any other body scrolls by as much as its view shrinks or grows.
+    // The layout changes only at the move's edges, and during the move it keeps the larger view of the two, so no
+    // content is cut off: a fall lays the page out for its end at its start, and a rise at its end, in the frame its
+    // animations end. In between, the dock writes no style and no scroll position and changes no box, so a page that
+    // works on each resize or scroll of its thread has nothing to do mid-move (`DockFrameWork`).
+    // A part moves as the keyboard covers its frame: not while the keyboard is under the detail's foot (the safe area)
+    // or the space under the footer (a tab bar), and with each px of it above that. So each animation holds the
+    // curve's values at `motionSteps` points, even in the curve's own parameter, and at the bend where the keyboard
+    // comes over the frame, on a straight line between two of them (within 0.2 px of the curve on a 380 px keyboard).
+    // Before the time of its start (`now`, which a busy frame can draw: its time is when the frame began) a part holds
+    // where it starts.
+    const motionSteps = 48
+    type Track = { from: number; to: number; offsets: number[]; values: number[] }
+    type Motion = {
+      start: number
+      target: number
+      clock: Animation
+      animations: Animation[]
+      // Where each footer's bottom is drawn, and each body's view's bottom and scroll position as drawn, through the move.
+      // A footer's bottom, not its top: a footer that grows or shrinks during the move does so at its top, as in the
+      // layout, and stays on the keyboard.
+      footers: Map<HTMLElement, Track>
+      // `real` is the scroll position the move set or kept: a scroll by the reader or the page during the move moves
+      // the end's by as much.
+      bodies: Map<HTMLElement, { bottom: Track; scroll: Track; atEnd: boolean; real: number }>
+    }
+    let moving: Motion | undefined
+    // A track's value at `now`: between its values at the two points around that time.
+    const valueAt = (move: Motion, track: Track, now: number) => {
+      const time = Math.min(1, Math.max(0, (now - move.start) / keyboardMotion))
+      const next = track.offsets.findIndex((offset) => offset >= time)
+      if (next <= 0) return next === 0 ? (track.values[0] ?? track.to) : track.to
+      const a = track.offsets[next - 1] ?? 0
+      const b = track.offsets[next] ?? 1
+      const low = track.values[next - 1] ?? track.to
+      const high = track.values[next] ?? track.to
+      return b - a < 1e-9 ? high : low + ((high - low) * (time - a)) / (b - a)
+    }
+    // Where a part is drawn now: on its move's track, or where the layout has it.
+    const drawn = (now: number) => {
+      const move = moving
+      const footerBottom = (footer: HTMLElement) => {
+        const track = move?.footers.get(footer)
+        return move === undefined || track === undefined ? footer.getBoundingClientRect().bottom : valueAt(move, track, now)
+      }
+      const body = (el: HTMLElement) => {
+        const tracks = move?.bodies.get(el)
+        return move === undefined || tracks === undefined
+          ? { bottom: viewBottom(el), scroll: el.scrollTop, atEnd: atEndOf(el) }
+          : {
+              bottom: valueAt(move, tracks.bottom, now),
+              // A scroll by the reader or the page during the move moves the drawn place by as much, and leaves the end.
+              scroll: valueAt(move, tracks.scroll, now) + el.scrollTop - tracks.real,
+              atEnd: tracks.atEnd && Math.abs(el.scrollTop - tracks.real) <= 1,
+            }
+      }
+      return { footerBottom, body }
+    }
+    const stopMotion = () => {
+      const move = moving
+      moving = undefined
+      if (move === undefined) return
+      move.clock.onfinish = null
+      move.clock.cancel()
+      for (const animation of move.animations) animation.cancel()
+    }
+    // Tells the page that the dock moves to `inset`, before it measures the page: a listener may change the layout
+    // there (a composer that grows with the keyboard), and the move takes that change on the keyboard's curve.
+    const announce = (inset: number) => {
+      root.dispatchEvent(new CustomEvent<AppShellDockDetail>(appShellDockEvent, { detail: { inset } }))
+    }
+    // The dock at `inset` at once: a keyboard that reports each frame of its move, a mouse with reduced motion, or the
+    // same inset laid out again for a new layout.
+    const jump = (inset: number) => {
+      const now = performance.now()
+      const look = drawn(now)
+      const bodies = dockedParts().bodies.map((body) => ({ el: body, ...look.body(body) }))
+      stopMotion()
+      announce(inset)
+      lay(inset)
       // The move is added to the scroll position read before the change: a view that grows has the browser clamp
       // `scrollTop` first, and adding to that would jump the thread (Codex review of #216).
-      for (const { body, atEnd, view, top } of bodies) {
-        if (atEnd) body.scrollTop = body.scrollHeight
-        else if (body.clientHeight !== view) body.scrollTop = top + view - body.clientHeight
+      for (const { el, atEnd, bottom, scroll } of bodies) {
+        const next = viewBottom(el)
+        if (atEnd) el.scrollTop = el.scrollHeight
+        else if (Math.abs(next - bottom) > 0.5 || Math.abs(el.scrollTop - scroll) > 0.5) el.scrollTop = scroll + bottom - next
       }
-      if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
+    }
+    // The space under a frame's footer, or under its body with no footer: the part of the keyboard's reach that does
+    // not move it (a tab bar under the frame; 0 elsewhere).
+    const frameInset = (frame: Element) => {
+      const footer = frame.querySelector(':scope > .scroll-frame__footer')
+      if (footer !== null) return Number.parseFloat(getComputedStyle(footer).marginBottom) || 0
+      const body = frame.querySelector(':scope > .scroll-frame__body')
+      const spacer = body === null ? null : getComputedStyle(body, '::after')
+      return spacer === null || spacer.display === 'none' ? 0 : Number.parseFloat(spacer.height) || 0
+    }
+    // Each footer's height as the move laid it out, and the footers watched for a change of it (`resized`, below).
+    const sizes = new Map<Element, number>()
+    const watched = new Set<Element>()
+    // A footer whose height changes during a move (a composer that grows as the keyboard opens, from a page's
+    // `appShellDockEvent` listener, or shrinks at a blur as it closes) changes the move's end: the move goes on from where
+    // the dock is drawn to the new end, on the same curve. The observer reports the change after the layout and before
+    // the frame paints, so no frame shows the old move on the new layout: the footer's bottom stays on its track and its
+    // top takes the change, and each body's content moves on from where it is drawn (screen review R39: the composer's
+    // 28 px growth came at the tap, a step of its own before the keyboard moved).
+    const resized =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver((entries) => {
+            let changed = false
+            for (const entry of entries) {
+              const height = entry.target.getBoundingClientRect().height
+              const was = sizes.get(entry.target)
+              sizes.set(entry.target, height)
+              if (was !== undefined && Math.abs(was - height) > 0.5) changed = true
+            }
+            const move = moving
+            if (changed && move !== undefined) glide(move.target, move.start, from, shownAt(performance.now()))
+          })
+    // The dock moves to `target` on the keyboard's curve, which started at `start` from the inset `fromInset` (the
+    // start can be in the past: a frame shows the dock where the keyboard is then). `drawnInset` is where the dock is
+    // drawn now.
+    const glide = (target: number, start: number, fromInset: number, drawnInset: number) => {
+      const now = performance.now()
+      const look = drawn(now)
+      const parts = dockedParts()
+      const footersNow = parts.footers.map((el) => ({ el, bottom: look.footerBottom(el) }))
+      const bodiesNow = parts.bodies.map((el) => ({ el, ...look.body(el) }))
+      stopMotion()
+      announce(target)
+      // The layout of the move: the one the page has, when its view is already the larger; else the larger view, of
+      // the dock where it is drawn now or of the target.
+      const low = Math.min(drawnInset, target)
+      const layout = applied <= low + 0.5 ? applied : low
+      const keptScroll = bodiesNow.map(({ el }) => el.scrollTop)
+      // Measured once, at the target's layout: where each footer and each view's bottom end.
+      if (applied !== target) lay(target)
+      const ends = {
+        footers: footersNow.map(({ el }) => el.getBoundingClientRect().bottom),
+        bodies: bodiesNow.map(({ el }) => ({ bottom: viewBottom(el), view: el.clientHeight, height: el.scrollHeight })),
+      }
+      if (layout !== target) lay(layout)
+      // How far the keyboard reaches over a frame's moving parts at an inset: none under the detail's foot, and none
+      // under the space below the footer.
+      const detail = root.querySelector(':scope > .app-shell__detail')
+      const scrolled = viewport.scale === 1 ? window.scrollY : 0
+      const below = detail === null ? 0 : document.documentElement.clientHeight - detail.getBoundingClientRect().bottom - scrolled
+      const reach = (frame: Element | null) => {
+        const under = below + (frame === null ? 0 : frameInset(frame))
+        return (inset: number) => Math.max(0, inset - under)
+      }
+      // The points of the keyboard's curve, as (time, progress), and a part's values at them: from its value now, at the
+      // drawn inset, to its value at the end, in step with the keyboard's reach over its frame.
+      const [x1, y1, x2, y2] = keyboardCurve
+      const begun = Math.min(1, Math.max(0, (now - start) / keyboardMotion))
+      const curve = Array.from({ length: motionSteps + 1 }, (_, i) => ({ time: bezier(x1, x2, i / motionSteps), progress: bezier(y1, y2, i / motionSteps) }))
+      const track = (frame: Element | null, valueNow: number, to: number): Track => {
+        const over = reach(frame)
+        const span = over(target) - over(drawnInset)
+        const points = [...curve, { time: begun, progress: ease(begun) }]
+        // The bend: the progress at which the keyboard comes over the frame, and its time on the curve.
+        const under = frame === null ? below : below + frameInset(frame)
+        const bend = target === fromInset ? -1 : (under - fromInset) / (target - fromInset)
+        if (bend > 0 && bend < 1) {
+          let lowS = 0
+          let highS = 1
+          for (let i = 0; i < 30; i += 1) {
+            const mid = (lowS + highS) / 2
+            if (bezier(y1, y2, mid) < bend) lowS = mid
+            else highS = mid
+          }
+          points.push({ time: bezier(x1, x2, highS), progress: bend })
+        }
+        points.sort((a, b) => a.time - b.time)
+        const startProgress = ease(begun)
+        const value = (progress: number) => {
+          const inset = fromInset + (target - fromInset) * Math.max(progress, startProgress)
+          return Math.abs(span) < 0.01 ? to : valueNow + ((to - valueNow) * (over(inset) - over(drawnInset))) / span
+        }
+        const offsets = points.map((point) => point.time)
+        const values = points.map((point) => value(point.progress))
+        return { from: values[0] ?? valueNow, to, offsets, values }
+      }
+      const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map() }
+      const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
+      const animate = (el: HTMLElement, offsets: number[], values: number[]) => {
+        const animation = el.animate(
+          values.map((value, i) => ({ offset: offsets[i] ?? 1, transform: `translateY(${String(value)}px)` })),
+          timing,
+        )
+        animation.startTime = start
+        move.animations.push(animation)
+      }
+      footersNow.forEach(({ el, bottom }, i) => {
+        const steps = track(el.parentElement, bottom, ends.footers[i] ?? bottom)
+        move.footers.set(el, steps)
+        // The layout's own place for the footer, without its transform: the animation's transform replaces it.
+        const box = el.getBoundingClientRect()
+        const place = box.bottom - translateOf(el)
+        sizes.set(el, box.height)
+        if (resized !== undefined && !watched.has(el)) {
+          watched.add(el)
+          resized.observe(el)
+        }
+        animate(
+          el,
+          steps.offsets,
+          steps.values.map((value) => value - place),
+        )
+      })
+      bodiesNow.forEach(({ el, bottom, scroll, atEnd }, i) => {
+        const end = ends.bodies[i]
+        if (end === undefined) return
+        const room = Math.max(0, end.height - end.view)
+        const toScroll = atEnd ? room : Math.min(room, Math.max(0, scroll + bottom - end.bottom))
+        // The scroll position of the move's layout: the end's, where the end's layout is the move's, else as it was.
+        const real = layout === target ? toScroll : (keptScroll[i] ?? el.scrollTop)
+        if (Math.abs(el.scrollTop - real) > 0.5) el.scrollTop = real
+        const tracks = {
+          bottom: track(el.parentElement, bottom, end.bottom),
+          scroll: track(el.parentElement, scroll, toScroll),
+          atEnd,
+          real: el.scrollTop,
+        }
+        move.bodies.set(el, tracks)
+        const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
+        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return
+        // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
+        // layer per entry.
+        const top = el.getBoundingClientRect().top + el.clientTop
+        const foot = top + el.clientHeight
+        const lowest = Math.min(...shifts)
+        const highest = Math.max(...shifts)
+        for (const child of el.children) {
+          if (!(child instanceof HTMLElement)) continue
+          const box = child.getBoundingClientRect()
+          if (box.bottom + highest <= top || box.top + lowest >= foot) continue
+          animate(child, tracks.scroll.offsets, shifts)
+        }
+      })
+      move.clock.startTime = start
+      moving = move
+      // The move's end: the layout of the target and the bodies' end scroll positions, in the frame the animations end.
+      move.clock.onfinish = () => {
+        if (moving !== move) return
+        stopMotion()
+        if (applied !== move.target) lay(move.target)
+        for (const [body, tracks] of move.bodies) {
+          const end = body.scrollTop + tracks.scroll.to - tracks.real
+          if (Math.abs(body.scrollTop - end) > 0.5) body.scrollTop = end
+        }
+        motionDone()
+      }
     }
     // The dock moves to a new inset on the keyboard's curve over `keyboardMotion`, from where it is, on the keyboard's
     // own clock: a move starts when the keyboard started (`since`), so each frame shows the dock where the keyboard is
     // then, also a frame that comes late. A new target during a move starts a new move from there. With reduced
     // motion and no keyboard that slides (a mouse), it is there at once.
-    let shown = 0
     let target = 0
     let from = 0
     let origin = 0
@@ -225,41 +489,44 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let lastQuick = false
     // Until when a report in the same direction as a frame step is one too, at any gap (see `stepping`).
     let stepUntil = Number.NEGATIVE_INFINITY
-    // When the dock's last frame of a move was drawn, and the time between its last two frames, for `keyboardStepGap`.
-    let lastFrameAt = Number.NEGATIVE_INFINITY
+    // The time between two frames at the start of the dock's last move, for `keyboardStepGap`.
     let frameGap = 0
     let start = 0
-    let motion: number | undefined
+    // The two frames at a move's start that time the frame gap; no frame of the move does anything else.
+    let gapFrame: number | undefined
     // Whether the move has drawn no frame yet: until then the dock is still where the move began.
     let firstFrame = false
-    // The clock is read here, not from the frame's timestamp, which can be earlier than the move's start, so the first
-    // frame already moves. A frame that comes late (iOS draws no frame of the page for 100 ms or more at times, the
-    // iPhone traces of screen review R26) shows the dock where the keyboard is by then: the keyboard does not wait for
-    // the page's frames.
-    const step = () => {
-      const drawn = performance.now()
-      if (Number.isFinite(lastFrameAt)) frameGap = drawn - lastFrameAt
-      lastFrameAt = drawn
-      firstFrame = false
-      const t = Math.min(1, Math.max(0, (performance.now() - start) / keyboardMotion))
-      shown = t === 1 ? target : from + (target - from) * ease(t)
-      paint(shown)
-      motion = t === 1 ? undefined : requestAnimationFrame(step)
+    const timeFrames = () => {
+      if (gapFrame !== undefined) cancelAnimationFrame(gapFrame)
+      gapFrame = requestAnimationFrame(() => {
+        firstFrame = false
+        const first = performance.now()
+        gapFrame = requestAnimationFrame(() => {
+          gapFrame = undefined
+          frameGap = performance.now() - first
+        })
+      })
     }
+    const motionDone = () => {
+      from = target
+    }
+    // Where the dock is drawn at `now`, as an inset: on the move's curve, or at its target.
+    const shownAt = (now: number) =>
+      moving === undefined ? target : from + (target - from) * ease(Math.min(1, Math.max(0, (now - start) / keyboardMotion)))
     // `since` is when the keyboard started the motion that this target ends (see `keyboardSince`); now by default.
     const show = (inset: number, since = performance.now()) => {
-      // The same inset again, as after a route change or a window resize, is painted again for the new layout.
+      // The same inset again, as after a route change or a window resize, is laid out again for the new layout.
       if (inset === target) {
-        if (motion === undefined) paint(inset)
+        if (moving === undefined) jump(inset)
         return
       }
+      const now = performance.now()
+      const shown = shownAt(now)
       const previous = target
       target = inset
       if (media('(prefers-reduced-motion: reduce)') && !slides()) {
-        if (motion !== undefined) cancelAnimationFrame(motion)
-        motion = undefined
-        shown = inset
-        paint(inset)
+        from = inset
+        jump(inset)
         return
       }
       // A new target during a move keeps that move's end and curve: the rest of the curve takes the dock from where it
@@ -268,7 +535,6 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // A target back past where the move began (a reopen while the dock comes down, or a close after a correction)
       // starts a new move; a target on the same side of that place is a correction of this move. The place is kept in
       // `origin`: `from` is recomputed by a correction and can lie anywhere (Codex review of #236).
-      const now = performance.now()
       const elapsed = Math.min(1, Math.max(0, (now - start) / keyboardMotion))
       const done = ease(elapsed)
       // The target must be past that place by more than a small step: a target back at it, within a float error or a
@@ -298,31 +564,31 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // time, the rest of the curve still has room for the correction; later, a correction would jump within a frame.
       // A frame step of the keyboard, in a move or after it, and after the move a small step, are followed at once: a
       // new 250 ms move for them would leave the dock off the keyboard for most of its curve.
-      if (stepping || (motion === undefined && small && Math.abs(inset - shown) <= keyboardFollow)) {
-        if (motion !== undefined) cancelAnimationFrame(motion)
-        motion = undefined
-        shown = inset
+      if (stepping || (moving === undefined && small && Math.abs(inset - shown) <= keyboardFollow)) {
+        from = inset
         origin = inset
         root.dataset.keyboardEnd = String(now)
-        paint(inset)
+        jump(inset)
         return
       }
-      if (motion !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
+      if (moving !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
         // Before the move's first frame nothing is drawn, so the move still starts where the dock is (Codex review of
         // #280).
         if (!firstFrame) from = (shown - inset * done) / (1 - done)
+        glide(inset, start, from, shown)
         return
       }
+      const wasMoving = moving !== undefined
       from = shown
       origin = shown
       start = Math.min(now, since)
       // The time the move ends, for a test or a trace to read: a correction keeps it and a new move sets it.
       root.dataset.keyboardEnd = String(start + keyboardMotion)
-      if (motion === undefined) {
+      if (!wasMoving) {
         firstFrame = true
-        lastFrameAt = Number.NEGATIVE_INFINITY
-        motion = requestAnimationFrame(step)
+        timeFrames()
       }
+      glide(inset, start, from, shown)
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
     // measure settles, the dock rises with the keyboard's first report, to the reported inset, or to the expected one
@@ -639,7 +905,9 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       cancelEnd()
       if (settleTimer !== undefined) clearTimeout(settleTimer)
       if (layoutCheck !== undefined) cancelAnimationFrame(layoutCheck)
-      if (motion !== undefined) cancelAnimationFrame(motion)
+      if (gapFrame !== undefined) cancelAnimationFrame(gapFrame)
+      stopMotion()
+      resized?.disconnect()
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)
@@ -669,6 +937,20 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
    * message to the console. Pass the app's error reporter.
    */
   onDiagnostic?: ((diagnostic: AppShellDiagnostic) => void) | undefined
+}
+
+/**
+ * The event that `AppShell` sends its root element (`.app-shell__root`, not bubbling) at the start of each move of the
+ * keyboard dock, before it measures the page: a `CustomEvent` whose `detail` is an `AppShellDockDetail`. A listener
+ * may change the page's layout in it, at once (in React, with `flushSync`), such as a composer that grows while the
+ * keyboard is open: the move then takes that change on the keyboard's curve, so it does not jump before or after.
+ */
+export const appShellDockEvent = 'app-shell-dock'
+
+/** The `detail` of the `appShellDockEvent`. */
+export type AppShellDockDetail = {
+  /** How tall the on-screen keyboard is at the move's end, in CSS px; 0 when the move closes it. */
+  inset: number
 }
 
 /** A mistake in the page that `AppShell` found at run time, for `onDiagnostic`. It holds no element or page text. */
@@ -707,7 +989,10 @@ export type AppShellDiagnostic = {
  * the layout for it (iOS Safari, which only shrinks `window.visualViewport`),
  * the shell keeps its height and a `ScrollFrame` in the detail moves its
  * footer (a composer) up onto the keyboard, while the tab bar or the safe
- * area stays under it. It does so only while a text field has
+ * area stays under it. Where the keyboard slides (iOS), each move is a set of
+ * transform animations on the keyboard's curve, started once: the layout
+ * changes only at the move's start (a close) or end (an open), and
+ * `appShellDockEvent` tells the page when a move starts. It does so only while a text field has
  * the focus, and after the focus leaves it until the keyboard closes, the
  * tap that took the focus ends or 300 ms pass (so a tap on Send lands):
  * otherwise the browser's bars that show and hide on a

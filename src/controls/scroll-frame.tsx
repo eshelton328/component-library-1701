@@ -114,9 +114,12 @@ export type ScrollFrameProps = Scalar<ScrollFrameVariantProps> & {
  * under the footer:
  * `max(0px, --app-shell-keyboard - --scroll-frame-inset)`,
  * `0px` with the keyboard closed or anywhere else. It is
- * public, and moves with the keyboard frame by frame. Content in the footer
- * may read it to keep space over the keyboard that grows as the footer
- * rises, as `var(--scroll-frame-dock, 0px)`, such as
+ * public. It changes once per keyboard move, at the move's start for a
+ * close and at its end for an open, while the AppShell moves the footer and
+ * the body's content with transform animations on the keyboard's curve; a
+ * space that it sizes moves with the footer on that curve. Content in the
+ * footer may read it to keep space over the keyboard that grows as the
+ * footer rises, as `var(--scroll-frame-dock, 0px)`, such as
  * `pb: '[min(token(spacing.8), var(--scroll-frame-dock, 0px))]'` for 8 px
  * over the keyboard and none with it closed.
  *

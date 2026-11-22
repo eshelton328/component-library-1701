@@ -4039,3 +4039,72 @@ const dockOnCurve: StoryObj<typeof meta> = {
 /** Phone chat on iOS: between its keyframes, the dock's animation draws the keyboard's curve, not a line under it. */
 export const DockOnCurveDark: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const DockOnCurveLight: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// Where a thread line paints on screen: its box, cut to its body's view (the body's padding box, which its overflow
+// clips) and to the body's `clip-path` inset from its box's bottom. Null when none of it shows.
+const paintedLine = (line: Element, body: HTMLElement) => {
+  const box = line.getBoundingClientRect()
+  const frame = body.getBoundingClientRect()
+  const view = { top: frame.top + body.clientTop, bottom: frame.top + body.clientTop + body.clientHeight }
+  const inset = /^inset\(\s*(-?[\d.]+)px(?:\s+(-?[\d.]+)px)?(?:\s+(-?[\d.]+)px)?/.exec(getComputedStyle(body).clipPath)
+  const [, top = '0', , bottom] = inset ?? []
+  const cutTop = Math.max(view.top, frame.top + Number(top))
+  const cutBottom = Math.min(view.bottom, frame.bottom - Number(bottom ?? top))
+  const shown = { top: Math.max(box.top, cutTop), bottom: Math.min(box.bottom, cutBottom) }
+  return shown.bottom - shown.top > 0.5 ? shown : null
+}
+// While the keyboard moves, no thread line paints under the composer's top (screen review R44: on the iPad, lines of
+// the thread showed between the composer and the keyboard, as the body kept its larger view during the move). In every
+// frame of an open and a close, at the thread's end and scrolled up, each line's painted part ends above the composer.
+const dockClip: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { field, composer } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const keyboard = 336
+    const off: string[] = []
+    const record = (name: string) => {
+      let frames = 0
+      let on = true
+      const tick = () => {
+        if (!on) return
+        frames += 1
+        const top = composer().top
+        for (const line of body.children) {
+          const shown = paintedLine(line, body)
+          if (shown !== null && shown.bottom > top + 1)
+            off.push(`${name} frame ${String(frames)}: a line paints to ${shown.bottom.toFixed(1)}, under the composer's top ${top.toFixed(1)}`)
+        }
+        requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+      return {
+        stop: () => {
+          on = false
+          return frames
+        },
+      }
+    }
+    for (const scrolled of [false, true]) {
+      body.scrollTop = scrolled ? 200 : body.scrollHeight
+      await nextFrame()
+      const opening = record(`open${scrolled ? ' (scrolled up)' : ''}`)
+      await userEvent.click(field)
+      await wait(110)
+      fakeViewport.move({ height: 844 - keyboard })
+      await wait(motionMs + 150)
+      await expect(opening.stop()).toBeGreaterThan(10)
+      const closing = record(`close${scrolled ? ' (scrolled up)' : ''}`)
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await wait(motionMs + 150)
+      await expect(closing.stop()).toBeGreaterThan(10)
+    }
+    await expect(off.slice(0, 6)).toEqual([])
+  }),
+}
+/** Phone chat on iOS: while the keyboard moves, the thread paints only above the composer. */
+export const DockClipDark: StoryObj<typeof meta> = { ...dockClip, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockClipLight: StoryObj<typeof meta> = { ...dockClip, globals: { mode: 'light', viewport: { value: 'm390' } } }

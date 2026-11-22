@@ -49,6 +49,9 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   drawn (`DockTurns`). A story reads the drawn dock from transforms and
   rects at the frame's `document.timeline` time (`drawnTime`), not
   `--app-shell-keyboard`: a busy frame draws a time from before it ran.
+- During a move a body keeps its larger layout, so it clips its lines at
+  the drawn footer's top with a `clip-path` animation that ends with the
+  others (R44, `DockClip`).
 - A page changes its layout for a keyboard move in `appShellDockEvent`
   (a composer that grows), never at the focus; a footer that changes its
   height during a move restarts the move from where it is drawn

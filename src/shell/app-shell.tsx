@@ -524,7 +524,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           real: el.scrollTop,
         }
         const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
-        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, children: [] }
+        // The body's box is the move's layout, the larger view, and its view ends where the drawn footer's top is: so the
+        // body clips its lines there, from its box's bottom, and no line paints under the footer as it moves (screen
+        // review R44: on the iPad, thread lines showed between the composer and the keyboard, under the composer's top).
+        const boxBottom = el.getBoundingClientRect().bottom
+        const clips = tracks.bottom.values.map((value) => Math.max(0, boxBottom - value))
+        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, clips, children: [] }
         // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
         // layer per entry.
         const top = el.getBoundingClientRect().top + el.clientTop
@@ -536,7 +541,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           const box = child.getBoundingClientRect()
           return box.bottom + highest > top && box.top + lowest < foot
         })
-        return { el, tracks, shifts, children: children.filter((child) => child instanceof HTMLElement) }
+        return { el, tracks, shifts, clips, children: children.filter((child) => child instanceof HTMLElement) }
       })
       for (const { el, steps, place, height } of footerMoves) {
         move.footers.set(el, steps)
@@ -551,9 +556,20 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           steps.values.map((value) => value - place),
         )
       }
-      for (const { el, tracks, shifts, children } of bodyShifts) {
+      for (const { el, tracks, shifts, clips, children } of bodyShifts) {
         move.bodies.set(el, tracks)
         for (const child of children) animate(child, tracks.scroll, shifts, 'add')
+        // The clip goes with the move's other animations, in the frame the final layout comes (`stopMotion`).
+        const clip = el.animate(
+          clips.map((inset, i) => ({
+            offset: tracks.bottom.offsets[i] ?? 1,
+            easing: tracks.bottom.easings[i] ?? 'linear',
+            clipPath: `inset(0px 0px ${String(inset)}px 0px)`,
+          })),
+          timing,
+        )
+        clip.startTime = start
+        move.animations.push(clip)
       }
       move.clock.startTime = start
       moving = move

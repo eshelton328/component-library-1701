@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test'
-import { css } from '../../styled-system/css'
+import { css, cx } from '../../styled-system/css'
 import { token } from '../../styled-system/tokens'
 import { Button } from '../controls/button'
 import { Container } from '../controls/layout'
@@ -3696,6 +3696,7 @@ const growOnDock: StoryObj<typeof meta> = {
 /** Phone chat on iOS: a composer that grows with the dock's event grows on the keyboard's curve, with no jump. */
 export const GrowOnDockDark: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 // An iPad in the desktop layout, with a chat in the detail and a list pane with its own ScrollFrame footer (the phone and
 // tablet layouts show one pane): the keyboard's inset lifts both
 // footers (Codex review of #314), so the list's footer moves with the composer in every frame of a move, and neither
@@ -3820,3 +3821,60 @@ const footEdges: StoryObj<typeof meta> = {
 export const FootEdgesDark: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// A thread whose lines carry their own transform (a list row moved aside): the dock's move adds its own to it, so each
+// line keeps its offset in every frame of a move (Codex review of #314).
+const shifted = css({ transform: 'translateX(12px)' })
+function ShiftedThread() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m, i) => (
+              <p key={m} className={i % 2 === 0 ? cx(text, shifted) : text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const keepsTransform: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ShiftedThread />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const moved = canvas.getByText('Message 39 of the thread')
+    const plain = canvas.getByText('Message 40 of the thread')
+    const lefts: number[] = []
+    let id = requestAnimationFrame(function tick() {
+      lefts.push(rect(moved).left - rect(plain).left)
+      id = requestAnimationFrame(tick)
+    })
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - 336 })
+    await wait(motionMs + 150)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    await expect(lefts.filter((left) => Math.abs(left - 12) > 0.5)).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a thread line's own transform stays through the dock's move. */
+export const KeepsTransformDark: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeepsTransformLight: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'light', viewport: { value: 'm390' } } }

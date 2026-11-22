@@ -430,10 +430,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map() }
       const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
-      const animate = (el: HTMLElement, offsets: number[], values: number[]) => {
+      // A footer's animation replaces its transform, the dock's own; a body's child's adds to the child's own transform
+      // (Codex review of #314).
+      const animate = (el: HTMLElement, offsets: number[], values: number[], composite: CompositeOperation = 'replace') => {
         const animation = el.animate(
           values.map((value, i) => ({ offset: offsets[i] ?? 1, transform: `translateY(${String(value)}px)` })),
-          timing,
+          { ...timing, composite },
         )
         animation.startTime = start
         move.animations.push(animation)
@@ -481,7 +483,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           if (!(child instanceof HTMLElement)) continue
           const box = child.getBoundingClientRect()
           if (box.bottom + highest <= top || box.top + lowest >= foot) continue
-          animate(child, tracks.scroll.offsets, shifts)
+          animate(child, tracks.scroll.offsets, shifts, 'add')
         }
       })
       move.clock.startTime = start

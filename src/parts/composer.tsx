@@ -270,10 +270,13 @@ export type ComposerProps = {
   /**
    * Draws the stacked composer in one row at the same width, for a phone
    * with its keyboard closed (screen review R31): the attach button, the
-   * text on one line with its placeholder, then Send. The model and Stop
-   * are not drawn. The text stays mounted and focusable, and does not grow
-   * past one line; a longer draft scrolls in that line. A tap anywhere on
-   * the row except the attach button and Send focuses the text. The
+   * text on one line with its placeholder, then Send. While `running`,
+   * Stop sits before Send in that row, as in the expanded composer
+   * (Workspaces M3 105:2838 beside Send 105:2844, screen review R45), and
+   * the row keeps its height. The model is not drawn. The text stays
+   * mounted and focusable, and does not grow past one line; a longer
+   * draft scrolls in that line. A tap anywhere on the row except its
+   * buttons (attach, Stop, Send) focuses the text. The
    * composer does not expand itself: set `collapsed` to false in
    * `onFocusChange(true)`, and back to true on `onFocusChange(false)` when
    * the composer is empty. The text keeps its caret when it expands,
@@ -311,8 +314,8 @@ export type ComposerProps = {
  * uploads, and `onAddFiles` takes files dropped on the composer or pasted
  * into it.
  *
- * `collapsed` draws the stacked composer in one row (attach, text, Send)
- * for a phone with its keyboard closed; the caller expands it from
+ * `collapsed` draws the stacked composer in one row (attach, text, Stop
+ * while `running`, Send) for a phone with its keyboard closed; the caller expands it from
  * `onFocusChange(true)`. Attachments keep it expanded.
  */
 export function Composer({
@@ -440,7 +443,7 @@ export function Composer({
   const inline = layout === 'inline'
   // Chips win over `collapsed`: a composer with files draws expanded.
   const folded = collapsed && !inline && attachments.length === 0
-  // A tap on the collapsed row, outside the attach button and Send, focuses the text in the same tap, so iOS opens
+  // A tap on the collapsed row, outside its buttons (attach, Stop, Send), focuses the text in the same tap, so iOS opens
   // the keyboard.
   const tapToFocus = folded
     ? {
@@ -573,7 +576,7 @@ export function Composer({
           {folded ? null : model}
         </Inline>
         <Inline data-composer-group="end" gap="6">
-          {folded ? null : stop}
+          {stop}
           {send}
         </Inline>
       </Inline>

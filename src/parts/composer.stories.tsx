@@ -1344,7 +1344,6 @@ function CollapsedScreen() {
           <Composer
             label="Collapsed"
             collapsed
-            running
             onAttach={onCollapsedAttach}
             onSubmit={onCollapsedSubmit}
             onFocusChange={onCollapsedFocus}
@@ -1389,7 +1388,7 @@ const collapsedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   await expect(middle(attach)).toBe(middle(send))
   await expect(middle(area)).toBe(middle(send))
   await expect(area).toHaveAttribute('placeholder', 'Message, or / for a skill')
-  // The other controls are not drawn: no model, no Stop.
+  // The other controls are not drawn: no model, and no Stop while the chat is idle.
   await expect(within(box).queryByRole('button', { name: 'Model: Opus 5.5' })).toBeNull()
   await expect(within(box).queryByRole('button', { name: 'Stop' })).toBeNull()
   await expect(within(expanded).getByRole('button', { name: 'Stop' })).toBeInTheDocument()
@@ -1442,6 +1441,107 @@ export const CollapsedPhoneLight: StoryObj<typeof meta> = {
   parameters: { viewport: { options: skillScreens } },
   globals: { mode: 'light', viewport: { value: 'phone' } },
   play: collapsedPlay,
+}
+
+// A working chat at rest (screen review R45): the collapsed row keeps one row and draws Stop before Send, as the
+// expanded composer does (Workspaces M3: Stop 105:2838, then Send 105:2844, 6 apart). A turn that starts or ends
+// does not change the row's height, so the transcript above it does not move.
+const onRunningStop = fn<() => void>()
+const onRunningFocus = fn<(focused: boolean) => void>()
+
+function CollapsedRunningScreen() {
+  const [running, setRunning] = useState(true)
+  return (
+    <div className={skillScreen}>
+      <main className={skillChatPhone}>
+        <Stack gap="16">
+          <Composer
+            label="Working"
+            collapsed
+            running={running}
+            onStop={onRunningStop}
+            onFocusChange={onRunningFocus}
+            onAttach={() => undefined}
+            model={<ModelChip model="Opus 5.5" options={[]} />}
+          />
+          <Composer label="Idle" collapsed onAttach={() => undefined} model={<ModelChip model="Opus 5.5" options={[]} />} />
+          <Composer label="Expanded" running onAttach={() => undefined} model={<ModelChip model="Opus 5.5" options={[]} />} />
+          <Button
+            onClick={() => {
+              setRunning((value) => !value)
+            }}
+          >
+            Turn
+          </Button>
+        </Stack>
+      </main>
+    </div>
+  )
+}
+
+const collapsedRunningPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  onRunningStop.mockClear()
+  onRunningFocus.mockClear()
+  await expect(window.innerWidth).toBe(390)
+  await document.fonts.ready
+  const box = composerOf(canvasElement, 'Working')
+  const idle = composerOf(canvasElement, 'Idle')
+  const expanded = composerOf(canvasElement, 'Expanded')
+  const area = within(box).getByRole('textbox', { name: 'Working' })
+  const attach = within(box).getByRole('button', { name: 'Attach a file' })
+  const stop = within(box).getByRole('button', { name: 'Stop' })
+  const send = within(box).getByRole('button', { name: 'Send' })
+  // Still one row, as high as the idle one: 50, where the expanded composer is 78.
+  await expect(box).toHaveAttribute('data-collapsed')
+  await expect(rect(box).height).toBe(50)
+  await expect(rect(idle).height).toBe(rect(box).height)
+  await expect(rect(box).width).toBe(rect(idle).width)
+  await expect(rect(expanded).height).toBe(78)
+  // The idle row draws no Stop; neither row draws the model.
+  await expect(within(idle).queryByRole('button', { name: 'Stop' })).toBeNull()
+  await expect(within(box).queryByRole('button', { name: 'Model: Opus 5.5' })).toBeNull()
+  // The paperclip, the text, Stop, then Send, on one line; Stop 6 before Send, as in the expanded composer.
+  const middle = (el: Element) => rect(el).top + rect(el).height / 2
+  await expect(rect(attach).right).toBeLessThan(rect(area).left)
+  await expect(rect(area).right).toBeLessThan(rect(stop).left)
+  await expect(rect(send).left - rect(stop).right).toBe(6)
+  await expect(middle(stop)).toBe(middle(send))
+  await expect(middle(area)).toBe(middle(send))
+  await expect(rect(send).right).toBeLessThanOrEqual(rect(box).right)
+  // Stop draws at the expanded composer's size, and nothing covers it or Send.
+  const wide = within(expanded).getByRole('button', { name: 'Stop' })
+  await expect([rect(stop).width, rect(stop).height]).toEqual([rect(wide).width, rect(wide).height])
+  await expect(hitsOwnMiddle(stop)).toBe(true)
+  await expect(hitsOwnMiddle(send)).toBe(true)
+  // Stop keeps its own handler: it calls onStop and does not focus the text, so the row stays collapsed.
+  await userEvent.click(stop)
+  await expect(onRunningStop).toHaveBeenCalledTimes(1)
+  await expect(area).not.toHaveFocus()
+  await expect(onRunningFocus).not.toHaveBeenCalledWith(true)
+  // A turn that ends or starts changes nothing but Stop: the row keeps its top, height and Send.
+  const before = rect(box)
+  const sendBefore = rect(send)
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Turn' }))
+  await waitFor(() => expect(within(box).queryByRole('button', { name: 'Stop' })).toBeNull())
+  await expect([rect(box).top, rect(box).height, rect(box).width]).toEqual([before.top, before.height, before.width])
+  await expect([rect(send).left, rect(send).top]).toEqual([sendBefore.left, sendBefore.top])
+  await userEvent.click(within(canvasElement).getByRole('button', { name: 'Turn' }))
+  await waitFor(() => expect(within(box).getByRole('button', { name: 'Stop' })).toBeInTheDocument())
+  await expect([rect(box).top, rect(box).height, rect(box).width]).toEqual([before.top, before.height, before.width])
+}
+
+/** `collapsed` with `running`: the same one row, with Stop before Send; a turn that starts or ends keeps its height. */
+export const CollapsedRunningPhoneDark: StoryObj<typeof meta> = {
+  render: () => <CollapsedRunningScreen />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' } },
+  play: collapsedRunningPlay,
+}
+export const CollapsedRunningPhoneLight: StoryObj<typeof meta> = {
+  render: () => <CollapsedRunningScreen />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'light', viewport: { value: 'phone' } },
+  play: collapsedRunningPlay,
 }
 
 // A caller that expands the composer when the text gets the focus and collapses it when the text loses the focus

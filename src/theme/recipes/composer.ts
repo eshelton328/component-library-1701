@@ -199,8 +199,10 @@ export const composer = defineSlotRecipe({
     },
     // `collapsed` (screen review R31): the stacked composer at rest on a phone, one row at the same width, as the
     // Claude iOS app draws its message box with the keyboard closed. The paperclip, the text on one line with its
-    // placeholder, then Send; the model and Stop are not drawn. The composer keeps its DOM: the button rows lay out
-    // their buttons in the root's own row (`display: contents`), and the start row's buttons come before the text.
+    // placeholder, then Send; while the chat runs, Stop sits before Send as in the expanded composer (Workspaces M3:
+    // Stop 105:2838 then Send 105:2844, 6 apart; screen review R45). The model is not drawn. The composer keeps its
+    // DOM: the button rows lay out in the root's own row (`display: contents`), the start row's buttons come before
+    // the text, and the end group (Stop and Send) stays one flex item with its own 6 px gap.
     // The root's padding and its 8 px gap stay, so the row is 50 high (10 + control.sm 28 + 10 and the border).
     // The text keeps one line: it stops at one 20 px line (`body`) and scrolls past it.
     collapsed: {
@@ -210,7 +212,7 @@ export const composer = defineSlotRecipe({
           alignItems: 'center',
           // The text field: the rest of the row.
           '& > [data-scope="field"]': { flex: '1', minW: '0' },
-          '& > [data-composer-controls], & > [data-composer-controls] > div': { display: 'contents' },
+          '& > [data-composer-controls], & > [data-composer-controls] > [data-composer-group="start"]': { display: 'contents' },
           '& [data-composer-group="start"] > *': { order: '-1' },
           '& textarea': { maxH: 'token(spacing.20)' },
         },

@@ -142,7 +142,10 @@ const cases: [string, Mutate, (r: Result) => boolean][] = [
     cpSync(join(dir, theme), join(dir, 'themes/alt.json'))
     e('resolver.json', (r) => { set(r, 'modifiers.theme.contexts.alt', [{ $ref: 'themes/alt.json' }]) })
   }, ok((r) => r.preset.includes('"alt": {') && /"staticCss":\s*\{\s*"themes":\s*\[\s*"alt"/.test(r.preset))],
-  ['a literal text font family is emitted', (e) => { e(theme, (d) => { set(d, 'text.body.$value.fontFamily', ['Literal Sans', 'serif']) }) },
+  // Each text size keeps the family of its style, so the case sets it in all three.
+  ['a literal text font family is emitted', (e) => { e(theme, (d) => {
+    for (const group of ['text', 'small.text', 'large.text']) set(d, `${group}.body.$value.fontFamily`, ['Literal Sans', 'serif'])
+  }) },
     ok((r) => r.preset.includes('\\"Literal Sans\\", serif') && r.preset.includes('"fontFamily": "text.body"'))],
   ['a mode cannot change spacing', (e) => { e('modes/light.json', (d) => { set(d, 'spacing', { 4: { $type: 'dimension', $value: { value: 99, unit: 'px' } } }) }) },
     has('layout', 'spacing.4')],
@@ -173,6 +176,19 @@ const cases: [string, Mutate, (r: Result) => boolean][] = [
   ['a mode cannot change an easing', (e) => { e('modes/light.json', (d) => { set(d, 'easing', { sheet: { $type: 'cubicBezier', $value: [0, 0, 1, 1] } }) }) },
     has('layout', 'easing.sheet')],
   ['a missing description fails', (e) => { e(theme, (d) => { remove(d, 'radius.md.$description') }) }, has('described', 'radius.md')],
+  ['the text sizes are emitted under their class conditions', () => {},
+    ok((r) => /"textSmall": "\.text-small &"/.test(r.preset) && /"textLarge": "\.text-large &"/.test(r.preset) &&
+      /"body": \{\s*"value": \{\s*"base": "14px",\s*"_textSmall": "13px",\s*"_textLarge": "15px"/.test(r.preset))],
+  ['a text size cannot change a font weight', (e) => { e(theme, (d) => { set(d, 'small.text.body.$value.fontWeight', 700) }) },
+    has('size', 'text.body')],
+  ['a text size cannot change a radius', (e) => { e('sizes/large.json', (d) => { set(d, 'radius', { md: { $type: 'dimension', $value: { value: 99, unit: 'px' } } }) }) },
+    has('size', 'radius.md')],
+  ['a line height off the 4 px grid fails', (e) => { e(theme, (d) => { set(d, 'large.text.body.$value.lineHeight', 1.5) }) },
+    has('grid', 'text.body')],
+  ['a line height just under the 4 px grid fails', (e) => { e(theme, (d) => { set(d, 'text.paneTitle.$value.lineHeight', 1.3333) }) },
+    has('grid', 'viewscreen/dark/default text.paneTitle')],
+  ['a default line height off the 4 px grid fails', (e) => { e(theme, (d) => { set(d, 'text.label.$value.lineHeight', 1.5) }) },
+    has('grid', 'viewscreen/dark/default text.label')],
 ]
 
 const results: { name: string; ok: boolean; problems: Problem[] }[] = []

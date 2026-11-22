@@ -1,7 +1,8 @@
 # tokens
 
 The design tokens, as DTCG JSON, and the build that checks them and writes
-the Panda preset. `resolver.json` lists the themes and the modes.
+the Panda preset. `resolver.json` lists the themes, the modes and the text
+sizes.
 
 - `layout.json` (spacing, sizes) and `motion.json` (durations, easings)
   hold what no theme or mode may change (d-035).
@@ -20,5 +21,6 @@ the Panda preset. `resolver.json` lists the themes and the modes.
 - [themes/AGENTS.md](themes/AGENTS.md): read before adding a theme or a
   themed token.
 - [modes/AGENTS.md](modes/AGENTS.md): read before adding a mode.
+- [sizes/AGENTS.md](sizes/AGENTS.md): read before changing a text size.
 - [figma/AGENTS.md](figma/AGENTS.md): read before changing the Figma
   export or running the Figma token sync.

@@ -3,13 +3,16 @@ import '@fontsource-variable/geist'
 import '@fontsource-variable/geist-mono'
 import '../src/index.css'
 import { resetStoryState } from './story-reset.ts'
+import { textSizeClass } from '../src/foundations/text-size.ts'
 
-// The theme and mode the toolbar picks. Panda reads `data-panda-theme` for
-// the theme and the `dark` class for the mode. A story can fix either one
-// with `globals: { mode: 'light' }`.
+// The theme, mode and text size the toolbar picks. Panda reads
+// `data-panda-theme` for the theme, the `dark` class for the mode and the
+// `text-small` or `text-large` class for the text size. A story can fix
+// any of them with `globals: { mode: 'light' }`.
 const withThemeAndMode: Decorator = (Story, { globals }) => {
   const root = document.documentElement
   root.classList.toggle('dark', globals.mode !== 'light')
+  for (const size of ['small', 'large'] as const) root.classList.toggle(textSizeClass[size], globals.textSize === size)
   root.dataset.pandaTheme = String(globals.theme ?? 'viewscreen')
   return Story()
 }
@@ -27,8 +30,12 @@ const preview: Preview = {
       description: 'Mode',
       toolbar: { title: 'Mode', icon: 'mirror', items: ['dark', 'light'], dynamicTitle: true },
     },
+    textSize: {
+      description: 'Text size',
+      toolbar: { title: 'Text size', icon: 'paragraph', items: ['small', 'default', 'large'], dynamicTitle: true },
+    },
   },
-  initialGlobals: { theme: 'viewscreen', mode: 'dark' },
+  initialGlobals: { theme: 'viewscreen', mode: 'dark', textSize: 'default' },
   parameters: {
     // An accessibility violation fails the story test, in CI and locally.
     a11y: { test: 'error' },

@@ -4,6 +4,12 @@ import { definePreset } from '@pandacss/dev'
 
 export default definePreset({
   "name": "component-library-1701",
+  "conditions": {
+    "extend": {
+      "textSmall": ".text-small &",
+      "textLarge": ".text-large &"
+    }
+  },
   "theme": {
     "extend": {
       "tokens": {
@@ -1111,107 +1117,210 @@ export default definePreset({
         "fontSizes": {
           "text": {
             "badge": {
-              "value": "10px",
+              "value": {
+                "base": "10px",
+                "_textSmall": "9px",
+                "_textLarge": "11px"
+              },
               "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
             },
             "body": {
-              "value": "14px",
+              "value": {
+                "base": "14px",
+                "_textSmall": "13px",
+                "_textLarge": "15px"
+              },
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
             "bodyLg": {
-              "value": "15px",
+              "value": {
+                "base": "15px",
+                "_textSmall": "14px",
+                "_textLarge": "16px"
+              },
               "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
             },
             "bodySm": {
-              "value": "13px",
+              "value": {
+                "base": "13px",
+                "_textSmall": "12px",
+                "_textLarge": "14px"
+              },
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
             },
             "code": {
-              "value": "14px",
+              "value": {
+                "base": "14px",
+                "_textSmall": "13px",
+                "_textLarge": "15px"
+              },
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
             },
             "eyebrow": {
-              "value": "11px",
+              "value": {
+                "base": "11px",
+                "_textSmall": "10px",
+                "_textLarge": "12px"
+              },
               "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
             },
             "heading": {
-              "value": "28px",
+              "value": {
+                "base": "28px",
+                "_textSmall": "26px",
+                "_textLarge": "30px"
+              },
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
             "headingSm": {
-              "value": "26px",
+              "value": {
+                "base": "26px",
+                "_textSmall": "24px",
+                "_textLarge": "28px"
+              },
               "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
             "label": {
-              "value": "14px",
+              "value": {
+                "base": "14px",
+                "_textSmall": "13px",
+                "_textLarge": "15px"
+              },
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
             "labelLg": {
-              "value": "16px",
+              "value": {
+                "base": "16px",
+                "_textSmall": "15px",
+                "_textLarge": "17px"
+              },
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
             "labelSm": {
-              "value": "13px",
+              "value": {
+                "base": "13px",
+                "_textSmall": "12px",
+                "_textLarge": "14px"
+              },
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
             },
             "labelSmStrong": {
-              "value": "13px",
+              "value": {
+                "base": "13px",
+                "_textSmall": "12px",
+                "_textLarge": "14px"
+              },
               "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
             },
             "labelXs": {
-              "value": "12px",
+              "value": {
+                "base": "12px",
+                "_textSmall": "11px",
+                "_textLarge": "13px"
+              },
               "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
             },
             "labelXsStrong": {
-              "value": "12px",
+              "value": {
+                "base": "12px",
+                "_textSmall": "11px",
+                "_textLarge": "13px"
+              },
               "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
-              "value": "12px",
+              "value": {
+                "base": "12px",
+                "_textSmall": "11px",
+                "_textLarge": "13px"
+              },
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
             },
             "monoCaps": {
-              "value": "12px",
+              "value": {
+                "base": "12px",
+                "_textSmall": "11px",
+                "_textLarge": "13px"
+              },
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "monoSm": {
-              "value": "11px",
+              "value": {
+                "base": "11px",
+                "_textSmall": "10px",
+                "_textLarge": "12px"
+              },
               "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
-              "value": "10px",
+              "value": {
+                "base": "10px",
+                "_textSmall": "9px",
+                "_textLarge": "11px"
+              },
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
             "pageCount": {
-              "value": "16px",
+              "value": {
+                "base": "16px",
+                "_textSmall": "15px",
+                "_textLarge": "17px"
+              },
               "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
             },
             "paneTitle": {
-              "value": "15px",
+              "value": {
+                "base": "15px",
+                "_textSmall": "14px",
+                "_textLarge": "16px"
+              },
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
             "pill": {
-              "value": "11px",
+              "value": {
+                "base": "11px",
+                "_textSmall": "10px",
+                "_textLarge": "12px"
+              },
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "railLabel": {
-              "value": "9px",
+              "value": {
+                "base": "9px",
+                "_textLarge": "10px"
+              },
               "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
             "small": {
-              "value": "12px",
+              "value": {
+                "base": "12px",
+                "_textSmall": "11px",
+                "_textLarge": "13px"
+              },
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
             "smallXs": {
-              "value": "11px",
+              "value": {
+                "base": "11px",
+                "_textSmall": "10px",
+                "_textLarge": "12px"
+              },
               "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
             "subtitle": {
-              "value": "17px",
+              "value": {
+                "base": "17px",
+                "_textSmall": "16px",
+                "_textLarge": "18px"
+              },
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
             },
             "title": {
-              "value": "20px",
+              "value": {
+                "base": "20px",
+                "_textSmall": "18px",
+                "_textLarge": "22px"
+              },
               "description": "Part of the title text style. Use textStyle: 'title', not this token."
             }
           }
@@ -1219,107 +1328,210 @@ export default definePreset({
         "lineHeights": {
           "text": {
             "badge": {
-              "value": "1.2",
+              "value": {
+                "base": "1.2",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4546"
+              },
               "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
             },
             "body": {
-              "value": "1.4286",
+              "value": {
+                "base": "1.4286",
+                "_textSmall": "1.5385",
+                "_textLarge": "1.6"
+              },
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
             "bodyLg": {
-              "value": "1.6",
+              "value": {
+                "base": "1.6",
+                "_textSmall": "1.7143",
+                "_textLarge": "1.5"
+              },
               "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
             },
             "bodySm": {
-              "value": "1.5385",
+              "value": {
+                "base": "1.5385",
+                "_textSmall": "1.6667",
+                "_textLarge": "1.4286"
+              },
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
             },
             "code": {
-              "value": "1.4286",
+              "value": {
+                "base": "1.4286",
+                "_textSmall": "1.5385",
+                "_textLarge": "1.6"
+              },
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
             },
             "eyebrow": {
-              "value": "1.4546",
+              "value": {
+                "base": "1.4546",
+                "_textSmall": "1.6",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
             },
             "heading": {
-              "value": "1.4286",
+              "value": {
+                "base": "1.4286",
+                "_textSmall": "1.3847",
+                "_textLarge": "1.4667"
+              },
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
             "headingSm": {
-              "value": "1.3847",
+              "value": {
+                "base": "1.3847",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4286"
+              },
               "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
             "label": {
-              "value": "1.4286",
+              "value": {
+                "base": "1.4286",
+                "_textSmall": "1.5385",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
             "labelLg": {
-              "value": "1.5",
+              "value": {
+                "base": "1.5",
+                "_textSmall": "1.6",
+                "_textLarge": "1.4118"
+              },
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
             "labelSm": {
-              "value": "1.2308",
+              "value": {
+                "base": "1.2308",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4286"
+              },
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
             },
             "labelSmStrong": {
-              "value": "1.2308",
+              "value": {
+                "base": "1.2308",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4286"
+              },
               "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
             },
             "labelXs": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4546",
+                "_textLarge": "1.2308"
+              },
               "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
             },
             "labelXsStrong": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4546",
+                "_textLarge": "1.2308"
+              },
               "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
             "mono": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4546",
+                "_textLarge": "1.2308"
+              },
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
             },
             "monoCaps": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4546",
+                "_textLarge": "1.2308"
+              },
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
             "monoSm": {
-              "value": "1.4546",
+              "value": {
+                "base": "1.4546",
+                "_textSmall": "1.6",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
             "navLabel": {
-              "value": "1.2",
+              "value": {
+                "base": "1.2",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4546"
+              },
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
             "pageCount": {
-              "value": "1.25",
+              "value": {
+                "base": "1.25",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4118"
+              },
               "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
             },
             "paneTitle": {
-              "value": "1.3333",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4286",
+                "_textLarge": "1.25"
+              },
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
             "pill": {
-              "value": "1.4546",
+              "value": {
+                "base": "1.4546",
+                "_textSmall": "1.6",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "railLabel": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textLarge": "1.2"
+              },
               "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
             "small": {
-              "value": "1.3334",
+              "value": {
+                "base": "1.3334",
+                "_textSmall": "1.4546",
+                "_textLarge": "1.2308"
+              },
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
             "smallXs": {
-              "value": "1.4546",
+              "value": {
+                "base": "1.4546",
+                "_textSmall": "1.6",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
             "subtitle": {
-              "value": "1.4118",
+              "value": {
+                "base": "1.4118",
+                "_textSmall": "1.5",
+                "_textLarge": "1.3334"
+              },
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
             },
             "title": {
-              "value": "1.4",
+              "value": {
+                "base": "1.4",
+                "_textSmall": "1.3334",
+                "_textLarge": "1.4546"
+              },
               "description": "Part of the title text style. Use textStyle: 'title', not this token."
             }
           }

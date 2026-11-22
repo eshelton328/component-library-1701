@@ -1,0 +1,108 @@
+{
+  "text": {
+    "heading": {
+      "$type": "typography",
+      "$value": "{large.text.heading}"
+    },
+    "headingSm": {
+      "$type": "typography",
+      "$value": "{large.text.headingSm}"
+    },
+    "title": {
+      "$type": "typography",
+      "$value": "{large.text.title}"
+    },
+    "subtitle": {
+      "$type": "typography",
+      "$value": "{large.text.subtitle}"
+    },
+    "paneTitle": {
+      "$type": "typography",
+      "$value": "{large.text.paneTitle}"
+    },
+    "label": {
+      "$type": "typography",
+      "$value": "{large.text.label}"
+    },
+    "labelLg": {
+      "$type": "typography",
+      "$value": "{large.text.labelLg}"
+    },
+    "labelSm": {
+      "$type": "typography",
+      "$value": "{large.text.labelSm}"
+    },
+    "labelSmStrong": {
+      "$type": "typography",
+      "$value": "{large.text.labelSmStrong}"
+    },
+    "labelXs": {
+      "$type": "typography",
+      "$value": "{large.text.labelXs}"
+    },
+    "labelXsStrong": {
+      "$type": "typography",
+      "$value": "{large.text.labelXsStrong}"
+    },
+    "body": {
+      "$type": "typography",
+      "$value": "{large.text.body}"
+    },
+    "pageCount": {
+      "$type": "typography",
+      "$value": "{large.text.pageCount}"
+    },
+    "bodyLg": {
+      "$type": "typography",
+      "$value": "{large.text.bodyLg}"
+    },
+    "bodySm": {
+      "$type": "typography",
+      "$value": "{large.text.bodySm}"
+    },
+    "small": {
+      "$type": "typography",
+      "$value": "{large.text.small}"
+    },
+    "smallXs": {
+      "$type": "typography",
+      "$value": "{large.text.smallXs}"
+    },
+    "mono": {
+      "$type": "typography",
+      "$value": "{large.text.mono}"
+    },
+    "monoCaps": {
+      "$type": "typography",
+      "$value": "{large.text.monoCaps}"
+    },
+    "monoSm": {
+      "$type": "typography",
+      "$value": "{large.text.monoSm}"
+    },
+    "code": {
+      "$type": "typography",
+      "$value": "{large.text.code}"
+    },
+    "eyebrow": {
+      "$type": "typography",
+      "$value": "{large.text.eyebrow}"
+    },
+    "navLabel": {
+      "$type": "typography",
+      "$value": "{large.text.navLabel}"
+    },
+    "railLabel": {
+      "$type": "typography",
+      "$value": "{large.text.railLabel}"
+    },
+    "badge": {
+      "$type": "typography",
+      "$value": "{large.text.badge}"
+    },
+    "pill": {
+      "$type": "typography",
+      "$value": "{large.text.pill}"
+    }
+  }
+}

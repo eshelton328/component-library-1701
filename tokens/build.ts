@@ -6,10 +6,13 @@
 //                                      outputs to <path>/generated (for tests)
 // Prints one JSON object. Exits 1 if a check fails.
 //
-// Checks, for every theme and mode the resolver lists:
-//   complete    every theme and mode has the same tokens, with the same types
+// Checks, for every theme, mode and text size the resolver lists:
+//   complete    every theme, mode and size has the same tokens, with the same types
 //   layout      spacing, sizes, durations and easings have the same value in
-//               every theme and mode
+//               every theme, mode and size
+//   size        a text size changes only the font size and line height of
+//               text styles
+//   grid        every text style's line height is a whole multiple of 4 px
 //   described   every token has a $description (in the default theme and mode)
 //   colorspace  every colour, also inside a shadow, is in srgb
 //   hex         a colour's hex matches its components, also inside a shadow
@@ -48,24 +51,32 @@ const src = readFileSync(join(dir, 'resolver.json'), 'utf8')
 const { resolver } = await parse([{ src, filename: new URL(`file://${dir}/resolver.json`) }], { config, logger: new Logger({ level: 'error' }) })
 const themeModifier = resolver.source.modifiers?.['theme']
 const modeModifier = resolver.source.modifiers?.['mode']
-if (!themeModifier || !modeModifier) throw new Error('resolver.json needs a theme and a mode modifier')
+const sizeModifier = resolver.source.modifiers?.['size']
+if (!themeModifier || !modeModifier || !sizeModifier) throw new Error('resolver.json needs a theme, a mode and a size modifier')
 const themes = Object.keys(themeModifier.contexts)
 const modes = Object.keys(modeModifier.contexts)
+const sizes = Object.keys(sizeModifier.contexts)
 const defaultTheme = themeModifier.default ?? themes[0]
 const defaultMode = modeModifier.default ?? modes[0]
-if (!defaultTheme || !defaultMode) throw new Error('resolver.json lists no theme or no mode')
+const defaultSize = sizeModifier.default ?? sizes[0]
+if (!defaultTheme || !defaultMode || !defaultSize) throw new Error('resolver.json lists no theme, no mode or no size')
+// The other text sizes, each with the Panda condition and the class on
+// <html> that picks it: size small is _textSmall and .text-small.
+const otherSizes = sizes.filter((s) => s !== defaultSize).map((s) => ({ size: s, condition: `text${s.charAt(0).toUpperCase()}${s.slice(1)}`, className: `text-${s}` }))
 
-// Tokens under dark.* and light.* are the raw mode groups; modes/*.json
-// extend them into color.* and shadow.*, so only the extended copies ship.
-const isRaw = (id: string) => modes.some((m) => id.startsWith(`${m}.`))
+// Tokens under dark.* and light.* are the raw mode groups, and those under
+// small.* and large.* the raw size groups; modes/*.json and sizes/*.json
+// extend them into color.*, shadow.* and text.*, so only the extended
+// copies ship.
+const isRaw = (id: string) => [...modes, ...sizes].some((m) => id.startsWith(`${m}.`))
 const sets: Record<string, TokenNormalizedSet> = {}
-for (const theme of themes) for (const mode of modes) {
-  const all = resolver.apply({ theme, mode })
-  sets[`${theme}/${mode}`] = Object.fromEntries(Object.entries(all).filter(([id]) => !isRaw(id)))
+for (const theme of themes) for (const mode of modes) for (const size of sizes) {
+  const all = resolver.apply({ theme, mode, size })
+  sets[`${theme}/${mode}/${size}`] = Object.fromEntries(Object.entries(all).filter(([id]) => !isRaw(id)))
 }
-const setOf = (theme: string, mode: string): TokenNormalizedSet => {
-  const set = sets[`${theme}/${mode}`]
-  if (!set) throw new Error(`no token set for ${theme}/${mode}`)
+const setOf = (theme: string, mode: string, size = defaultSize): TokenNormalizedSet => {
+  const set = sets[`${theme}/${mode}/${size}`]
+  if (!set) throw new Error(`no token set for ${theme}/${mode}/${size}`)
   return set
 }
 const base = setOf(defaultTheme, defaultMode)
@@ -82,10 +93,36 @@ for (const [key, set] of Object.entries(sets)) {
     if (!got) fail('complete', `${key} has no ${id}`)
     else if (got.$type !== want.$type) fail('complete', `${key} ${id} is ${got.$type}, not ${want.$type}`)
     else if (isLayout(id) && JSON.stringify(got.$value) !== JSON.stringify(want.$value)) {
-      fail('layout', `${key} changes ${id}; spacing, sizes, durations and easings are the same in every theme and mode (d-035)`)
+      fail('layout', `${key} changes ${id}; spacing, sizes, durations and easings are the same in every theme, mode and size (d-035)`)
     }
   }
   for (const id of Object.keys(set)) if (!base[id]) fail('complete', `${key} has ${id}, which ${defaultTheme}/${defaultMode} lacks`)
+}
+// size: a text size set differs from its theme and mode only in the font
+// size and line height of text styles.
+const sizeFree = (t: TokenNormalized): unknown => {
+  if (t.$type !== 'typography') return t.$value
+  const { fontFamily, fontWeight, letterSpacing } = t.$value
+  return { fontFamily, fontWeight, letterSpacing }
+}
+for (const theme of themes) for (const mode of modes) for (const { size } of otherSizes) {
+  const plain = setOf(theme, mode)
+  for (const [id, t] of Object.entries(setOf(theme, mode, size))) {
+    const want = plain[id]
+    if (want && JSON.stringify(sizeFree(t)) !== JSON.stringify(sizeFree(want))) {
+      fail('size', `${theme}/${mode}/${size} changes ${t.$type === 'typography' ? `more than the font size and line height of ${id}` : id}; a text size changes only those`)
+    }
+  }
+}
+// grid: a line height is a ratio of the font size, rounded up to 4 places
+// so the browser lays out at least the whole px (d-100); it must land on a
+// multiple of 4 or less than 0.01 px over it, never under it.
+for (const [key, set] of Object.entries(sets)) for (const [id, t] of Object.entries(set)) {
+  if (t.$type !== 'typography') continue
+  const { fontSize, lineHeight } = t.$value
+  const px = typeof lineHeight === 'number' ? fontSize.value * lineHeight : lineHeight.value
+  if (fontSize.unit !== 'px' || (typeof lineHeight !== 'number' && lineHeight.unit !== 'px')) fail('grid', `${key} ${id} is not in px`)
+  else if (px - Math.floor(px / 4 + 1e-9) * 4 >= 0.01) fail('grid', `${key} ${id} has a line height of ${px.toFixed(4)} px, not a multiple of 4 or just over one`)
 }
 // described
 for (const [id, t] of Object.entries(base)) if (!t.$description?.trim()) fail('described', `${id} has no $description`)
@@ -141,7 +178,9 @@ const parsePairs = (text: string): Pair[] => {
 }
 const pairs = parsePairs(readFileSync(join(dir, 'contrast.json'), 'utf8'))
 let measured = 0
-for (const [key, set] of Object.entries(sets)) {
+// The size check keeps colours the same in every text size, so contrast is
+// measured on the default size only.
+for (const [key, set] of Object.entries(sets).filter(([k]) => k.endsWith(`/${defaultSize}`))) {
   const canvasColour = colourOf(set, 'bg.canvas')
   if (!canvasColour) { fail('canvas', `${key} has no color.bg.canvas`); continue }
   if (canvasColour.alpha !== 1) { fail('canvas', `${key} color.bg.canvas has alpha ${String(canvasColour.alpha)}; it must be opaque`); continue }
@@ -164,7 +203,7 @@ for (const [key, set] of Object.entries(sets)) {
 }
 
 const report = () => {
-  console.log(JSON.stringify({ ok: problems.length === 0, themes, modes, tokens: Object.keys(base).length, contrastPairs: measured, problems }, null, 1))
+  console.log(JSON.stringify({ ok: problems.length === 0, themes, modes, sizes, tokens: Object.keys(base).length, contrastPairs: measured, problems }, null, 1))
   process.exit(problems.length ? 1 : 0)
 }
 // The outputs are built only from tokens that passed every check.
@@ -232,6 +271,15 @@ const leaf = (value: unknown, description: string | undefined): Leaf => {
 // The Panda categories of the fixed tokens, which ship as tokens, not semantic tokens.
 const fixedCategories = ['spacing', 'sizes', 'durations', 'easings']
 const modal = (light: string, dark: string) => (light === dark ? dark : { base: light, _dark: dark })
+type Modal = ReturnType<typeof modal>
+// A text part's value in each size: the default size's value as base, and
+// each other size's value under its condition when it differs.
+const sized = (part: (set: TokenNormalizedSet) => string, theme: string) => {
+  const value = (size: string): Modal => modal(part(setOf(theme, 'light', size)), part(setOf(theme, 'dark', size)))
+  const plain = value(defaultSize)
+  const changed = otherSizes.map(({ size, condition }): [string, Modal] => [`_${condition}`, value(size)]).filter(([, v]) => JSON.stringify(v) !== JSON.stringify(plain))
+  return changed.length ? { base: plain, ...Object.fromEntries(changed) } : plain
+}
 
 const tokens: Tree = {}
 const textStyles: Record<string, { description: string | undefined; value: Record<string, string> }> = {}
@@ -256,16 +304,14 @@ const semantic = (theme: string) => {
     if (cat === 'text') {
       // Each part of a text style is its own semantic token, so a theme or
       // mode can change any part, the font family included.
-      const d = typographyOf(dark, id)
-      const l = typographyOf(light, id)
-      const parts: [string, string, string][] = [
-        ['fonts', css.fontFamily(l.fontFamily), css.fontFamily(d.fontFamily)],
-        ['fontSizes', css.dimension(l.fontSize), css.dimension(d.fontSize)],
-        ['lineHeights', css.lineHeight(l.lineHeight), css.lineHeight(d.lineHeight)],
-        ['fontWeights', String(l.fontWeight), String(d.fontWeight)],
-        ['letterSpacings', css.dimension(l.letterSpacing), css.dimension(d.letterSpacing)],
+      const parts: [string, (v: Typography) => string][] = [
+        ['fonts', (v) => css.fontFamily(v.fontFamily)],
+        ['fontSizes', (v) => css.dimension(v.fontSize)],
+        ['lineHeights', (v) => css.lineHeight(v.lineHeight)],
+        ['fontWeights', (v) => String(v.fontWeight)],
+        ['letterSpacings', (v) => css.dimension(v.letterSpacing)],
       ]
-      for (const [c, lv, dv] of parts) put(branch(tree, c), `text.${name}`, leaf(modal(lv, dv), `Part of the ${name} text style. Use textStyle: '${name}', not this token.`))
+      for (const [c, format] of parts) put(branch(tree, c), `text.${name}`, leaf(sized((set) => format(typographyOf(set, id)), theme), `Part of the ${name} text style. Use textStyle: '${name}', not this token.`))
       const transform = t.$extensions?.['com.eshelton328.textTransform']
       textStyles[name] = {
         description: desc,
@@ -284,6 +330,9 @@ for (const [id, t] of Object.entries(base)) {
 const otherThemes = themes.filter((t) => t !== defaultTheme)
 const preset = {
   name: 'component-library-1701',
+  // A class on <html> picks a text size, as the dark class picks the mode:
+  // `.text-small &` is the condition _textSmall.
+  conditions: { extend: Object.fromEntries(otherSizes.map(({ condition, className }) => [condition, `.${className} &`])) },
   theme: { extend: { tokens, semanticTokens: semantic(defaultTheme), textStyles } },
   themes: Object.fromEntries(otherThemes.map((t) => [t, { semanticTokens: semantic(t) }])),
   // Panda writes a theme's CSS only when staticCss lists it; then

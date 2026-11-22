@@ -1,5 +1,7 @@
-// The package entry: the icons, Controls, Parts and Shell, with their props types, and the focus ring condition.
+// The package entry: the icons, Controls, Parts and Shell, with their props types, the focus ring condition and the text size classes.
 export { focusRing } from './theme/recipes/focus'
+export { textSizeClass } from './foundations/text-size'
+export type { TextSize } from './foundations/text-size'
 export { BareIconButton } from './controls/bare-icon-button'
 export type { BareIconButtonProps } from './controls/bare-icon-button'
 export { Button } from './controls/button'

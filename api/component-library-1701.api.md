@@ -1802,6 +1802,16 @@ export type TextFieldProps = TextFieldBaseProps & Scalar<TextFieldVariantProps> 
 };
 
 // @public
+export type TextSize = 'small' | 'default' | 'large';
+
+// @public
+export const textSizeClass: {
+    readonly small: "text-small";
+    readonly default: null;
+    readonly large: "text-large";
+};
+
+// @public
 export function Thumbnail(input: ThumbnailProps): JSX.Element;
 
 // @public

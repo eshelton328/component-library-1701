@@ -1,7 +1,7 @@
 {
   "name": "component-library-1701",
   "version": "2025.10",
-  "description": "Theme picks the theme file; mode picks its dark or light group.",
+  "description": "Theme picks the theme file; mode picks its dark or light group; size picks its text size group.",
   "sets": {
     "layout": {
       "sources": [
@@ -43,6 +43,26 @@
         ]
       },
       "default": "dark"
+    },
+    "size": {
+      "contexts": {
+        "default": [
+          {
+            "$ref": "sizes/default.json"
+          }
+        ],
+        "small": [
+          {
+            "$ref": "sizes/small.json"
+          }
+        ],
+        "large": [
+          {
+            "$ref": "sizes/large.json"
+          }
+        ]
+      },
+      "default": "default"
     }
   },
   "resolutionOrder": [
@@ -57,6 +77,9 @@
     },
     {
       "$ref": "#/modifiers/mode"
+    },
+    {
+      "$ref": "#/modifiers/size"
     }
   ]
 }

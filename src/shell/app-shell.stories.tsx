@@ -3493,7 +3493,7 @@ export const DockEdgesLight: StoryObj<typeof meta> = { ...dockEdges, globals: { 
 
 // A keyboard that turns back during its move: a close during an open, and an open during a close. The dock starts the
 // new move from where it is drawn, on the keyboard's clock: every frame shows the composer within 1 px of the first
-// move's curve until the turn (a frame drawn at a time before the turn shows the first move), and after it within 1 px
+// move's curve until the turn (a frame drawn and read before the turn shows the first move), and after it within 1 px
 // of the new move's curve from the place the dock was drawn at the turn, which the keyboard started at its own start
 // (a report comes after the keyboard started).
 const dockTurns: StoryObj<typeof meta> = {
@@ -3507,16 +3507,20 @@ const dockTurns: StoryObj<typeof meta> = {
     const riseOn = (from: number, to: number, start: number) => (t: number) =>
       Math.max(0, from + (to - from) * curveAt(t - start) - safe)
     const off: string[] = []
+    const moves: number[] = []
+    // The time a frame shows: its drawn time, or, for a frame read after a move (re)started and drawn before it, the
+    // move's start. A move holds the place of its start before that time (as in `GrowOnDock`), so such a frame shows
+    // the new move at its start (CI and a busy runner: a frame drawn at 5151 and read at 5158, the turn at 5154).
+    const shows = (f: { at: number; drawn: number }) => Math.max(f.drawn, moves.filter((at) => at <= f.at).at(-1) ?? f.drawn)
     // `least` frames at least, so a check cannot pass on none: 2 for the 70 ms of a close that an open turns back, which
     // a slow runner draws in 3 frames.
-    const check = (name: string, frames: { drawn: number; rise: number }[], rise: (t: number) => number, least = 4) => {
+    const check = (name: string, frames: { at: number; drawn: number; rise: number }[], rise: (t: number) => number, least = 4) => {
       if (frames.length < least) off.push(`${name}: ${String(frames.length)} frames`)
       for (const f of frames) {
-        const want = rise(f.drawn)
+        const want = rise(shows(f))
         if (Math.abs(f.rise - want) > 1) off.push(`${name} @${String(Math.round(f.drawn))}: rise ${f.rise.toFixed(1)}, curve ${want.toFixed(1)}`)
       }
     }
-    const moves: number[] = []
     root.addEventListener('app-shell-dock', () => moves.push(performance.now()))
     // The start of the move that the last report or focus change started: its end once it has changed, less its time.
     const newStart = async (was: string | undefined) => {

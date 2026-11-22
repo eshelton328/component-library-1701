@@ -1419,6 +1419,8 @@ const collapsedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   await userEvent.type(area, 'A draft long enough to wrap past the first line of the collapsed composer')
   await waitFor(() => expect(rect(area).height).toBe(20))
   await expect(rect(box).height).toBe(50)
+  // The cap is one Default `body` line, 14 × 1.4286: within a 64th of a px of 20.
+  await expect(Math.abs(parseFloat(getComputedStyle(area).maxHeight) - 20)).toBeLessThan(1 / 64)
   await userEvent.click(send)
   await expect(onCollapsedSubmit).toHaveBeenLastCalledWith('A draft long enough to wrap past the first line of the collapsed composer')
   await expect(area).toHaveValue('')
@@ -1427,6 +1429,26 @@ const collapsedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   await expect(withFiles).not.toHaveAttribute('data-collapsed')
   await expect(within(withFiles).getByText('theme-ideas.md')).toBeInTheDocument()
   await expect(rect(within(withFiles).getByRole('textbox', { name: 'With files' })).width).toBe(rect(withFiles).width - 22)
+}
+
+// With the Large text size (d-119), `body` is 15 on a 24 px line: the collapsed text grows to that one line and
+// does not clip it, and the row stays 50 high, since the 24 px line fits beside the 28 px buttons.
+const collapsedLargePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(390)
+  await document.fonts.ready
+  await expect(document.documentElement.classList.contains('text-large')).toBe(true)
+  const box = composerOf(canvasElement, 'Collapsed')
+  const area = within(box).getByRole('textbox', { name: 'Collapsed' })
+  await expect(getComputedStyle(area).lineHeight).toBe('24px')
+  await expect(rect(area).height).toBe(24)
+  await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight)
+  await expect(rect(box).height).toBe(50)
+  // A long draft still keeps one 24 px line and scrolls in it.
+  await userEvent.click(area)
+  await userEvent.type(area, 'A draft long enough to wrap past the first line of the collapsed composer')
+  await waitFor(() => expect(rect(area).height).toBe(24))
+  await expect(rect(box).height).toBe(50)
+  await userEvent.clear(area)
 }
 
 /** `collapsed`: one row at a 390 px phone's width, the paperclip, the placeholder and Send; files keep it expanded. */
@@ -1441,6 +1463,13 @@ export const CollapsedPhoneLight: StoryObj<typeof meta> = {
   parameters: { viewport: { options: skillScreens } },
   globals: { mode: 'light', viewport: { value: 'phone' } },
   play: collapsedPlay,
+}
+/** `collapsed` with the Large text size: the one line is 24 px and the row stays 50 high. */
+export const CollapsedPhoneLarge: StoryObj<typeof meta> = {
+  render: () => <CollapsedScreen />,
+  parameters: { viewport: { options: skillScreens } },
+  globals: { mode: 'dark', viewport: { value: 'phone' }, textSize: 'large' },
+  play: collapsedLargePlay,
 }
 
 // A working chat at rest (screen review R45): the collapsed row keeps one row and draws Stop before Send, as the

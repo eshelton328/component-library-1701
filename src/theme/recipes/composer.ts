@@ -78,10 +78,11 @@ export const composer = defineSlotRecipe({
       // A long draft grows the text to at most 30% of the nearest size container (a pane, or the parent of a
       // ScrollFrame; with none, 30% of the window), less the composer's own padding, border, gap and button
       // row, so the whole box stops at 30%. Past that the text scrolls inside. The cap never goes below one
-      // line, so a composer at rest keeps its height in any frame and nothing clips it (d-107).
+      // line, so a composer at rest keeps its height in any frame and nothing clips it (d-107). One line is the
+      // `body` line in the text size on <html> (d-119): 20 px at Default, 24 at Large.
       '& textarea': {
         caretColor: 'accent.default',
-        maxH: 'max(token(spacing.20), calc(30cqh - 2 * token(spacing.10) - token(spacing.8) - token(sizes.control.sm) - 2 * token(borderWidths.default)))',
+        maxH: 'max(calc(token(fontSizes.text.body) * token(lineHeights.text.body)), calc(30cqh - 2 * token(spacing.10) - token(spacing.8) - token(sizes.control.sm) - 2 * token(borderWidths.default)))',
       },
     },
     // The one row of `layout="inline"`: the text, then the buttons, bottom-aligned.
@@ -189,10 +190,10 @@ export const composer = defineSlotRecipe({
           py: '8',
           ps: '10',
           pe: '8',
-          // One row: the text (2 px above and below its line, a control.xs high) beside the buttons.
+          // One row: the text (2 px above and below its `body` line, a control.xs high at Default) beside the buttons.
           '& textarea': {
             py: '2',
-            maxH: 'max(token(sizes.control.xs), calc(30cqh - 2 * token(spacing.8) - 2 * token(borderWidths.default)))',
+            maxH: 'max(calc(token(fontSizes.text.body) * token(lineHeights.text.body) + 2 * token(spacing.2)), calc(30cqh - 2 * token(spacing.8) - 2 * token(borderWidths.default)))',
           },
         },
       },
@@ -204,7 +205,7 @@ export const composer = defineSlotRecipe({
     // DOM: the button rows lay out in the root's own row (`display: contents`), the start row's buttons come before
     // the text, and the end group (Stop and Send) stays one flex item with its own 6 px gap.
     // The root's padding and its 8 px gap stay, so the row is 50 high (10 + control.sm 28 + 10 and the border).
-    // The text keeps one line: it stops at one 20 px line (`body`) and scrolls past it.
+    // The text keeps one line: it stops at one `body` line (20 px at Default, 24 at Large, d-119) and scrolls past it.
     collapsed: {
       true: {
         root: {
@@ -214,7 +215,7 @@ export const composer = defineSlotRecipe({
           '& > [data-scope="field"]': { flex: '1', minW: '0' },
           '& > [data-composer-controls], & > [data-composer-controls] > [data-composer-group="start"]': { display: 'contents' },
           '& [data-composer-group="start"] > *': { order: '-1' },
-          '& textarea': { maxH: 'token(spacing.20)' },
+          '& textarea': { maxH: 'calc(token(fontSizes.text.body) * token(lineHeights.text.body))' },
         },
       },
       false: {},

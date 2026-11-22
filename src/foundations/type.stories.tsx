@@ -171,6 +171,8 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
 /** Small, Default and Large side by side, each column under its class. */
 export const Sizes: StoryObj<typeof meta> = {
+  // The Default column needs no class on <html>, whatever the toolbar picks.
+  globals: { textSize: 'default' },
   render: () => <TextSizes />,
   play: async ({ canvasElement }) => {
     // Every style of the table is in the scale.

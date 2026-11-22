@@ -440,12 +440,52 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         animation.startTime = start
         move.animations.push(animation)
       }
-      footersNow.forEach(({ el, bottom }, i) => {
-        const steps = track(el.parentElement, bottom, ends.footers[i] ?? bottom)
-        move.footers.set(el, steps)
+      // Every read of the page comes before the first animation: an animation started between two reads makes the
+      // second lay the page out again, once per thread line (the iPad Simulator drew no frame for 140 to 200 ms after a
+      // close's start with the reads and the starts mixed). First the scroll positions of the move's layout, then the
+      // reads, then the animations.
+      const bodyMoves = bodiesNow.flatMap(({ el, bottom, scroll, atEnd }, i) => {
+        const end = ends.bodies[i]
+        if (end === undefined) return []
+        const room = Math.max(0, end.height - end.view)
+        const toScroll = atEnd ? room : Math.min(room, Math.max(0, scroll + bottom - end.bottom))
+        // The scroll position of the move's layout: the end's, where the end's layout is the move's, else as it was.
+        const real = layout === target ? toScroll : (keptScroll[i] ?? el.scrollTop)
+        if (Math.abs(el.scrollTop - real) > 0.5) el.scrollTop = real
+        return [{ el, bottom, scroll, atEnd, end, toScroll }]
+      })
+      const footerMoves = footersNow.map(({ el, bottom }, i) => ({
+        el,
+        steps: track(el.parentElement, bottom, ends.footers[i] ?? bottom),
         // The layout's own place for the footer, without its transform: the animation's transform replaces it.
-        const place = footerBase(el) - translateOf(el)
-        sizes.set(el, el.getBoundingClientRect().height)
+        place: footerBase(el) - translateOf(el),
+        height: el.getBoundingClientRect().height,
+      }))
+      const bodyShifts = bodyMoves.map(({ el, bottom, scroll, atEnd, end, toScroll }) => {
+        const tracks = {
+          bottom: track(el.parentElement, bottom, end.bottom),
+          scroll: track(el.parentElement, scroll, toScroll),
+          atEnd,
+          real: el.scrollTop,
+        }
+        const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
+        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, children: [] }
+        // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
+        // layer per entry.
+        const top = el.getBoundingClientRect().top + el.clientTop
+        const foot = top + el.clientHeight
+        const lowest = Math.min(...shifts)
+        const highest = Math.max(...shifts)
+        const children = [...el.children].filter((child) => {
+          if (!(child instanceof HTMLElement)) return false
+          const box = child.getBoundingClientRect()
+          return box.bottom + highest > top && box.top + lowest < foot
+        })
+        return { el, tracks, shifts, children: children.filter((child) => child instanceof HTMLElement) }
+      })
+      for (const { el, steps, place, height } of footerMoves) {
+        move.footers.set(el, steps)
+        sizes.set(el, height)
         if (resized !== undefined && !watched.has(el)) {
           watched.add(el)
           resized.observe(el)
@@ -455,37 +495,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           steps.offsets,
           steps.values.map((value) => value - place),
         )
-      })
-      bodiesNow.forEach(({ el, bottom, scroll, atEnd }, i) => {
-        const end = ends.bodies[i]
-        if (end === undefined) return
-        const room = Math.max(0, end.height - end.view)
-        const toScroll = atEnd ? room : Math.min(room, Math.max(0, scroll + bottom - end.bottom))
-        // The scroll position of the move's layout: the end's, where the end's layout is the move's, else as it was.
-        const real = layout === target ? toScroll : (keptScroll[i] ?? el.scrollTop)
-        if (Math.abs(el.scrollTop - real) > 0.5) el.scrollTop = real
-        const tracks = {
-          bottom: track(el.parentElement, bottom, end.bottom),
-          scroll: track(el.parentElement, scroll, toScroll),
-          atEnd,
-          real: el.scrollTop,
-        }
+      }
+      for (const { el, tracks, shifts, children } of bodyShifts) {
         move.bodies.set(el, tracks)
-        const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
-        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return
-        // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
-        // layer per entry.
-        const top = el.getBoundingClientRect().top + el.clientTop
-        const foot = top + el.clientHeight
-        const lowest = Math.min(...shifts)
-        const highest = Math.max(...shifts)
-        for (const child of el.children) {
-          if (!(child instanceof HTMLElement)) continue
-          const box = child.getBoundingClientRect()
-          if (box.bottom + highest <= top || box.top + lowest >= foot) continue
-          animate(child, tracks.scroll.offsets, shifts, 'add')
-        }
-      })
+        for (const child of children) animate(child, tracks.scroll.offsets, shifts, 'add')
+      }
       move.clock.startTime = start
       moving = move
       // The move's end: the layout of the target and the bodies' end scroll positions, in the frame the animations end.

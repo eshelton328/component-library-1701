@@ -52,6 +52,10 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
 - During a move a body keeps its larger layout, so it clips its lines at
   the drawn footer's top with a `clip-path` animation that ends with the
   others (R44, `DockClip`).
+- A move animates a body's children that show at some shift of it, 0
+  included (a child left out is drawn at its layout place), and a child
+  that a scroll brings into view or a page adds during the move (R44,
+  `DockEntries`).
 - A page changes its layout for a keyboard move in `appShellDockEvent`
   (a composer that grows), never at the focus; a footer that changes its
   height during a move restarts the move from where it is drawn

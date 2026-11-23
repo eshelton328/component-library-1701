@@ -66,6 +66,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
+        timeout-minutes: 10
         with:
           browser: 'true'
       - run: pnpm check:worktree
@@ -81,6 +82,7 @@ jobs:
       (needs.worktree.result == 'success' ||
       (needs.worktree.result == 'skipped' && needs.reuse.outputs.worktree == 'true')))) }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     # One release at a time across branches, and never cancel a publisher.
     concurrency:
       group: release
@@ -93,6 +95,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
+        timeout-minutes: 10
       # A PR title check cannot catch an edited squash message, so check
       # every commit since the last release tag.
       - run: pnpm check:commits

@@ -306,6 +306,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // `real` is the scroll position the move set or kept: a scroll by the reader or the page during the move moves
       // the end's by as much.
       bodies: Map<HTMLElement, { bottom: Track; scroll: Track; atEnd: boolean; real: number }>
+      // Called when the move ends: each body's scroll listener and child observer of the move.
+      cleanups: (() => void)[]
     }
     let moving: Motion | undefined
     // A track's value at `now`: between its values at the two points around that time, at the curve's progress then
@@ -353,6 +355,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       move.clock.onfinish = null
       move.clock.cancel()
       for (const animation of move.animations) animation.cancel()
+      for (const cleanup of move.cleanups) cleanup()
     }
     // Tells the page that the dock moves to `inset`, before it measures the page: a listener may change the layout
     // there (a composer that grows with the keyboard), and the move takes that change on the keyboard's curve.
@@ -479,7 +482,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         const easings = points.map((point, i) => partEasing(point.param, points[i + 1]?.param ?? point.param))
         return { from: values[0] ?? valueNow, to, offsets, values, progress: points.map((point) => point.progress), easings }
       }
-      const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map() }
+      const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map(), cleanups: [] }
       const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
       // A footer's animation replaces its transform, the dock's own; a body's child's adds to the child's own transform
       // (Codex review of #314).
@@ -516,6 +519,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         place: footerBase(el) - translateOf(el),
         height: el.getBoundingClientRect().height,
       }))
+      // For a body that does not move: no child joins its move.
+      const noChild = (child: Element): child is HTMLElement => child !== child
       const bodyShifts = bodyMoves.map(({ el, bottom, scroll, atEnd, end, toScroll }) => {
         const tracks = {
           bottom: track(el.parentElement, bottom, end.bottom),
@@ -524,19 +529,28 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           real: el.scrollTop,
         }
         const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
-        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, children: [] }
+        // The body's box is the move's layout, the larger view, and its view ends where the drawn footer's top is: so the
+        // body clips its lines there, from its box's bottom, and no line paints under the footer as it moves (screen
+        // review R44: on the iPad, thread lines showed between the composer and the keyboard, under the composer's top).
+        const boxBottom = el.getBoundingClientRect().bottom
+        const clips = tracks.bottom.values.map((value) => Math.max(0, boxBottom - value))
+        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, clips, inView: noChild, children: [] }
         // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
         // layer per entry.
+        // A child left out is drawn at its place in the layout, a shift of 0: a move that starts part way (a keyboard
+        // reported late) has no shift of 0, and a child at the view's edge that was out of view at every shift of the
+        // move was still drawn there, and the moved children over it (screen review R44, the iPhone at 19:47: two layers
+        // of the thread at its top as the keyboard opened).
         const top = el.getBoundingClientRect().top + el.clientTop
         const foot = top + el.clientHeight
-        const lowest = Math.min(...shifts)
-        const highest = Math.max(...shifts)
-        const children = [...el.children].filter((child) => {
+        const lowest = Math.min(0, ...shifts)
+        const highest = Math.max(0, ...shifts)
+        const inView = (child: Element): child is HTMLElement => {
           if (!(child instanceof HTMLElement)) return false
           const box = child.getBoundingClientRect()
           return box.bottom + highest > top && box.top + lowest < foot
-        })
-        return { el, tracks, shifts, children: children.filter((child) => child instanceof HTMLElement) }
+        }
+        return { el, tracks, shifts, clips, inView, children: [...el.children].filter(inView) }
       })
       for (const { el, steps, place, height } of footerMoves) {
         move.footers.set(el, steps)
@@ -551,9 +565,41 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           steps.values.map((value) => value - place),
         )
       }
-      for (const { el, tracks, shifts, children } of bodyShifts) {
+      for (const { el, tracks, shifts, clips, inView, children } of bodyShifts) {
         move.bodies.set(el, tracks)
         for (const child of children) animate(child, tracks.scroll, shifts, 'add')
+        // A scroll during the move (a reader's flick, or a page that keeps its thread at the end) brings other children
+        // into view, and a page may add a child (a new entry): each one in view moves with the others from then on, so
+        // none is drawn at its place in the layout among them. The observer runs before the frame paints.
+        if (shifts.some((shift) => Math.abs(shift) >= 0.5)) {
+          const moved = new Set<Element>(children)
+          const scrolled = () => {
+            // All the reads first, then the animations (see above).
+            const entering = [...el.children].filter((child) => !moved.has(child)).filter(inView)
+            for (const child of entering) {
+              moved.add(child)
+              animate(child, tracks.scroll, shifts, 'add')
+            }
+          }
+          el.addEventListener('scroll', scrolled, { passive: true })
+          const added = typeof MutationObserver === 'undefined' ? undefined : new MutationObserver(scrolled)
+          added?.observe(el, { childList: true })
+          move.cleanups.push(() => {
+            el.removeEventListener('scroll', scrolled)
+            added?.disconnect()
+          })
+        }
+        // The clip goes with the move's other animations, in the frame the final layout comes (`stopMotion`).
+        const clip = el.animate(
+          clips.map((inset, i) => ({
+            offset: tracks.bottom.offsets[i] ?? 1,
+            easing: tracks.bottom.easings[i] ?? 'linear',
+            clipPath: `inset(0px 0px ${String(inset)}px 0px)`,
+          })),
+          timing,
+        )
+        clip.startTime = start
+        move.animations.push(clip)
       }
       move.clock.startTime = start
       moving = move

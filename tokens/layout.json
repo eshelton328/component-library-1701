@@ -201,7 +201,12 @@
       "thread": {
         "$type": "dimension",
         "$value": { "value": 768, "unit": "px" },
-        "$description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is the owner's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. Not for a pane or a dialog."
+        "$description": "Largest width of a chat column, its messages and its reply box (ChatColumn). 768 is the owner's choice, ChatGPT's 48rem, so the lines stay short enough to read. The 1512 px Figma frames draw the column 1074 wide (Workspaces D06 158:914 and 158:934, D15 to D21); the pages record that as a known difference. On a wider screen the column stops here, centred. It is also the Narrow choice of the-bridge's Chat width setting (d-119). Not for a pane or a dialog."
+      },
+      "threadWide": {
+        "$type": "dimension",
+        "$value": { "value": 1040, "unit": "px" },
+        "$description": "Largest width of a chat's transcript and reply box together when the owner picks Chat width Wide in the-bridge's Settings (d-119, bridge-coord 2026-11-23); the column sits in the middle of a wider chat pane and fills a narrower one. Narrow is shell.thread (768); Full has no largest width. Not for ChatColumn's default, a pane or a dialog."
       },
       "discussionPane": {
         "$type": "dimension",

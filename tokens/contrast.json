@@ -337,6 +337,19 @@
    ],
    "min": 4.5,
    "why": "Syntax colours in CodeLines are 12 px code text (WCAG 1.4.3)."
+  },
+  {
+   "fg": "skeleton.base",
+   "on": [
+    "bg.canvas",
+    "surface.chrome",
+    "surface.pane",
+    "surface.overlay",
+    "surface.raised",
+    "surface.selected"
+   ],
+   "min": 1.2,
+   "why": "A Skeleton shows on the surface it loads on, quieter than a control: a placeholder, not a control (WCAG 1.4.11 does not apply)."
   }
  ]
 }

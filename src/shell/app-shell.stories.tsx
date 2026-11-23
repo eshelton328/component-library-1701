@@ -2674,6 +2674,7 @@ const keyboardRise: StoryObj<typeof meta> = {
     const record = recordFrames(root, footer)
     const timed = recordRise(footer, root)
     const start = performance.now()
+    console.log('KRPROBE ' + JSON.stringify({ start, first: timed.frames[0], insetAtStart: root.style.getPropertyValue('--app-shell-keyboard') }))
     await userEvent.click(field)
     await stepViewport(fakeViewport, rising)
     await settled(footer, 266)
@@ -2685,6 +2686,7 @@ const keyboardRise: StoryObj<typeof meta> = {
     // The dock rises on the curve for the keyboard's time, not at once, whatever the runner's frame rate.
     // The first frame at the end, from the dock's own inset (full precision), as in Reopen Falling.
     const last = root.style.getPropertyValue('--app-shell-keyboard')
+    console.log('KRPROBE ' + JSON.stringify({ last, frames: timed.frames.slice(0, 6) }))
     const up = timed.frames.find((f) => f.at >= start && f.inset === last)?.at ?? 0
     // The layout rounds the inset to 1/64 px, as in Reopen Falling: no frame shows the last one before the curve is
     // within 1/64 px of the end of its 266 px.

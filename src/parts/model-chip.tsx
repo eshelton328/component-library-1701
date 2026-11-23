@@ -34,7 +34,8 @@ export type ModelChipProps = {
   disabled?: boolean | undefined
   /**
    * Reach a touch target of at least 44 px (`control.xl`) 12 past each edge of the 26 px chip, for a chip a finger taps on a phone or tablet,
-   * such as the one-row chat header (d-121). The chip draws the same.
+   * such as the chat header's (d-121). The chip draws the same. Only a chip with `options` takes it: a chip without them is text and
+   * opens nothing, so a target round it would only take taps from the controls beside it.
    */
   touch?: boolean | undefined
 }
@@ -48,7 +49,7 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
   const text = effort === undefined || effort === '' ? model : `${model} · ${effort}`
   if (options === undefined) {
     return (
-      <StaticRoot touch={touch}>
+      <StaticRoot>
         <Label>
           <TruncatedText>{text}</TruncatedText>
         </Label>
@@ -69,8 +70,8 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
             <ChevronDownIcon size="12" />
           </Chevron>
           <Label>
-          <TruncatedText>{text}</TruncatedText>
-        </Label>
+            <TruncatedText>{text}</TruncatedText>
+          </Label>
         </ButtonRoot>
       }
     />

@@ -48,7 +48,8 @@ export const modelChip = defineSlotRecipe({
     label: { minW: '0' },
   },
   variants: {
-    // The chip in the one-row chat header (d-121): a 44 px touch target round the 26 px chip.
+    // The chip in the chat header (d-121): a 44 px touch target round the 26 px chip. ModelChip sets it only on the
+    // chip that opens a menu.
     touch: { true: { root: touchTarget }, false: {} },
   },
   defaultVariants: { touch: false },

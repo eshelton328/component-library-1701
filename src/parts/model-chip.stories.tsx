@@ -192,8 +192,9 @@ export const LongModel: StoryObj<typeof meta> = {
   },
 }
 
-// The compact chip of the one-row chat header (d-121): the caller writes the short effort ("Opus 5.5 · med", or the
-// family alone, "Opus", on the phone), and `touch` reaches a 44 px touch target past the 26 px chip.
+// The chip of the chat header (d-121): the caller writes the short effort ("Opus 5.5 · med", or the family alone,
+// "Opus", on the phone), and `touch` reaches a 44 px touch target past the 26 px chip that opens a menu. A text chip
+// (no `options`) opens nothing, so `touch` gives it no target.
 function HeaderChips() {
   return (
     <main className={page}>
@@ -215,7 +216,7 @@ const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   if (family === undefined) throw new Error('no family chip')
   const staticChip = canvas.getByText('Sonnet 5.5 · high').closest('.model-chip__root')
   if (!(staticChip instanceof HTMLElement)) throw new Error('no static chip')
-  for (const c of [chip, family, staticChip]) {
+  for (const c of [chip, family]) {
     // The chip draws as before, 26 high; its target reaches 12 past each edge of the padding box: 48 high.
     const box = c.getBoundingClientRect()
     await expect(box.height).toBeCloseTo(26, 0)
@@ -224,6 +225,9 @@ const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
     await expect(Number.parseFloat(before.height)).toBeGreaterThanOrEqual(44)
     await expect(Number.parseFloat(before.width)).toBeCloseTo(c.clientWidth + 24, 0)
   }
+  // The text chip with `touch` keeps its 26 px box and has no target: a tap beside it reaches what is there.
+  await expect(staticChip.getBoundingClientRect().height).toBeCloseTo(26, 0)
+  await expect(getComputedStyle(staticChip, '::before').content).toBe('none')
   // `touch` changes nothing drawn: the same box, padding, border and fill as the chip without it.
   const [withTouch, without] = canvas.getAllByRole('button', { name: 'Model: Opus' })
   if (withTouch === undefined || without === undefined) throw new Error('no chips to compare')

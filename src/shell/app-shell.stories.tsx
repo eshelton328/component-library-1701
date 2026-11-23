@@ -1982,6 +1982,73 @@ const frameStepsJank: StoryObj<typeof meta> = {
 /** A keyboard that reports in each frame, on a runner with random slow frames: the composer stays on the keyboard. */
 export const FrameStepsJankDark: StoryObj<typeof meta> = { ...frameStepsJank, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FrameStepsJankLight: StoryObj<typeof meta> = { ...frameStepsJank, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// A second open whose keyboard's first frame is held 100 ms: the keyboard's first report then comes about 100 ms
+// into its motion and shows only part of it. The dock starts where the keyboard started, so no frame drawn after the
+// keyboard stopped shows the composer under it (`FrameStepsJank` on CI: 0.8 and 1.3 px under, a dock 50 ms behind).
+const firstReportHeld: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { field, composer } = threadParts(canvasElement)
+    for (let open = 0; open < 2; open++) {
+      await userEvent.click(field)
+      for (let i = 0; i < 4; i++) await nextFrame()
+      // On the second open the shell knows the keyboard; the frame after the keyboard's start is held, before the
+      // keyboard's own frame callback runs in it.
+      if (open === 1) requestAnimationFrame(() => busy(100))
+      await frameKeyboard(fakeViewport, 336, 'open')
+      // Each frame that draws a time after the keyboard stopped, as in Frame Steps.
+      const stopped = performance.now()
+      const off: number[] = []
+      const until = performance.now() + 400
+      while (performance.now() < until) {
+        if (drawnTime() >= stopped) off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+        await nextFrame()
+      }
+      await expect(off.length).toBeGreaterThan(0)
+      await expect(off.filter((v) => v > 0.5)).toEqual([])
+      field.blur()
+      await frameKeyboard(fakeViewport, 336, 'close')
+      await wait(400)
+    }
+  }),
+}
+/** A keyboard whose first frame on a second open is held 100 ms: the composer is on the keyboard once it stops. */
+export const FirstReportHeldDark: StoryObj<typeof meta> = { ...firstReportHeld, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const FirstReportHeldLight: StoryObj<typeof meta> = { ...firstReportHeld, globals: { mode: 'light', viewport: { value: 'm390' } } }
+// A second open whose whole keyboard is shorter than the one measured (a number pad, an accessory bar), in one full
+// report, as iOS sends it. The report is not part of a rise: the move starts `keyboardReportLag` before it, not where
+// the curve would reach that part of the measured keyboard, so the dock does not jump ahead (Codex review of #319).
+const shorterKeyboard: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    await userEvent.click(field)
+    for (let i = 0; i < 4; i++) await nextFrame()
+    fakeViewport.move({ height: 844 - 336 })
+    await settled(footer, 302)
+    await wait(400)
+    field.blur()
+    fakeViewport.move({ height: 844 })
+    await settled(footer, 0)
+    await wait(400)
+    await userEvent.click(field)
+    for (let i = 0; i < 4; i++) await nextFrame()
+    // Later than the curve takes to reach 252 of 336, so the focus does not bound the move's start.
+    await wait(150)
+    const reported = performance.now()
+    fakeViewport.move({ height: 844 - 252 })
+    const reportDone = performance.now()
+    const end = Number(root.dataset.keyboardEnd)
+    await expect(end).toBeGreaterThanOrEqual(reported - reportLag + motionMs)
+    await expect(end).toBeLessThanOrEqual(reportDone - reportLag + motionMs)
+    await settled(footer, 218)
+  }),
+}
+/** A second open whose keyboard is shorter than the measured one, in one full report: the dock starts on the keyboard's clock. */
+export const ShorterKeyboardDark: StoryObj<typeof meta> = { ...shorterKeyboard, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const ShorterKeyboardLight: StoryObj<typeof meta> = { ...shorterKeyboard, globals: { mode: 'light', viewport: { value: 'm390' } } }
 /** A keyboard that reports in each frame, on a device whose frames take 50 ms: the composer stays on the keyboard. */
 export const FrameStepsSlowDark: StoryObj<typeof meta> = { ...frameStepsSlow, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FrameStepsSlowLight: StoryObj<typeof meta> = { ...frameStepsSlow, globals: { mode: 'light', viewport: { value: 'm390' } } }

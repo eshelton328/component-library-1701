@@ -89,6 +89,18 @@ const ease = (t: number) => {
   const [, y1, , y2] = keyboardCurve
   return bezier(y1, y2, paramAt(t))
 }
+// The time, in ms from the keyboard's start, at which its curve reaches `progress` (0 to 1): the inverse of `ease`.
+const curveTime = (progress: number) => {
+  const [x1, y1, x2, y2] = keyboardCurve
+  let low = 0
+  let high = 1
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (low + high) / 2
+    if (bezier(y1, y2, mid) < progress) low = mid
+    else high = mid
+  }
+  return bezier(x1, x2, (low + high) / 2) * keyboardMotion
+}
 // The keyboard's curve between its parameters `from` and `to`, as a CSS easing over that part: the part of a cubic
 // bezier is a cubic bezier (its control points are the curve's blossom at the two ends), scaled to the part's time and
 // progress. A keyframe with it moves on the curve itself, not on a straight line between two points of it (a line
@@ -687,6 +699,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // The keyboard the current opening expects, and whether it was measured (or is Figma's guess).
     let expectedInset = 0
     let expectedMeasured = false
+    // The distinct keyboard reports of the current opening, and whether this page saw a keyboard rise in frame steps:
+    // an earlier opening with more than one report. iOS in a home screen app almost always reports a whole keyboard
+    // once, so it seldom sets it there; Safari in a tab reports in frame steps, and sets it.
+    let openReports = 0
+    let lastReport = 0
+    let steppedRise = false
     let settleTimer: ReturnType<typeof setTimeout> | undefined
     // When a field last took the focus, and when the focus last left the fields: the keyboard starts its motion no
     // earlier than these, and a close starts at the focusout.
@@ -695,14 +713,16 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // When the keyboard started the motion that a report shows: a close at its focusout (when that came within the
     // keyboard's motion), and anything else `keyboardReportLag` before the report, but not before the focus that
     // opened it.
-    const keyboardSince = () => {
+    // `lag` is how long the keyboard has moved at the report, `keyboardReportLag` by default.
+    const keyboardSince = (lag = keyboardReportLag) => {
       const now = performance.now()
-      if (typing) return Math.max(focusedAt, now - keyboardReportLag)
+      if (typing) return Math.max(focusedAt, now - lag)
       return now - closedAt <= keyboardMotion ? closedAt : now - keyboardReportLag
     }
     const settle = () => {
       settleTimer = undefined
       opening = false
+      if (openReports > 1) steppedRise = true
       // The focus left the fields during the opening (a press on Send): the end of the fit brings the dock down after
       // the press's release, so the settle moves nothing (Codex review of #202).
       if (!typing || !editable(document.activeElement)) return
@@ -751,7 +771,24 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // A report taken as the whole keyboard is kept for the next open at once: a blur before the settle (a press on
       // Send) would otherwise lose it.
       if (opening && typing && !early && inset > 1) measured.set(orientation(), inset)
-      show(early ? hold : inset, keyboardSince())
+      if (opening && typing && inset > 1 && inset !== lastReport) {
+        openReports += 1
+        lastReport = inset
+      }
+      // A late partial report: the first report of an opening that shows only part of the expected keyboard (r/E < 1)
+      // can come well after the keyboard started, when the page's frame is held (a busy main thread). The curve says how
+      // long the keyboard has moved to reach that part, so the move starts that far back, not only `keyboardReportLag`,
+      // and ends with the keyboard (`FirstReportHeld`; a dock 50 ms behind left the composer up to 4 px under it after
+      // it stopped, `FrameStepsJank` on CI). A full first report keeps `keyboardReportLag`: iOS in a home screen app
+      // reports a whole keyboard once, and the curve would date it 300 ms back. Only a measured keyboard tells a part
+      // from the whole: a first open's whole keyboard can be under Figma's guess (336 against 380, `KeyboardFollow`).
+      // And only a page that saw a keyboard rise in frame steps (`steppedRise`) gets a partial first report: a second
+      // open's whole keyboard can be shorter than the measured one (a number pad, an accessory bar), and its one full
+      // report would read as a part and date the move back past the keyboard's start (`ShorterKeyboard`, Codex review
+      // of #319).
+      const partial = steppedRise && opening && typing && expectedMeasured && target === 0 && inset > 1 && inset < expectedInset
+      const lag = partial ? Math.max(keyboardReportLag, curveTime(inset / expectedInset)) : keyboardReportLag
+      show(early ? hold : inset, keyboardSince(lag))
     }
     // A layout that is shorter than at the focus during an opening: a browser that resizes the layout for the keyboard
     // (Firefox on Android) expects nothing again, but only when the layout is still short `layoutFrames` frames later.
@@ -810,6 +847,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       if (!was) focusedAt = performance.now()
       if (!was && measure() <= rest + 1 && expected > 0 && keyboardExpected()) {
         opening = true
+        openReports = 0
+        lastReport = 0
         openLayout = document.documentElement.clientHeight
         scheduleSettle(keyboardWait)
       } else fit()

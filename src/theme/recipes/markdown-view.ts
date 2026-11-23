@@ -7,7 +7,7 @@ import { defineRecipe } from '@pandacss/dev'
 // for h2 and h3; paragraphs and list items Regular 14/20 #8a97b8 (427:286,
 // 427:288, `body`, fg.muted); a path line in Mono 14/20 #8a97b8 (427:290,
 // `code`). Inline code, code blocks, links, quotes and tables are not
-// drawn; see each rule below.
+// drawn; see each rule below. A Markdown table renders with the Table part.
 // `size="sm"` is the 13 px body text of the Inbox detail sections (D1
 // 346:354, Geist Regular 13/20 #8a97b8, `bodySm`), with `labelSm` for the
 // h2 to h6 subheadings. h1 and code keep their styles: no Figma frame draws
@@ -50,6 +50,15 @@ export const markdownView = defineRecipe({
     // Links are not drawn here; the inventory lists cyan for links.
     '& a': { color: 'fg.accent', textDecoration: 'underline' },
     '& a:focus-visible': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
+    // GFM (remark-gfm, R51). Strikethrough keeps the text colour with a line
+    // through it. A task list item drops its marker and draws the disabled
+    // checkbox the renderer writes in its place, 8 before the text, centred
+    // on the first line and in the accent colour when checked. Autolinks are
+    // plain `a` elements and take the link style above; the root's
+    // overflow-wrap breaks a long URL. Tables are the Table part's.
+    '& del': { textDecoration: 'line-through' },
+    '& :where(li.task-list-item)': { listStyleType: 'none' },
+    '& :where(li.task-list-item) > input[type=checkbox]': { m: '0', me: '8', verticalAlign: 'middle', accentColor: 'accent.default' },
   },
   variants: {
     size: {

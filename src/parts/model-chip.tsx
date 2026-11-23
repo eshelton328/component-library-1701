@@ -32,6 +32,11 @@ export type ModelChipProps = {
   onOpenChange?: ((open: boolean) => void) | undefined
   /** The chip does not open its menu. */
   disabled?: boolean | undefined
+  /**
+   * Reach a touch target of at least 44 px (`control.xl`) 12 past each edge of the 26 px chip, for a chip a finger taps on a phone or tablet,
+   * such as the one-row chat header (d-121). The chip draws the same.
+   */
+  touch?: boolean | undefined
 }
 
 /**
@@ -39,11 +44,11 @@ export type ModelChipProps = {
  * composer. With `options`, the chip is a button that opens a menu to pick
  * another model; the chip reports the pick with `onValueChange`.
  */
-export function ModelChip({ model, effort, options, value, onValueChange, open, onOpenChange, disabled }: ModelChipProps) {
+export function ModelChip({ model, effort, options, value, onValueChange, open, onOpenChange, disabled, touch = false }: ModelChipProps) {
   const text = effort === undefined || effort === '' ? model : `${model} · ${effort}`
   if (options === undefined) {
     return (
-      <StaticRoot>
+      <StaticRoot touch={touch}>
         <Label>
           <TruncatedText>{text}</TruncatedText>
         </Label>
@@ -59,7 +64,7 @@ export function ModelChip({ model, effort, options, value, onValueChange, open, 
       open={open}
       onOpenChange={onOpenChange}
       trigger={
-        <ButtonRoot type="button" aria-label={`Model: ${text}`} disabled={disabled === true ? true : undefined}>
+        <ButtonRoot touch={touch} type="button" aria-label={`Model: ${text}`} disabled={disabled === true ? true : undefined}>
           <Chevron aria-hidden="true">
             <ChevronDownIcon size="12" />
           </Chevron>

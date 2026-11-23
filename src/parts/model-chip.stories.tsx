@@ -191,3 +191,60 @@ export const LongModel: StoryObj<typeof meta> = {
     await expectCutText(staticLabel, `Sonnet 5.5 · ${longEffort}`)
   },
 }
+
+// The compact chip of the one-row chat header (d-121): the caller writes the short effort ("Opus 5.5 · med", or the
+// family alone, "Opus", on the phone), and `touch` reaches a 44 px touch target past the 26 px chip.
+function HeaderChips() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <ModelChip model="Opus 5.5" effort="med" options={models} value="opus-medium" touch />
+        <ModelChip model="Opus" options={models} value="opus-medium" touch />
+        <ModelChip model="Sonnet 5.5" effort="high" touch />
+        <ModelChip model="Opus" options={models} value="opus-medium" />
+      </Inline>
+    </main>
+  )
+}
+
+const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const body = within(document.body)
+  const chip = canvas.getByRole('button', { name: 'Model: Opus 5.5 · med' })
+  const [family] = canvas.getAllByRole('button', { name: 'Model: Opus' })
+  if (family === undefined) throw new Error('no family chip')
+  const staticChip = canvas.getByText('Sonnet 5.5 · high').closest('.model-chip__root')
+  if (!(staticChip instanceof HTMLElement)) throw new Error('no static chip')
+  for (const c of [chip, family, staticChip]) {
+    // The chip draws as before, 26 high; its target reaches 12 past each edge of the padding box: 48 high.
+    const box = c.getBoundingClientRect()
+    await expect(box.height).toBeCloseTo(26, 0)
+    const before = getComputedStyle(c, '::before')
+    await expect(before.position).toBe('absolute')
+    await expect(Number.parseFloat(before.height)).toBeGreaterThanOrEqual(44)
+    await expect(Number.parseFloat(before.width)).toBeCloseTo(c.clientWidth + 24, 0)
+  }
+  // `touch` changes nothing drawn: the same box, padding, border and fill as the chip without it.
+  const [withTouch, without] = canvas.getAllByRole('button', { name: 'Model: Opus' })
+  if (withTouch === undefined || without === undefined) throw new Error('no chips to compare')
+  const drawn = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return [r.width, r.height, s.padding, s.borderWidth, s.borderColor, s.backgroundColor, s.borderRadius]
+  }
+  await expect(drawn(withTouch)).toEqual(drawn(without))
+  await expect(getComputedStyle(without, '::before').content).toBe('none')
+  // A tap 9 px above the chip opens its menu.
+  const box = family.getBoundingClientRect()
+  const reached = document.elementFromPoint(box.left + box.width / 2, box.top - 9)?.closest('button')
+  await expect(reached).toBe(family)
+  if (!(reached instanceof HTMLElement)) throw new Error('no button at the point')
+  await userEvent.click(reached)
+  await body.findByRole('menu')
+  await expect(family).toHaveAttribute('aria-expanded', 'true')
+  await userEvent.keyboard('{Escape}')
+  await waitFor(() => expect(body.queryByRole('menu')).toBeNull())
+}
+
+export const TouchDark: StoryObj<typeof meta> = { render: () => <HeaderChips />, globals: { mode: 'dark' }, play: touchPlay }
+export const TouchLight: StoryObj<typeof meta> = { render: () => <HeaderChips />, globals: { mode: 'light' }, play: touchPlay }

@@ -1,5 +1,6 @@
 import { defineSlotRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { touchTarget } from './touch'
 
 // The model chip of Workbench: in the composer (D2 105:905) and the chat
 // header (D2 105:801, M3 105:2770). surface.raised with a border.default
@@ -46,4 +47,9 @@ export const modelChip = defineSlotRecipe({
     // TruncatedText inside cuts a long model and effort and shows it whole in a tooltip.
     label: { minW: '0' },
   },
+  variants: {
+    // The chip in the one-row chat header (d-121): a 44 px touch target round the 26 px chip.
+    touch: { true: { root: touchTarget }, false: {} },
+  },
+  defaultVariants: { touch: false },
 })

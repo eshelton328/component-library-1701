@@ -9,7 +9,8 @@ const StyledButton = styled('button', button)
 /**
  * The props of a native button, plus the recipe's `variant`, `size`,
  * `textSize`, `padding`, `keepIconSize`, `pressedTone`, `pressedBorder`, `expandedBorder` and
- * `iconOnly`, `iconOnlyWidth`, `pressed` and `indicator`. `size` sets the
+ * `iconOnly`, `iconOnlyWidth`, `touch`, `pressed` and `indicator`. `touch` reaches a touch target of at least 44 px
+ * (`control.xl`) 12 past each edge of a smaller button, such as the chat header's 24 px back (d-121). `size` sets the
  * height: `xs` 24 (such as Copy under a chat reply), `sm` 28, `md` 32 (the
  * default), `lg` 36 and `xl` 44. `textSize` sets the label's text: `md` (the
  * default) draws `label` (Medium 14/20), or `labelLg` on a `text` button;

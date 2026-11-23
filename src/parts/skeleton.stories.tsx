@@ -190,6 +190,13 @@ function Presets() {
             real={<ListRow density="compact" padding="phoneSides" title="Sample question" meta="chat" leading={<KindTile kind="question" />} trailing="5m" />}
             skeleton={<InboxRowSkeleton phone />}
           />
+          <span className={heading}>Loading rows with a title row</span>
+          <div data-testid="title-row-trailing">
+            <ListRow loading title="" density="compact" trailingPlacement="title" trailing="5m" />
+          </div>
+          <div data-testid="title-row-dot">
+            <ListRow loading title="" density="compact" dot="working" dotLabel="New" />
+          </div>
           <span className={heading}>Workspaces</span>
           <Pair name="sidebar-group" real={<GroupHeader variant="sidebar" label="live work" count={3} />} skeleton={<GroupHeaderSkeleton variant="sidebar" />} />
           <Pair
@@ -231,6 +238,14 @@ const presetPlay: Story['play'] = async ({ canvasElement }) => {
   if (row === null) throw new Error('no loading row')
   await expect(row.hasAttribute('data-loading')).toBe(true)
   await expect(row.querySelector('button')).toBeNull()
+  // In a title row that is a flex row (trailingPlacement="title", or a dot), a loading title takes the free width,
+  // so its line is 3/4 of it, not the width of a space.
+  for (const id of ['title-row-trailing', 'title-row-dot']) {
+    const titleRow = canvasElement.querySelector(`[data-testid="${id}"] .list-row__titleRow`)
+    const line = titleRow?.querySelector('[data-skeleton="line"]')
+    if (titleRow === null || line === null || line === undefined) throw new Error(`no loading title in ${id}`)
+    await expect({ id, wide: line.getBoundingClientRect().width >= titleRow.getBoundingClientRect().width / 2 }).toEqual({ id, wide: true })
+  }
   // A loading card's title line takes 3/4 of the free width of its title row, not the width of no text.
   const title = canvasElement.querySelector('[data-pair="artifact-card"] [data-side="skeleton"] .card__titleRow')
   const bar = title?.querySelector('[data-skeleton="line"]')

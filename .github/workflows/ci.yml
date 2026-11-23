@@ -40,6 +40,7 @@ jobs:
     # Only the reuse step runs when the worktree job ran pnpm verify and
     # passed, so the job takes the 1-CPU runner at a third of the price.
     runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
@@ -66,6 +67,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.reuse.outputs.reuse != 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm codegen
       - if: steps.reuse.outputs.reuse != 'true'
@@ -78,6 +80,7 @@ jobs:
     # Only the reuse step runs when the worktree job ran pnpm verify and
     # passed, so the job takes the 1-CPU runner at a third of the price.
     runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
@@ -104,6 +107,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.reuse.outputs.reuse != 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm codegen
       - if: steps.reuse.outputs.reuse != 'true'
@@ -116,6 +120,7 @@ jobs:
     # Only the reuse step runs when the worktree job ran pnpm verify and
     # passed, so the job takes the 1-CPU runner at a third of the price.
     runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
@@ -142,6 +147,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.reuse.outputs.reuse != 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
       - if: steps.reuse.outputs.reuse != 'true'
         run: pnpm tokens:check
       - if: steps.reuse.outputs.reuse != 'true'
@@ -156,6 +162,7 @@ jobs:
     # Only the reuse step runs when the worktree job ran pnpm verify and
     # passed, so the job takes the 1-CPU runner at a third of the price.
     runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
@@ -182,6 +189,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.reuse.outputs.reuse != 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
         with:
           browser: 'true'
       - if: steps.reuse.outputs.reuse != 'true'
@@ -208,6 +216,7 @@ jobs:
     # Only the reuse step runs when the worktree job ran pnpm verify and
     # passed, so the job takes the 1-CPU runner at a third of the price.
     runs-on: ${{ needs.worktree.result == 'success' && needs.worktree.outputs.ran == 'true' && 'ubuntu-slim' || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     steps:
       # pnpm verify in the worktree job runs this job's commands
       # (scripts/ci-reuse.test.ts checks it). When that job ran verify on
@@ -234,6 +243,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: steps.reuse.outputs.reuse != 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
         with:
           browser: 'true'
       - if: steps.reuse.outputs.reuse != 'true'
@@ -245,18 +255,22 @@ jobs:
 
   build:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
+        timeout-minutes: 10
       - run: pnpm codegen
       - run: pnpm build-storybook
 
   # The public API report, the release script tests and the packed package.
   package:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup
+        timeout-minutes: 10
       - run: pnpm codegen
       - run: pnpm check:api
       - run: pnpm test:release
@@ -288,6 +302,7 @@ jobs:
         run: echo "run=true" >> "$GITHUB_OUTPUT"
       - if: steps.paths.outputs.run == 'true'
         uses: ./.github/actions/setup
+        timeout-minutes: 10
         with:
           browser: 'true'
       - if: steps.paths.outputs.run == 'true'

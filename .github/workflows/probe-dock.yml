@@ -21,4 +21,4 @@ jobs:
           browser: 'true'
       - run: pnpm codegen
       - run: nproc; cat /proc/loadavg
-      - run: pnpm vitest run --project=storybook src/shell/app-shell.stories.tsx --silent=false
+      - run: pnpm vitest run --project=storybook --silent=false

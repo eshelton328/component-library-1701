@@ -48,6 +48,24 @@ void test('a removed export is breaking', () => {
   assert.deepEqual(d.removed, ['export const b: string;'])
 })
 
+void test('an unexported declaration opens its own item, so a new export before it is not breaking', () => {
+  // API Extractor writes a renamed export as `function Highlight_2(…);` and `export { Highlight_2 as Highlight }`.
+  const renamed = 'function Highlight_2(input: HighlightProps): ReactNode;\nexport { Highlight_2 as Highlight }'
+  const before = report(`export type GroupProps = {\n    label: string;\n};\n${renamed}`)
+  const after = report(`export type GroupProps = {\n    label: string;\n};\nexport type GroupSkeletonProps = Pick<GroupProps, 'label'>;\n${renamed}`)
+  const d = diffApi(before, after)
+  assert.deepEqual(d.removed, [])
+  assert.deepEqual(d.added, ["export type GroupSkeletonProps = Pick<GroupProps, 'label'>;"])
+  assert.equal(d.breaking, false)
+})
+
+void test('a removed unexported declaration is still breaking', () => {
+  const before = report('export const a: number;\nfunction Highlight_2(input: HighlightProps): ReactNode;\nexport { Highlight_2 as Highlight }')
+  const d = diffApi(before, report('export const a: number;'))
+  assert.equal(d.breaking, true)
+  assert.deepEqual(d.removed, ['function Highlight_2(input: HighlightProps): ReactNode;', 'export { Highlight_2 as Highlight }'])
+})
+
 void test('a renamed or retyped prop is breaking', () => {
   const before = report('export interface ButtonProps {\n    size?: "sm" | "md";\n}')
   const after = report('export interface ButtonProps {\n    size?: "md";\n}')

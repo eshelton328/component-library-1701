@@ -130,7 +130,10 @@ function objectAliasShape(lines: readonly string[], start: number): false | 'obj
 
 /**
  * Splits a report into declarations and members. A line with no indent
- * that starts with `export` or `declare` opens a declaration. In an
+ * that starts with `export` or `declare`, or that declares a name with no
+ * `export` (API Extractor writes `function Highlight_2(…);` and then
+ * `export { Highlight_2 as Highlight }` for a renamed export), opens a
+ * declaration, so such a line never joins the item before it. In an
  * interface, a class or a type alias that is one plain object literal,
  * alone or intersected with named types or generic references (see
  * `objectAliasShape`), a line
@@ -174,7 +177,7 @@ export function apiItems(report: string): ApiItem[] {
   const lines = apiLines(report)
   for (const [i, line] of lines.entries()) {
     const t = line.trim()
-    if (depth === 0 && /^(export|declare)\b/.test(line)) {
+    if (depth === 0 && (/^(export|declare)\b/.test(line) || declName.test(line))) {
       const m = declName.exec(t)
       const kind = m?.[1] ?? ''
       decl = { key: unique(m?.[2] ?? t), text: t, required: false }

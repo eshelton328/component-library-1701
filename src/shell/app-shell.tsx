@@ -700,7 +700,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     let expectedInset = 0
     let expectedMeasured = false
     // The distinct keyboard reports of the current opening, and whether this page saw a keyboard rise in frame steps:
-    // an earlier opening with more than one report. iOS reports a whole keyboard once, so it never sets it.
+    // an earlier opening with more than one report. iOS in a home screen app almost always reports a whole keyboard
+    // once, so it seldom sets it there; Safari in a tab reports in frame steps, and sets it.
     let openReports = 0
     let lastReport = 0
     let steppedRise = false
@@ -778,12 +779,13 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // can come well after the keyboard started, when the page's frame is held (a busy main thread). The curve says how
       // long the keyboard has moved to reach that part, so the move starts that far back, not only `keyboardReportLag`,
       // and ends with the keyboard (`FirstReportHeld`; a dock 50 ms behind left the composer up to 4 px under it after
-      // it stopped, `FrameStepsJank` on CI). A full first report keeps `keyboardReportLag`: iOS reports a whole
-      // keyboard once, and the curve would date it 300 ms back. Only a measured keyboard tells a part from the whole: a
-      // first open's whole keyboard can be under Figma's guess (336 against 380, `KeyboardFollow`). And only a page that
-      // saw a keyboard rise in frame steps (`steppedRise`) gets a partial first report: a second open's whole keyboard can
-      // be shorter than the measured one (a number pad, an accessory bar), and its one full report would read as a part
-      // and date the move back past the keyboard's start (`ShorterKeyboard`, Codex review of #319).
+      // it stopped, `FrameStepsJank` on CI). A full first report keeps `keyboardReportLag`: iOS in a home screen app
+      // reports a whole keyboard once, and the curve would date it 300 ms back. Only a measured keyboard tells a part
+      // from the whole: a first open's whole keyboard can be under Figma's guess (336 against 380, `KeyboardFollow`).
+      // And only a page that saw a keyboard rise in frame steps (`steppedRise`) gets a partial first report: a second
+      // open's whole keyboard can be shorter than the measured one (a number pad, an accessory bar), and its one full
+      // report would read as a part and date the move back past the keyboard's start (`ShorterKeyboard`, Codex review
+      // of #319).
       const partial = steppedRise && opening && typing && expectedMeasured && target === 0 && inset > 1 && inset < expectedInset
       const lag = partial ? Math.max(keyboardReportLag, curveTime(inset / expectedInset)) : keyboardReportLag
       show(early ? hold : inset, keyboardSince(lag))

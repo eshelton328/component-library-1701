@@ -107,6 +107,13 @@ export type MenuProps = {
    */
   iconTone?: 'muted' | 'default' | undefined
   /**
+   * Rows a finger can tap. On a touch screen (`pointer: coarse`) each row is at least 44 px tall (`control.xl`) and
+   * keeps its size's text and icons: at `size="md"` the 14 px `label` and 16 px icons, at `density="compact"` still
+   * edge to edge. A mouse or trackpad keeps the size's rows (32 at `md`). A `size="lg"` row is 44 already. A submenu
+   * takes it from the menu. `false` when not set.
+   */
+  touch?: boolean | undefined
+  /**
    * The value of the highlighted action, the row filled as the pointer or the arrow keys leave it, such as a design
    * state that shows the row whose submenu is open. `null` highlights none. Set it with `onHighlightChange` to control
    * it; when not set, the menu keeps its own.
@@ -131,7 +138,7 @@ const fromArk = (v: string) => (v.startsWith('menu:') ? v.slice(5) : undefined)
  * closes the menu and returns the focus to the trigger. A row with a
  * `submenu` opens a list of more actions to its right.
  */
-export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, iconTone, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
+export function Menu({ trigger, items, onSelect, open, onOpenChange, placement = 'bottom-start', heading, width, size, density, iconTone, touch, highlightedValue, onHighlightChange, className, ...rest }: MenuProps) {
   useInputModality()
   const baseId = useId()
   const select = (details: { value: string }) => {
@@ -144,6 +151,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       size={size}
       density={density}
       iconTone={iconTone}
+      touch={touch}
       positioning={{ placement, gutter: 4 }}
       {...(open === undefined ? {} : { open })}
       {...highlightOf(baseId, items, highlightedValue, onHighlightChange)}
@@ -157,7 +165,7 @@ export function Menu({ trigger, items, onSelect, open, onOpenChange, placement =
       <OverlayPortal>
         <Positioner>
           <Content {...dataAttributesOf(rest)} {...(className === undefined ? {} : { className })}>
-            <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} iconTone={iconTone} onSelect={select} />
+            <Entries baseId={baseId} items={items} heading={heading} size={size} density={density} iconTone={iconTone} touch={touch} onSelect={select} />
           </Content>
         </Positioner>
       </OverlayPortal>
@@ -195,11 +203,12 @@ type SubmenuProps = {
   size: MenuProps['size']
   density: MenuProps['density']
   iconTone: MenuProps['iconTone']
+  touch: MenuProps['touch']
   onSelect: (details: { value: string }) => void
 }
 
 // A submenu level: its own React id names its Ark menu, so its list and items have ids no other level can repeat.
-function Submenu({ triggerId, submenu, row, size, density, iconTone, onSelect }: SubmenuProps) {
+function Submenu({ triggerId, submenu, row, size, density, iconTone, touch, onSelect }: SubmenuProps) {
   const id = useId()
   const { api, service } = useMenu({
     id,
@@ -235,12 +244,12 @@ function Submenu({ triggerId, submenu, row, size, density, iconTone, onSelect }:
     }
   }, [open, contentId, service])
   return (
-    <RootProvider value={{ api, service }} width="submenu" size={size} density={density} iconTone={iconTone}>
+    <RootProvider value={{ api, service }} width="submenu" size={size} density={density} iconTone={iconTone} touch={touch}>
       <TriggerItem>{row}</TriggerItem>
       <OverlayPortal>
         <Positioner>
           <Content>
-            <Entries baseId={id} items={submenu.items} size={size} density={density} iconTone={iconTone} onSelect={onSelect} />
+            <Entries baseId={id} items={submenu.items} size={size} density={density} iconTone={iconTone} touch={touch} onSelect={onSelect} />
           </Content>
         </Positioner>
       </OverlayPortal>
@@ -255,10 +264,11 @@ type EntriesProps = {
   size: MenuProps['size']
   density: MenuProps['density']
   iconTone: MenuProps['iconTone']
+  touch: MenuProps['touch']
   onSelect: (details: { value: string }) => void
 }
 
-function Entries({ baseId, items, heading, size, density, iconTone, onSelect }: EntriesProps) {
+function Entries({ baseId, items, heading, size, density, iconTone, touch, onSelect }: EntriesProps) {
   const renderEntry = (entry: MenuEntry, i: number) => {
     if (entry.type === 'separator') return <Separator key={`separator-${String(i)}`} />
     const icon = entry.icon === undefined ? null : <ItemIcon aria-hidden="true" data-part="item-icon">{entry.icon}</ItemIcon>
@@ -295,6 +305,7 @@ function Entries({ baseId, items, heading, size, density, iconTone, onSelect }: 
         size={size}
         density={density}
         iconTone={iconTone}
+        touch={touch}
         onSelect={onSelect}
         row={
           <>

@@ -676,6 +676,71 @@ const phoneNewMenuPlay: StoryObj<typeof meta>['play'] = async () => {
 export const PhoneNewMenuDark: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'dark' } }
 export const PhoneNewMenuLight: StoryObj<typeof meta> = { render: () => <PhoneNewMenu />, play: phoneNewMenuPlay, globals: { mode: 'light' } }
 
+// Touch rows (the-bridge workspaces LIBRARY_GAPS "Menu touch rows", R59): `touch` keeps size md's look (label 14,
+// icons 16) and makes each row at least 44 tall on a touch screen, at the default and the compact density; a size lg
+// row is 44 already. Beside them, a menu with no `touch` keeps its 32 px rows on a touch screen too.
+function TouchMenus() {
+  return (
+    <main className={page}>
+      <Inline gap="24">
+        <Menu open trigger={<Button>Touch</Button>} items={workbenchActions} touch data-figma="touch" />
+        <Menu open trigger={<Button>Touch compact</Button>} items={workbenchActions} width="sm" density="compact" touch data-figma="touchCompact" />
+        <Menu open trigger={<Button>Touch large</Button>} items={newActions} size="lg" touch data-figma="touchLarge" />
+        <Menu open trigger={<Button>Plain</Button>} items={workbenchActions} data-figma="plain" />
+      </Inline>
+    </main>
+  )
+}
+
+// Chromium's touch emulation, through the test runner's DevTools session, makes the CSS `(pointer: coarse)` true, as
+// a phone's is (composer SkillPickerTouch); `.storybook/story-reset.ts` turns it off before each story test.
+const emulateTouch = async (enabled: boolean) => {
+  const { cdp } = await import('vitest/browser')
+  await cdp().send('Emulation.setTouchEmulationEnabled', { enabled, maxTouchPoints: 1 })
+}
+
+const rowHeights = async (key: string) => within(await menuByKey(key)).getAllByRole('menuitem').map((row) => row.getBoundingClientRect().height)
+
+const touchPlay: StoryObj<typeof meta>['play'] = async () => {
+  try {
+    await emulateTouch(true)
+    await waitFor(() => expect(matchMedia('(pointer: coarse)').matches).toBe(true))
+    // A touch screen: every touch row is 44 (control.xl); the compact rows stay edge to edge, one 44 px pitch.
+    await waitFor(async () => expect(await rowHeights('touch')).toEqual(Array.from({ length: 8 }, () => 44)))
+    await expect(await rowHeights('touchCompact')).toEqual(Array.from({ length: 8 }, () => 44))
+    const [c1, c2] = within(await menuByKey('touchCompact')).getAllByRole('menuitem')
+    if (c1 === undefined || c2 === undefined) throw new Error('no compact rows')
+    await expect(c2.getBoundingClientRect().top - c1.getBoundingClientRect().bottom).toBe(0)
+    await expect(await rowHeights('touchLarge')).toEqual([44, 44])
+    // The rows keep size md's look: a `label` (Medium 14/20, sans) and 16 px icons.
+    for (const key of ['touch', 'touchCompact']) {
+      const fork = within(await menuByKey(key)).getByRole('menuitem', { name: 'Fork' })
+      const label = getComputedStyle(within(fork).getByText('Fork'))
+      await expect([label.fontSize, Math.round(Number.parseFloat(label.lineHeight)), label.fontWeight]).toEqual(['14px', 20, '500'])
+      await expect(label.fontFamily).not.toMatch(/Mono/)
+      const icon = iconOf(fork).getBoundingClientRect()
+      await expect([icon.width, icon.height]).toEqual([16, 16])
+    }
+    // A menu with no `touch` keeps its 32 px rows on a touch screen.
+    await expect(await rowHeights('plain')).toEqual(Array.from({ length: 8 }, () => 32))
+  } finally {
+    await emulateTouch(false)
+  }
+  // A mouse (a fine pointer): the touch rows are size md's 32 again, and the large rows stay 44.
+  await waitFor(() => expect(matchMedia('(pointer: coarse)').matches).toBe(false))
+  await waitFor(async () => expect(await rowHeights('touch')).toEqual(Array.from({ length: 8 }, () => 32)))
+  await expect(await rowHeights('touchCompact')).toEqual(Array.from({ length: 8 }, () => 32))
+  await expect(await rowHeights('touchLarge')).toEqual([44, 44])
+  await expect(await rowHeights('plain')).toEqual(Array.from({ length: 8 }, () => 32))
+}
+
+/**
+ * `touch` at size md, at the compact density and at size lg, beside a menu with no `touch`. Only the story test runner
+ * has the DevTools session that emulates touch, so the Storybook UI leaves these stories out; the runner still runs them.
+ */
+export const TouchDark: StoryObj<typeof meta> = { tags: ['!dev'], render: () => <TouchMenus />, play: touchPlay, globals: { mode: 'dark' } }
+export const TouchLight: StoryObj<typeof meta> = { tags: ['!dev'], render: () => <TouchMenus />, play: touchPlay, globals: { mode: 'light' } }
+
 // The New menu's icons in their labels' colour (M15 208:521 plus, 208:529 grid: stroke #e6ecff, as the labels 208:519
 // and 208:527), beside the same menu with the default `fg.muted` icons. A danger row keeps its own colour.
 const defaultSwatch = css({ color: 'fg.default' })

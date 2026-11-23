@@ -1128,6 +1128,7 @@ export type MenuVariant = {
   size?: "md" | "lg"
   iconTone?: "muted" | "default"
   density?: "default" | "compact"
+  touch?: boolean
 }
 
 export type MenuVariantProps = {

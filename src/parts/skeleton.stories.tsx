@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Skeleton, SkeletonGroup } from './skeleton'
 
@@ -103,10 +103,12 @@ const meta = {
     }
     await expect([height(tile), Math.round(tile.getBoundingClientRect().width)]).toEqual([28, 28])
     await expect(getComputedStyle(circle).borderRadius).not.toBe('0px')
-    // The skeletons are hidden from assistive technology; their group is a busy status named by its label.
+    // The skeletons are hidden from assistive technology. Their group is a status named by its label that is
+    // never busy (aria-busy stops the announcement) and says the label as text once it is in place.
     await expect(line.getAttribute('aria-hidden')).toBe('true')
     const group = canvas.getByRole('status', { name: 'Loading the sample lines' })
-    await expect(group.getAttribute('aria-busy')).toBe('true')
+    await expect(group.getAttribute('aria-busy')).toBeNull()
+    await waitFor(() => expect(group).toHaveTextContent('Loading the sample lines'))
   },
 } satisfies Meta<typeof Shapes>
 

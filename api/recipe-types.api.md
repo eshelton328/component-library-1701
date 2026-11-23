@@ -759,6 +759,7 @@ export * from './script-explanation.js';
 export * from './scroll-frame.js';
 export * from './search-field.js';
 export * from './select-field.js';
+export * from './skeleton-group.js';
 export * from './splitter.js';
 export * from './switch-recipe.js';
 export * from './tab-bar.js';
@@ -1527,6 +1528,24 @@ export type SelectFieldSlot = "root" | "label" | "trigger" | "icon" | "value" | 
 export type SelectFieldRecipe = ConfigSlotRecipeRuntimeFn<SelectFieldSlot, SelectFieldVariantProps, SelectFieldVariantMap>
 
 export declare const selectField: SelectFieldRecipe;
+
+// skeleton-group.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type SkeletonGroupVariant = {}
+
+export type SkeletonGroupVariantProps = {
+  [K in keyof SkeletonGroupVariant]?: ConditionalValue<SkeletonGroupVariant[K]>
+}
+
+export type SkeletonGroupVariantMap = RecipeVariantMap<SkeletonGroupVariant>
+
+export type SkeletonGroupSlot = "root" | "label"
+
+export type SkeletonGroupRecipe = ConfigSlotRecipeRuntimeFn<SkeletonGroupSlot, SkeletonGroupVariantProps, SkeletonGroupVariantMap>
+
+export declare const skeletonGroup: SkeletonGroupRecipe;
 
 // skeleton.d.ts
 import type { ConditionalValue } from '../types/system.js';

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { styled } from '../../styled-system/jsx'
-import { skeleton, type SkeletonVariantProps } from '../../styled-system/recipes'
+import { skeleton, skeletonGroup, type SkeletonVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 
 const Shape = styled('span', skeleton)
@@ -41,12 +41,25 @@ export type SkeletonGroupProps = {
 }
 
 /**
- * The place that waits for content: a status named by `label`, busy while it shows. Its skeletons are
- * hidden from assistive technology; the caller replaces the group with the content when it comes.
+ * The place that waits for content: a status named by `label`. The status is in place empty first and then
+ * says `label` as hidden text, so a screen reader announces it; it is never `aria-busy`, which would stop
+ * the announcement. Its skeletons are hidden from assistive technology; the caller replaces the group with the
+ * content when it comes.
  */
 export function SkeletonGroup({ label, children }: SkeletonGroupProps) {
+  const [said, setSaid] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSaid(true)
+    })
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  const classes = skeletonGroup()
   return (
-    <div role="status" aria-label={label} aria-busy="true">
+    <div role="status" aria-label={label} className={classes.root}>
+      <span className={classes.label}>{said ? label : ''}</span>
       {children}
     </div>
   )

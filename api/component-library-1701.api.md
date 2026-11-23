@@ -42,6 +42,7 @@ import { RefObject } from 'react';
 import { ScrollFrameVariantProps } from '../../styled-system/recipes';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { SelectFieldVariantProps } from '../../styled-system/recipes';
+import { SkeletonVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
 import { TableVariantProps } from '../../styled-system/recipes';
 import { TagsLineVariantProps } from '../../styled-system/recipes';
@@ -1628,6 +1629,30 @@ export type SelectFieldProps = Scalar<SelectFieldVariantProps> & {
 
 // @public
 export function SettingsIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Skeleton(input: SkeletonProps): JSX.Element;
+
+// @public
+export function SkeletonGroup(input: SkeletonGroupProps): JSX.Element;
+
+// @public (undocumented)
+export type SkeletonGroupProps = {
+    label: string;
+    children: ReactNode;
+};
+
+// @public (undocumented)
+export type SkeletonProps = Scalar<SkeletonVariantProps>;
+
+// @public (undocumented)
+export type SkeletonShape = NonNullable<SkeletonProps['shape']>;
+
+// @public (undocumented)
+export type SkeletonSize = NonNullable<SkeletonProps['size']>;
+
+// @public (undocumented)
+export type SkeletonWidth = NonNullable<SkeletonProps['width']>;
 
 // @public
 export function SkillIcon(props: IconProps): JSX.Element;

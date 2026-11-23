@@ -700,6 +700,7 @@ export * from './layout-inline.js';
 export * from './layout-stack.js';
 export * from './markdown-view.js';
 export * from './nav-badge.js';
+export * from './skeleton.js';
 export * from './status-pill.js';
 export * from './truncated-text.js';
 export * from './app-shell.js';
@@ -1526,6 +1527,27 @@ export type SelectFieldSlot = "root" | "label" | "trigger" | "icon" | "value" | 
 export type SelectFieldRecipe = ConfigSlotRecipeRuntimeFn<SelectFieldSlot, SelectFieldVariantProps, SelectFieldVariantMap>
 
 export declare const selectField: SelectFieldRecipe;
+
+// skeleton.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type SkeletonVariant = {
+  shape?: "line" | "block" | "circle"
+  width?: "full" | "long" | "half" | "short" | "word"
+  size?: "fill" | "icon12" | "icon16" | "icon20" | "icon24" | "kindTileSm" | "kindTileLg" | "thumbnailSm" | "thumbnailMd" | "thumbnailLg"
+  ratio?: "wide" | "compact" | "banner"
+}
+
+export type SkeletonVariantProps = {
+  [K in keyof SkeletonVariant]?: ConditionalValue<SkeletonVariant[K]>
+}
+
+export type SkeletonVariantMap = RecipeVariantMap<SkeletonVariant>
+
+export type SkeletonRecipe = ConfigRecipeRuntimeFn<SkeletonVariantProps, SkeletonVariantMap>
+
+export declare const skeleton: SkeletonRecipe;
 
 // splitter.d.ts
 import type { ConditionalValue } from '../types/system.js';

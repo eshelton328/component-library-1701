@@ -1547,12 +1547,27 @@ const drawnTime = () => {
   const time = document.timeline.currentTime
   return typeof time === 'number' ? time : performance.now()
 }
+// PROBE (do not merge): the dock's own clocks in this frame, for the parts that move the composer or a list footer.
+const dockClocks = (root: Element) => {
+  const parts = [...root.querySelectorAll('[aria-label="Composer"], [aria-label="List footer"]')]
+  return {
+    now: performance.now(),
+    tl: document.timeline.currentTime,
+    end: root instanceof HTMLElement ? root.dataset.keyboardEnd : undefined,
+    anims: root.getAnimations({ subtree: true }).flatMap((a) => {
+      const target = a.effect instanceof KeyframeEffect ? a.effect.target : null
+      const on = target === root ? 'clock' : parts.find((p) => target?.contains(p))?.getAttribute('aria-label')
+      if (on === undefined || on === null) return []
+      return [{ on, ct: a.currentTime, st: a.startTime, p: a.effect?.getComputedTiming().progress ?? null }]
+    }),
+  }
+}
 // The dock's rise at every frame, with the time of the frame and the time it draws, until `stop`.
 const recordRise = (footer: HTMLElement, root?: HTMLElement) => {
-  const frames: { at: number; drawn: number; rise: number; inset: string }[] = []
+  const frames: { at: number; drawn: number; rise: number; inset: string; probe?: unknown }[] = []
   let id = 0
   const tick = () => {
-    frames.push({ at: performance.now(), drawn: drawnTime(), rise: riseOf(footer), inset: root?.style.getPropertyValue('--app-shell-keyboard') ?? '' })
+    frames.push({ at: performance.now(), drawn: drawnTime(), rise: riseOf(footer), inset: root?.style.getPropertyValue('--app-shell-keyboard') ?? '', ...(root === undefined ? {} : { probe: dockClocks(root) }) })
     id = requestAnimationFrame(tick)
   }
   tick()
@@ -1904,6 +1919,7 @@ const frameStepsSlow: StoryObj<typeof meta> = {
   render: () => <ThreadChat />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { field, composer } = threadParts(canvasElement)
+    const { root } = threadParts(canvasElement)
     let slow = true
     const hold = () => {
       if (!slow) return
@@ -1919,11 +1935,14 @@ const frameStepsSlow: StoryObj<typeof meta> = {
         // Each frame that draws a time after the keyboard stopped, as in Frame Steps.
         const stopped = performance.now()
         const off: number[] = []
+        const seen: unknown[] = []
         const until = performance.now() + 400
         while (performance.now() < until) {
           if (drawnTime() >= stopped) off.push(Math.round((composer().bottom - (844 - 336)) * 10) / 10)
+          seen.push({ at: performance.now(), drawn: drawnTime(), bottom: composer().bottom, probe: dockClocks(root) })
           await nextFrame()
         }
+        globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'frameStepsSlow', open, stopped, seen }))
         await expect(off.length).toBeGreaterThan(0)
         await expect(off.filter((v) => v > 0.5)).toEqual([])
         field.blur()
@@ -3489,13 +3508,13 @@ export const DockFrameWorkReducedLight: StoryObj<typeof meta> = { ...dockFrameWo
 // (made before this one, so its callback comes first): the shell restarts its move there, before the frame paints, so
 // the read in the frame's callbacks saw a layout that the screen never shows.
 const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[], resizing?: Element) => {
-  const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[] }[] = []
+  const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[]; probe?: unknown }[] = []
   const moves: number[] = []
   const onMove = () => {
     moves.push(performance.now())
   }
   root.addEventListener('app-shell-dock', onMove)
-  const read = () => ({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)) })
+  const read = () => ({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)), probe: dockClocks(root) })
   let id = requestAnimationFrame(function tick() {
     frames.push(read())
     id = requestAnimationFrame(tick)
@@ -3643,6 +3662,7 @@ const dockTurns: StoryObj<typeof meta> = {
     await settled(footer, 0)
     await wait(motionMs)
     first.stop()
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'dockTurns', first: first.frames }))
     const turn = moves.find((at) => at >= blurred) ?? closeStart
     const opening = riseOn(0, keyboard, openStart)
     // The inset drawn at the turn, from which the fall starts.
@@ -3683,6 +3703,7 @@ const dockTurns: StoryObj<typeof meta> = {
     const fell = moves.find((at) => at >= closed) ?? fallStart
     check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), (t) => (t < fell ? keyboard - safe : falling(t)), 2)
     check('open during close', second.frames.filter((f) => f.drawn >= riseStart), (t) => (t < back ? falling(t) : rising(t)))
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'dockTurns', moves, reported, blurred, openStart, closeStart, closed, reopened, fallStart, riseStart, first: first.frames, second: second.frames }))
     await expect(off).toEqual([])
   }),
 }
@@ -3797,6 +3818,7 @@ const growOnDock = (late: number): StoryObj<typeof meta> => ({
     await wait(motionMs + 150)
     opening.stop()
     check('open', opening, openStart, (t) => keyboard * curveAt(t - openStart))
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'growOnDock', late, openStart, open: { moves: opening.moves, frames: opening.frames } }))
     await expect(within(canvasElement).getByTestId('grow-row')).toBeVisible()
     const closing = recordBoxes(root, composer, [last], composerBox)
     await nextFrame()
@@ -3809,6 +3831,7 @@ const growOnDock = (late: number): StoryObj<typeof meta> => ({
     await wait(motionMs + 150)
     closing.stop()
     check('close', closing, closeStart, (t) => keyboard * (1 - curveAt(t - closeStart)))
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'growOnDock', late, openStart, closeStart, open: { moves: opening.moves, frames: opening.frames }, close: { moves: closing.moves, frames: closing.frames } }))
     await expect(within(canvasElement).queryByTestId('grow-row')).toBeNull()
     await expect(off).toEqual([])
   }),
@@ -3872,9 +3895,9 @@ const tabletFooters: StoryObj<typeof meta> = {
     const composer = () => rect(canvas.getByRole('group', { name: 'Composer' }))
     const listFooter = () => rect(canvas.getByRole('group', { name: 'List footer' }))
     await expect(Math.round(listFooter().bottom)).toBe(Math.round(composer().bottom))
-    const frames: { composer: number; list: number }[] = []
+    const frames: { composer: number; list: number; probe?: unknown }[] = []
     let id = requestAnimationFrame(function tick() {
-      frames.push({ composer: composer().bottom, list: listFooter().bottom })
+      frames.push({ composer: composer().bottom, list: listFooter().bottom, probe: dockClocks(shellRoot(canvasElement)) })
       id = requestAnimationFrame(tick)
     })
     await userEvent.click(field)
@@ -3886,6 +3909,7 @@ const tabletFooters: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 1133 })
     await wait(motionMs + 150)
     cancelAnimationFrame(id)
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'tabletFooters', end: shellRoot(canvasElement).dataset.keyboardEnd, frames }))
     const off = frames.filter((f) => Math.abs(f.list - f.composer) > 1).map((f) => `list ${f.list.toFixed(1)}, composer ${f.composer.toFixed(1)}`)
     await expect(frames.some((f) => f.composer <= 1133 - 400 + 0.5)).toBe(true)
     await expect(off).toEqual([])
@@ -3912,6 +3936,7 @@ const footEdges: StoryObj<typeof meta> = {
     fakeViewport.move({ height: 844 - keyboard })
     await wait(motionMs + 150)
     opening.stop()
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'footEdges', open: opening.frames }))
     await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
     // The frames around the open's end, where the layout takes the inset (and the space goes): the composer is on the
     // keyboard's curve within 1 px (the space is 0 there).
@@ -3939,6 +3964,7 @@ const footEdges: StoryObj<typeof meta> = {
       const want = 844 - keyboard * (1 - curveAt(Math.max(first.drawn, started) - closeStart))
       if (Math.abs(first.composer.bottom - want) > 1) off.push(`close start: composer ${first.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
     }
+    globalThis.console.log('DOCKCLOCK ' + JSON.stringify({ story: 'footEdges', end, open: opening.frames, started, closeStart, close: closing.frames }))
     await expect(composer().bottom).toBe(844 - 34 - foot)
     await expect(off).toEqual([])
   }),

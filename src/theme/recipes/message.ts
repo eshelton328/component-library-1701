@@ -17,6 +17,15 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // not.
 // Figma draws no time on a message; the time here is `mono` in fg.subtle on
 // the transcript, or fg.muted inside the user's bubble.
+// `from="peer"` is a message from another chat (the-bridge R55; the owner: "a
+// yellow background or text to show that it's not from me"). It has no
+// bubble: a 2 px bar (borderWidths.ring) on the start side, 10 px before the
+// content, and an author row of the chat icon and "From <name>", all in
+// status.needsYou.fg; the body stays fg.default. It shares
+// status.needsYou.fg because the library has one amber today, for both
+// "not from you" and "needs you", and that token's contrast entries already
+// check it on the canvas, the pane and raised surfaces in both modes. A
+// later peer token is a change to this variant only.
 export const message = defineSlotRecipe({
   className: 'message',
   jsx: ['Message'],
@@ -40,6 +49,16 @@ export const message = defineSlotRecipe({
         time: { color: 'fg.muted', alignSelf: 'flex-end' },
       },
       assistant: {},
+      peer: {
+        root: {
+          borderInlineStartWidth: 'ring',
+          borderInlineStartStyle: 'solid',
+          borderInlineStartColor: 'status.needsYou.fg',
+          ps: '10',
+        },
+        author: { color: 'status.needsYou.fg' },
+        name: { color: 'status.needsYou.fg' },
+      },
     },
     size: {
       md: {},

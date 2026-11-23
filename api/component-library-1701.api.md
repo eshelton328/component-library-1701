@@ -1230,15 +1230,20 @@ export function Message(input: MessageProps): JSX.Element;
 export type MessageFrom = NonNullable<MessageProps['from']>;
 
 // @public (undocumented)
-export type MessageProps = Scalar<MessageVariantProps> & {
-    name?: string | undefined;
+export type MessageProps = Omit<Scalar<MessageVariantProps>, 'from'> & {
     kind?: KindMarkKind | undefined;
     markSize?: KindMarkSize | undefined;
     time?: string | undefined;
     dateTime?: string | undefined;
     children: ReactNode;
     actions?: ReactNode;
-};
+} & ({
+    from?: 'user' | 'assistant' | undefined;
+    name?: string | undefined;
+} | {
+    from: 'peer';
+    name: string;
+});
 
 // @public
 export function MetaChip(input: MetaChipProps): JSX.Element;

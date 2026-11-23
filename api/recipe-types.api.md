@@ -1147,7 +1147,7 @@ import type { ConditionalValue } from '../types/system.js';
 import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
 
 export type MessageVariant = {
-  from?: "user" | "assistant"
+  from?: "user" | "assistant" | "peer"
   size?: "md" | "sm"
 }
 

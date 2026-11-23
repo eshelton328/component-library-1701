@@ -4,6 +4,7 @@ import { groupHeader, type GroupHeaderVariantProps } from '../../styled-system/r
 import type { Scalar } from '../controls/scalar'
 import { TruncatedText } from '../controls/tooltip'
 import { ChevronDownIcon, ChevronRightIcon } from '../foundations/icons'
+import { Skeleton } from './skeleton'
 
 const { withProvider, withContext } = createSlotRecipeContext(groupHeader)
 const Root = withProvider('div', 'root')
@@ -25,6 +26,11 @@ function present(node: ReactNode): boolean {
 export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
   /** The group name, such as "Needs you". The header shows it in capitals. */
   label: string
+  /**
+   * A header whose group is still loading: the label is a `Skeleton` word in the label's text style, with no
+   * count, dot or chevron, and the header does not collapse. Put it in a `SkeletonGroup` with the loading rows.
+   */
+  loading?: boolean | undefined
   /** The number of rows in the group. */
   count?: number | undefined
   /** Whether the group is open. With `onOpenChange`, the header is a button that opens and closes it. */
@@ -51,22 +57,22 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
  * high, with the label 10 under its top. `toolkitCompact` is the same
  * header on a tablet (T1): 28 high, with the label 8 under its top.
  */
-export function GroupHeader({ label, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
-  const collapsible = onOpenChange !== undefined
+export function GroupHeader({ label, loading = false, count, dot, open = true, onOpenChange, contentId, leading, actions, variant }: GroupHeaderProps) {
+  const collapsible = onOpenChange !== undefined && !loading
   // Inbox draws a 12 px chevron (346:189) and Workbench a 13 px one
   // (105:631); both take 12, on the 4 px icon scale.
   const body = (
     <>
       {collapsible ? <Chevron>{open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}</Chevron> : null}
       <Label>
-        <TruncatedText>{label}</TruncatedText>
+        {loading ? <Skeleton width="word" /> : <TruncatedText>{label}</TruncatedText>}
       </Label>
-      {count === undefined ? null : <Count>{count}</Count>}
-      {dot === undefined ? null : <Dot aria-hidden="true" />}
+      {count === undefined || loading ? null : <Count>{count}</Count>}
+      {dot === undefined || loading ? null : <Dot aria-hidden="true" />}
     </>
   )
   return (
-    <Root variant={variant} dot={dot} data-state={collapsible ? (open ? 'open' : 'closed') : undefined}>
+    <Root variant={variant} dot={loading ? undefined : dot} data-loading={loading ? '' : undefined} data-state={collapsible ? (open ? 'open' : 'closed') : undefined}>
       {present(leading) ? <Leading>{leading}</Leading> : null}
       {!collapsible ? (
         <Static>{body}</Static>

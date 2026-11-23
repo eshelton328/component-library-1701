@@ -58,6 +58,8 @@ export const message = defineSlotRecipe({
         },
         author: { color: 'status.needsYou.fg' },
         name: { color: 'status.needsYou.fg' },
+        // fg.subtle reads 4.39:1 on dark surface.raised; fg.muted passes 4.5:1 on every surface.
+        time: { color: 'fg.muted' },
       },
     },
     size: {

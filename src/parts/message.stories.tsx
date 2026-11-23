@@ -300,7 +300,7 @@ function Peers() {
           </Message>
         </div>
         <div data-testid="peer-raised" className={raisedBox}>
-          <Message from="peer" name="bridge-coord">
+          <Message from="peer" name="bridge-coord" time="10:28" dateTime="2026-11-23T10:28">
             Go.
           </Message>
         </div>
@@ -366,7 +366,9 @@ const peerPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
     const label = parseRgba(getComputedStyle(slot(canvasElement, id, 'name')).color)
     const text = parseRgba(getComputedStyle(slot(canvasElement, id, 'body')).color)
     const bar = parseRgba(getComputedStyle(article).borderLeftColor)
+    const time = parseRgba(getComputedStyle(slot(canvasElement, id, 'time')).color)
     await expect(contrast(label, behind), `label on ${id}`).toBeGreaterThanOrEqual(4.5)
+    await expect(contrast(time, behind), `time on ${id}`).toBeGreaterThanOrEqual(4.5)
     await expect(contrast(text, behind), `text on ${id}`).toBeGreaterThanOrEqual(4.5)
     await expect(contrast(bar, behind), `bar on ${id}`).toBeGreaterThanOrEqual(3)
   }

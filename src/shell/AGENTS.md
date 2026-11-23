@@ -49,6 +49,16 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   drawn (`DockTurns`). A story reads the drawn dock from transforms and
   rects at the frame's `document.timeline` time (`drawnTime`), not
   `--app-shell-keyboard`: a busy frame draws a time from before it ran.
+- Known gap: during a move a body keeps its larger layout, so its lines
+  can paint under the drawn footer, between it and the keyboard (R44,
+  iPad). It is not clipped: a `clip-path` animation repaints the body in
+  each frame on iOS, and a clip by transforms around the body cost more
+  frames over 20 ms on an iPhone close in the Simulator trace than no
+  clip (R44 gate, 2026-11-23).
+- A move animates a body's children that show at some shift of it, 0
+  included (a child left out is drawn at its layout place), and a child
+  that a scroll brings into view or a page adds during the move (R44,
+  `DockEntries`).
 - A page changes its layout for a keyboard move in `appShellDockEvent`
   (a composer that grows), never at the focus; a footer that changes its
   height during a move restarts the move from where it is drawn

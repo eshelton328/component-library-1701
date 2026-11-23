@@ -1,5 +1,6 @@
 import { defineRecipe } from '@pandacss/dev'
 import { focusRing } from './focus'
+import { touchTarget } from './touch'
 
 // The button of every page. The design inventory found 8 variants drawn
 // with 8 padding sets and three label sizes; this recipe merges them into
@@ -60,6 +61,8 @@ export const button = defineRecipe({
     '&:has(> .button__indicator)': { position: 'relative' },
   },
   variants: {
+    // A 44 px touch target round a smaller button, such as the 24 px back and actions of the chat header (d-121).
+    touch: { true: touchTarget, false: {} },
     variant: {
       primary: { bg: 'accent.default', color: 'fg.onAccent', _disabled: { opacity: 'disabled' } },
       // A disabled secondary button keeps its fill and its border.default

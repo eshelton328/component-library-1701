@@ -17,6 +17,9 @@ written with `defineRecipe` or `defineSlotRecipe` and listed in
 - A slot's icon size loses to the `icon` recipe's own size. Pass `size`
   to an icon the component renders; size a caller's icon with `!`
   (`'icon.12!'`), and keep an important size in `base`, not a variant.
+- A control drawn under 44 px that a finger taps takes a `touch` variant
+  that spreads `touchTarget` from `touch.ts` (d-121), never its own
+  `::before`.
 - Write a focus ring under `[focusRing]` from `focus.ts`, never
   `_focusVisible`, with `outline: 'none'` on the same slot (R16). Keep the
   one definition here; `../../index.ts` re-exports it.

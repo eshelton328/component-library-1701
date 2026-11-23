@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { useState } from 'react'
-import { ChartIcon, ChatIcon, ChevronDownIcon, CopyIcon, FilterIcon, GridIcon, ListIcon, MapIcon, MoveIcon, SortDescIcon, SortIcon } from '../foundations/icons'
+import { ChartIcon, ChatIcon, ChevronDownIcon, ChevronLeftIcon, CopyIcon, FilterIcon, GridIcon, ListIcon, MapIcon, MoreIcon, MoveIcon, SortDescIcon, SortIcon } from '../foundations/icons'
 import { Button } from './button'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '24' })
@@ -981,3 +981,66 @@ const itemActionPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** The open Toolkit item's Discuss and Show on map buttons, with `iconOnlyWidth="lg"` for the phone's 36 x 28 Discuss. */
 export const ItemActionsDark: StoryObj<typeof meta> = { render: () => <ItemActionButtons />, globals: { mode: 'dark' }, play: itemActionPlay }
 export const ItemActionsLight: StoryObj<typeof meta> = { render: () => <ItemActionButtons />, globals: { mode: 'light' }, play: itemActionPlay }
+
+const touchOnBack = fn()
+// The one-row chat header's 24 px back and actions buttons (d-121): `touch` gives each a 44 px touch target while the
+// button still draws 24 square. The buttons sit 24 apart, so the reaches meet and do not overlap.
+const touchRow = css({ display: 'flex', alignItems: 'center', gap: '24' })
+
+function TouchButtons() {
+  return (
+    <main className={page}>
+      <div className={touchRow}>
+        <Button variant="text" size="xs" iconOnly keepIconSize touch aria-label="Back" onClick={touchOnBack}>
+          <ChevronLeftIcon size="20" />
+        </Button>
+        <Button size="xs" iconOnly keepIconSize touch aria-label="Chat actions">
+          <MoreIcon size="12" />
+        </Button>
+        <Button size="xs" iconOnly keepIconSize aria-label="No touch">
+          <MoreIcon size="12" />
+        </Button>
+      </div>
+    </main>
+  )
+}
+
+const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  touchOnBack.mockClear()
+  const canvas = within(canvasElement)
+  const back = canvas.getByRole('button', { name: 'Back' })
+  const actions = canvas.getByRole('button', { name: 'Chat actions' })
+  const plain = canvas.getByRole('button', { name: 'No touch' })
+  for (const b of [back, actions]) {
+    // The box stays 24 square; the target reaches 12 past each edge of the padding box: at least 44 (control.xl).
+    const box = b.getBoundingClientRect()
+    await expect([box.width, box.height]).toEqual([24, 24])
+    const before = getComputedStyle(b, '::before')
+    await expect(before.position).toBe('absolute')
+    await expect(Number.parseFloat(before.width)).toBeGreaterThanOrEqual(44)
+    await expect(Number.parseFloat(before.height)).toBeGreaterThanOrEqual(44)
+    // A tap 9 px above the box and 9 px past its end lands on the button.
+    await expect(document.elementFromPoint(box.left + 12, box.top - 9)?.closest('button')).toBe(b)
+    await expect(document.elementFromPoint(box.right + 9, box.top + 12)?.closest('button')).toBe(b)
+    await expect(document.elementFromPoint(box.left - 9, box.top + 12)?.closest('button')).toBe(b)
+  }
+  // `touch` changes nothing drawn: the same box, padding, border and fill as the button without it.
+  const drawn = (el: HTMLElement) => {
+    const s = getComputedStyle(el)
+    const r = el.getBoundingClientRect()
+    return [r.width, r.height, s.padding, s.borderWidth, s.borderColor, s.backgroundColor, s.borderRadius]
+  }
+  await expect(drawn(actions)).toEqual(drawn(plain))
+  // Without `touch`, a point 9 px above the button is not the button.
+  const box = plain.getBoundingClientRect()
+  await expect(document.elementFromPoint(box.left + 12, box.top - 9)?.closest('button')).not.toBe(plain)
+  // A click in the reach presses the button.
+  const b = back.getBoundingClientRect()
+  const reached = document.elementFromPoint(b.left + 12, b.top - 8)?.closest('button')
+  if (!(reached instanceof HTMLElement)) throw new Error('no button at the point')
+  await userEvent.click(reached)
+  await expect(touchOnBack).toHaveBeenCalledTimes(1)
+}
+
+export const TouchDark: StoryObj<typeof meta> = { render: () => <TouchButtons />, globals: { mode: 'dark' }, play: touchPlay }
+export const TouchLight: StoryObj<typeof meta> = { render: () => <TouchButtons />, globals: { mode: 'light' }, play: touchPlay }

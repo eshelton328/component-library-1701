@@ -125,6 +125,7 @@ export declare const bottomSheet: BottomSheetRecipe;
 import type { ConfigRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
 
 export type ButtonVariant = {
+  touch?: boolean
   variant?: "primary" | "secondary" | "secondaryDanger" | "danger" | "dangerSoft" | "dangerText" | "text"
   size?: "xs" | "sm" | "md" | "lg" | "xl"
   textSize?: "md" | "sm" | "smStrong" | "xs"
@@ -1208,7 +1209,9 @@ export declare const metaLine: MetaLineRecipe;
 import type { ConditionalValue } from '../types/system.js';
 import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
 
-export type ModelChipVariant = {}
+export type ModelChipVariant = {
+  touch?: boolean
+}
 
 export type ModelChipVariantProps = {
   [K in keyof ModelChipVariant]?: ConditionalValue<ModelChipVariant[K]>

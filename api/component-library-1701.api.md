@@ -1284,6 +1284,7 @@ export type ModelChipProps = {
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
     disabled?: boolean | undefined;
+    touch?: boolean | undefined;
 };
 
 // @public

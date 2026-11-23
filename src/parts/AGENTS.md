@@ -31,6 +31,14 @@ under their purpose group, never under "Parts" (d-065).
   those parts with skeletons in their slots. Each preset's story stands it
   beside the part it stands for and checks that both have the same height
   (`skeleton.stories.tsx`); add such a pair for a new preset.
+- `Message from="peer"` is a message that another chat sent (the-bridge
+  R55; the owner asked for "a yellow background or text to show that it's not
+  from me"): no bubble, an amber start bar and "From <name>" with the chat
+  icon. It uses `status.needsYou.fg` because the library has one amber
+  today, for "not from you" and "needs you", and that token's contrast
+  entries already cover it. A later peer token changes only the `peer`
+  variant in `theme/recipes/message.ts` (`PeerDark` and `PeerLight`
+  stories check the bar, the label and the contrast).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
 - The Table parts (`table.tsx`) work as react-markdown overrides for

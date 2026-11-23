@@ -3,6 +3,7 @@ import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { message, type MessageVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { TruncatedText } from '../controls/tooltip'
+import { ChatIcon } from '../foundations/icons'
 import { KindMark, type KindMarkKind, type KindMarkSize } from './kind-mark'
 
 const { withProvider, withContext } = createSlotRecipeContext(message)
@@ -29,16 +30,17 @@ function present(node: ReactNode): boolean {
 // always names its author: the mark itself is hidden from assistive technology.
 const kindNames: Record<KindMarkKind, string> = { claude: 'Claude', codex: 'Codex', shell: 'Shell' }
 
-/** Who wrote a message: `user` or `assistant`. */
+/** Who wrote a message: `user`, `assistant` or `peer` (another chat). */
 export type MessageFrom = NonNullable<MessageProps['from']>
 
 export type MessageProps = Scalar<MessageVariantProps> & {
   /**
    * The author's name, such as "Claude" or "writer". When not set (or blank) an assistant message shows the
    * name of its `kind` ("Claude", "Codex" or "Shell"), and a user message is named "You" without showing it.
+   * A peer message (another chat's, the-bridge R55) shows "From <name>", and "From another chat" without one.
    */
   name?: string | undefined
-  /** The kind mark before an assistant's name: `claude`, `codex` or `shell`. A user message has no mark. */
+  /** The kind mark before an assistant's name: `claude`, `codex` or `shell`. A user or peer message has no mark. */
   kind?: KindMarkKind | undefined
   /** The kind mark's size: `12` (the default, the chat's 13 px mark), `16` or `20`. The Toolkit discussion draws a 15 px mark, so it takes `16`. */
   markSize?: KindMarkSize | undefined
@@ -46,9 +48,9 @@ export type MessageProps = Scalar<MessageVariantProps> & {
   time?: string | undefined
   /** The time for machines, an ISO date such as "2026-11-15T09:41"; set it with `time`. */
   dateTime?: string | undefined
-  /** The message content. Markdown is rendered by the caller. */
+  /** The message content. Markdown is rendered by the caller. A peer message with no content shows its author row only. */
   children: ReactNode
-  /** Actions under an assistant's message, such as a Copy button. */
+  /** Actions under an assistant's or a peer's message, such as a Copy button. */
   actions?: ReactNode
 }
 
@@ -58,7 +60,11 @@ export type MessageProps = Scalar<MessageVariantProps> & {
  * message: an author row with its kind mark, name and time, the content,
  * and its actions. The content comes as children; the message renders no
  * Markdown itself. `size="sm"` sets the content in the compact 13 px body (`bodySm`), as the Inbox discussion
- * draws it; `md` (the default) keeps `body`.
+ * draws it; `md` (the default) keeps `body`. `from="peer"` is a message that
+ * another chat sent (the-bridge R55): no bubble, an amber bar on the start
+ * side and an author row of the chat icon and "From <name>" in
+ * `status.needsYou.fg`, the one amber the library has for "not from you" and
+ * "needs you" (see the recipe), then the content and its actions.
  */
 export function Message({
   from = 'assistant',
@@ -74,6 +80,22 @@ export function Message({
   const nameId = useId()
   const hasTime = time !== undefined && time !== ''
   const timeNode = hasTime ? <Time dateTime={dateTime}>{time}</Time> : null
+  if (from === 'peer') {
+    const sender = name === undefined || name.trim() === '' ? 'another chat' : name.trim()
+    return (
+      <Root from="peer" size={size} aria-labelledby={nameId}>
+        <Author>
+          <ChatIcon size="12" />
+          <Name id={nameId}>
+            <TruncatedText>{`From ${sender}`}</TruncatedText>
+          </Name>
+          {timeNode}
+        </Author>
+        {present(children) ? <Body>{children}</Body> : null}
+        {present(actions) ? <Actions>{actions}</Actions> : null}
+      </Root>
+    )
+  }
   if (from === 'user') {
     return (
       <Root from="user" size={size} aria-labelledby={nameId}>

@@ -4040,3 +4040,104 @@ const dockOnCurve: StoryObj<typeof meta> = {
 /** Phone chat on iOS: between its keyframes, the dock's animation draws the keyboard's curve, not a line under it. */
 export const DockOnCurveDark: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const DockOnCurveLight: StoryObj<typeof meta> = { ...dockOnCurve, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// Where a thread line paints on screen: its box, cut to its body's view (the body's padding box, which its overflow
+// clips). Null when none of it shows.
+const paintedLine = (line: Element, body: HTMLElement) => {
+  const box = line.getBoundingClientRect()
+  const frame = body.getBoundingClientRect()
+  const cutTop = frame.top + body.clientTop
+  const cutBottom = cutTop + body.clientHeight
+  const shown = { top: Math.max(box.top, cutTop), bottom: Math.min(box.bottom, cutBottom) }
+  return shown.bottom - shown.top > 0.5 ? shown : null
+}
+
+// While the keyboard moves, the thread's entries keep their gaps: in every frame of an open and a close, at the thread's
+// end and scrolled up, two neighbouring entries that both paint are as far apart as in the layout (screen review R44, the
+// iPhone at 19:47: as the keyboard opened, the thread's top showed two layers, an entry at its place in the layout and
+// the moved entries over it). Scrolled up, an entry ends 4 px under the view's top, as the move's first frame shifts the
+// thread by more. `flick` scrolls the thread 150 px during each move, as a reader's flick does; `add` adds an entry in
+// the view during each move, as a page does when an entry comes in.
+const dockEntries = (during: 'none' | 'flick' | 'add'): StoryObj<typeof meta> => ({
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { field } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const keyboard = 336
+    const off: string[] = []
+    // The direct children of the body that its layout stacks (not an absolute one).
+    const kids = () => [...body.children].filter((c) => getComputedStyle(c).position !== 'absolute')
+    // A copy of the entry in the view's middle, added after it: the gap before it is the gap the layout puts between entries.
+    const addEntry = () => {
+      const frame = body.getBoundingClientRect()
+      const middle = (frame.top + frame.bottom) / 2
+      const entry = kids().find((child) => child.getBoundingClientRect().bottom > middle)
+      if (entry !== undefined) entry.after(entry.cloneNode(true))
+    }
+    const record = (name: string, gaps: number[]) => {
+      let frames = 0
+      let on = true
+      const tick = () => {
+        if (!on) return
+        frames += 1
+        const list = kids()
+        list.slice(1).forEach((next, i) => {
+          const prev = list[i]
+          if (prev === undefined || paintedLine(prev, body) === null || paintedLine(next, body) === null) return
+          const gap = next.getBoundingClientRect().top - prev.getBoundingClientRect().bottom
+          const want = gaps[i] ?? gaps.at(-1) ?? 0
+          if (Math.abs(gap - want) > 1) off.push(`${name} frame ${String(frames)}: entries ${String(i)}-${String(i + 1)} gap ${gap.toFixed(1)}, laid out ${want.toFixed(1)}`)
+        })
+        requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+      return () => {
+        on = false
+        return frames
+      }
+    }
+    const gapsNow = () => {
+      const list = kids().map((c) => c.getBoundingClientRect())
+      return list.slice(1).map((b, i) => b.top - (list[i]?.bottom ?? 0))
+    }
+    for (const scrolled of [false, true]) {
+      body.scrollTop = scrolled ? 200 : body.scrollHeight
+      if (scrolled) {
+        const top = body.getBoundingClientRect().top + body.clientTop
+        const edge = kids().find((child) => child.getBoundingClientRect().bottom > top)
+        if (edge !== undefined) body.scrollTop += edge.getBoundingClientRect().bottom - top - 4
+      }
+      await wait(50)
+      const gaps = gapsNow()
+      const stopOpen = record(`open${scrolled ? ' (scrolled up)' : ''}`, gaps)
+      await userEvent.click(field)
+      await wait(110)
+      fakeViewport.move({ height: 844 - keyboard })
+      await wait(90)
+      if (during === 'flick') body.scrollTop -= 150
+      if (during === 'add') addEntry()
+      await wait(motionMs + 150)
+      stopOpen()
+      const stopClose = record(`close${scrolled ? ' (scrolled up)' : ''}`, gapsNow())
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await wait(90)
+      if (during === 'flick') body.scrollTop -= 150
+      if (during === 'add') addEntry()
+      await wait(motionMs + 150)
+      stopClose()
+    }
+    await expect(off.slice(0, 8)).toEqual([])
+  }),
+})
+/** Phone chat on iOS: while the keyboard moves, the thread's entries keep their gaps. */
+export const DockEntriesDark: StoryObj<typeof meta> = { ...dockEntries('none'), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockEntriesLight: StoryObj<typeof meta> = { ...dockEntries('none'), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat on iOS: a flick of the thread while the keyboard moves keeps the entries' gaps. */
+export const DockEntriesFlickDark: StoryObj<typeof meta> = { ...dockEntries('flick'), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockEntriesFlickLight: StoryObj<typeof meta> = { ...dockEntries('flick'), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat on iOS: an entry added while the keyboard moves keeps its gap. */
+export const DockEntriesAddDark: StoryObj<typeof meta> = { ...dockEntries('add'), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockEntriesAddLight: StoryObj<typeof meta> = { ...dockEntries('add'), globals: { mode: 'light', viewport: { value: 'm390' } } }

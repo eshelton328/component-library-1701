@@ -1514,14 +1514,15 @@ const fakeActivation = (active: boolean) => {
 
 // A touch screen with motion and no VirtualKeyboard API, as iOS Safari: a field's focus starts the dock at once, to
 // the expected keyboard, and each move runs on the keyboard's curve.
-const withMotion = {
+// `reduce` adds reduced motion: iOS still slides its keyboard, and the dock follows it.
+const motionDevice = (reduce: boolean) => ({
   ...withFakeViewport,
   beforeEach: () => {
     // Each story starts with no keyboard measured, as a fresh page does.
     keyboardMeasures.clear()
     fakeViewport = new FakeViewport()
     const restoreViewport = replaceVisualViewport(fakeViewport)
-    const restoreMedia = emulateMedia({ coarse: true, reduce: false })
+    const restoreMedia = emulateMedia({ coarse: true, reduce })
     Object.defineProperty(navigator, 'virtualKeyboard', { configurable: true, value: undefined })
     // The user has pressed on the page before, so a focus may open the keyboard; `LoadFocus` takes this back.
     fakeActivation(true)
@@ -1532,7 +1533,8 @@ const withMotion = {
       restoreViewport()
     }
   },
-}
+})
+const withMotion = motionDevice(false)
 const settled = (footer: HTMLElement, rise: number) => waitFor(() => expect(riseOf(footer)).toBe(rise), { timeout: 2000 })
 // An open from rest has docked: the footer is at `rise`, and the page has its layout. A rise lays the page out only at
 // its end (R39), in the clock's finish, which can come after a frame that draws the footer at `rise` already. At rest
@@ -4991,3 +4993,78 @@ const keyboardGlideScroll: StoryObj<typeof meta> = {
 /** Phone thread at its end: a glide element in a body that scrolls on the move moves with its lines, with one animation. */
 export const KeyboardGlideScrollDark: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardGlideScrollLight: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// While the keyboard moves, no thread line shows under the composer's top: the body keeps the move's larger layout, so
+// lines lie there between the composer and the keyboard (screen review R44, the iPad), and each one fades out while it
+// does. A line that stays above the composer's top never fades, and every line is opaque after each move. With reduced
+// motion nothing fades, and the move ends as with motion. An open and a close, at the thread's end and scrolled up.
+const dockFade = (reduce: boolean): StoryObj<typeof meta> => ({
+  ...motionDevice(reduce),
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field, composer } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const keyboard = 336
+    const off: string[] = []
+    const lines = () => [...body.children].filter((c) => getComputedStyle(c).position !== 'absolute')
+    const opacity = (line: Element) => Number(getComputedStyle(line).opacity)
+    const record = (name: string) => {
+      let frames = 0
+      let on = true
+      // For each line: whether a frame drew it below the composer's top, and whether one faded it.
+      const below = new Set<Element>()
+      const faded = new Set<Element>()
+      const tick = () => {
+        if (!on) return
+        frames += 1
+        const top = composer().top
+        for (const line of lines()) {
+          const shown = paintedLine(line, body)
+          if (shown === null) continue
+          const seen = opacity(line)
+          if (shown.bottom > top + 0.5) below.add(line)
+          if (seen < 1) faded.add(line)
+          if (reduce && seen < 1) off.push(`${name} frame ${String(frames)}: a line fades with reduced motion`)
+          if (!reduce && seen > 0 && shown.bottom > top + 1)
+            off.push(`${name} frame ${String(frames)}: a line shows to ${shown.bottom.toFixed(1)}, under the composer's top ${top.toFixed(1)}`)
+        }
+        requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+      return {
+        stop: () => {
+          on = false
+          for (const line of faded) if (!below.has(line)) off.push(`${name}: a line that stayed above the composer's top faded`)
+          for (const line of lines()) if (opacity(line) !== 1) off.push(`${name}: a line is at opacity ${String(opacity(line))} after the move`)
+          return frames
+        },
+      }
+    }
+    for (const scrolled of [false, true]) {
+      body.scrollTop = scrolled ? 200 : body.scrollHeight
+      await nextFrame()
+      const opening = record(`open${scrolled ? ' (scrolled up)' : ''}`)
+      await userEvent.click(field)
+      await wait(110)
+      fakeViewport.move({ height: 844 - keyboard })
+      await wait(motionMs + 150)
+      await expect(opening.stop()).toBeGreaterThan(10)
+      // The same end with and without reduced motion: the composer on the keyboard's top.
+      await expect(Math.round(composer().bottom)).toBe(844 - keyboard)
+      const closing = record(`close${scrolled ? ' (scrolled up)' : ''}`)
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await wait(motionMs + 150)
+      await expect(closing.stop()).toBeGreaterThan(10)
+      await expect(riseOf(footer)).toBe(0)
+      await expect(keyboardInset(root)).toBe('')
+    }
+    await expect(off.slice(0, 6)).toEqual([])
+  }),
+})
+/** Phone chat on iOS: while the keyboard moves, a line under the composer's top fades out, and only such a line. */
+export const DockFadeDark: StoryObj<typeof meta> = { ...dockFade(false), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFadeLight: StoryObj<typeof meta> = { ...dockFade(false), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat on iOS with reduced motion: nothing fades, and the keyboard's move ends as with motion. */
+export const DockFadeReducedDark: StoryObj<typeof meta> = { ...dockFade(true), globals: { mode: 'dark', viewport: { value: 'm390' } } }

@@ -57,12 +57,13 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   `data-keyboard-end`; data for a test or a trace goes in the dock
   event's `detail`. A root attribute written in each move cost frames on
   an iPhone close (motion gate 338, `QuietRoot`).
-- Known gap: during a move a body keeps its larger layout, so its lines
-  can paint under the drawn footer, between it and the keyboard (R44,
-  iPad). It is not clipped: a `clip-path` animation repaints the body in
-  each frame on iOS, and a clip by transforms around the body cost more
-  frames over 20 ms on an iPhone close in the Simulator trace than no
-  clip (R44 gate, 2026-11-23).
+- During a move a body keeps its larger layout, so a child that shows
+  below the drawn footer's top at some time of the move fades out for
+  those times, with opacity only, in steps (R44, `DockFade`). A child
+  that stays above it never fades, and none fades with reduced motion.
+  No clip: a `clip-path` animation repaints the body in each frame on
+  iOS, and a clip by transforms around the body cost frames in the R44
+  Simulator gate.
 - A move animates a body's children that show at some shift of it, 0
   included (a child left out is drawn at its layout place), and a child
   that a scroll brings into view or a page adds during the move (R44,

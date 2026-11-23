@@ -600,15 +600,30 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           real: el.scrollTop,
         }
         const shifts = tracks.scroll.values.map((value) => el.scrollTop - value)
-        if (shifts.every((shift) => Math.abs(shift) < 0.5)) return { el, tracks, shifts, inView: noChild, children: [] }
+        const top = el.getBoundingClientRect().top + el.clientTop
+        const foot = top + el.clientHeight
+        // The body keeps the move's layout, its larger view, so a line can show below the drawn footer's top, between
+        // the footer and the keyboard (screen review R44, the iPad). Each child that shows there at some time of the
+        // move fades out for those times, with opacity only: the compositor draws it, with no clip and no repaint. A
+        // child that stays above the footer's top never fades, and none is faded after the move (`stopMotion`).
+        const fadeOf = (box: DOMRect, moves: boolean) =>
+          tracks.bottom.values.map((edge, i) => {
+            const shift = moves ? (shifts[i] ?? 0) : 0
+            return box.bottom + shift > edge + 0.5 && box.top + shift < foot ? 0 : 1
+          })
+        const faded = (moves: boolean) => (child: Element) => {
+          if (!(child instanceof HTMLElement)) return []
+          const opacities = fadeOf(child.getBoundingClientRect(), moves)
+          return opacities.includes(0) ? [{ child, opacities }] : []
+        }
+        if (shifts.every((shift) => Math.abs(shift) < 0.5))
+          return { el, tracks, shifts, inView: noChild, children: [], fades: [...el.children].flatMap(faded(false)), faded }
         // Only the children in view at some time of the move move, each as one layer: a long thread does not become a
         // layer per entry.
         // A child left out is drawn at its place in the layout, a shift of 0: a move that starts part way (a keyboard
         // reported late) has no shift of 0, and a child at the view's edge that was out of view at every shift of the
         // move was still drawn there, and the moved children over it (screen review R44, the iPhone at 19:47: two layers
         // of the thread at its top as the keyboard opened).
-        const top = el.getBoundingClientRect().top + el.clientTop
-        const foot = top + el.clientHeight
         const lowest = Math.min(0, ...shifts)
         const highest = Math.max(0, ...shifts)
         const inView = (child: Element): child is HTMLElement => {
@@ -616,7 +631,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           const box = child.getBoundingClientRect()
           return box.bottom + highest > top && box.top + lowest < foot
         }
-        return { el, tracks, shifts, inView, children: [...el.children].filter(inView) }
+        const children = [...el.children].filter(inView)
+        return { el, tracks, shifts, inView, children, fades: children.flatMap(faded(true)), faded }
       })
       // A glide element moves from where it is drawn to its top at the target's layout, in step with the keyboard's reach
       // over its frame, as a footer does: the layout of the move is its place, so a layout change at a close's start or an
@@ -659,9 +675,27 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           'add',
         )
       }
-      for (const { el, tracks, shifts, inView, children } of bodyShifts) {
+      // A child's fade: opacity 0 over each step of the move that has it below the footer's top at either end, so no
+      // step shows part of it there (a step function, not a blend). With reduced motion nothing fades: iOS still
+      // slides its keyboard and the dock follows it, and a line that blinks out and back is a motion of its own.
+      const fades = !media('(prefers-reduced-motion: reduce)')
+      const fade = (child: HTMLElement, steps: Track, opacities: number[]) => {
+        if (!fades) return
+        const animation = child.animate(
+          opacities.map((opacity, i) => ({
+            offset: steps.offsets[i] ?? 1,
+            easing: (opacities[i + 1] ?? opacity) < opacity ? 'step-start' : 'step-end',
+            opacity,
+          })),
+          timing,
+        )
+        animation.startTime = start
+        move.animations.push(animation)
+      }
+      for (const { el, tracks, shifts, inView, children, fades, faded } of bodyShifts) {
         move.bodies.set(el, tracks)
         for (const child of children) animate(child, tracks.scroll, shifts, 'add')
+        for (const { child, opacities } of fades) fade(child, tracks.bottom, opacities)
         // A scroll during the move (a reader's flick, or a page that keeps its thread at the end) brings other children
         // into view, and a page may add a child (a new entry): each one in view moves with the others from then on, so
         // none is drawn at its place in the layout among them. The observer runs before the frame paints.
@@ -670,10 +704,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           const scrolled = () => {
             // All the reads first, then the animations (see above).
             const entering = [...el.children].filter((child) => !moved.has(child)).filter(inView)
+            const fading = entering.flatMap(faded(true))
             for (const child of entering) {
               moved.add(child)
               animate(child, tracks.scroll, shifts, 'add')
             }
+            for (const { child, opacities } of fading) fade(child, tracks.bottom, opacities)
           }
           el.addEventListener('scroll', scrolled, { passive: true })
           const added = typeof MutationObserver === 'undefined' ? undefined : new MutationObserver(scrolled)

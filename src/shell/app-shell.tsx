@@ -246,6 +246,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const covered = detail === null ? 0 : Math.max(0, detail.getBoundingClientRect().bottom + scrolled - keyboardTop)
       // No keyboard docks nothing, even where the detail's foot lies below the layout's (a parent taller than the
       // screen).
+      console.warn('DOCKPROBE ' + JSON.stringify({ t: performance.now(), lay: inset, covered }))
       if (inset > 0 && covered > 0) root.style.setProperty(keyboardInset, `${String(covered)}px`)
       else root.style.removeProperty(keyboardInset)
       if (inset > 0 && covered > 0 && detail !== null) warnUndocked(detail)
@@ -1061,6 +1062,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       window.removeEventListener('resize', refit)
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)
+      console.warn('DOCKPROBE ' + JSON.stringify({ t: performance.now(), clear: true }))
       root.style.removeProperty(keyboardInset)
     }
     // `diagnostic` is a ref: the same object on every render, so it never restarts the dock.

@@ -3490,9 +3490,15 @@ export const DockFrameWorkReducedLight: StoryObj<typeof meta> = { ...dockFrameWo
 // the read in the frame's callbacks saw a layout that the screen never shows.
 const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[], resizing?: Element) => {
   const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[] }[] = []
+  // Each move's start in the app's clock (`keyboardMoved`: its event comes after the app's reads, later on a busy
+  // runner), the time its event came, and the time of each of the story's actions (`act`, just before a tap, a blur or
+  // a resize), for `movesInOrder`.
   const moves: number[] = []
+  const heard: number[] = []
+  const acts: number[] = []
   const onMove = () => {
-    moves.push(performance.now())
+    moves.push(Number(root.dataset.keyboardMoved))
+    heard.push(performance.now())
   }
   root.addEventListener('app-shell-dock', onMove)
   const read = () => ({ at: performance.now(), drawn: drawnTime(), composer: composer(), lines: lines.map((line) => rect(line)) })
@@ -3509,6 +3515,11 @@ const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElem
   return {
     frames,
     moves,
+    heard,
+    acts,
+    act: () => {
+      acts.push(performance.now())
+    },
     stop: () => {
       cancelAnimationFrame(id)
       sized.disconnect()
@@ -3516,6 +3527,15 @@ const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElem
     },
   }
 }
+// Each move's start in the app's clock is in the task of its own event: at or after the story's last action before that
+// event and the event of the move before, and at or before its own event. So a `keyboardMoved` too early or too late is
+// out of order, with no tolerance (the clock's grain is 0.1 ms, so a time in the same tick reads equal).
+const movesInOrder = (name: string, moves: number[], heard: number[], acts: number[]) =>
+  moves.flatMap((moved, i) => {
+    const event = heard[i] ?? Number.NaN
+    const after = Math.max(acts.filter((at) => at <= event).at(-1) ?? Number.NEGATIVE_INFINITY, heard[i - 1] ?? Number.NEGATIVE_INFINITY)
+    return moved >= after && moved <= event ? [] : [`${name}: move ${String(i)} at ${moved.toFixed(1)}, not from ${after.toFixed(1)} to ${event.toFixed(1)}`]
+  })
 // The edges of a move, where the layout changes (screen review R39): a fall lays the page out for its end at its start,
 // with the drawn parts held where they were, and a rise at its end, as its animations end. In the frame of each, no box
 // moves on screen by more than 1 px from where the keyboard's curve puts it: the composer is on the curve at the time
@@ -3559,22 +3579,28 @@ const dockEdges: StoryObj<typeof meta> = {
       await nextFrame()
       // The open's end: the layout takes the inset in the frame the animations end.
       const opening = recordBoxes(root, composer, lines)
+      opening.act()
       await userEvent.click(field)
       await wait(110)
+      opening.act()
       fakeViewport.move({ height: 844 - keyboard })
       await wait(motionMs + 150)
       opening.stop()
+      off.push(...movesInOrder(`open${scrolled ? ' (scrolled up)' : ''}`, opening.moves, opening.heard, opening.acts))
       const openEnd = Number(root.dataset.keyboardEnd)
       checkEdge(`open end${scrolled ? ' (scrolled up)' : ''}`, opening.frames, openEnd, () => bottomAt(keyboard))
       // The close's start: the layout drops the inset in the move's first task, and the composer starts down the curve.
       const closing = recordBoxes(root, composer, lines)
       await nextFrame()
       await nextFrame()
+      closing.act()
       field.blur()
       await wait(iosCloseReport)
+      closing.act()
       fakeViewport.move({ height: 844 })
       await wait(motionMs + 150)
       closing.stop()
+      off.push(...movesInOrder(`close${scrolled ? ' (scrolled up)' : ''}`, closing.moves, closing.heard, closing.acts))
       const closeStart = Number(root.dataset.keyboardEnd) - motionMs
       const started = closing.moves[0] ?? closeStart
       checkEdge(`close start${scrolled ? ' (scrolled up)' : ''}`, closing.frames, started, (drawn) =>
@@ -3619,7 +3645,17 @@ const dockTurns: StoryObj<typeof meta> = {
         if (Math.abs(f.rise - want) > 1) off.push(`${name} @${String(Math.round(f.drawn))}: rise ${f.rise.toFixed(1)}, curve ${want.toFixed(1)}`)
       }
     }
-    root.addEventListener('app-shell-dock', () => moves.push(performance.now()))
+    // Each move's start in the app's clock (`keyboardMoved`), the time its event came, and the story's actions, as in
+    // `recordBoxes`, for `movesInOrder`.
+    const heard: number[] = []
+    const acts: number[] = []
+    const act = () => {
+      acts.push(performance.now())
+    }
+    root.addEventListener('app-shell-dock', () => {
+      moves.push(Number(root.dataset.keyboardMoved))
+      heard.push(performance.now())
+    })
     // The start of the move that the last report or focus change started: its end once it has changed, less its time.
     const newStart = async (was: string | undefined) => {
       await waitFor(() => expect(root.dataset.keyboardEnd).not.toBe(was), { timeout: 2000 })
@@ -3627,17 +3663,21 @@ const dockTurns: StoryObj<typeof meta> = {
     }
     // A close during an open: the keyboard reports, and 90 ms later the field is blurred.
     const first = recordRise(footer, root)
+    act()
     await userEvent.click(field)
     await wait(110)
     const reported = performance.now()
     let was = root.dataset.keyboardEnd
+    act()
     fakeViewport.move({ height: 844 - keyboard })
     const openStart = await newStart(was)
     await wait(90)
     was = root.dataset.keyboardEnd
     const blurred = performance.now()
+    act()
     field.blur()
     await wait(iosCloseReport)
+    act()
     fakeViewport.move({ height: 844 })
     const closeStart = await newStart(was)
     await settled(footer, 0)
@@ -3653,21 +3693,27 @@ const dockTurns: StoryObj<typeof meta> = {
     check('open', first.frames.filter((f) => f.drawn >= reported && f.drawn < closeStart && f.at < turn), opening)
     check('close during open', first.frames.filter((f) => f.drawn >= closeStart || (f.drawn >= reported && f.at >= turn)), (t) => (t < turn ? opening(t) : closing(t)))
     // An open during a close: the keyboard closes, and 70 ms later the field takes the focus and the keyboard reports.
+    act()
     await userEvent.click(field)
+    act()
     fakeViewport.move({ height: 844 - keyboard })
     await settled(footer, keyboard - safe)
     await wait(motionMs)
     const second = recordRise(footer, root)
     was = root.dataset.keyboardEnd
     const closed = performance.now()
+    act()
     field.blur()
     await wait(iosCloseReport)
+    act()
     fakeViewport.move({ height: 844 })
     const fallStart = await newStart(was)
     await wait(70 - iosCloseReport)
     const reopened = performance.now()
+    act()
     await userEvent.click(field)
     was = root.dataset.keyboardEnd
+    act()
     fakeViewport.move({ height: 844 - keyboard })
     const riseStart = await newStart(was)
     await settled(footer, keyboard - safe)
@@ -3683,6 +3729,7 @@ const dockTurns: StoryObj<typeof meta> = {
     const fell = moves.find((at) => at >= closed) ?? fallStart
     check('close', second.frames.filter((f) => f.drawn > fallStart && f.drawn < riseStart), (t) => (t < fell ? keyboard - safe : falling(t)), 2)
     check('open during close', second.frames.filter((f) => f.drawn >= riseStart), (t) => (t < back ? falling(t) : rising(t)))
+    off.push(...movesInOrder('moves', moves, heard, acts))
     await expect(off).toEqual([])
   }),
 }
@@ -3789,26 +3836,32 @@ const growOnDock = (late: number): StoryObj<typeof meta> => ({
     await nextFrame()
     const opening = recordBoxes(root, composer, [last], composerBox)
     await nextFrame()
+    opening.act()
     await userEvent.click(field)
     await wait(110)
+    opening.act()
     fakeViewport.move({ height: 844 - keyboard })
     await waitFor(() => expect(root.dataset.keyboardEnd).not.toBeUndefined())
     const openStart = Number(root.dataset.keyboardEnd) - motionMs
     await wait(motionMs + 150)
     opening.stop()
     check('open', opening, openStart, (t) => keyboard * curveAt(t - openStart))
+    off.push(...movesInOrder('open', opening.moves, opening.heard, opening.acts))
     await expect(within(canvasElement).getByTestId('grow-row')).toBeVisible()
     const closing = recordBoxes(root, composer, [last], composerBox)
     await nextFrame()
     const blurred = performance.now()
+    closing.act()
     field.blur()
     await wait(iosCloseReport)
+    closing.act()
     fakeViewport.move({ height: 844 })
     await waitFor(() => expect(Number(root.dataset.keyboardEnd)).toBeGreaterThan(blurred))
     const closeStart = Number(root.dataset.keyboardEnd) - motionMs
     await wait(motionMs + 150)
     closing.stop()
     check('close', closing, closeStart, (t) => keyboard * (1 - curveAt(t - closeStart)))
+    off.push(...movesInOrder('close', closing.moves, closing.heard, closing.acts))
     await expect(within(canvasElement).queryByTestId('grow-row')).toBeNull()
     await expect(off).toEqual([])
   }),
@@ -3907,11 +3960,14 @@ const footEdges: StoryObj<typeof meta> = {
     const foot = 12
     const off: string[] = []
     const opening = recordBoxes(root, composer, [])
+    opening.act()
     await userEvent.click(field)
     await wait(110)
+    opening.act()
     fakeViewport.move({ height: 844 - keyboard })
     await wait(motionMs + 150)
     opening.stop()
+    off.push(...movesInOrder('open', opening.moves, opening.heard, opening.acts))
     await expect(composer().bottom).toBeCloseTo(844 - keyboard, 0)
     // The frames around the open's end, where the layout takes the inset (and the space goes): the composer is on the
     // keyboard's curve within 1 px (the space is 0 there).
@@ -3925,11 +3981,14 @@ const footEdges: StoryObj<typeof meta> = {
     const closing = recordBoxes(root, composer, [])
     await nextFrame()
     await nextFrame()
+    closing.act()
     field.blur()
     await wait(iosCloseReport)
+    closing.act()
     fakeViewport.move({ height: 844 })
     await wait(motionMs + 150)
     closing.stop()
+    off.push(...movesInOrder('close', closing.moves, closing.heard, closing.acts))
     // The close's first frame: the composer is where the keyboard's curve has it at that time (the space is 0 there).
     const started = closing.moves[0] ?? 0
     const closeStart = Number(root.dataset.keyboardEnd) - motionMs

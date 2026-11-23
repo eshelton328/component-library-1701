@@ -4,6 +4,7 @@ import { listRow, type ListRowVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
 import { Highlight } from '../controls/highlight'
 import { TruncatedText } from '../controls/tooltip'
+import { Skeleton } from './skeleton'
 
 const { withProvider, withContext } = createSlotRecipeContext(listRow)
 const Root = withProvider('div', 'root')
@@ -24,6 +25,12 @@ const Trailing = withContext('span', 'trailing')
 export type ListRowProps = Scalar<ListRowVariantProps> & {
   /** The row title, such as the task or chat name. */
   title: string
+  /**
+   * A row whose content is still loading: the title is a `Skeleton` line in the title's text style, and the
+   * row is not a button. Pass skeletons as `leading`, `meta` and `trailing` too, so the row has the size of the
+   * row that replaces it. Put loading rows in a `SkeletonGroup`.
+   */
+  loading?: boolean | undefined
   /** A search query, or several, whose matches in the title are marked with `Highlight`, as in search results. */
   highlight?: string | readonly string[] | undefined
   /** The meta line under the title, such as the project and the source. */
@@ -122,11 +129,12 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   `column`, the default, keeps `trailing` in its own column after the
  *   body.
  */
-export function ListRow({ title, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, metaStyle, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
+export function ListRow({ title, loading = false, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, metaStyle, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
   // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
-  const titleText =
-    variant === 'sidebar' ? (
+  const titleText = loading ? (
+    <Skeleton width="long" />
+  ) : variant === 'sidebar' ? (
       <TruncatedText highlight={highlight}>{title}</TruncatedText>
     ) : highlight === undefined ? (
       title
@@ -148,11 +156,11 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
   const release = () => {
     setPressed(false)
   }
-  const pressable = onSelect !== undefined
+  const pressable = onSelect !== undefined && !loading
   const trailingNode = trailing === undefined ? null : <Trailing>{trailing}</Trailing>
   const trailingInTitle = trailingPlacement === 'title'
   const titleNode =
-    onSelect === undefined ? (
+    !pressable ? (
       <TitleText aria-current={selected ? 'true' : undefined}>{titleText}</TitleText>
     ) : (
       <TitleButton type="button" aria-current={selected ? 'true' : undefined} onClick={onSelect}>
@@ -160,7 +168,7 @@ export function ListRow({ title, highlight, meta, metaTrailing, leading, trailin
       </TitleButton>
     )
   return (
-    <Root variant={variant} density={density} padding={padding} metaStyle={metaStyle} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-level={level === 0 ? undefined : level} data-pressed={pressable && pressed ? '' : undefined} onClick={pressable ? selectFromText : undefined} onPointerDown={pressable ? press : undefined} onPointerUp={pressable ? release : undefined} onPointerCancel={pressable ? release : undefined} onPointerLeave={pressable ? release : undefined}>
+    <Root variant={variant} density={density} padding={padding} metaStyle={metaStyle} surface={surface} trailingAlign={trailingAlign} leadingGap={leadingGap} bodyAlign={bodyAlign} dot={dot} dotPosition={dotPosition} trailingPlacement={trailingPlacement} data-selected={selected ? '' : undefined} data-running={running ? '' : undefined} data-snoozed={snoozed ? '' : undefined} data-finished={finished ? '' : undefined} data-loading={loading ? '' : undefined} data-level={level === 0 ? undefined : level} data-pressed={pressable && pressed ? '' : undefined} onClick={pressable ? selectFromText : undefined} onPointerDown={pressable ? press : undefined} onPointerUp={pressable ? release : undefined} onPointerCancel={pressable ? release : undefined} onPointerLeave={pressable ? release : undefined}>
       {level === 0 ? null : <Nest aria-hidden="true">↳</Nest>}
       {leading === undefined ? null : <Leading>{leading}</Leading>}
       <Body>

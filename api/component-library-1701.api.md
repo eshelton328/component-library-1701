@@ -99,6 +99,17 @@ export function ArrowRightIcon(props: IconProps): JSX.Element;
 export function ArrowUpIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ArtifactCardSkeleton(): JSX.Element;
+
+// @public
+export function ArtifactRowSkeleton(input: ArtifactRowSkeletonProps): JSX.Element;
+
+// @public (undocumented)
+export type ArtifactRowSkeletonProps = {
+    size?: 'sm' | 'md' | undefined;
+};
+
+// @public
 export function ArtifactsIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -226,6 +237,7 @@ export function Card(input: CardProps): JSX.Element;
 // @public (undocumented)
 export type CardProps = {
     title: string;
+    loading?: boolean | undefined;
     media?: ReactNode;
     leading?: ReactNode;
     badge?: ReactNode;
@@ -267,6 +279,9 @@ export type ChatPathStep = {
     label: string;
     note?: string | undefined;
 };
+
+// @public
+export function ChatRowSkeleton(): JSX.Element;
 
 // @public
 export function Checkbox(input: CheckboxProps): JSX.Element;
@@ -481,6 +496,14 @@ export type DailyBarChartProps = {
     legend?: string | undefined;
     axisLabels?: DailyAxisLabels | undefined;
     formatValue?: ((value: number) => string) | undefined;
+};
+
+// @public
+export function DetailBodySkeleton(input: DetailBodySkeletonProps): JSX.Element;
+
+// @public (undocumented)
+export type DetailBodySkeletonProps = {
+    lines?: 1 | 2 | 3 | 4 | 5 | 6 | undefined;
 };
 
 // @public
@@ -795,6 +818,7 @@ export function GroupHeader(input: GroupHeaderProps): JSX.Element;
 // @public (undocumented)
 export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
     label: string;
+    loading?: boolean | undefined;
     count?: number | undefined;
     open?: boolean | undefined;
     onOpenChange?: ((open: boolean) => void) | undefined;
@@ -802,6 +826,12 @@ export type GroupHeaderProps = Scalar<GroupHeaderVariantProps> & {
     leading?: ReactNode;
     actions?: ReactNode;
 };
+
+// @public
+export function GroupHeaderSkeleton(input: GroupHeaderSkeletonProps): JSX.Element;
+
+// @public (undocumented)
+export type GroupHeaderSkeletonProps = Pick<GroupHeaderProps, 'variant'>;
 
 // @public
 function Highlight_2(input: HighlightProps): ReactNode;
@@ -844,6 +874,14 @@ export type IconSize = Extract<IconVariantProps['size'], string>;
 
 // @public
 export function InboxIcon(props: IconProps): JSX.Element;
+
+// @public
+export function InboxRowSkeleton(input: InboxRowSkeletonProps): JSX.Element;
+
+// @public (undocumented)
+export type InboxRowSkeletonProps = {
+    phone?: boolean | undefined;
+};
 
 // @public
 export function Inline(props: InlineProps): JSX.Element;
@@ -953,6 +991,7 @@ export function ListRow(input: ListRowProps): JSX.Element;
 // @public (undocumented)
 export type ListRowProps = Scalar<ListRowVariantProps> & {
     title: string;
+    loading?: boolean | undefined;
     highlight?: string | readonly string[] | undefined;
     meta?: ReactNode;
     metaTrailing?: ReactNode;
@@ -1999,6 +2038,15 @@ export type TooltipProps = {
     onOpenChange?: ((open: boolean) => void) | undefined;
     placement?: 'top' | 'top-start' | 'bottom' | 'bottom-start' | undefined;
     disabled?: boolean | undefined;
+};
+
+// @public
+export function TranscriptEntrySkeleton(input: TranscriptEntrySkeletonProps): JSX.Element;
+
+// @public (undocumented)
+export type TranscriptEntrySkeletonProps = {
+    from?: 'user' | 'assistant' | undefined;
+    kind?: KindMarkKind | undefined;
 };
 
 // @public

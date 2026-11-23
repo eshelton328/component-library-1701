@@ -142,7 +142,13 @@ export const listRow = defineSlotRecipe({
     leading: { display: 'inline-flex', flexShrink: '0' },
     body: { display: 'flex', flexDirection: 'column', gap: '4', flex: '1', minW: '0' },
     // The title and the dot. Without a dot the title row draws no box, so the title lays out as the body's own child.
-    titleRow: { display: 'contents', '&:has(> .list-row__dot)': { display: 'flex', alignItems: 'center', gap: '8', minW: '0' } },
+    // A loading title holds only a Skeleton line, which is 3/4 of the title's width: in a title row that is a flex row
+    // (with a dot, or trailingPlacement="title"), the title takes the free width, so the line is not a space wide.
+    titleRow: {
+      display: 'contents',
+      '&:has(> .list-row__dot)': { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
+      '[data-loading] &:has(> .list-row__dot) > .list-row__title': { flex: '1' },
+    },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },
     title: {
       textStyle: 'label',
@@ -230,7 +236,7 @@ export const listRow = defineSlotRecipe({
     trailingPlacement: {
       column: {},
       title: {
-        titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
+        titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0', '[data-loading] & > .list-row__title': { flex: '1' } },
         title: { minW: '0' },
         trailing: { ms: 'auto' },
       },

@@ -65,7 +65,8 @@ export const card = defineSlotRecipe({
     heading: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
     titleRow: { display: 'flex', alignItems: 'center', gap: '8', minW: '0' },
     // TruncatedText inside cuts a long title and shows it whole in a tooltip.
-    title: { minW: '0', textStyle: 'label', color: 'fg.default' },
+    // A loading card's title takes the free width, so its Skeleton line has a width to take a part of.
+    title: { minW: '0', textStyle: 'label', color: 'fg.default', '[data-loading] &': { flex: '1' } },
     // The title button of a card with onSelect: no box of its own, and a hit area over the whole card.
     action: {
       display: 'block',

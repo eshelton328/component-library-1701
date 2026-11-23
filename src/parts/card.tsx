@@ -2,6 +2,7 @@ import { type MouseEvent, type ReactNode, useRef } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { card } from '../../styled-system/recipes'
 import { TruncatedText } from '../controls/tooltip'
+import { Skeleton } from './skeleton'
 
 const { withProvider, withContext } = createSlotRecipeContext(card)
 const Root = withProvider('article', 'root')
@@ -28,6 +29,12 @@ const INTERACTIVE = 'a[href], button, input, select, textarea, summary, [role="b
 export type CardProps = {
   /** The title, on one line; a long title ends with an ellipsis and shows in full in a tooltip. */
   title: string
+  /**
+   * A card whose content is still loading: the title is a `Skeleton` line in the title's text style, a given
+   * `subtitle` or `description` is a `Skeleton` line in place of its text, and the card is not a button. Pass skeletons as `media`, `leading` and `meta` too, so the card has the size of the
+   * card that replaces it. Put loading cards in a `SkeletonGroup`.
+   */
+  loading?: boolean | undefined
   /** A picture on top of the card, such as an artifact thumbnail. It takes the card's width. */
   media?: ReactNode
   /** An element before the title, such as a kind tile. */
@@ -83,7 +90,7 @@ export type CardProps = {
  * `onSelect`, the title is a button and a click anywhere on the card
  * presses it.
  */
-export function Card({ title, media, leading, badge, badgePosition = 'title', subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
+export function Card({ title, loading = false, media, leading, badge, badgePosition = 'title', subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
   // A card with onSelect owns its cut description: a hover on the card, or the keyboard focus on its title button,
   // opens its tooltip, and it takes no tab stop of its own. The subtitle keeps its own, so one hover opens one tip.
@@ -101,15 +108,17 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
     onSelect()
   }
   return (
-    <Root ref={rootRef} media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined ? undefined : select}>
+    <Root ref={rootRef} media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined || loading ? undefined : select} data-loading={loading ? '' : undefined}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>
           {shown(leading) ? <Leading>{leading}</Leading> : null}
           <Heading>
             <TitleRow>
-              <Title>
-                {onSelect === undefined ? (
+              <Title aria-hidden={loading ? 'true' : undefined}>
+                {loading ? (
+                  <Skeleton width="long" />
+                ) : onSelect === undefined ? (
                   <TruncatedText>{title}</TruncatedText>
                 ) : (
                   <Action type="button">
@@ -122,7 +131,7 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
             </TitleRow>
             {subtitle === undefined || subtitle === '' ? null : (
               <Subtitle>
-                <TruncatedText>{subtitle}</TruncatedText>
+                {loading ? <Skeleton width="half" /> : <TruncatedText>{subtitle}</TruncatedText>}
               </Subtitle>
             )}
           </Heading>
@@ -130,7 +139,7 @@ export function Card({ title, media, leading, badge, badgePosition = 'title', su
         </Header>
         {description === undefined || description === '' ? null : (
           <Description>
-            <TruncatedText owner={owner}>{description}</TruncatedText>
+            {loading ? <Skeleton width="full" /> : <TruncatedText owner={owner}>{description}</TruncatedText>}
           </Description>
         )}
         {shown(meta) ? <Meta>{meta}</Meta> : null}

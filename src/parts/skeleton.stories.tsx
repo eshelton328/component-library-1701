@@ -1,10 +1,28 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { ReactNode } from 'react'
 import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { Card } from './card'
+import { GroupHeader } from './group-header'
+import { KindMark } from './kind-mark'
+import { KindTile } from './kind-tile'
+import { ListRow } from './list-row'
+import { Message } from './message'
 import { Skeleton, SkeletonGroup } from './skeleton'
+import {
+  ArtifactCardSkeleton,
+  ArtifactRowSkeleton,
+  ChatRowSkeleton,
+  DetailBodySkeleton,
+  GroupHeaderSkeleton,
+  InboxRowSkeleton,
+  TranscriptEntrySkeleton,
+} from './skeleton-rows'
+import { StatusPill } from './status-pill'
+import { Thumbnail } from './thumbnail'
 
-// The Skeleton part (the loading standard, 2026-11-23). A line stands beside real text in the same text style, and
-// the plays check that both have the same height, so nothing moves when content comes.
+// The Skeleton part and the loading presets (the loading standard, 2026-11-23). Each preset stands beside the
+// part that replaces it, and the plays check that both have the same height, so nothing moves when content comes.
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '16', justifyItems: 'start' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', display: 'grid', gap: '12', w: 'shell.detail' })
 const heading = css({ textStyle: 'eyebrow', color: 'fg.muted' })
@@ -140,3 +158,107 @@ export const ReduceMotion: Story = {
     await expect([block.animationName, block.backgroundImage, block.backgroundColor]).toEqual(['none', 'none', swatch(canvasElement)])
   },
 }
+
+function Pair({ name, real, skeleton }: { name: string; real: ReactNode; skeleton: ReactNode }) {
+  return (
+    <div className={pair} data-pair={name}>
+      <div data-side="real">
+        {real}
+      </div>
+      <div data-side="skeleton">
+        {skeleton}
+      </div>
+    </div>
+  )
+}
+
+// Each preset beside the part it stands for, with sample content made up for the story.
+function Presets() {
+  return (
+    <main className={page}>
+      <SkeletonGroup label="Loading the sample presets">
+        <div className={pane}>
+          <span className={heading}>Inbox</span>
+          <Pair name="group" real={<GroupHeader label="Needs you" count={2} />} skeleton={<GroupHeaderSkeleton />} />
+          <Pair
+            name="inbox-row"
+            real={<ListRow density="compact" title="Sample question" meta="chat" leading={<KindTile kind="question" />} trailing="5m" />}
+            skeleton={<InboxRowSkeleton />}
+          />
+          <Pair
+            name="inbox-row-phone"
+            real={<ListRow density="compact" padding="phoneSides" title="Sample question" meta="chat" leading={<KindTile kind="question" />} trailing="5m" />}
+            skeleton={<InboxRowSkeleton phone />}
+          />
+          <span className={heading}>Loading rows with a title row</span>
+          <div data-testid="title-row-trailing">
+            <ListRow loading title="" density="compact" trailingPlacement="title" trailing="5m" />
+          </div>
+          <div data-testid="title-row-dot">
+            <ListRow loading title="" density="compact" dot="working" dotLabel="New" />
+          </div>
+          <span className={heading}>Workspaces</span>
+          <Pair name="sidebar-group" real={<GroupHeader variant="sidebar" label="live work" count={3} />} skeleton={<GroupHeaderSkeleton variant="sidebar" />} />
+          <Pair
+            name="chat-row"
+            real={<ListRow variant="sidebar" density="compact" title="plan the slice" meta="Opus 5.5" leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill label="Idle" tone="idle" dot />} />}
+            skeleton={<ChatRowSkeleton />}
+          />
+          <Pair name="prompt" real={<Message from="user">Fix the build</Message>} skeleton={<TranscriptEntrySkeleton from="user" />} />
+          <span className={heading}>Artifacts</span>
+          <Pair name="artifact-row" real={<ListRow title="Sample plan" meta="Claude · 30m" leading={<Thumbnail kind="doc" size="sm" />} />} skeleton={<ArtifactRowSkeleton />} />
+          <Pair name="artifact-row-phone" real={<ListRow title="Sample plan" meta="Claude · 30m" leading={<Thumbnail kind="doc" size="md" />} />} skeleton={<ArtifactRowSkeleton size="md" />} />
+          <Pair
+            name="artifact-card"
+            real={<Card title="Sample plan" description="A plan, made up for the story" media={<Thumbnail kind="doc" />} meta="Claude · 30m" />}
+            skeleton={<ArtifactCardSkeleton />}
+          />
+          <span className={heading}>Replies and detail bodies (no twin: their height follows the text)</span>
+          <div data-testid="replies">
+            <TranscriptEntrySkeleton />
+            <TranscriptEntrySkeleton kind="codex" />
+          </div>
+          <div className={styles.body}>
+            <DetailBodySkeleton />
+          </div>
+        </div>
+      </SkeletonGroup>
+    </main>
+  )
+}
+
+const pairs = ['group', 'inbox-row', 'inbox-row-phone', 'sidebar-group', 'chat-row', 'prompt', 'artifact-row', 'artifact-row-phone', 'artifact-card']
+
+const presetPlay: Story['play'] = async ({ canvasElement }) => {
+  // Each preset has the height of the part that replaces it.
+  for (const name of pairs) {
+    const { real, skeleton } = sides(canvasElement, name)
+    await expect({ name, height: height(skeleton) }).toEqual({ name, height: height(real) })
+  }
+  // A loading row is not a button and draws no title text.
+  const row = canvasElement.querySelector('[data-pair="inbox-row"] [data-side="skeleton"] .list-row__root')
+  if (row === null) throw new Error('no loading row')
+  await expect(row.hasAttribute('data-loading')).toBe(true)
+  await expect(row.querySelector('button')).toBeNull()
+  // A transcript skeleton shows no message to assistive technology: no empty article named "You" or "Claude".
+  for (const el of canvasElement.querySelectorAll('[data-pair="prompt"] [data-side="skeleton"], [data-testid="replies"]')) {
+    if (!(el instanceof HTMLElement)) continue
+    await expect(within(el).queryAllByRole('article')).toEqual([])
+  }
+  // In a title row that is a flex row (trailingPlacement="title", or a dot), a loading title takes the free width,
+  // so its line is 3/4 of it, not the width of a space.
+  for (const id of ['title-row-trailing', 'title-row-dot']) {
+    const titleRow = canvasElement.querySelector(`[data-testid="${id}"] .list-row__titleRow`)
+    const line = titleRow?.querySelector('[data-skeleton="line"]')
+    if (titleRow === null || line === null || line === undefined) throw new Error(`no loading title in ${id}`)
+    await expect({ id, wide: line.getBoundingClientRect().width >= titleRow.getBoundingClientRect().width / 2 }).toEqual({ id, wide: true })
+  }
+  // A loading card's title line takes 3/4 of the free width of its title row, not the width of no text.
+  const title = canvasElement.querySelector('[data-pair="artifact-card"] [data-side="skeleton"] .card__titleRow')
+  const bar = title?.querySelector('[data-skeleton="line"]')
+  if (title === null || bar === null || bar === undefined) throw new Error('no loading card title')
+  await expect(Math.round(bar.getBoundingClientRect().width)).toBe(Math.round(title.getBoundingClientRect().width * 0.75))
+}
+
+export const PresetsDark: Story = { render: () => <Presets />, globals: { mode: 'dark' }, play: presetPlay }
+export const PresetsLight: Story = { render: () => <Presets />, globals: { mode: 'light' }, play: presetPlay }

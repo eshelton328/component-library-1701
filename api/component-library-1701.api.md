@@ -43,6 +43,7 @@ import { ScrollFrameVariantProps } from '../../styled-system/recipes';
 import { SearchFieldVariantProps } from '../../styled-system/recipes';
 import { SelectFieldVariantProps } from '../../styled-system/recipes';
 import { StatusPillVariantProps } from '../../styled-system/recipes';
+import { TableVariantProps } from '../../styled-system/recipes';
 import { TagsLineVariantProps } from '../../styled-system/recipes';
 import { TextFieldVariantProps } from '../../styled-system/recipes';
 import { ThumbnailVariantProps } from '../../styled-system/recipes';
@@ -1114,6 +1115,11 @@ export type MapSelectionCardProps = {
 export type MarkdownHighlight = (code: string, lang: string | undefined) => readonly (readonly CodeSegment[] | undefined)[] | undefined;
 
 // @public
+export type MarkdownNodeProps = {
+    node?: unknown;
+};
+
+// @public
 export function MarkdownView(input: MarkdownViewProps): JSX.Element;
 
 // @public (undocumented)
@@ -1729,6 +1735,47 @@ export type TabBarProps = {
     label?: string | undefined;
     size?: 'phone' | 'tablet' | undefined;
 };
+
+// @public
+export function Table(input: TableProps): JSX.Element;
+
+// @public
+export type TableAlign = 'left' | 'center' | 'right';
+
+// @public
+export function TableBody(props: TableBodyProps): JSX.Element;
+
+// @public
+export type TableBodyProps = ComponentProps<'tbody'> & MarkdownNodeProps;
+
+// @public
+export function TableCell(input: TableCellProps): JSX.Element;
+
+// @public
+export type TableCellProps = ComponentProps<'td'> & MarkdownNodeProps;
+
+// @public
+export function TableHead(props: TableHeadProps): JSX.Element;
+
+// @public
+export function TableHeaderCell(input: TableHeaderCellProps): JSX.Element;
+
+// @public
+export type TableHeaderCellProps = ComponentProps<'th'> & MarkdownNodeProps;
+
+// @public
+export type TableHeadProps = ComponentProps<'thead'> & MarkdownNodeProps;
+
+// @public (undocumented)
+export type TableProps = ComponentProps<'table'> & MarkdownNodeProps & {
+    size?: Scalar<TableVariantProps>['size'];
+};
+
+// @public
+export function TableRow(props: TableRowProps): JSX.Element;
+
+// @public
+export type TableRowProps = ComponentProps<'tr'> & MarkdownNodeProps;
 
 // @public
 export function TagIcon(props: IconProps): JSX.Element;

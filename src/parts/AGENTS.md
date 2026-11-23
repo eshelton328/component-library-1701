@@ -26,3 +26,8 @@ under their purpose group, never under "Parts" (d-065).
   `CollapsedExpandOnFocusPhone` stories, screen review R31).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
+- The Table parts (`table.tsx`) work as react-markdown overrides for
+  `table` to `td`: they drop react-markdown's `node` prop and turn GFM
+  alignment (`style.textAlign` or `align`) into the recipe's `data-align`,
+  never an inline style. MarkdownView styles the other GFM elements
+  (`del`, task list items); it draws no table itself.

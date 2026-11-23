@@ -7,12 +7,12 @@ import { textSizeClass } from '../src/foundations/text-size.ts'
 
 // The theme, mode and text size the toolbar picks. Panda reads
 // `data-panda-theme` for the theme, the `dark` class for the mode and the
-// `text-small` or `text-large` class for the text size. A story can fix
+// `text-default` or `text-large` class for the text size (Small needs none). A story can fix
 // any of them with `globals: { mode: 'light' }`.
 const withThemeAndMode: Decorator = (Story, { globals }) => {
   const root = document.documentElement
   root.classList.toggle('dark', globals.mode !== 'light')
-  for (const size of ['small', 'large'] as const) root.classList.toggle(textSizeClass[size], globals.textSize === size)
+  for (const size of ['default', 'large'] as const) root.classList.toggle(textSizeClass[size], globals.textSize === size)
   root.dataset.pandaTheme = String(globals.theme ?? 'viewscreen')
   return Story()
 }
@@ -35,7 +35,7 @@ const preview: Preview = {
       toolbar: { title: 'Text size', icon: 'paragraph', items: ['small', 'default', 'large'], dynamicTitle: true },
     },
   },
-  initialGlobals: { theme: 'viewscreen', mode: 'dark', textSize: 'default' },
+  initialGlobals: { theme: 'viewscreen', mode: 'dark', textSize: 'small' },
   parameters: {
     // An accessibility violation fails the story test, in CI and locally.
     a11y: { test: 'error' },

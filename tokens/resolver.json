@@ -46,14 +46,14 @@
     },
     "size": {
       "contexts": {
-        "default": [
-          {
-            "$ref": "sizes/default.json"
-          }
-        ],
         "small": [
           {
             "$ref": "sizes/small.json"
+          }
+        ],
+        "default": [
+          {
+            "$ref": "sizes/default.json"
           }
         ],
         "large": [
@@ -62,7 +62,7 @@
           }
         ]
       },
-      "default": "default"
+      "default": "small"
     }
   },
   "resolutionOrder": [

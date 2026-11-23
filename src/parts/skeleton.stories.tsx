@@ -118,8 +118,11 @@ type Story = StoryObj<typeof meta>
 export const Dark: Story = { globals: { mode: 'dark' } }
 export const Light: Story = { globals: { mode: 'light' } }
 
-// With prefers-reduced-motion, every shape is a still block of skeleton.base: no shimmer, no band.
+// With prefers-reduced-motion, every shape is a still block of skeleton.base: no shimmer, no band. Its
+// emulation needs the test runner's DevTools session (vitest/browser), so '!dev' keeps the story out of the
+// Storybook UI; the test runner still runs it. Storybook reads the tags without running this file, so they are literal.
 export const ReduceMotion: Story = {
+  tags: ['!dev'],
   globals: { mode: 'dark' },
   beforeEach: async () => {
     await reduceMotion(true)

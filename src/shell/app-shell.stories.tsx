@@ -3648,9 +3648,10 @@ const dockTurns: StoryObj<typeof meta> = {
     // The inset drawn at the turn, from which the fall starts.
     const turned = Math.max(0, keyboard * curveAt(turn - openStart))
     const closing = riseOn(turned, 0, closeStart)
-    // From the report: before it the composer is down, as the keyboard has not shown.
-    check('open', first.frames.filter((f) => f.drawn >= reported && f.drawn < closeStart), opening)
-    check('close during open', first.frames.filter((f) => f.drawn >= closeStart), (t) => (t < turn ? opening(t) : closing(t)))
+    // From the report: before it the composer is down, as the keyboard has not shown. A frame drawn before the close
+    // started but read after its event shows the fall at its start, so the close check judges it.
+    check('open', first.frames.filter((f) => f.drawn >= reported && f.drawn < closeStart && f.at < turn), opening)
+    check('close during open', first.frames.filter((f) => f.drawn >= closeStart || (f.drawn >= reported && f.at >= turn)), (t) => (t < turn ? opening(t) : closing(t)))
     // An open during a close: the keyboard closes, and 70 ms later the field takes the focus and the keyboard reports.
     await userEvent.click(field)
     fakeViewport.move({ height: 844 - keyboard })

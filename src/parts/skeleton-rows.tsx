@@ -59,18 +59,26 @@ export type TranscriptEntrySkeletonProps = {
   kind?: KindMarkKind | undefined
 }
 
-/** A transcript entry that loads: the owner's prompt bubble, or a reply's lines. */
+/**
+ * A transcript entry that loads: the owner's prompt bubble, or a reply's lines. The whole entry is hidden from
+ * assistive technology, so a screen reader finds no empty message named "You" or "Claude"; its `SkeletonGroup`
+ * says what loads.
+ */
 export function TranscriptEntrySkeleton({ from = 'assistant', kind = 'claude' }: TranscriptEntrySkeletonProps) {
-  return from === 'user' ? (
-    <Message from="user">
-      <Skeleton width="long" />
-    </Message>
-  ) : (
-    <Message from="assistant" kind={kind}>
-      <Skeleton width="full" />
-      <Skeleton width="full" />
-      <Skeleton width="half" />
-    </Message>
+  return (
+    <div aria-hidden="true" data-skeleton="transcript-entry">
+      {from === 'user' ? (
+        <Message from="user">
+          <Skeleton width="long" />
+        </Message>
+      ) : (
+        <Message from="assistant" kind={kind}>
+          <Skeleton width="full" />
+          <Skeleton width="full" />
+          <Skeleton width="half" />
+        </Message>
+      )}
+    </div>
   )
 }
 

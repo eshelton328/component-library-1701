@@ -214,8 +214,10 @@ function Presets() {
             skeleton={<ArtifactCardSkeleton />}
           />
           <span className={heading}>Replies and detail bodies (no twin: their height follows the text)</span>
-          <TranscriptEntrySkeleton />
-          <TranscriptEntrySkeleton kind="codex" />
+          <div data-testid="replies">
+            <TranscriptEntrySkeleton />
+            <TranscriptEntrySkeleton kind="codex" />
+          </div>
           <div className={styles.body}>
             <DetailBodySkeleton />
           </div>
@@ -238,6 +240,11 @@ const presetPlay: Story['play'] = async ({ canvasElement }) => {
   if (row === null) throw new Error('no loading row')
   await expect(row.hasAttribute('data-loading')).toBe(true)
   await expect(row.querySelector('button')).toBeNull()
+  // A transcript skeleton shows no message to assistive technology: no empty article named "You" or "Claude".
+  for (const el of canvasElement.querySelectorAll('[data-pair="prompt"] [data-side="skeleton"], [data-testid="replies"]')) {
+    if (!(el instanceof HTMLElement)) continue
+    await expect(within(el).queryAllByRole('article')).toEqual([])
+  }
   // In a title row that is a flex row (trailingPlacement="title", or a dot), a loading title takes the free width,
   // so its line is 3/4 of it, not the width of a space.
   for (const id of ['title-row-trailing', 'title-row-dot']) {

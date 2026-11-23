@@ -49,6 +49,10 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   drawn (`DockTurns`). A story reads the drawn dock from transforms and
   rects at the frame's `document.timeline` time (`drawnTime`), not
   `--app-shell-keyboard`: a busy frame draws a time from before it ran.
+  It reads a move's start from the root's `data-keyboard-moved` (the
+  time the move holds its place until), never from its own listener's
+  clock: the dock event comes after the move's reads, later on a busy
+  runner (`movesInOrder`).
 - Known gap: during a move a body keeps its larger layout, so its lines
   can paint under the drawn footer, between it and the keyboard (R44,
   iPad). It is not clipped: a `clip-path` animation repaints the body in

@@ -366,6 +366,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // same inset laid out again for a new layout.
     const jump = (inset: number) => {
       const now = performance.now()
+      root.dataset.keyboardMoved = String(now)
       const look = drawn(now)
       const bodies = dockedParts().bodies.map((body) => ({ el: body, ...look.body(body) }))
       stopMotion()
@@ -416,6 +417,9 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // drawn now.
     const glide = (target: number, start: number, fromInset: number, drawnInset: number) => {
       const now = performance.now()
+      // The time this move holds its start's place until (`begun`, below), for a test or a trace to read. A listener of
+      // `appShellDockEvent` runs after the reads below, which a busy main thread makes later.
+      root.dataset.keyboardMoved = String(now)
       const look = drawn(now)
       const parts = dockedParts()
       const footersNow = parts.footers.map((el) => ({ el, bottom: look.footerBottom(el) }))

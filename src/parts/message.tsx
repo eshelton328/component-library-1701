@@ -33,7 +33,13 @@ const kindNames: Record<KindMarkKind, string> = { claude: 'Claude', codex: 'Code
 /** Who wrote a message: `user`, `assistant` or `peer` (another chat). */
 export type MessageFrom = NonNullable<MessageProps['from']>
 
-export type MessageProps = Omit<Scalar<MessageVariantProps>, 'from'> & {
+export type MessageProps = Scalar<MessageVariantProps> & {
+  /**
+   * The author's name, such as "Claude" or "writer". When not set (or blank) an assistant message shows the
+   * name of its `kind` ("Claude", "Codex" or "Shell"), and a user message is named "You" without showing it.
+   * A peer message (another chat's, the-bridge R55) shows "From <name>", and "From another chat" without one.
+   */
+  name?: string | undefined
   /** The kind mark before an assistant's name: `claude`, `codex` or `shell`. A user or peer message has no mark. */
   kind?: KindMarkKind | undefined
   /** The kind mark's size: `12` (the default, the chat's 13 px mark), `16` or `20`. The Toolkit discussion draws a 15 px mark, so it takes `16`. */
@@ -46,23 +52,7 @@ export type MessageProps = Omit<Scalar<MessageVariantProps>, 'from'> & {
   children: ReactNode
   /** Actions under an assistant's or a peer's message, such as a Copy button. */
   actions?: ReactNode
-} & (
-    | {
-        /** `user` (the owner's bubble) or `assistant` (the default). */
-        from?: 'user' | 'assistant' | undefined
-        /**
-         * The author's name, such as "Claude" or "writer". When not set (or blank) an assistant message shows the
-         * name of its `kind` ("Claude", "Codex" or "Shell"), and a user message is named "You" without showing it.
-         */
-        name?: string | undefined
-      }
-    | {
-        /** A message from another chat, never the owner's (the-bridge R55): an amber bar and "From <name>". */
-        from: 'peer'
-        /** The sending chat's name, shown as "From <name>"; a blank name shows "From another chat". */
-        name: string
-      }
-  )
+}
 
 /**
  * A message in a chat. `from="user"` is the user's message, a bubble the

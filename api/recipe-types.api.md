@@ -761,6 +761,7 @@ export * from './select-field.js';
 export * from './splitter.js';
 export * from './switch-recipe.js';
 export * from './tab-bar.js';
+export * from './table.js';
 export * from './tags-line.js';
 export * from './terminal-lines.js';
 export * from './text-field.js';
@@ -1601,6 +1602,26 @@ export type TabBarSlot = "root" | "list" | "item" | "icon" | "label" | "hint"
 export type TabBarRecipe = ConfigSlotRecipeRuntimeFn<TabBarSlot, TabBarVariantProps, TabBarVariantMap>
 
 export declare const tabBar: TabBarRecipe;
+
+// table.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type TableVariant = {
+  size?: "md" | "sm"
+}
+
+export type TableVariantProps = {
+  [K in keyof TableVariant]?: ConditionalValue<TableVariant[K]>
+}
+
+export type TableVariantMap = RecipeVariantMap<TableVariant>
+
+export type TableSlot = "frame" | "table" | "head" | "body" | "row" | "headerCell" | "cell"
+
+export type TableRecipe = ConfigSlotRecipeRuntimeFn<TableSlot, TableVariantProps, TableVariantMap>
+
+export declare const table: TableRecipe;
 
 // tags-line.d.ts
 import type { ConditionalValue } from '../types/system.js';

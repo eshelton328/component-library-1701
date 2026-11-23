@@ -17,8 +17,11 @@ export type MarkdownHighlight = (code: string, lang: string | undefined) => read
 export type MarkdownViewProps = {
   /**
    * The rendered Markdown as React elements: `h1` to `h6`, `p`, `ul`, `ol`,
-   * `li`, `strong`, `code`, `pre` and `a`. The view styles these elements;
-   * it parses no Markdown itself.
+   * `li`, `strong`, `code`, `pre` and `a`, and from GFM `del` and task list
+   * items (`li.task-list-item` with a disabled checkbox `input`). The view
+   * styles these elements; it parses no Markdown itself. Render a GFM table
+   * with the Table part (`Table`, `TableHead`, `TableBody`, `TableRow`,
+   * `TableHeaderCell`, `TableCell`).
    */
   children: ReactNode
   /**

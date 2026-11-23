@@ -19,7 +19,10 @@ written with `defineRecipe` or `defineSlotRecipe` and listed in
   (`'icon.12!'`), and keep an important size in `base`, not a variant.
 - A control drawn under 44 px that a finger taps takes a `touch` variant
   that spreads `touchTarget` from `touch.ts` (d-121), never its own
-  `::before`.
+  `::before`. Rows that sit edge to edge, such as compact Menu rows,
+  cannot spread one without covering the next row: their `touch`
+  variant sets `minH: 'control.xl'` under `@media (pointer: coarse)`,
+  so a mouse keeps the drawn size (Menu `touch`, R59).
 - Write a focus ring under `[focusRing]` from `focus.ts`, never
   `_focusVisible`, with `outline: 'none'` on the same slot (R16). Keep the
   one definition here; `../../index.ts` re-exports it.

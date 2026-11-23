@@ -10,6 +10,9 @@ export const keyframes = {
   // The scrim, and the sheet itself under prefers-reduced-motion.
   fadeIn: { from: { opacity: '0' }, to: { opacity: '1' } },
   fadeOut: { from: { opacity: '1' }, to: { opacity: '0' } },
+  // A Skeleton's shimmer: the band of skeleton.shine crosses the fill from the inline end to the start, then
+  // starts again. The fill is twice the box wide, so the band leaves the box before it comes back.
+  shimmer: { from: { backgroundPosition: '100% 0' }, to: { backgroundPosition: '-100% 0' } },
   // No change for a motion's duration, so Ark keeps a part while others close.
   hold: { from: { opacity: '1' }, to: { opacity: '1' } },
 }

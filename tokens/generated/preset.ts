@@ -25,6 +25,10 @@ export default definePreset({
           "sheetOpen": {
             "value": "300ms",
             "description": "How long a bottom sheet takes to slide up and its scrim to fade in (screen review R13). Use with easing.sheet. Not for closing; use duration.sheetClose."
+          },
+          "shimmer": {
+            "value": "1600ms",
+            "description": "How long the shimmer band of a Skeleton takes to cross it once; it repeats while the content loads, slowly, so a wait looks calm. Use with easing.shimmer. Not for a one-time motion such as a sheet."
           }
         },
         "easings": {
@@ -35,6 +39,10 @@ export default definePreset({
           "sheet": {
             "value": "cubic-bezier(0.38, 0.7, 0.125, 1)",
             "description": "The curve of a bottom sheet and its scrim as they open and close (screen review R13). Use with duration.sheetOpen or duration.sheetClose. Not for the keyboard dock; use easing.keyboard."
+          },
+          "shimmer": {
+            "value": "cubic-bezier(0.4, 0, 0.6, 1)",
+            "description": "The curve of the band that moves across a Skeleton as it shimmers: slow at both ends, so the band eases in and out of view. Use with duration.shimmer. Not for sheets or the keyboard dock."
           }
         },
         "sizes": {
@@ -723,6 +731,22 @@ export default definePreset({
                 "_dark": "rgba(7, 11, 20, 0.65)"
               },
               "description": "Scrim behind dialogs, sheets and drawers."
+            }
+          },
+          "skeleton": {
+            "base": {
+              "value": {
+                "base": "rgba(74, 86, 117, 0.14)",
+                "_dark": "rgba(138, 151, 184, 0.2)"
+              },
+              "description": "The fill of a Skeleton (line, block or circle) where content is still loading, on any surface. Not for a disabled control, a divider or an empty state."
+            },
+            "shine": {
+              "value": {
+                "base": "rgba(74, 86, 117, 0.07)",
+                "_dark": "rgba(138, 151, 184, 0.28)"
+              },
+              "description": "The band that moves across a Skeleton as it shimmers, over skeleton.base. Not for a highlight or a selected state, and not shown with prefers-reduced-motion."
             }
           },
           "status": {

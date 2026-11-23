@@ -1,5 +1,13 @@
 {
   "duration": {
+    "shimmer": {
+      "$type": "duration",
+      "$value": {
+        "value": 1600,
+        "unit": "ms"
+      },
+      "$description": "How long the shimmer band of a Skeleton takes to cross it once; it repeats while the content loads, slowly, so a wait looks calm. Use with easing.shimmer. Not for a one-time motion such as a sheet."
+    },
     "keyboard": {
       "$type": "duration",
       "$value": {
@@ -26,6 +34,16 @@
     }
   },
   "easing": {
+    "shimmer": {
+      "$type": "cubicBezier",
+      "$value": [
+        0.4,
+        0,
+        0.6,
+        1
+      ],
+      "$description": "The curve of the band that moves across a Skeleton as it shimmers: slow at both ends, so the band eases in and out of view. Use with duration.shimmer. Not for sheets or the keyboard dock."
+    },
     "keyboard": {
       "$type": "cubicBezier",
       "$value": [

@@ -24,6 +24,10 @@ under their purpose group, never under "Parts" (d-065).
   and caret as the caller expands it from `onFocusChange(true)`.
   Attachments keep it expanded (`CollapsedPhone` and
   `CollapsedExpandOnFocusPhone` stories, screen review R31).
+- Loading (the loading standard, 2026-11-23): `Skeleton` draws a line,
+  block or circle; a line takes the text style it sits in, so it has the
+  height of the text that replaces it (`skeleton.stories.tsx` checks it
+  beside real text).
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
 - The Table parts (`table.tsx`) work as react-markdown overrides for

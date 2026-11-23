@@ -99,6 +99,8 @@ export { Thumbnail } from './parts/thumbnail'
 export type { ThumbnailKind, ThumbnailProps, ThumbnailReference, ThumbnailShape, ThumbnailTone } from './parts/thumbnail'
 export { ListRow } from './parts/list-row'
 export type { ListRowProps } from './parts/list-row'
+export { Skeleton, SkeletonGroup } from './parts/skeleton'
+export type { SkeletonGroupProps, SkeletonProps, SkeletonShape, SkeletonSize, SkeletonWidth } from './parts/skeleton'
 export { Logo } from './parts/logo'
 export type { LogoProps, LogoSize } from './parts/logo'
 export {

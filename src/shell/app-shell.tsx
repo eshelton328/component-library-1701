@@ -69,6 +69,12 @@ const tapClickWait = 100
 const tapPressWait = 1000
 // Inside one of these, a tap keeps the keyboard and does its own action: Send, attach, a search's sort or filter.
 const keyboardKeep = '[data-keyboard-keep]'
+// A layer over the page that docks on the keyboard itself, such as a BottomSheet with `keyboardDock` (its positioner,
+// fixed to the layout's foot): while a field in it has the focus, the dock moves it, and only it (screen review R71).
+// At an edge of a move the dock sets `sheetRise` on it, the keyboard's height over the layout's foot, and its recipe
+// stands it that far up; between the edges the dock moves it with a transform animation, as it moves a footer.
+const sheetDock = '[data-keyboard-dock]'
+const sheetRise = '--keyboard-dock'
 const fieldSelector = 'input, textarea, [contenteditable]'
 
 // The curve's progress at the time fraction `t`: the bezier's y where its x is `t`, found by bisection.
@@ -218,7 +224,26 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // end, past the field. Only a field (`editable`) counts: a tap on the thread that closes the keyboard gives the
     // focus to the body itself (its `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the
     // fall (the-bridge's iPhone probe: 211 px on each open and close, `TapClosesKeyboard`).
+    // The docking layer that holds the focused field (`sheetDock`), kept after the field's focusout so that the close
+    // moves it down. A field in the shell takes the dock back to the shell's own parts. A field in another layer
+    // outside the shell, such as a popover that the sheet opened (portalled after it), keeps the sheet's dock: the
+    // sheet and the popover anchored in it then stay over the keyboard (Codex review of #347).
+    let sheet: HTMLElement | null = null
+    const heldSheet = () => {
+      const focused = document.activeElement
+      if (editable(focused)) {
+        const layer = focused.closest(sheetDock)
+        if (layer instanceof HTMLElement) sheet = layer
+        else if (root.contains(focused)) sheet = null
+      }
+      if (sheet !== null && !sheet.isConnected) sheet = null
+      return sheet
+    }
+    // While a docking layer holds the field, it is the only part that moves: the footers and bodies stay where they
+    // are, as the keyboard covers none of them that the user is working in.
     const dockedParts = () => {
+      const held = heldSheet()
+      if (held !== null) return { footers: [held], bodies: [] }
       const focused = document.activeElement
       const field = editable(focused) ? focused : null
       const slots = (frames: string, name: string) =>
@@ -232,9 +257,26 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     }
     // The inset the layout shows now: the property is set for it.
     let applied = 0
+    // The docking layer that has `sheetRise` set.
+    let laidSheet: HTMLElement | null = null
     // Lays the page out for a keyboard `inset` px tall at the layout's foot: the property is how far it covers the detail.
+    // With a docking layer holding the field, the layer stands `inset` up instead, and the shell is laid out with no
+    // keyboard.
     const lay = (inset: number) => {
       applied = inset
+      const held = heldSheet()
+      if (laidSheet !== null && (laidSheet !== held || inset <= 0)) {
+        laidSheet.style.removeProperty(sheetRise)
+        laidSheet = null
+      }
+      if (held !== null) {
+        root.style.removeProperty(keyboardInset)
+        if (inset > 0) {
+          held.style.setProperty(sheetRise, `${String(inset)}px`)
+          laidSheet = held
+        }
+        return
+      }
       const detail = root.querySelector(':scope > .app-shell__detail')
       const keyboardTop = document.documentElement.clientHeight - inset
       // The detail's foot where it is with the document at its top: iOS scrolls the document as it reports the
@@ -443,10 +485,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const detail = root.querySelector(':scope > .app-shell__detail')
       const scrolled = viewport.scale === 1 ? window.scrollY : 0
       const below = detail === null ? 0 : document.documentElement.clientHeight - detail.getBoundingClientRect().bottom - scrolled
-      const reach = (frame: Element | null) => {
-        const under = below + (frame === null ? 0 : frameInset(frame))
-        return (inset: number) => Math.max(0, inset - under)
-      }
+      // The keyboard's height under which a part does not move: the space under its frame, or for a docking layer the
+      // space under its box at rest (0 for a sheet at the layout's foot).
+      const frameUnder = (frame: Element | null) => below + (frame === null ? 0 : frameInset(frame))
+      const layerUnder = (layer: HTMLElement) =>
+        Math.max(0, document.documentElement.clientHeight - (layer.getBoundingClientRect().bottom - translateOf(layer)))
+      const reach = (under: number) => (inset: number) => Math.max(0, inset - under)
       // The points of the keyboard's curve, as (time, progress), and a part's values at them: from its value now, at the
       // drawn inset, to its value at the end, in step with the keyboard's reach over its frame.
       const [x1, y1, x2, y2] = keyboardCurve
@@ -456,13 +500,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         time: bezier(x1, x2, i / motionSteps),
         progress: bezier(y1, y2, i / motionSteps),
       }))
-      const track = (frame: Element | null, valueNow: number, to: number): Track => {
-        const over = reach(frame)
+      const track = (under: number, valueNow: number, to: number): Track => {
+        const over = reach(under)
         const span = over(target) - over(drawnInset)
         const begunParam = paramAt(begun)
         const points = [...curve, { param: begunParam, time: begun, progress: bezier(y1, y2, begunParam) }]
         // The bend: the progress at which the keyboard comes over the frame, and its time on the curve.
-        const under = frame === null ? below : below + frameInset(frame)
         const bend = target === fromInset ? -1 : (under - fromInset) / (target - fromInset)
         if (bend > 0 && bend < 1) {
           let lowS = 0
@@ -518,7 +561,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       })
       const footerMoves = footersNow.map(({ el, bottom }, i) => ({
         el,
-        steps: track(el.parentElement, bottom, ends.footers[i] ?? bottom),
+        steps: track(el === sheet ? layerUnder(el) : frameUnder(el.parentElement), bottom, ends.footers[i] ?? bottom),
         // The layout's own place for the footer, without its transform: the animation's transform replaces it.
         place: footerBase(el) - translateOf(el),
         height: el.getBoundingClientRect().height,
@@ -527,8 +570,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const noChild = (child: Element): child is HTMLElement => child !== child
       const bodyShifts = bodyMoves.map(({ el, bottom, scroll, atEnd, end, toScroll }) => {
         const tracks = {
-          bottom: track(el.parentElement, bottom, end.bottom),
-          scroll: track(el.parentElement, scroll, toScroll),
+          bottom: track(frameUnder(el.parentElement), bottom, end.bottom),
+          scroll: track(frameUnder(el.parentElement), scroll, toScroll),
           atEnd,
           real: el.scrollTop,
         }
@@ -957,6 +1000,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const target = event.target instanceof Element ? event.target : null
       if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return
       if (!editable(focused) || target === null || !root.contains(target)) return
+      // A docking layer's field: the layer has its own rules for a press outside it.
+      if (focused.closest(sheetDock) !== null) return
       if (editable(target.closest(fieldSelector)) || target.closest(keyboardKeep) !== null) return
       // A field's label moves the focus to its field, as a tap on the field does (Codex review of #213).
       const label = target.closest('label')
@@ -1066,6 +1111,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       window.removeEventListener('orientationchange', refit)
       window.removeEventListener('pageshow', refit)
       root.style.removeProperty(keyboardInset)
+      laidSheet?.style.removeProperty(sheetRise)
     }
     // `diagnostic` is a ref: the same object on every render, so it never restarts the dock.
   }, [diagnostic])

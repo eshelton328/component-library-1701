@@ -72,9 +72,29 @@ export type BottomSheetProps = ({ title: string; label?: undefined } | { title?:
    * `true` (the default) draws the `overlay.scrim` backdrop over the page behind the sheet. `false` draws no scrim,
    * so the page above the sheet keeps its full colour and stays readable, as the tablet side chat sheet does
    * (Workspaces T2 105:1914). The sheet behaves the same either way: it keeps the focus inside, and a press outside
-   * it closes it (the press does not reach the page under it) and gives the focus back.
+   * it closes it (the press does not reach the page under it) and gives the focus back, unless `closeOn` says
+   * otherwise.
    */
   scrim?: boolean | undefined
+  /**
+   * What closes the sheet. Not set (the default): Escape, the close button, `BottomSheetClose`, a swipe down from
+   * the grabber, the title row or the content at its top, and a press or a focus outside the sheet. `explicit`: only
+   * the close button, `BottomSheetClose`, a swipe down from the grabber and Escape, so a press on the page behind
+   * (with no scrim), a swipe on the title or the content, a focus outside and the keyboard opening or closing never
+   * close it, as the side chat needs while the user types (screen review R71). `scrim`: those and a press on the
+   * scrim; with `scrim={false}` it is the same as `explicit`. A press outside that does not close the sheet does
+   * not reach the page under it either.
+   */
+  closeOn?: 'explicit' | 'scrim' | undefined
+  /**
+   * Dock the sheet on the on-screen keyboard, as `AppShell` docks the composer: while a field in the sheet has the
+   * focus, the sheet moves up with the keyboard, on the keyboard's curve and clock, until its content ends 8 px above
+   * the keyboard, and it gets shorter where it would pass the top of the window. Only the sheet moves then; the
+   * page's own composer stays where it is. The sheet also does not fix the page's body while it is open (Ark's
+   * scroll lock), so iOS does not jump the page when the field takes the focus (screen review R71). It docks only on
+   * a page in an `AppShell`, which runs the dock.
+   */
+  keyboardDock?: boolean | undefined
   /** A copy of a page element to draw over the scrim, at that element's place, such as a held row (M9). */
   lifted?: BottomSheetLifted | undefined
 }
@@ -88,7 +108,8 @@ type WithoutSize<T> = T extends unknown ? Omit<T, 'size'> : never
  * scrim, as the tablet side chat does. It keeps the focus inside while it is
  * open; Escape, a click outside it (on the scrim, or on the page with no
  * scrim), `BottomSheetClose` and a swipe down close it, and the focus goes
- * back to the trigger.
+ * back to the trigger. `closeOn` limits what closes it, and `keyboardDock`
+ * docks it on the on-screen keyboard (the side chat, screen review R71).
  *
  * Swipe to close: a downward touch or pen drag from the grabber or the title
  * row, or from the content when it is scrolled to the top, moves the sheet
@@ -123,7 +144,25 @@ type SizedBottomSheetProps = WithoutSize<BottomSheetProps> &
  * `md` are the sheets, `lg` the More drawer, with a larger title. The
  * package does not export it, so `BottomSheetProps` offers only `sm` and `md`.
  */
-export function SizedBottomSheet({ title, label, children, trigger, open, defaultOpen, onOpenChange, closeButton = false, actions, leading, initialFocus, size, scrim = true, focusSheet = false, lifted }: SizedBottomSheetProps) {
+export function SizedBottomSheet({
+  title,
+  label,
+  children,
+  trigger,
+  open,
+  defaultOpen,
+  onOpenChange,
+  closeButton = false,
+  actions,
+  leading,
+  initialFocus,
+  size,
+  scrim = true,
+  closeOn,
+  keyboardDock = false,
+  focusSheet = false,
+  lifted,
+}: SizedBottomSheetProps) {
   useInputModality()
   const hasLeading = present(leading)
   // The sheet's own id, so the focus can find it when it opens.
@@ -140,6 +179,8 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       {...(firstFocus === undefined ? {} : { initialFocusEl: firstFocus })}
       {...(open === undefined ? {} : { open })}
       {...(open === undefined && defaultOpen !== undefined ? { defaultOpen } : {})}
+      {...(keyboardDock ? { preventScroll: false } : {})}
+      {...(closeOn === undefined ? {} : outsideRules(closeOn === 'scrim' && scrim))}
       onOpenChange={(details) => {
         onOpenChange?.(details.open)
       }}
@@ -149,9 +190,9 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       <OverlayPortal>
         {scrim ? <Backdrop /> : null}
         {lifted === undefined ? null : <LiftedCopy lifted={lifted} />}
-        <Positioner>
+        <Positioner data-keyboard-dock={keyboardDock ? '' : undefined}>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
-          <DraggableContent aria-label={title ?? label} returnToRef={returnToRef}>
+          <DraggableContent aria-label={title ?? label} returnToRef={returnToRef} grabberOnly={closeOn !== undefined} keepFocusInView={keyboardDock}>
             <Grabber aria-hidden="true" data-drag-handle="grabber" />
             {title === undefined ? null : (
               <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="title">
@@ -171,6 +212,20 @@ export function SizedBottomSheet({ title, label, children, trigger, open, defaul
       </OverlayPortal>
     </Root>
   )
+}
+
+// The outside rules of a sheet with `closeOn`: a focus outside never closes it, and a press outside closes it only
+// on a scrim (`onScrim`). The sheet's layer takes every press outside it (its positioner covers the window, over the
+// scrim), so a press there is on the scrim when a scrim is drawn. The focus rule is a guard only: the sheet's focus
+// trap takes a focus outside back before Ark's outside check sees it, and on a touch screen Ark does not watch the
+// focus at all, so no story can reach it.
+function outsideRules(onScrim: boolean) {
+  return {
+    closeOnInteractOutside: onScrim,
+    onFocusOutside: (event: { preventDefault: () => void }) => {
+      event.preventDefault()
+    },
+  }
 }
 
 // Notes the element that has the focus as the sheet opens, before Ark moves the focus into it.
@@ -325,7 +380,16 @@ function reset(sheet: HTMLElement) {
 }
 
 // The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
-function DraggableContent({ children, returnToRef, ...props }: ComponentProps<typeof Content> & { returnToRef: RefObject<HTMLElement | null> }) {
+// With `grabberOnly` (a sheet with `closeOn`), only a drag that starts on the grabber moves the sheet. With
+// `keepFocusInView` (a `keyboardDock` sheet), a sheet that gets shorter scrolls its content so the focused element
+// stays in view.
+function DraggableContent({
+  children,
+  returnToRef,
+  grabberOnly,
+  keepFocusInView,
+  ...props
+}: ComponentProps<typeof Content> & { returnToRef: RefObject<HTMLElement | null>; grabberOnly: boolean; keepFocusInView: boolean }) {
   const dialog = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
@@ -339,6 +403,29 @@ function DraggableContent({ children, returnToRef, ...props }: ComponentProps<ty
       if (sheet !== null && !sheet.isConnected) returnFocus(returnToRef)
     }
   }, [returnToRef])
+
+  // A docked sheet gets shorter by the keyboard's height at the open's end (its recipe's max height), and its content
+  // keeps its scroll position, so a field near the content's end went under the sheet's end (Codex review of #347).
+  // When the sheet gets shorter, its content scrolls just enough to show the focused element again. The observer
+  // reports after the layout and before the paint, so no frame shows the field cut off.
+  useEffect(() => {
+    const sheet = ref.current
+    if (!keepFocusInView || sheet === null || typeof ResizeObserver === 'undefined') return undefined
+    let height = sheet.clientHeight
+    const watch = new ResizeObserver(() => {
+      const was = height
+      height = sheet.clientHeight
+      const focused = sheet.ownerDocument.activeElement
+      if (height >= was || !(focused instanceof HTMLElement) || focused === sheet || !sheet.contains(focused)) return
+      const view = sheet.getBoundingClientRect().top + sheet.clientTop + sheet.clientHeight - (Number.parseFloat(getComputedStyle(sheet).paddingBottom) || 0)
+      const below = focused.getBoundingClientRect().bottom - view
+      if (below > 0) sheet.scrollTop += below
+    })
+    watch.observe(sheet)
+    return () => {
+      watch.disconnect()
+    }
+  }, [keepFocusInView])
 
   // A sheet that opens again while its swipe close still runs keeps its element, so it drops the drag offset
   // that the close slid down from, and opens at its rest.
@@ -367,7 +454,8 @@ function DraggableContent({ children, returnToRef, ...props }: ComponentProps<ty
     const sheet = event.currentTarget
     const target = event.target
     if (!(target instanceof Element)) return
-    const handle = target.closest('[data-drag-handle]') !== null
+    const handle = target.closest(grabberOnly ? '[data-drag-handle="grabber"]' : '[data-drag-handle]') !== null
+    if (grabberOnly && !handle) return
     // A mouse drag selects text, so with a mouse only the grabber, which has no text, moves the sheet.
     if (event.pointerType === 'mouse' && target.closest('[data-drag-handle="grabber"]') === null) return
     // A press in a text field selects text or moves the caret; it never drags the sheet.

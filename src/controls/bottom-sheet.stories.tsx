@@ -1194,3 +1194,169 @@ const noScrimPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 /** `scrim={false}`: the tablet side chat sheet draws no scrim, so the chat above it stays in its full colour. */
 export const NoScrimDark: StoryObj<typeof meta> = { render: () => <SideChatPage />, play: noScrimPlay, globals: { mode: 'dark' } }
 export const NoScrimLight: StoryObj<typeof meta> = { render: () => <SideChatPage />, play: noScrimPlay, globals: { mode: 'light' } }
+
+// `closeOn` (screen review R71): the tablet side chat closed on the next tap on the chat above it, while the user
+// typed. With `explicit`, only the close button, `BottomSheetClose`, a swipe down from the grabber and Escape close
+// the sheet; with `scrim`, a press on the scrim too.
+const onAsk = fn()
+const sideNote = css({ textStyle: 'body', color: 'fg.default' })
+
+function CloseOnPage({ closeOn, scrim }: { closeOn: 'explicit' | 'scrim'; scrim: boolean }) {
+  return (
+    <main className={page}>
+      <Stack gap="12">
+        <h2 className={chatTop}>Release the library</h2>
+        <Button onClick={onAsk}>Ask</Button>
+        <BottomSheet
+          title="Side chat"
+          closeButton
+          closeOn={closeOn}
+          scrim={scrim}
+          trigger={<Button>Side chat</Button>}
+          initialFocus={() => document.querySelector('textarea[aria-label="Side message"]')}
+        >
+          <p className={sideNote}>Which checks failed on the last run?</p>
+          <textarea aria-label="Side message" rows={2} />
+          <BottomSheetClose>
+            <Button>Done</Button>
+          </BottomSheetClose>
+        </BottomSheet>
+      </Stack>
+    </main>
+  )
+}
+
+// A touch drag of `by` px down from the middle of `target`, slow enough that it is no flick.
+async function touchDrag(target: Element, by: number) {
+  const from = middleY(target)
+  touch('pointerdown', target, from)
+  for (let dy = 20; dy <= by; dy += 20) {
+    touch('pointermove', target, from + dy)
+    await pause(20)
+  }
+  await pause(flickRest)
+  touch('pointerup', target, from + by)
+}
+
+const closeOnPlay =
+  (closeOn: 'explicit' | 'scrim', scrim: boolean): NonNullable<StoryObj<typeof meta>['play']> =>
+  async ({ canvasElement }) => {
+    onAsk.mockClear()
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    const trigger = canvas.getByRole('button', { name: 'Side chat' })
+    // Ark hides the page from assistive technology while the sheet is open, so it is found first.
+    const ask = canvas.getByRole('button', { name: 'Ask' })
+    const open = async () => {
+      await userEvent.click(trigger)
+      const sheet = await body.findByRole('dialog', { name: 'Side chat' })
+      await motionDone(sheet)
+      await layerSettled()
+      return sheet
+    }
+    const closed = async (sheet: HTMLElement) => {
+      await unmounted(sheet)
+      await expect(body.queryByRole('dialog')).toBeNull()
+    }
+    let sheet = await open()
+    const field = within(sheet).getByRole('textbox', { name: 'Side message' })
+    await waitFor(() => expect(field).toHaveFocus())
+    // A swipe on the title row or the content leaves the sheet in place, however far it goes.
+    const far = Math.ceil((sheet.getBoundingClientRect().height * 0.5) / 20) * 20
+    const header = sheet.querySelector('.bottom-sheet__header')
+    if (header === null) throw new Error('no title row')
+    for (const from of [header, within(sheet).getByText('Which checks failed on the last run?')]) {
+      await touchDrag(from, far)
+      await expect(sheet).not.toHaveAttribute('data-dragging')
+      await pause(50)
+      await expect(body.getByRole('dialog', { name: 'Side chat' })).toBe(sheet)
+    }
+    // A press above the sheet: on the page with no scrim it keeps the sheet open, and on the scrim with `scrim` it
+    // closes it. It never reaches the page under it.
+    const a = ask.getBoundingClientRect()
+    await expect(a.bottom).toBeLessThan(sheet.getBoundingClientRect().top)
+    const above = document.elementFromPoint(a.left + a.width / 2, a.top + a.height / 2)
+    if (!(above instanceof HTMLElement)) throw new Error('nothing above the sheet')
+    await expect(sheet.contains(above)).toBe(false)
+    await userEvent.click(above)
+    await expect(onAsk).not.toHaveBeenCalled()
+    if (closeOn === 'scrim' && scrim) {
+      await closed(sheet)
+      sheet = await open()
+    } else {
+      await pause(100)
+      await expect(body.getByRole('dialog', { name: 'Side chat' })).toBe(sheet)
+    }
+    // A swipe down from the grabber closes it.
+    await touchDrag(grabberOf(sheet), far)
+    await closed(sheet)
+    // Escape closes it.
+    sheet = await open()
+    await userEvent.keyboard('{Escape}')
+    await closed(sheet)
+    // The close button and BottomSheetClose close it.
+    sheet = await open()
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Close' }))
+    await closed(sheet)
+    sheet = await open()
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Done' }))
+    await closed(sheet)
+  }
+
+/** `closeOn="explicit"` with no scrim, as the tablet side chat: a press on the page, a focus outside and a swipe on the title or content keep it open. */
+export const CloseOnExplicitDark: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="explicit" scrim={false} />, play: closeOnPlay('explicit', false), globals: { mode: 'dark' } }
+export const CloseOnExplicitLight: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="explicit" scrim={false} />, play: closeOnPlay('explicit', false), globals: { mode: 'light' } }
+/** `closeOn="scrim"`: a press on the scrim closes it too; nothing else outside does. */
+export const CloseOnScrimDark: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="scrim" scrim />, play: closeOnPlay('scrim', true), globals: { mode: 'dark' } }
+export const CloseOnScrimLight: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="scrim" scrim />, play: closeOnPlay('scrim', true), globals: { mode: 'light' } }
+/** `closeOn="scrim"` with no scrim is `explicit`: a press on the page keeps it open. */
+export const CloseOnScrimNoScrim: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="scrim" scrim={false} />, play: closeOnPlay('scrim', false) }
+
+// A `keyboardDock` sheet taller than the room above the keyboard gets shorter at the open's end, when AppShell sets
+// `--keyboard-dock` on its positioner. A field near the end of its content stays in view: the content scrolls by as much
+// as the field would go under the sheet's end (Codex review of #347). The play sets the property as the shell does.
+function TallDockSheet() {
+  return (
+    <main className={page}>
+      <BottomSheet title="Notes" keyboardDock defaultOpen>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <Button key={row} size="xl">
+              {row}
+            </Button>
+          ))}
+          <textarea aria-label="Last note" rows={2} />
+        </Stack>
+      </BottomSheet>
+    </main>
+  )
+}
+const keepFieldPlay: NonNullable<StoryObj<typeof meta>['play']> = async () => {
+  const body = within(document.body)
+  const sheet = await body.findByRole('dialog', { name: 'Notes' })
+  await motionDone(sheet)
+  const positioner = sheet.parentElement
+  if (positioner === null) throw new Error('no positioner')
+  const field = within(sheet).getByRole('textbox', { name: 'Last note' })
+  sheet.scrollTop = sheet.scrollHeight
+  field.focus()
+  await waitFor(() => expect(field).toHaveFocus())
+  const viewBottom = () => {
+    const box = sheet.getBoundingClientRect()
+    return box.top + sheet.clientTop + sheet.clientHeight - Number.parseFloat(getComputedStyle(sheet).paddingBottom)
+  }
+  await expect(field.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewBottom() + 0.5)
+  const tall = sheet.clientHeight
+  positioner.style.setProperty('--keyboard-dock', '300px')
+  // The frame after the change: its observers have run (they come after the frame's animation callbacks).
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  // The sheet is shorter, and the field is still in view above its end.
+  await expect(sheet.clientHeight).toBeLessThan(tall)
+  await expect(field.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewBottom() + 0.5)
+  await expect(field.getBoundingClientRect().top).toBeGreaterThanOrEqual(sheet.getBoundingClientRect().top)
+  positioner.style.removeProperty('--keyboard-dock')
+}
+/** A tall docked sheet keeps its focused field in view as it gets shorter over the keyboard. */
+export const KeepFieldInViewDark: StoryObj<typeof meta> = { render: () => <TallDockSheet />, play: keepFieldPlay, globals: { mode: 'dark' } }
+export const KeepFieldInViewLight: StoryObj<typeof meta> = { render: () => <TallDockSheet />, play: keepFieldPlay, globals: { mode: 'light' } }

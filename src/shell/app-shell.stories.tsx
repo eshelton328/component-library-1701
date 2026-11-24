@@ -3,7 +3,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test'
 import { css, cx } from '../../styled-system/css'
 import { token } from '../../styled-system/tokens'
+import { BottomSheet } from '../controls/bottom-sheet'
+import { motionDone, unmounted } from '../controls/bottom-sheet.testing'
 import { Button } from '../controls/button'
+import { layerSettled } from '../controls/layer.testing'
+import { Popover } from '../controls/popover'
 import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
@@ -4014,6 +4018,302 @@ const footEdges: StoryObj<typeof meta> = {
 /** Phone chat on iOS with a 12 px `foot`: the composer does not jump as the space changes at a move's edge. */
 export const FootEdgesDark: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The R36 pad: a page pads its composer over the keyboard from the public `--scroll-frame-dock`, 8 px on the keyboard
+// and none with it closed (the-bridge's composer). The pad changes at the open's end, with the layout. The dock moves
+// the composer's own bottom (the footer's last child less its pad, `footerBase`), so the composer is on the dock's
+// curve in every frame around the open's end, and does not step by the pad as the layout takes it (Codex review of
+// #314; bridge-coord's guard for R67). Read the composer, not the footer box: the box grows by the pad.
+const padBox = css({ '--composer-pad': 'min(token(spacing.8), var(--scroll-frame-dock, 0px))', pb: 'var(--composer-pad)' })
+function PadChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div className={padBox}>
+                <div role="group" aria-label="Composer" className={composerBox}>
+                  <textarea aria-label="Message" rows={1} className={messageField} />
+                </div>
+              </div>
+            }
+          >
+            {messages.map((m) => (
+              <p key={m} className={text}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const padEdges: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <PadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer } = threadParts(canvasElement)
+    const footer = slotOf(canvasElement, 'scroll-frame__footer')
+    const keyboard = 336
+    const pad = 8
+    // The safe area under the detail: the keyboard moves the footer only past it.
+    const under = 34
+    const off: string[] = []
+    const rest = composer().bottom
+    await expect(Math.round(rest)).toBe(844 - under)
+    // The composer is the footer's last child's own box, inside the pad.
+    await expect(footer.lastElementChild?.contains(field)).toBe(true)
+    const opening = recordBoxes(root, composer, [])
+    opening.act()
+    await userEvent.click(field)
+    await wait(110)
+    opening.act()
+    fakeViewport.move({ height: 844 - keyboard })
+    await wait(motionMs + 150)
+    opening.stop()
+    off.push(...movesInOrder('open', opening.moves, opening.heard, opening.acts))
+    // At rest the pad is laid out: the composer ends 8 px over the keyboard.
+    const docked = 844 - keyboard - pad
+    await expect(composer().bottom).toBeCloseTo(docked, 0)
+    // Through the open's end, where the layout takes the pad: the composer is on the dock's curve within 1 px. The dock
+    // moves it from its rest to its docked place as the keyboard reaches past the safe area.
+    const end = Number(root.dataset.keyboardEnd)
+    const around = opening.frames.filter((f) => f.drawn >= end - 100 && f.drawn <= end + 50)
+    if (around.length < 2) off.push(`open end: ${String(around.length)} frames`)
+    for (const f of around) {
+      const reach = Math.max(0, keyboard * curveAt(f.drawn - (end - motionMs)) - under) / (keyboard - under)
+      const want = rest + (docked - rest) * reach
+      if (Math.abs(f.composer.bottom - want) > 1) off.push(`open end @${f.drawn.toFixed(0)}: composer ${f.composer.bottom.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS with the R36 pad over the keyboard: the composer does not step by the pad at the open's end. */
+export const PadEdgesDark: StoryObj<typeof meta> = { ...padEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const PadEdgesLight: StoryObj<typeof meta> = { ...padEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A BottomSheet with `keyboardDock` over a chat, as the tablet side chat (screen review R71): while its field has the
+// focus, the sheet docks on the keyboard, on the keyboard's curve, and only the sheet: the chat's composer stays at its
+// place. The sheet sets no scroll lock on the page, so iOS does not jump the page at the focus. With
+// `closeOn="explicit"` and no scrim, a press on the page behind keeps it open, and Escape closes it.
+const onPage = fn()
+function SheetChat() {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            <Button
+              onClick={() => {
+                setOpen(true)
+              }}
+            >
+              Side chat
+            </Button>
+            {messages.slice(0, 6).map((m) => (
+              <p key={m} className={text} onPointerDown={onPage}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+      <BottomSheet
+        label="Side chat"
+        size="sm"
+        scrim={false}
+        closeOn="explicit"
+        keyboardDock
+        open={open}
+        onOpenChange={setOpen}
+        initialFocus={() => document.querySelector('textarea[aria-label="Side message"]')}
+      >
+        <p className={text}>Which checks failed on the last run?</p>
+        <div role="group" aria-label="Side composer" className={composerBox}>
+          <textarea aria-label="Side message" rows={1} className={messageField} />
+        </div>
+      </BottomSheet>
+    </div>
+  )
+}
+const sheetKeyboardDock: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <SheetChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    onPage.mockClear()
+    const canvas = within(canvasElement)
+    const body = within(document.body)
+    const root = shellRoot(canvasElement)
+    const footer = slotOf(canvasElement, 'scroll-frame__footer')
+    // Ark hides the page from assistive technology while the sheet is open, so the page's parts are found first.
+    const composerGroup = canvas.getByRole('group', { name: 'Composer' })
+    const line = canvas.getByText('Message 1 of the thread')
+    const composer = () => rect(composerGroup)
+    const keyboard = 336
+    const keyboardTop = 844 - keyboard
+    await userEvent.click(canvas.getByRole('button', { name: 'Side chat' }))
+    const sheet = await body.findByRole('dialog', { name: 'Side chat' })
+    const field = within(sheet).getByRole('textbox', { name: 'Side message' })
+    await waitFor(() => expect(field).toHaveFocus())
+    await motionDone(sheet)
+    // No scroll lock on the page: iOS fixes the body for it, and the field's focus then jumped the page.
+    await expect(document.body.hasAttribute('data-scroll-lock')).toBe(false)
+    const positioner = sheet.parentElement
+    if (positioner === null) throw new Error('no positioner')
+    const sideComposer = () => rect(within(sheet).getByRole('group', { name: 'Side composer' }))
+    // At rest, the sheet's content ends over the home indicator's area.
+    await expect(Math.round(sideComposer().bottom)).toBe(844 - 34 - 1)
+    const rest = sideComposer().bottom
+    // The keyboard opens: each frame of the move draws the sheet on the dock's curve, and the chat's composer at its
+    // place.
+    const frames: { drawn: number; side: number; composer: number; rise: number }[] = []
+    const moves: number[] = []
+    const onMove = (event: Event) => {
+      if (event instanceof CustomEvent) moves.push(Number(Reflect.get(Object(event.detail), 'at')))
+    }
+    root.addEventListener(appShellDockEvent, onMove)
+    let id = requestAnimationFrame(function tick() {
+      frames.push({ drawn: drawnTime(), side: sideComposer().bottom, composer: composer().bottom, rise: riseOf(footer) })
+      id = requestAnimationFrame(tick)
+    })
+    fakeViewport.move({ height: keyboardTop })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    root.removeEventListener(appShellDockEvent, onMove)
+    const off: string[] = []
+    // The move is the shell's own: it sends the dock event, as a composer's does.
+    await expect(moves.length).toBeGreaterThan(0)
+    // Docked: the sheet's box ends on the keyboard, its content 8 px over it, and its top in the window.
+    const docked = keyboardTop - 8 - 1
+    await expect(Math.round(sheet.getBoundingClientRect().bottom)).toBe(keyboardTop)
+    await expect(sideComposer().bottom).toBeCloseTo(docked, 0)
+    await expect(sheet.getBoundingClientRect().top).toBeGreaterThanOrEqual(0)
+    // Only the sheet docks: the shell sets no keyboard cover, and the chat's composer stays at its place.
+    await expect(keyboardInset(root)).toBe('')
+    await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    for (const f of frames) {
+      if (Math.abs(f.composer - (844 - 34)) > 0.5 || f.rise !== 0) off.push(`composer moved @${f.drawn.toFixed(0)}: ${f.composer.toFixed(1)}`)
+    }
+    // The sheet's content is on the keyboard's curve through the move, its end included, where the layout takes the
+    // smaller end space: a sheet at the layout's foot moves from the keyboard's first pixel.
+    // Until the move's own start (its dock event's `at`, after the keyboard's report) a frame draws where the keyboard
+    // was at that start.
+    const end = Number(root.dataset.keyboardEnd)
+    const started = moves[0] ?? Number.NaN
+    const during = frames.filter((f) => f.drawn >= end - motionMs && f.drawn <= end + 50)
+    if (during.length < 4) off.push(`move: ${String(during.length)} frames`)
+    for (const f of during) {
+      const want = rest + (docked - rest) * curveAt(Math.max(f.drawn, started) - (end - motionMs))
+      if (Math.abs(f.side - want) > 1) off.push(`sheet @${f.drawn.toFixed(0)}: ${f.side.toFixed(1)}, curve ${want.toFixed(1)}`)
+    }
+    await expect(off).toEqual([])
+    // A press on the page behind the sheet keeps it open and does not reach the page.
+    const l = rect(line)
+    await expect(l.bottom).toBeLessThan(sheet.getBoundingClientRect().top)
+    const behind = document.elementFromPoint(l.left + 8, l.top + l.height / 2)
+    if (!(behind instanceof HTMLElement)) throw new Error('nothing behind the sheet')
+    await expect(sheet.contains(behind)).toBe(false)
+    await userEvent.click(behind)
+    await expect(onPage).not.toHaveBeenCalled()
+    await wait(100)
+    await expect(body.getByRole('dialog', { name: 'Side chat' })).toBe(sheet)
+    // The keyboard closes (the press took the focus from the field, or the user did): the sheet comes back down and
+    // stays open.
+    if (field === document.activeElement) field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    await expect(body.getByRole('dialog', { name: 'Side chat' })).toBe(sheet)
+    await expect(sideComposer().bottom).toBeCloseTo(rest, 0)
+    await expect(Math.round(composer().bottom)).toBe(844 - 34)
+    // Escape closes it.
+    await userEvent.keyboard('{Escape}')
+    await unmounted(sheet)
+    await expect(body.queryByRole('dialog')).toBeNull()
+  }),
+}
+/** iPad side chat: a `keyboardDock` sheet docks on the keyboard, and the chat's composer stays put. */
+export const SheetKeyboardDockDark: StoryObj<typeof meta> = { ...sheetKeyboardDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SheetKeyboardDockLight: StoryObj<typeof meta> = { ...sheetKeyboardDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A field in a popover that the docked sheet opened: the popover portals after the sheet, outside its positioner, and
+// its field keeps the sheet's dock, so the sheet and the popover anchored in it stay over the keyboard and the chat's
+// composer stays put (Codex review of #347).
+function SheetPopoverChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            <p className={text}>Message 1 of the thread</p>
+          </ScrollFrame>
+        }
+      />
+      <BottomSheet label="Side chat" size="sm" scrim={false} closeOn="explicit" keyboardDock defaultOpen>
+        <textarea aria-label="Side message" rows={1} className={messageField} />
+        <Popover label="Find" trigger={<Button>Find</Button>} placement="top-start">
+          <input type="search" aria-label="Find a skill" />
+        </Popover>
+      </BottomSheet>
+    </div>
+  )
+}
+const sheetPopover: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <SheetPopoverChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const body = within(document.body)
+    const root = shellRoot(canvasElement)
+    const sheet = await body.findByRole('dialog', { name: 'Side chat' })
+    await motionDone(sheet)
+    const positioner = sheet.parentElement
+    if (positioner === null) throw new Error('no positioner')
+    // The sheet's field docks the sheet.
+    await userEvent.click(within(sheet).getByRole('textbox', { name: 'Side message' }))
+    fakeViewport.move({ height: 544 })
+    await waitFor(() => expect(positioner.style.getPropertyValue('--keyboard-dock')).toBe('300px'))
+    await expect(keyboardInset(root)).toBe('')
+    // A field in the popover the sheet opened keeps the dock on the sheet.
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Find' }))
+    const find = await body.findByRole('searchbox', { name: 'Find a skill' })
+    await layerSettled()
+    await expect(sheet.contains(find)).toBe(false)
+    await userEvent.click(find)
+    await expect(find).toHaveFocus()
+    fakeViewport.move({ height: 543 })
+    fakeViewport.move({ height: 544 })
+    await expect(positioner.style.getPropertyValue('--keyboard-dock')).toBe('300px')
+    await expect(keyboardInset(root)).toBe('')
+    await expect(Math.round(rect(sheet).bottom)).toBe(544)
+  }),
+}
+/** A field in a popover over a docked sheet keeps the sheet on the keyboard. */
+export const SheetPopoverDockDark: StoryObj<typeof meta> = { ...sheetPopover, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SheetPopoverDockLight: StoryObj<typeof meta> = { ...sheetPopover, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // The root attributes that a dock move writes in normal use: the keyboard's cover (`--app-shell-keyboard` in `style`)
 // and the move's end (`data-keyboard-end`). A move writes nothing more on the root, so a test or a trace that needs

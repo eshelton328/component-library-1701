@@ -37,6 +37,11 @@ components (d-066).
   pane also `expectScrollsByWheelAndKeys` (`scroll-area.testing.ts`).
 - A `BottomSheet` play function awaits `motionDone` before it measures
   and awaits `unmounted` after a close (`bottom-sheet.testing.ts`).
+- A sheet with a field the user types in, such as the side chat, sets
+  `keyboardDock` (it docks on the keyboard and fixes no page body) and
+  `closeOn`, so a focus, the keyboard or a press on the page never closes
+  it (R71, `CloseOnExplicit`, `SheetKeyboardDock` in the shell). Without
+  `closeOn` a press or a focus outside closes a sheet, as before.
 - A play that clicks outside an overlay right after an overlay opened
   or closed first awaits `layerSettled()` (`layer.testing.ts`): Ark
   ignores outside clicks until its layers settle (popover Behaviour).

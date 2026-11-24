@@ -1205,6 +1205,7 @@ export type MenuProps = {
     size?: 'md' | 'lg' | undefined;
     density?: 'default' | 'compact' | undefined;
     iconTone?: 'muted' | 'default' | undefined;
+    touch?: boolean | undefined;
     highlightedValue?: string | null | undefined;
     onHighlightChange?: ((value: string | null) => void) | undefined;
     className?: string | undefined;

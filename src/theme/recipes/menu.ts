@@ -69,6 +69,17 @@ import { scrollArea } from './scroll-area'
 // has gap 0), so the menu is Figma's 283 high. The component opens it 8 under
 // its trigger (Figma y 150 under the Sort button).
 //
+// `touch` makes each row at least 44 tall (control.xl) on a touch screen, as
+// the phone's PhoneAddMenu and the Workbench pane menu need (the-bridge
+// workspaces LIBRARY_GAPS "Menu touch rows", R59). Compact rows sit edge to
+// edge, so the spread `touchTarget` of Button and ModelChip (d-121) would lay
+// each row's hit area over the next one; the row grows instead. Only under
+// `@media (pointer: coarse)`, so a mouse keeps the 32 px rows of size md; the
+// label stays `label` (14) and the icons icon.16. It sets a minimum height, so
+// it adds nothing to a row that is already 44 or more: a `size="lg"` row or a
+// choice with a description. With `density="compact"` the 44 px rows stay
+// edge to edge, one 44 px pitch.
+//
 // The box is glass, as Dialog and BottomSheet: Figma's menu (Workbench T12
 // 420:1266, T2b 402:5721, D19 417:1740) fills #0f1626 at 0.95 over a 12 px
 // background blur, so the text under an open menu does not show through.
@@ -187,6 +198,8 @@ export const menu = defineSlotRecipe({
     },
     // Only `size="md"` has a compact pitch; see the compound variant.
     density: { default: {}, compact: {} },
+    // At least 44 px rows on a touch screen; a mouse keeps the size's rows.
+    touch: { true: { item: { '@media (pointer: coarse)': { minH: 'control.xl' } } }, false: {} },
   },
   compoundVariants: [
     {
@@ -209,5 +222,5 @@ export const menu = defineSlotRecipe({
       },
     },
   ],
-  defaultVariants: { size: 'md', density: 'default', iconTone: 'muted' },
+  defaultVariants: { size: 'md', density: 'default', iconTone: 'muted', touch: false },
 })

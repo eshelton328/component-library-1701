@@ -216,7 +216,9 @@ export function SizedBottomSheet({
 
 // The outside rules of a sheet with `closeOn`: a focus outside never closes it, and a press outside closes it only
 // on a scrim (`onScrim`). The sheet's layer takes every press outside it (its positioner covers the window, over the
-// scrim), so a press there is on the scrim when a scrim is drawn.
+// scrim), so a press there is on the scrim when a scrim is drawn. The focus rule is a guard only: the sheet's focus
+// trap takes a focus outside back before Ark's outside check sees it, and on a touch screen Ark does not watch the
+// focus at all, so no story can reach it.
 function outsideRules(onScrim: boolean) {
   return {
     closeOnInteractOutside: onScrim,

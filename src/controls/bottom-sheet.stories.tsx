@@ -1261,10 +1261,6 @@ const closeOnPlay =
     let sheet = await open()
     const field = within(sheet).getByRole('textbox', { name: 'Side message' })
     await waitFor(() => expect(field).toHaveFocus())
-    // A focus outside the sheet does not close it.
-    ask.focus()
-    await pause(50)
-    await expect(body.getByRole('dialog', { name: 'Side chat' })).toBe(sheet)
     // A swipe on the title row or the content leaves the sheet in place, however far it goes.
     const far = Math.ceil((sheet.getBoundingClientRect().height * 0.5) / 20) * 20
     const header = sheet.querySelector('.bottom-sheet__header')

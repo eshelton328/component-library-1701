@@ -7,6 +7,7 @@ import { BranchIcon, BubbleIcon, CalendarIcon, CheckIcon, CloseIcon, EditIcon, G
 import { Inline } from './layout'
 import { Menu, RadioMenu, type MenuEntry, type MenuSubmenu, type RadioMenuOption } from './menu'
 import { expectScrollAreas } from './scroll-area.testing'
+import { atTextSize, textSizes, textSpills } from './text-size.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', minH: 'shell.dialog' })
 
@@ -1178,3 +1179,37 @@ const compactSortPlay: StoryObj<typeof meta>['play'] = async () => {
 /** The Artifacts Sort menu (D6): `RadioMenu density="compact"`, beside the default density. */
 export const CompactSortDark: StoryObj<typeof meta> = { render: () => <CompactSort />, play: compactSortPlay, globals: { mode: 'dark' } }
 export const CompactSortLight: StoryObj<typeof meta> = { render: () => <CompactSort />, play: compactSortPlay, globals: { mode: 'light' } }
+
+// The Inbox sort menu as the-bridge opens it (`width="sort"`, 280). At Large "Most recent activity at the top" is
+// wider than the row, so at Default and Large a description wraps under its label and the row grows.
+function SortAtSizes() {
+  return (
+    <main className={page}>
+      <RadioMenu open trigger={<Button>Sort</Button>} label="Sort tasks" heading="Sort by" options={describedSorts} defaultValue="newest" width="sort" />
+    </main>
+  )
+}
+
+const sortAtSizesPlay: StoryObj<typeof meta>['play'] = async () => {
+  const menu = await within(document.body).findByRole('menu')
+  const description = within(menu).getByText('Most recent activity at the top')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      await expect(Math.round(menu.getBoundingClientRect().width)).toBe(280)
+      await expect(textSpills(menu)).toEqual([])
+      const line = Number.parseFloat(getComputedStyle(description).lineHeight)
+      if (size === 'small') {
+        // As before: one line, and the row Figma's 50 (D9 346:4003).
+        await expect(getComputedStyle(description).whiteSpace).toBe('nowrap')
+        await expect(Math.round(description.getBoundingClientRect().height)).toBe(Math.round(line))
+        await expect(Math.round(within(menu).getByRole('menuitemradio', { name: 'Newest first' }).getBoundingClientRect().height)).toBe(50)
+      } else {
+        await expect(getComputedStyle(description).whiteSpace).toBe('normal')
+      }
+    })
+  }
+}
+
+/** The sort menu at Small, Default and Large: a description that is too long for the row wraps. */
+export const SortTextSizesDark: StoryObj<typeof meta> = { render: () => <SortAtSizes />, play: sortAtSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const SortTextSizesLight: StoryObj<typeof meta> = { render: () => <SortAtSizes />, play: sortAtSizesPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -138,7 +138,9 @@ export const menu = defineSlotRecipe({
       '&[data-has-description]': { h: 'auto', py: '6', px: '12', borderRadius: 'md' },
     },
     itemBody: { display: 'flex', flexDirection: 'column', gap: '2', flex: '1', minW: '0' },
-    itemDescription: { textStyle: 'small', color: 'fg.muted', whiteSpace: 'nowrap' },
+    // One line at Small (D9). At Default and Large (d-122) a description wider than the row wraps under the label
+    // and the row grows: at Large "Most recent activity at the top" is wider than the sort menu's row.
+    itemDescription: { textStyle: 'small', color: 'fg.muted', whiteSpace: 'nowrap', _textDefault: { whiteSpace: 'normal' }, _textLarge: { whiteSpace: 'normal' } },
     itemIcon: {},
     itemChevron: { display: 'inline-flex', flexShrink: '0', ms: 'auto' },
     itemTrailing: { flexShrink: '0', ms: 'auto', textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap' },

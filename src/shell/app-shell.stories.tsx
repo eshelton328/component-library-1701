@@ -1804,7 +1804,9 @@ const reopenFalling: StoryObj<typeof meta> = {
     const riseEnd = Number(root.dataset.keyboardEnd)
     await expect(riseEnd).toBeGreaterThanOrEqual(start + motionMs)
     await expect(riseEnd).toBeLessThanOrEqual(reported + motionMs)
-    await settled(footer, 266)
+    // The layout takes the inset at the clock's finish, which can come after a frame that draws the footer at 266
+    // already, so `last` is read once the open has docked (`opened`), not at `settled` alone.
+    await opened(root, footer, 266)
     timed.stop()
     // The first frame at the end: the dock's own inset, which has full precision, not the computed transform, which
     // has six digits and reads 266 a fraction of a millisecond before the end.
@@ -2676,7 +2678,8 @@ const keyboardRise: StoryObj<typeof meta> = {
     const start = performance.now()
     await userEvent.click(field)
     await stepViewport(fakeViewport, rising)
-    await settled(footer, 266)
+    // As in Reopen Falling: `last` is read once the open has docked, after the clock's finish lays the inset out.
+    await opened(root, footer, 266)
     record.stop()
     timed.stop()
     await expect(record.frames.every((f) => f.shell === 844)).toBe(true)

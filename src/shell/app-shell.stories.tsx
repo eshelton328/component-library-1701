@@ -3488,16 +3488,22 @@ export const DockFrameWorkReducedLight: StoryObj<typeof meta> = { ...dockFrameWo
 // With `resizing`, a frame in which that element changes its size is read again after the shell's own ResizeObserver
 // (made before this one, so its callback comes first): the shell restarts its move there, before the frame paints, so
 // the read in the frame's callbacks saw a layout that the screen never shows.
+// The time a move started in the app's own clock, from its `appShellDockEvent`: the `now` that the move holds its
+// start's place until. An event without it reads NaN, which `movesInOrder` reports.
+const movedAt = (event: Event) => {
+  const detail: unknown = event instanceof CustomEvent ? event.detail : undefined
+  return typeof detail === 'object' && detail !== null && 'at' in detail ? Number(detail.at) : Number.NaN
+}
 const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElement[], resizing?: Element) => {
   const frames: { at: number; drawn: number; composer: DOMRect; lines: (DOMRect | null)[] }[] = []
-  // Each move's start in the app's clock (`keyboardMoved`: its event comes after the app's reads, later on a busy
+  // Each move's start in the app's clock (the event's `at`: the event comes after the app's reads, later on a busy
   // runner), the time its event came, and the time of each of the story's actions (`act`, just before a tap, a blur or
   // a resize), for `movesInOrder`.
   const moves: number[] = []
   const heard: number[] = []
   const acts: number[] = []
-  const onMove = () => {
-    moves.push(Number(root.dataset.keyboardMoved))
+  const onMove = (event: Event) => {
+    moves.push(movedAt(event))
     heard.push(performance.now())
   }
   root.addEventListener('app-shell-dock', onMove)
@@ -3528,7 +3534,7 @@ const recordBoxes = (root: HTMLElement, composer: () => DOMRect, lines: HTMLElem
   }
 }
 // Each move's start in the app's clock is in the task of its own event: at or after the story's last action before that
-// event and the event of the move before, and at or before its own event. So a `keyboardMoved` too early or too late is
+// event and the event of the move before, and at or before its own event. So an `at` too early or too late is
 // out of order, with no tolerance (the clock's grain is 0.1 ms, so a time in the same tick reads equal).
 const movesInOrder = (name: string, moves: number[], heard: number[], acts: number[]) =>
   moves.flatMap((moved, i) => {
@@ -3645,15 +3651,15 @@ const dockTurns: StoryObj<typeof meta> = {
         if (Math.abs(f.rise - want) > 1) off.push(`${name} @${String(Math.round(f.drawn))}: rise ${f.rise.toFixed(1)}, curve ${want.toFixed(1)}`)
       }
     }
-    // Each move's start in the app's clock (`keyboardMoved`), the time its event came, and the story's actions, as in
+    // Each move's start in the app's clock (the event's `at`), the time its event came, and the story's actions, as in
     // `recordBoxes`, for `movesInOrder`.
     const heard: number[] = []
     const acts: number[] = []
     const act = () => {
       acts.push(performance.now())
     }
-    root.addEventListener('app-shell-dock', () => {
-      moves.push(Number(root.dataset.keyboardMoved))
+    root.addEventListener('app-shell-dock', (event) => {
+      moves.push(movedAt(event))
       heard.push(performance.now())
     })
     // The start of the move that the last report or focus change started: its end once it has changed, less its time.
@@ -4005,6 +4011,55 @@ const footEdges: StoryObj<typeof meta> = {
 /** Phone chat on iOS with a 12 px `foot`: the composer does not jump as the space changes at a move's edge. */
 export const FootEdgesDark: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The root attributes that a dock move writes in normal use: the keyboard's cover (`--app-shell-keyboard` in `style`)
+// and the move's end (`data-keyboard-end`). A move writes nothing more on the root, so a test or a trace that needs
+// more takes it from the dock event's `detail`: one more attribute written in each move cost frames over 20 ms on an
+// iPhone close (motion gate 338, `data-keyboard-moved`).
+const quietRootWrites = new Set(['style', 'data-keyboard-end'])
+const quietRoot: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field } = threadParts(canvasElement)
+    const keyboard = 336
+    const written = new Set<string>()
+    const watch = new MutationObserver((records) => {
+      for (const record of records) if (record.attributeName !== null) written.add(record.attributeName)
+    })
+    watch.observe(root, { attributes: true })
+    let moves = 0
+    const onMove = () => {
+      moves += 1
+    }
+    root.addEventListener(appShellDockEvent, onMove)
+    // An open, a close, and a close during an open (a move that restarts).
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await wait(motionMs + 150)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    await userEvent.click(field)
+    await wait(110)
+    fakeViewport.move({ height: 844 - keyboard })
+    await wait(90)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    for (const record of watch.takeRecords()) if (record.attributeName !== null) written.add(record.attributeName)
+    watch.disconnect()
+    root.removeEventListener(appShellDockEvent, onMove)
+    await expect(moves).toBeGreaterThanOrEqual(4)
+    await expect([...written].filter((name) => !quietRootWrites.has(name))).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a keyboard move writes no root attribute beyond its cover and its end (motion gate 338). */
+export const QuietRootDark: StoryObj<typeof meta> = { ...quietRoot, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const QuietRootLight: StoryObj<typeof meta> = { ...quietRoot, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // A thread whose lines carry their own transform (a list row moved aside): the dock's move adds its own to it, so each
 // line keeps its offset in every frame of a move (Codex review of #314).

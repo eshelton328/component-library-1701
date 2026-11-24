@@ -358,19 +358,21 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       for (const cleanup of move.cleanups) cleanup()
     }
     // Tells the page that the dock moves to `inset`, before it measures the page: a listener may change the layout
-    // there (a composer that grows with the keyboard), and the move takes that change on the keyboard's curve.
-    const announce = (inset: number) => {
-      root.dispatchEvent(new CustomEvent<AppShellDockDetail>(appShellDockEvent, { detail: { inset } }))
+    // there (a composer that grows with the keyboard), and the move takes that change on the keyboard's curve. `at` is
+    // the move's own `now`, the time it holds its start's place until, for a test or a trace: the listener runs after
+    // the move's reads, which a busy main thread makes later, so its own clock is late. It goes in the event the move
+    // sends anyway, so normal use writes nothing more (a root attribute here cost frames on an iPhone close, gate 338).
+    const announce = (inset: number, at: number) => {
+      root.dispatchEvent(new CustomEvent<AppShellDockDetail>(appShellDockEvent, { detail: { inset, at } }))
     }
     // The dock at `inset` at once: a keyboard that reports each frame of its move, a mouse with reduced motion, or the
     // same inset laid out again for a new layout.
     const jump = (inset: number) => {
       const now = performance.now()
-      root.dataset.keyboardMoved = String(now)
       const look = drawn(now)
       const bodies = dockedParts().bodies.map((body) => ({ el: body, ...look.body(body) }))
       stopMotion()
-      announce(inset)
+      announce(inset, now)
       lay(inset)
       // The move is added to the scroll position read before the change: a view that grows has the browser clamp
       // `scrollTop` first, and adding to that would jump the thread (Codex review of #216).
@@ -416,16 +418,14 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // start can be in the past: a frame shows the dock where the keyboard is then). `drawnInset` is where the dock is
     // drawn now.
     const glide = (target: number, start: number, fromInset: number, drawnInset: number) => {
+      // The time this move holds its start's place until (`begun`, below), sent to the page as the event's `at`.
       const now = performance.now()
-      // The time this move holds its start's place until (`begun`, below), for a test or a trace to read. A listener of
-      // `appShellDockEvent` runs after the reads below, which a busy main thread makes later.
-      root.dataset.keyboardMoved = String(now)
       const look = drawn(now)
       const parts = dockedParts()
       const footersNow = parts.footers.map((el) => ({ el, bottom: look.footerBottom(el) }))
       const bodiesNow = parts.bodies.map((el) => ({ el, ...look.body(el) }))
       stopMotion()
-      announce(target)
+      announce(target, now)
       // The layout of the move: the one the page has, when its view is already the larger; else the larger view, of
       // the dock where it is drawn now or of the target.
       const low = Math.min(drawnInset, target)
@@ -1105,6 +1105,13 @@ export const appShellDockEvent = 'app-shell-dock'
 export type AppShellDockDetail = {
   /** How tall the on-screen keyboard is at the move's end, in CSS px; 0 when the move closes it. */
   inset: number
+  /**
+   * The `performance.now()` time at which the shell started this move, before it measured the page: the dock is drawn
+   * where it was at this time until the move's animations start. A listener's own `performance.now()` is later, by as
+   * long as the shell's reads took. For a test or a trace that times the move. `AppShell` always sets it; it is optional
+   * so that a detail made without it, as before it came, still type-checks.
+   */
+  at?: number
 }
 
 /** A mistake in the page that `AppShell` found at run time, for `onDiagnostic`. It holds no element or page text. */

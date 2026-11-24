@@ -73,6 +73,7 @@ export type AppShellDiagnostic = {
 // @public
 export type AppShellDockDetail = {
     inset: number;
+    at?: number;
 };
 
 // @public

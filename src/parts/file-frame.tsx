@@ -71,8 +71,10 @@ export type FileFrameProps = Scalar<FileFrameVariantProps> & {
  * narrow for the bar, `barEnd="keep"` (the default) keeps the end group and
  * cuts the meta, then the name, with an ellipsis; `barEnd="cut"` lets the
  * name and the meta take the bar first and the box cuts the bar's end, for a
- * bar whose end holds no control (Read-only only). A name and meta wider than
- * the bar still end with an ellipsis and show the whole text in a tooltip.
+ * bar whose end holds no control (Read-only only). `cut` cuts only at the Small
+ * text size; at Default and Large (d-122) the bar wraps and the end group takes
+ * a row of its own when it does not fit. A name and meta wider than the bar
+ * still end with an ellipsis and show the whole text in a tooltip.
  */
 export function FileFrame({
   name,

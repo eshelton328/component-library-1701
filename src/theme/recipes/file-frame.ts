@@ -34,7 +34,19 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   right, never over the meta. A name and meta wider than the bar still
 //   shrink and show their tooltip. Use it only where the end holds no
 //   control.
+// - Text sizes (d-122): `barEnd: 'cut'` cuts Read-only at Small only, the
+//   size of the Figma frames. At Default and Large the text is wider, so the
+//   bar wraps: the end group keeps its own width and moves to a row of its
+//   own when it does not fit after the name, at the bar's end, 8 under the
+//   name's row (the bar's gap). The meta takes only the room the name and
+//   the end group leave on the first row, so it gives way first, as at
+//   Small; a name too long for its row still ends with an ellipsis.
 // The fill is `surface.pane` with no glass blur, as Figma draws the box.
+// `barEnd: 'cut'` at Default and Large: the bar wraps and the end group keeps its width.
+const wrappedBar = { flexWrap: 'wrap' } as const
+const wrappedMeta = { flexBasis: '0', flexGrow: '1' } as const
+const wrappedEnd = { flexBasis: 'auto', flexGrow: '0', minW: 'auto', ms: 'auto', justifyContent: 'flex-start' } as const
+
 export const fileFrame = defineSlotRecipe({
   className: 'file-frame',
   jsx: ['FileFrame'],
@@ -77,7 +89,19 @@ export const fileFrame = defineSlotRecipe({
     },
     barEnd: {
       keep: {},
-      cut: { end: { flexBasis: '0', flexGrow: '1', minW: '0', ms: '0', justifyContent: 'safe flex-end' } },
+      cut: {
+        bar: { _textDefault: wrappedBar, _textLarge: wrappedBar },
+        meta: { _textDefault: wrappedMeta, _textLarge: wrappedMeta },
+        end: {
+          flexBasis: '0',
+          flexGrow: '1',
+          minW: '0',
+          ms: '0',
+          justifyContent: 'safe flex-end',
+          _textDefault: wrappedEnd,
+          _textLarge: wrappedEnd,
+        },
+      },
     },
   },
   defaultVariants: { variant: 'box', barEnd: 'keep' },

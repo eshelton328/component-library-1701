@@ -2111,7 +2111,7 @@ export const LateFirstFrame30Light: StoryObj<typeof meta> = { ...lateFirstFrame(
 // The keyboard's report comes before the move's late first frame, and a second report (a correction) before it too:
 // the move still starts where the dock is, and every frame rises toward the keyboard, never below the start (Codex
 // review of #280).
-const lateFirstFrameCorrection: StoryObj<typeof meta> = {
+const lateFirstFrameCorrection = (heldMs: number): StoryObj<typeof meta> => ({
   ...withMotion,
   render: () => <ThreadChat />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
@@ -2125,7 +2125,7 @@ const lateFirstFrameCorrection: StoryObj<typeof meta> = {
     fakeViewport.addEventListener(
       'resize',
       () => {
-        busy(100)
+        busy(heldMs)
         reported = performance.now()
         fakeViewport.move({ height: 844 - 330 })
       },
@@ -2144,10 +2144,47 @@ const lateFirstFrameCorrection: StoryObj<typeof meta> = {
     await expect(afterReport[1]?.rise ?? 0).toBeGreaterThan(0)
     await expect(moved.filter((f) => f.rise > 346 + 1)).toEqual([])
   }),
-}
+})
 /** Phone chat: the keyboard reports twice before the dock's late first frame; the composer only rises. */
-export const LateFirstFrameCorrectionDark: StoryObj<typeof meta> = { ...lateFirstFrameCorrection, globals: { mode: 'dark', viewport: { value: 'm390' } } }
-export const LateFirstFrameCorrectionLight: StoryObj<typeof meta> = { ...lateFirstFrameCorrection, globals: { mode: 'light', viewport: { value: 'm390' } } }
+export const LateFirstFrameCorrectionDark: StoryObj<typeof meta> = { ...lateFirstFrameCorrection(100), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrameCorrectionLight: StoryObj<typeof meta> = { ...lateFirstFrameCorrection(100), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/**
+ * The same with the page held 200 ms, past most of the keyboard's time before the correction: the composer still only
+ * rises (a held runner drew it at 324, then brought it down to 296).
+ */
+export const LateFirstFrameCorrectionSlowDark: StoryObj<typeof meta> = { ...lateFirstFrameCorrection(200), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const LateFirstFrameCorrectionSlowLight: StoryObj<typeof meta> = { ...lateFirstFrameCorrection(200), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/**
+ * The keyboard reports an open, then a close before the dock's first frame, with the page held 200 ms between: the turn
+ * starts where the dock is drawn (still down), so no frame shows the composer up (a held runner drew it at 218 px).
+ */
+const turnBeforeFirstFrame: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ThreadChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, footer, field } = threadParts(canvasElement)
+    const timed = recordRise(footer, root)
+    await userEvent.click(field)
+    await wait(120)
+    fakeViewport.addEventListener(
+      'resize',
+      () => {
+        busy(200)
+        fakeViewport.move({ height: 844 })
+      },
+      { once: true },
+    )
+    fakeViewport.move({ height: 844 - 380 })
+    await settled(footer, 0)
+    await nextFrame()
+    await nextFrame()
+    timed.stop()
+    await expect(timed.frames.length).toBeGreaterThan(0)
+    await expect(timed.frames.filter((f) => f.rise > 1)).toEqual([])
+  }),
+}
+export const TurnBeforeFirstFrameDark: StoryObj<typeof meta> = { ...turnBeforeFirstFrame, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const TurnBeforeFirstFrameLight: StoryObj<typeof meta> = { ...turnBeforeFirstFrame, globals: { mode: 'light', viewport: { value: 'm390' } } }
 /** The same at 60 fps. */
 export const LateFirstFrameDark: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const LateFirstFrameLight: StoryObj<typeof meta> = { ...lateFirstFrame(17), globals: { mode: 'light', viewport: { value: 'm390' } } }

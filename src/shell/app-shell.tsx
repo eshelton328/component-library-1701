@@ -741,16 +741,23 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         jump(inset)
         return
       }
-      if (moving !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small)) {
-        // Before the move's first frame nothing is drawn, so the move still starts where the dock is (Codex review of
-        // #280).
-        if (!firstFrame) from = (shown - inset * done) / (1 - done)
+      // Before the move's first frame nothing is drawn, so the dock is still where the move began (`origin`), not where
+      // its curve says (Codex review of #280). A correction then keeps the move however late it comes by the clock (a
+      // main thread held past `keepEndUntil` between two reports): a new move would start from a place no frame
+      // showed, and the first frame would draw the dock past the new target and bring it back (Late First Frame
+      // Correction Slow: 327 px, then down to 296).
+      const unseen = moving !== undefined && firstFrame
+      if (moving !== undefined && done < 1 && ahead && (elapsed < keepEndUntil || small || unseen)) {
+        if (!unseen) from = (shown - inset * done) / (1 - done)
         glide(inset, start, from, shown)
         return
       }
       const wasMoving = moving !== undefined
-      from = shown
-      origin = shown
+      // A turn before the move's first frame starts where the dock is drawn, at `origin` (Turn Before First Frame: a
+      // close report held 200 ms after an open's drew the dock at 218 px, then down to 0).
+      const place = unseen ? origin : shown
+      from = place
+      origin = place
       start = Math.min(now, since)
       // The time the move ends, for a test or a trace to read: a correction keeps it and a new move sets it.
       root.dataset.keyboardEnd = String(start + keyboardMotion)
@@ -758,7 +765,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         firstFrame = true
         timeFrames()
       }
-      glide(inset, start, from, shown)
+      glide(inset, start, from, place)
     }
     // The keyboards measured last, per orientation, and the opening of one: from a field's focus until the keyboard's
     // measure settles, the dock rises with the keyboard's first report, to the reported inset, or to the expected one

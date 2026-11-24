@@ -131,7 +131,7 @@ export function Card({ title, loading = false, media, leading, badge, badgePosit
             </TitleRow>
             {subtitle === undefined || subtitle === '' ? null : (
               <Subtitle>
-                {loading ? <Skeleton width="half" /> : <TruncatedText>{subtitle}</TruncatedText>}
+                {loading ? <Skeleton width="half" /> : <TruncatedText grow>{subtitle}</TruncatedText>}
               </Subtitle>
             )}
           </Heading>
@@ -139,7 +139,11 @@ export function Card({ title, loading = false, media, leading, badge, badgePosit
         </Header>
         {description === undefined || description === '' ? null : (
           <Description>
-            {loading ? <Skeleton width="full" /> : <TruncatedText owner={owner}>{description}</TruncatedText>}
+            {loading ? <Skeleton width="full" /> : (
+                <TruncatedText owner={owner} grow>
+                  {description}
+                </TruncatedText>
+              )}
           </Description>
         )}
         {shown(meta) ? <Meta>{meta}</Meta> : null}

@@ -7,6 +7,7 @@ import { Dialog } from './dialog'
 import { Stack } from './layout'
 import { ScrollFrame } from './scroll-frame'
 import { Tooltip, TruncatedText } from './tooltip'
+import { atTextSize, expectGrown, textSizes, textSpills } from './text-size.testing'
 import { expectCutText } from './tooltip.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '40', textStyle: 'body' })
@@ -445,3 +446,54 @@ export const TruncatedTextWidenAndNarrow: StoryObj<typeof meta> = {
     await expect(tooltipOf()).toBeNull()
   },
 }
+
+
+// `grow` at each text size (d-131): Small cuts the text as before, with an ellipsis; at Default and Large it wraps
+// onto as many lines as it needs, so the box grows and no text is cut. Without `grow` the ellipsis stays.
+function Grow() {
+  return (
+    <main className={page}>
+      <div className={narrow} data-testid="grow-one">
+        <TruncatedText grow>{long}</TruncatedText>
+      </div>
+      <div className={narrow} data-testid="grow-two">
+        <TruncatedText grow lines={2}>{`${long} ${long} ${long}`}</TruncatedText>
+      </div>
+      <div className={narrow} data-testid="plain">
+        <TruncatedText>{long}</TruncatedText>
+      </div>
+    </main>
+  )
+}
+
+const growPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const box = (id: string) => within(canvasElement).getByTestId(id)
+  const textIn = (id: string) => {
+    const t = box(id).querySelector('.truncated-text')
+    if (!(t instanceof HTMLElement)) throw new Error(`no text in ${id}`)
+    return t
+  }
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      const plain = textIn('plain')
+      await expect(getComputedStyle(plain).textOverflow).toBe('ellipsis')
+      await waitFor(() => expect(plain.scrollWidth).toBeGreaterThan(plain.clientWidth))
+      if (size === 'small') {
+        // As before: one line with an ellipsis, and two lines clamped.
+        const one = textIn('grow-one')
+        await expect(getComputedStyle(one).textOverflow).toBe('ellipsis')
+        await waitFor(() => expect(one.scrollWidth).toBeGreaterThan(one.clientWidth))
+        await waitFor(() => expect(textIn('grow-two').scrollHeight - textIn('grow-two').clientHeight).toBeGreaterThan(1))
+        return
+      }
+      await expectGrown(box('grow-one'), ['.truncated-text'])
+      await expectGrown(box('grow-two'), ['.truncated-text'])
+      await expect(textSpills(box('grow-one'))).toEqual([])
+      await expect(textSpills(box('grow-two'))).toEqual([])
+    })
+  }
+}
+
+/** `grow` at Small, Default and Large: Small keeps the ellipsis; the larger sizes wrap the whole text. */
+export const TruncatedTextGrowTextSizesDark: StoryObj<typeof meta> = { render: () => <Grow />, play: growPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const TruncatedTextGrowTextSizesLight: StoryObj<typeof meta> = { render: () => <Grow />, play: growPlay, globals: { mode: 'light', textSize: 'small' } }

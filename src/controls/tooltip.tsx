@@ -101,6 +101,13 @@ export type TruncatedTextProps = {
    */
   lines?: 1 | 2 | 3 | undefined
   /**
+   * At the Default and Large text sizes (d-122), wrap onto as many lines as the text needs, with no ellipsis and no
+   * line clamp, so the box grows in height with its text. Small is unchanged: one line (or `lines`) and an ellipsis.
+   * For text in a content box that may grow, such as a card's description or a tool line; never for one-line
+   * chrome (a tab, a pane header, a tree row), whose height d-122 keeps.
+   */
+  grow?: boolean | undefined
+  /**
    * Where the tooltip opens; `bottom` when not set, below the text and away from a card's title above it. Where the
    * window has no room there, it flips to the other side, and it slides along the text to stay in the window.
    */
@@ -140,7 +147,14 @@ const CLOSE_DELAY = 150
  * covers a card's title or a row reaches that element, and the pointer
  * cannot rest on it. Escape closes it.
  */
-export function TruncatedText({ children, placement = 'bottom', highlight, lines = 1, owner: ownerRef }: TruncatedTextProps) {
+export function TruncatedText({
+  children,
+  placement = 'bottom',
+  highlight,
+  lines = 1,
+  grow = false,
+  owner: ownerRef,
+}: TruncatedTextProps) {
   const [element, setElement] = useState<HTMLSpanElement | null>(null)
   const [cut, setCut] = useState(false)
   const [owner, setOwner] = useState<HTMLElement | null>(null)
@@ -261,7 +275,7 @@ export function TruncatedText({ children, placement = 'bottom', highlight, lines
       }}
       cutText
     >
-      <Text ref={ref} lines={lineVariants[lines]} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
+      <Text ref={ref} lines={lineVariants[lines]} grow={grow} {...(cut && !inOwner ? { tabIndex: 0 } : {})}>
         {highlight === undefined ? children : <Highlight text={children} query={highlight} />}
       </Text>
     </TooltipBase>

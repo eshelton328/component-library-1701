@@ -99,7 +99,7 @@ export function FileFrame({
         <Name>
           <TruncatedText>{name}</TruncatedText>
         </Name>
-        {shown(meta) ? <Meta>{typeof meta === 'string' ? <TruncatedText>{meta}</TruncatedText> : meta}</Meta> : null}
+        {shown(meta) ? <Meta>{typeof meta === 'string' ? <TruncatedText grow>{meta}</TruncatedText> : meta}</Meta> : null}
         {hasActions || onCopy !== undefined || readOnly ? (
           <End>
             {hasActions ? actions : null}

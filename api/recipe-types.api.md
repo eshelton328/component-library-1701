@@ -1837,6 +1837,7 @@ import type { ConfigRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js
 
 export type TruncatedTextVariant = {
   lines?: "1" | "2" | "3"
+  grow?: boolean
 }
 
 export type TruncatedTextVariantProps = {

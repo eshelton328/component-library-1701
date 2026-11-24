@@ -25,6 +25,11 @@ you add a file. `theme/` is not a tier.
 - Text that can be cut uses `TruncatedText` (`controls/tooltip.tsx`), with
   `lines` for two or three lines, never an ellipsis or a `Clamp`. Its
   story shows a long value and calls `expectCutText` in its play function.
+- Content text that may wrap at the larger text sizes (d-131), such as a
+  card's description, takes `TruncatedText grow`: Small keeps its
+  ellipsis, Default and Large wrap it and the box grows. One-line chrome
+  (a tab, a pane header, a tree row) never takes `grow`. Its
+  `TextSizes` story calls `expectGrown` with the slots that grow.
 - `fg.subtle` only on the surfaces its description names; on
   `surface.raised` or `surface.selected`, use `fg.muted`.
 

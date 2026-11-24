@@ -57,6 +57,12 @@ export const tooltip = defineSlotRecipe({
 // fits shows whole. A KpiTile caption with `captionLines={2}` uses it (Toolkit
 // T23 491:8077, D12 445:227), so a caption cut on its second line still shows
 // whole in the tooltip.
+//
+// `grow` (d-122): under the text-default and text-large classes the text
+// wraps onto as many lines as it needs, with no ellipsis and no line clamp,
+// so a content box grows in height with its text. It changes nothing at
+// Small, the size of the Figma frames. The class selectors are more specific
+// than the `lines` variant, so they also lift a clamp of 2 or 3 lines.
 export const truncatedText = defineRecipe({
   className: 'truncated-text',
   jsx: ['TruncatedText'],
@@ -79,6 +85,13 @@ export const truncatedText = defineRecipe({
       '2': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineClamp: '2' },
       '3': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineClamp: '3' },
     },
+    grow: {
+      true: {
+        _textDefault: { whiteSpace: 'normal', overflowWrap: 'anywhere', textOverflow: 'clip', WebkitLineClamp: 'unset' },
+        _textLarge: { whiteSpace: 'normal', overflowWrap: 'anywhere', textOverflow: 'clip', WebkitLineClamp: 'unset' },
+      },
+      false: {},
+    },
   },
-  defaultVariants: { lines: '1' },
+  defaultVariants: { lines: '1', grow: false },
 })

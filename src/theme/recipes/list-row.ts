@@ -187,7 +187,17 @@ export const listRow = defineSlotRecipe({
         // TruncatedText inside cuts a long title and shows it whole in a tooltip.
         title: { minW: '0' },
         // A text meta holds a TruncatedText, which cuts it and shows it whole in a tooltip; any other meta is cut here.
-        meta: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:has(> .truncated-text)': { overflow: 'visible' } },
+        // At the Default and Large text sizes (d-131) any meta wraps instead, and a row of items in it (a model name
+        // and a ContextMeter) wraps onto more lines, so the row grows with its text and nothing is cut.
+        meta: {
+          minW: '0',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          '&:has(> .truncated-text)': { overflow: 'visible' },
+          _textDefault: { overflow: 'visible', whiteSpace: 'normal', '& > *': { flexWrap: 'wrap' } },
+          _textLarge: { overflow: 'visible', whiteSpace: 'normal', '& > *': { flexWrap: 'wrap' } },
+        },
       },
     },
     density: {

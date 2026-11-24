@@ -10,6 +10,7 @@ import { KindTile } from './kind-tile'
 import { MetaLine } from './meta-line'
 import { StatusPill } from './status-pill'
 import { expectCutText } from '../controls/tooltip.testing'
+import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const column = css({ w: 'shell.sidebar' })
@@ -718,3 +719,43 @@ const artifactCardsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement 
 /** `badgePosition="end"` and the `md` meta mark: the Artifacts card (D1 402:15449). */
 export const ArtifactCardDark: StoryObj<typeof meta> = { render: () => <ArtifactCards />, globals: { mode: 'dark' }, play: artifactCardsPlay }
 export const ArtifactCardLight: StoryObj<typeof meta> = { render: () => <ArtifactCards />, globals: { mode: 'light' }, play: artifactCardsPlay }
+
+
+// The subtitle and the description at each text size (d-131): Small cuts each with an ellipsis, as before; at Default
+// and Large they wrap and the card grows in height, as an iOS cell does. The title keeps its one line.
+function GrowCard() {
+  return (
+    <main className={page}>
+      <div className={column} data-testid="grow-card">
+        <Card
+          title="pr-description-checker"
+          subtitle="agents/pr-description-checker-with-a-long-path.md"
+          description="Grades a PR title and description against the final diff and quotes the hunk behind each failure"
+        />
+      </div>
+    </main>
+  )
+}
+
+const growCardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const card = within(canvasElement).getByTestId('grow-card')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      if (size === 'small') {
+        for (const slot of ['.card__subtitle', '.card__description']) {
+          const t = card.querySelector(`${slot} .truncated-text`)
+          if (!(t instanceof HTMLElement)) throw new Error(`no ${slot}`)
+          await expect(getComputedStyle(t).textOverflow).toBe('ellipsis')
+          await waitFor(() => expect(t.scrollWidth).toBeGreaterThan(t.clientWidth))
+        }
+        return
+      }
+      await expectGrown(card, ['.card__subtitle', '.card__description'])
+      await expect(textSpills(card)).toEqual([])
+    })
+  }
+}
+
+/** A Toolkit card at Small, Default and Large: the larger sizes wrap its subtitle and description. */
+export const GrowTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowCard />, play: growCardPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const GrowTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowCard />, play: growCardPlay, globals: { mode: 'light', textSize: 'small' } }

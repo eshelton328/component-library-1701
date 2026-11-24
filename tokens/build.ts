@@ -61,11 +61,11 @@ const defaultMode = modeModifier.default ?? modes[0]
 const defaultSize = sizeModifier.default ?? sizes[0]
 if (!defaultTheme || !defaultMode || !defaultSize) throw new Error('resolver.json lists no theme, no mode or no size')
 // The other text sizes, each with the Panda condition and the class on
-// <html> that picks it: size small is _textSmall and .text-small.
+// <html> that picks it: size default is _textDefault and .text-default.
 const otherSizes = sizes.filter((s) => s !== defaultSize).map((s) => ({ size: s, condition: `text${s.charAt(0).toUpperCase()}${s.slice(1)}`, className: `text-${s}` }))
 
 // Tokens under dark.* and light.* are the raw mode groups, and those under
-// small.* and large.* the raw size groups; modes/*.json and sizes/*.json
+// default.* and large.* the raw size groups; modes/*.json and sizes/*.json
 // extend them into color.*, shadow.* and text.*, so only the extended
 // copies ship.
 const isRaw = (id: string) => [...modes, ...sizes].some((m) => id.startsWith(`${m}.`))
@@ -331,7 +331,7 @@ const otherThemes = themes.filter((t) => t !== defaultTheme)
 const preset = {
   name: 'component-library-1701',
   // A class on <html> picks a text size, as the dark class picks the mode:
-  // `.text-small &` is the condition _textSmall.
+  // `.text-default &` is the condition _textDefault.
   conditions: { extend: Object.fromEntries(otherSizes.map(({ condition, className }) => [condition, `.${className} &`])) },
   theme: { extend: { tokens, semanticTokens: semantic(defaultTheme), textStyles } },
   themes: Object.fromEntries(otherThemes.map((t) => [t, { semanticTokens: semantic(t) }])),

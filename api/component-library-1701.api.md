@@ -1918,8 +1918,8 @@ export type TextSize = 'small' | 'default' | 'large';
 
 // @public
 export const textSizeClass: {
-    readonly small: "text-small";
-    readonly default: null;
+    readonly small: null;
+    readonly default: "text-default";
     readonly large: "text-large";
 };
 

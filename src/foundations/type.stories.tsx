@@ -18,9 +18,9 @@ import { textSizeClass, type TextSize } from './text-size'
 // 452:2964, D9 452:3582: SemiBold 26 on an auto line in a 34 px box, 26/36
 // on the grid), one step under `heading`.
 //
-// Each style also comes in a Small and a Large text size (d-119): the
-// text-small or text-large class on <html> picks one, as the dark class
-// picks the mode, and Default needs no class. The Sizes story shows the
+// Each style comes in three text sizes (d-122): Small is the base type
+// and needs no class, and the text-default or text-large class on <html>
+// picks the other two, as the dark class picks the mode. The Sizes story shows the
 // three side by side; tokens/sizes/AGENTS.md has the table.
 const page = css({ bg: 'bg.canvas', p: '24', display: 'grid', gap: '12' })
 const row = css({ display: 'grid', gridTemplateColumns: '160px 1fr', alignItems: 'baseline', gap: '16' })
@@ -58,32 +58,32 @@ const styles = [
 // The font size and line height in px of each style in each text size, as
 // tokens/sizes/AGENTS.md lists them.
 const expected: Record<string, Record<TextSize, [number, number]>> = {
-  heading: { small: [26, 36], default: [28, 40], large: [30, 44] },
-  headingSm: { small: [24, 32], default: [26, 36], large: [28, 40] },
-  title: { small: [18, 24], default: [20, 28], large: [22, 32] },
-  subtitle: { small: [16, 24], default: [17, 24], large: [18, 24] },
-  paneTitle: { small: [14, 20], default: [15, 20], large: [16, 20] },
-  label: { small: [13, 20], default: [14, 20], large: [15, 20] },
-  labelLg: { small: [15, 24], default: [16, 24], large: [17, 24] },
-  labelSm: { small: [12, 16], default: [13, 16], large: [14, 20] },
-  labelSmStrong: { small: [12, 16], default: [13, 16], large: [14, 20] },
-  labelXs: { small: [11, 16], default: [12, 16], large: [13, 16] },
-  labelXsStrong: { small: [11, 16], default: [12, 16], large: [13, 16] },
-  body: { small: [13, 20], default: [14, 20], large: [15, 24] },
-  pageCount: { small: [15, 20], default: [16, 20], large: [17, 24] },
-  bodyLg: { small: [14, 24], default: [15, 24], large: [16, 24] },
-  bodySm: { small: [12, 20], default: [13, 20], large: [14, 20] },
-  small: { small: [11, 16], default: [12, 16], large: [13, 16] },
-  smallXs: { small: [10, 16], default: [11, 16], large: [12, 16] },
-  mono: { small: [11, 16], default: [12, 16], large: [13, 16] },
-  monoCaps: { small: [11, 16], default: [12, 16], large: [13, 16] },
-  monoSm: { small: [10, 16], default: [11, 16], large: [12, 16] },
-  code: { small: [13, 20], default: [14, 20], large: [15, 24] },
-  eyebrow: { small: [10, 16], default: [11, 16], large: [12, 16] },
-  navLabel: { small: [9, 12], default: [10, 12], large: [11, 16] },
-  railLabel: { small: [9, 12], default: [9, 12], large: [10, 12] },
-  badge: { small: [9, 12], default: [10, 12], large: [11, 16] },
-  pill: { small: [10, 16], default: [11, 16], large: [12, 16] },
+  heading: { small: [28, 40], default: [32, 44], large: [37, 52] },
+  headingSm: { small: [26, 36], default: [30, 40], large: [34, 48] },
+  title: { small: [20, 28], default: [23, 32], large: [26, 36] },
+  subtitle: { small: [17, 24], default: [19, 28], large: [22, 32] },
+  paneTitle: { small: [15, 20], default: [17, 24], large: [20, 28] },
+  label: { small: [14, 20], default: [16, 24], large: [18, 24] },
+  labelLg: { small: [16, 24], default: [18, 28], large: [21, 32] },
+  labelSm: { small: [13, 16], default: [15, 20], large: [17, 24] },
+  labelSmStrong: { small: [13, 16], default: [15, 20], large: [17, 24] },
+  labelXs: { small: [12, 16], default: [14, 20], large: [16, 20] },
+  labelXsStrong: { small: [12, 16], default: [14, 20], large: [16, 20] },
+  body: { small: [14, 20], default: [16, 24], large: [18, 28] },
+  pageCount: { small: [16, 20], default: [18, 24], large: [21, 28] },
+  bodyLg: { small: [15, 24], default: [17, 28], large: [20, 32] },
+  bodySm: { small: [13, 20], default: [15, 24], large: [17, 28] },
+  small: { small: [12, 16], default: [14, 20], large: [16, 20] },
+  smallXs: { small: [11, 16], default: [13, 20], large: [14, 20] },
+  mono: { small: [12, 16], default: [14, 20], large: [16, 20] },
+  monoCaps: { small: [12, 16], default: [14, 20], large: [16, 20] },
+  monoSm: { small: [11, 16], default: [13, 20], large: [14, 20] },
+  code: { small: [14, 20], default: [16, 24], large: [18, 28] },
+  eyebrow: { small: [11, 16], default: [13, 20], large: [14, 20] },
+  navLabel: { small: [10, 12], default: [11, 16], large: [13, 16] },
+  railLabel: { small: [9, 12], default: [10, 12], large: [12, 16] },
+  badge: { small: [10, 12], default: [11, 16], large: [13, 16] },
+  pill: { small: [11, 16], default: [13, 20], large: [14, 20] },
 }
 
 function TypeScale() {
@@ -171,8 +171,8 @@ export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
 /** Small, Default and Large side by side, each column under its class. */
 export const Sizes: StoryObj<typeof meta> = {
-  // The Default column needs no class on <html>, whatever the toolbar picks.
-  globals: { textSize: 'default' },
+  // The Small column needs no class on <html>, whatever the toolbar picks.
+  globals: { textSize: 'small' },
   render: () => <TextSizes />,
   play: async ({ canvasElement }) => {
     // Every style of the table is in the scale.
@@ -196,12 +196,12 @@ export const Sizes: StoryObj<typeof meta> = {
   },
 }
 
-/** The text-small class on <html> makes the whole page Small. */
-export const SmallOnRoot: StoryObj<typeof meta> = {
-  globals: { textSize: 'small' },
+/** The text-default class on <html> makes the whole page Default. */
+export const DefaultOnRoot: StoryObj<typeof meta> = {
+  globals: { textSize: 'default' },
   play: async ({ canvasElement }) => {
-    await expect(document.documentElement.classList.contains('text-small')).toBe(true)
-    await checkScale(canvasElement, 'small')
+    await expect(document.documentElement.classList.contains('text-default')).toBe(true)
+    await checkScale(canvasElement, 'default')
   },
 }
 

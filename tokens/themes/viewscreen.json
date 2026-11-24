@@ -2085,19 +2085,19 @@
       "$description": "Status pill labels. Not for counts or chip labels, which use mono and label."
     }
   },
-  "small": {
-    "$description": "The text styles of the Small text size, which the text-small class on <html> picks (d-119). Each has the size and line height of the Small column in tokens/sizes/AGENTS.md; the family, weight and letter spacing are those of text.",
+  "default": {
+    "$description": "The text styles of the Default text size, which the text-default class on <html> picks (d-122). Each has the size and line height of the Default column in tokens/sizes/AGENTS.md; the family, weight and letter spacing are those of text.",
     "text": {
       "heading": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 26,
+            "value": 32,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.3847,
+          "lineHeight": 1.375,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2105,411 +2105,6 @@
         }
       },
       "headingSm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 24,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "title": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 18,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "subtitle": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 16,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.5,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "paneTitle": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 14,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.4286,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "label": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 13,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.5385,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelLg": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 15,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelSm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelSmStrong": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelXs": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 11,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.4546,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelXsStrong": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 11,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.4546,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "body": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 13,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.5385,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "pageCount": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 15,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "bodyLg": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 14,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.7143,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "bodySm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.6667,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "small": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 11,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.4546,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "smallXs": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 10,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "mono": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.mono}",
-          "fontSize": {
-            "value": 11,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.4546,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "monoCaps": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.mono}",
-          "fontSize": {
-            "value": 11,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.4546,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "monoSm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.mono}",
-          "fontSize": {
-            "value": 10,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "code": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.mono}",
-          "fontSize": {
-            "value": 13,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.5385,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "eyebrow": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.mono}",
-          "fontSize": {
-            "value": 10,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0.44,
-            "unit": "px"
-          }
-        }
-      },
-      "navLabel": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 9,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "railLabel": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 9,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "badge": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 9,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.3334,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "pill": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 10,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      }
-    }
-  },
-  "large": {
-    "$description": "The text styles of the Large text size, which the text-large class on <html> picks (d-119). Each has the size and line height of the Large column in tokens/sizes/AGENTS.md; the family, weight and letter spacing are those of text.",
-    "text": {
-      "heading": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
@@ -2518,23 +2113,7 @@
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.4667,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "headingSm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 28,
-            "unit": "px"
-          },
-          "fontWeight": 600,
-          "lineHeight": 1.4286,
+          "lineHeight": 1.3334,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2546,11 +2125,11 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 22,
+            "value": 23,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.4546,
+          "lineHeight": 1.3914,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2562,11 +2141,11 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 18,
+            "value": 19,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.3334,
+          "lineHeight": 1.4737,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2578,11 +2157,11 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 16,
+            "value": 17,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.25,
+          "lineHeight": 1.4118,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2590,6 +2169,38 @@
         }
       },
       "label": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.5,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelLg": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 18,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.5556,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelSm": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
@@ -2605,48 +2216,16 @@
           }
         }
       },
-      "labelLg": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 17,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.4118,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "labelSm": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 14,
-            "unit": "px"
-          },
-          "fontWeight": 500,
-          "lineHeight": 1.4286,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
       "labelSmStrong": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 14,
+            "value": 15,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.4286,
+          "lineHeight": 1.3334,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2658,11 +2237,11 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 13,
+            "value": 14,
             "unit": "px"
           },
           "fontWeight": 500,
-          "lineHeight": 1.2308,
+          "lineHeight": 1.4286,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2674,11 +2253,11 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
-            "value": 13,
+            "value": 14,
             "unit": "px"
           },
           "fontWeight": 600,
-          "lineHeight": 1.2308,
+          "lineHeight": 1.4286,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2686,38 +2265,6 @@
         }
       },
       "body": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 15,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.6,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "pageCount": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 17,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.4118,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "bodyLg": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
@@ -2733,7 +2280,55 @@
           }
         }
       },
+      "pageCount": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 18,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.3334,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "bodyLg": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 17,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.6471,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
       "bodySm": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 15,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.6,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "small": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
@@ -2749,7 +2344,7 @@
           }
         }
       },
-      "small": {
+      "smallXs": {
         "$type": "typography",
         "$value": {
           "fontFamily": "{font.family.sans}",
@@ -2758,23 +2353,7 @@
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.2308,
-          "letterSpacing": {
-            "value": 0,
-            "unit": "px"
-          }
-        }
-      },
-      "smallXs": {
-        "$type": "typography",
-        "$value": {
-          "fontFamily": "{font.family.sans}",
-          "fontSize": {
-            "value": 12,
-            "unit": "px"
-          },
-          "fontWeight": 400,
-          "lineHeight": 1.3334,
+          "lineHeight": 1.5385,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2786,11 +2365,11 @@
         "$value": {
           "fontFamily": "{font.family.mono}",
           "fontSize": {
-            "value": 13,
+            "value": 14,
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.2308,
+          "lineHeight": 1.4286,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2802,11 +2381,11 @@
         "$value": {
           "fontFamily": "{font.family.mono}",
           "fontSize": {
-            "value": 13,
+            "value": 14,
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.2308,
+          "lineHeight": 1.4286,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2818,11 +2397,11 @@
         "$value": {
           "fontFamily": "{font.family.mono}",
           "fontSize": {
-            "value": 12,
+            "value": 13,
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.3334,
+          "lineHeight": 1.5385,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2834,11 +2413,11 @@
         "$value": {
           "fontFamily": "{font.family.mono}",
           "fontSize": {
-            "value": 15,
+            "value": 16,
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.6,
+          "lineHeight": 1.5,
           "letterSpacing": {
             "value": 0,
             "unit": "px"
@@ -2850,11 +2429,11 @@
         "$value": {
           "fontFamily": "{font.family.mono}",
           "fontSize": {
-            "value": 12,
+            "value": 13,
             "unit": "px"
           },
           "fontWeight": 400,
-          "lineHeight": 1.3334,
+          "lineHeight": 1.5385,
           "letterSpacing": {
             "value": 0.44,
             "unit": "px"
@@ -2914,11 +2493,432 @@
         "$value": {
           "fontFamily": "{font.family.sans}",
           "fontSize": {
+            "value": 13,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.5385,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      }
+    }
+  },
+  "large": {
+    "$description": "The text styles of the Large text size, which the text-large class on <html> picks (d-122). Each has the size and line height of the Large column in tokens/sizes/AGENTS.md; the family, weight and letter spacing are those of text.",
+    "text": {
+      "heading": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 37,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.4055,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "headingSm": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 34,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.4118,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "title": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 26,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.3847,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "subtitle": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 22,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.4546,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "paneTitle": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.4,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "label": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 18,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.3334,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelLg": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 21,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.5239,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelSm": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 17,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.4118,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelSmStrong": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 17,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.4118,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelXs": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.25,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "labelXsStrong": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.25,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "body": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 18,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.5556,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "pageCount": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 21,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.3334,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "bodyLg": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 20,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.6,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "bodySm": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 17,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.6471,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "small": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.25,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "smallXs": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 14,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.4286,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "mono": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.mono}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.25,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "monoCaps": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.mono}",
+          "fontSize": {
+            "value": 16,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.25,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "monoSm": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.mono}",
+          "fontSize": {
+            "value": 14,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.4286,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "code": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.mono}",
+          "fontSize": {
+            "value": 18,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.5556,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "eyebrow": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.mono}",
+          "fontSize": {
+            "value": 14,
+            "unit": "px"
+          },
+          "fontWeight": 400,
+          "lineHeight": 1.4286,
+          "letterSpacing": {
+            "value": 0.44,
+            "unit": "px"
+          }
+        }
+      },
+      "navLabel": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 13,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.2308,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "railLabel": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
             "value": 12,
             "unit": "px"
           },
           "fontWeight": 500,
           "lineHeight": 1.3334,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "badge": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 13,
+            "unit": "px"
+          },
+          "fontWeight": 600,
+          "lineHeight": 1.2308,
+          "letterSpacing": {
+            "value": 0,
+            "unit": "px"
+          }
+        }
+      },
+      "pill": {
+        "$type": "typography",
+        "$value": {
+          "fontFamily": "{font.family.sans}",
+          "fontSize": {
+            "value": 14,
+            "unit": "px"
+          },
+          "fontWeight": 500,
+          "lineHeight": 1.4286,
           "letterSpacing": {
             "value": 0,
             "unit": "px"

@@ -4022,7 +4022,7 @@ export const FootEdgesLight: StoryObj<typeof meta> = { ...footEdges, globals: { 
 // the composer's own bottom (the footer's last child less its pad, `footerBase`), so the composer is on the dock's
 // curve in every frame around the open's end, and does not step by the pad as the layout takes it (Codex review of
 // #314; bridge-coord's guard for R67). Read the composer, not the footer box: the box grows by the pad.
-const padBox = css({ pb: 'min(token(spacing.8), var(--scroll-frame-dock, 0px))' })
+const padBox = css({ '--composer-pad': 'min(token(spacing.8), var(--scroll-frame-dock, 0px))', pb: 'var(--composer-pad)' })
 function PadChat() {
   return (
     <div className={screenFrame}>

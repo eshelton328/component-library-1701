@@ -1439,14 +1439,15 @@ const collapsedLargePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement
   await expect(document.documentElement.classList.contains('text-large')).toBe(true)
   const box = composerOf(canvasElement, 'Collapsed')
   const area = within(box).getByRole('textbox', { name: 'Collapsed' })
-  await expect(getComputedStyle(area).lineHeight).toBe('24px')
-  await expect(rect(area).height).toBe(24)
+  // Large body is 18/28 (d-122); the ratio is rounded up, so the line is 28 px and a hair (28.0008).
+  await expect(Math.round(Number.parseFloat(getComputedStyle(area).lineHeight))).toBe(28)
+  await expect(Math.round(rect(area).height)).toBe(28)
   await expect(area.scrollHeight).toBeLessThanOrEqual(area.clientHeight)
   await expect(rect(box).height).toBe(50)
-  // A long draft still keeps one 24 px line and scrolls in it.
+  // A long draft still keeps one 28 px line and scrolls in it.
   await userEvent.click(area)
   await userEvent.type(area, 'A draft long enough to wrap past the first line of the collapsed composer')
-  await waitFor(() => expect(rect(area).height).toBe(24))
+  await waitFor(() => expect(Math.round(rect(area).height)).toBe(28))
   await expect(rect(box).height).toBe(50)
   await userEvent.clear(area)
 }
@@ -1464,7 +1465,7 @@ export const CollapsedPhoneLight: StoryObj<typeof meta> = {
   globals: { mode: 'light', viewport: { value: 'phone' } },
   play: collapsedPlay,
 }
-/** `collapsed` with the Large text size: the one line is 24 px and the row stays 50 high. */
+/** `collapsed` with the Large text size: the one line is 28 px and the row stays 50 high. */
 export const CollapsedPhoneLarge: StoryObj<typeof meta> = {
   render: () => <CollapsedScreen />,
   parameters: { viewport: { options: skillScreens } },

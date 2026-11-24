@@ -33,9 +33,10 @@ under their purpose group, never under "Parts" (d-065).
   (`skeleton.stories.tsx`); add such a pair for a new preset.
 - The shimmer is one band for the page (screen review R65): the fill is
   sized in viewport units and placed from the bar's own left, which
-  `Skeleton` writes to `--skeleton-x` on mount and on a window resize,
-  and every shimmer starts at time 0 of the document timeline. Nothing
-  runs per frame. A part that draws its own placeholder uses `Skeleton`,
+  `Skeleton` writes to `--skeleton-x` when its shimmer starts (also
+  when a hidden bar is shown), on a window resize and when a box that
+  holds it resizes; every shimmer starts at time 0 of the document
+  timeline. Nothing runs per frame. A part that draws its own placeholder uses `Skeleton`,
   never the recipe alone, or its band is out of step (`SharedBand`
   stories).
 - `Message from="peer"` is a message that another chat sent (the-bridge

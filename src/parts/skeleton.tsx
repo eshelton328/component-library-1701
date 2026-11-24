@@ -9,8 +9,9 @@ export type SkeletonProps = Scalar<SkeletonVariantProps>
 
 // The shared band (screen review R65). Each bar's fill is placed from the page's left edge, so a bar needs its own
 // left in --skeleton-x, and its shimmer starts at time 0 of the document timeline, so all bars are in step whenever
-// they mounted. Both are set once when a bar mounts and again when the window changes size; nothing runs per frame.
-// A bar that moves sideways for another cause keeps its old left until the next resize or mount.
+// they mounted. Both are set when a bar's shimmer starts, which is also when a hidden bar is shown again (an
+// inactive tab panel), and again when the window changes size; nothing runs per frame. A bar that moves sideways
+// for another cause keeps its old left until the next resize or start.
 const bars = new Set<HTMLElement>()
 
 function place(bar: HTMLElement) {
@@ -34,9 +35,17 @@ function useSharedBand() {
     if (bar === null) return
     if (bars.size === 0) window.addEventListener('resize', placeAll)
     bars.add(bar)
+    // A shimmer starts when the bar mounts and again each time a hidden bar is shown, as a new animation.
+    const start = (event: AnimationEvent) => {
+      if (event.animationName !== 'shimmer') return
+      place(bar)
+      inStep(bar)
+    }
+    bar.addEventListener('animationstart', start)
     place(bar)
     inStep(bar)
     return () => {
+      bar.removeEventListener('animationstart', start)
       bars.delete(bar)
       if (bars.size === 0) window.removeEventListener('resize', placeAll)
     }

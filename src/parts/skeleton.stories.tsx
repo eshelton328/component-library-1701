@@ -209,9 +209,46 @@ const bandPlay: Story['play'] = async ({ canvasElement }) => {
   await expect(Math.abs((two[0] ?? 0) - (one[0] ?? 0))).toBeGreaterThan(1)
 }
 
+// A bar in a hidden box, such as an inactive tab panel, that is shown 400 ms later joins the band.
+function Reveal() {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShown(true)
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={heading}>A bar shown later</span>
+        <div className={styles.body} data-testid="first">
+          <Skeleton width="full" />
+        </div>
+        <div className={css({ display: 'flex', justifyContent: 'flex-end' })}>
+          <div data-testid="second" data-shown={shown} hidden={!shown}>
+            <Skeleton shape="block" size="thumbnailLg" />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
 // No colours of their own beyond the Skeleton's, but Dark and Light keep the axe test on both modes.
 export const SharedBandDark: Story = { render: () => <Band />, globals: { mode: 'dark' }, play: bandPlay }
 export const SharedBandLight: Story = { render: () => <Band />, globals: { mode: 'light' }, play: bandPlay }
+
+const revealPlay: Story['play'] = async (context) => {
+  await waitFor(() => expect(context.canvasElement.querySelector('[data-testid="second"][data-shown="true"]')).not.toBeNull())
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  await bandPlay(context)
+}
+
+export const SharedBandRevealDark: Story = { render: () => <Reveal />, globals: { mode: 'dark' }, play: revealPlay }
+export const SharedBandRevealLight: Story = { render: () => <Reveal />, globals: { mode: 'light' }, play: revealPlay }
 
 function Pair({ name, real, skeleton }: { name: string; real: ReactNode; skeleton: ReactNode }) {
   return (

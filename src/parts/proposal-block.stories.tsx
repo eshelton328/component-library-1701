@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Checkbox } from '../controls/checkbox'
 import { Stack } from '../controls/layout'
+import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
 import { CheckIcon, PlusIcon } from '../foundations/icons'
 import { ProposalBlock, ProposalCommand, ProposalDiff, ProposalSection } from './proposal-block'
 
@@ -313,3 +314,71 @@ const createPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const CreateDark: StoryObj<typeof meta> = { render: () => <Create />, globals: { mode: 'dark' }, play: createPlay }
 export const CreateLight: StoryObj<typeof meta> = { render: () => <Create />, globals: { mode: 'light' }, play: createPlay }
+
+// The Inbox change proposal (changeProposedPage): a long added line, and the command of an approval. Each wrapper
+// pads the block by a spacing token, so the lines wrap at many widths.
+const diffInsets = ['0', '2', '4', '6', '8', '10', '12', '16', '20', '24', '32', '40'] as const
+// Literal styles, so Panda writes each one.
+const diffInset = {
+  '0': css({ px: '0' }),
+  '2': css({ px: '2' }),
+  '4': css({ px: '4' }),
+  '6': css({ px: '6' }),
+  '8': css({ px: '8' }),
+  '10': css({ px: '10' }),
+  '12': css({ px: '12' }),
+  '16': css({ px: '16' }),
+  '20': css({ px: '20' }),
+  '24': css({ px: '24' }),
+  '32': css({ px: '32' }),
+  '40': css({ px: '40' }),
+} satisfies Record<(typeof diffInsets)[number], string>
+const phoneColumn = css({ w: 'shell.popover' })
+
+function DiffAtSizes() {
+  return (
+    <main className={page}>
+      {[page, phoneColumn].map((column) =>
+        diffInsets.map((p) => (
+          <div key={`${column}-${p}`} className={column}>
+            <div className={diffInset[p]} data-testid="diff">
+              <ProposalBlock tone="update" label="Proposed change" title="Update the prompt" actions={[{ label: 'Apply', onClick: () => undefined }]}>
+                <ProposalDiff
+                  label="Suggested prompt"
+                  lines={[
+                    { change: 'removed', text: 'Link each ticket to its requirement IDs and leave them in Backlog' },
+                    { change: 'added', text: 'Link each ticket to its requirement IDs and to its Figma frame from pages.md, and leave them in Backlog' },
+                  ]}
+                />
+                <ProposalCommand>git mv notes/research/old.md archive/ and then check the links of each note again</ProposalCommand>
+              </ProposalBlock>
+            </div>
+          </div>
+        )),
+      )}
+    </main>
+  )
+}
+
+const diffAtSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const blocks = within(canvasElement).getAllByTestId('diff')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      for (const [i, block] of blocks.entries()) {
+        const lineText = block.querySelector('ins')
+        if (lineText === null) throw new Error('no added line')
+        if (size === 'small') {
+          // Small wraps as before, keeping the spaces.
+          await expect(getComputedStyle(lineText).whiteSpace).toBe('pre-wrap')
+          continue
+        }
+        // Default and Large: no space hangs past the line, so no wrapped line sticks out of its box.
+        await expect({ block: i, spills: textSpills(block) }).toEqual({ block: i, spills: [] })
+      }
+    })
+  }
+}
+
+/** A diff and a command at Small, Default and Large: no wrapped line sticks out of its box. */
+export const DiffTextSizesDark: StoryObj<typeof meta> = { render: () => <DiffAtSizes />, globals: { mode: 'dark', textSize: 'small' }, play: diffAtSizesPlay }
+export const DiffTextSizesLight: StoryObj<typeof meta> = { render: () => <DiffAtSizes />, globals: { mode: 'light', textSize: 'small' }, play: diffAtSizesPlay }

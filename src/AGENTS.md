@@ -41,6 +41,12 @@ you add a file. `theme/` is not a tier.
 - Write a story's `tags` as a literal on its own object: Storybook reads
   tags without running the file, so a spread or a helper loses `!dev`
   (`pnpm check:story-tags`, review of #296).
+- A part whose text must not be cut at the Default and Large text sizes
+  (d-122) has a `<Name>TextSizes` Dark and Light pair that renders it at
+  Small and checks Small is as before, then at the larger sizes with
+  `atTextSize` and `textSpills` (`controls/text-size.testing.ts`). The
+  larger sizes change a recipe only under `_textDefault` and
+  `_textLarge`, so Small stays the Figma frames' size.
 - A play that moves a fake `visualViewport` takes it from `viewportPlay`,
   never from the global, so a play that timed out cannot move the next
   story's viewport (Keyboard Light, `expected 1654 to be 810`).

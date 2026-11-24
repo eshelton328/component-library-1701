@@ -11,6 +11,13 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // (diff.removed.fg) struck through; an added line is diff.added.
 // The command box of D1 105:294: rgba(7,11,20,0.7) (merged into
 // surface.well), radius 6, padding 8, Geist Mono 12 #e6ecff.
+// At Default and Large (d-122) a diff line and the command take
+// `break-spaces`: with `pre-wrap` a space at the end of a wrapped line hangs
+// past the box (the-bridge check:text-sizes, Inbox changeProposedPage).
+// Small keeps `pre-wrap`.
+// A preserved space takes room and wraps, so none hangs past the line.
+const unhung = { whiteSpace: 'break-spaces' } as const
+
 export const proposalSection = defineSlotRecipe({
   className: 'proposal-section',
   jsx: ['ProposalSection', 'ProposalDiff', 'ProposalCommand'],
@@ -45,6 +52,8 @@ export const proposalSection = defineSlotRecipe({
       // Keep spaces and indentation, so a change in whitespace shows.
       whiteSpace: 'pre-wrap',
       overflowWrap: 'anywhere',
+      _textDefault: unhung,
+      _textLarge: unhung,
       '[data-change=removed] > &': { color: 'diff.removed.fg', textDecoration: 'line-through' },
       '[data-change=added] > &': { color: 'diff.added.fg' },
     },
@@ -57,6 +66,8 @@ export const proposalSection = defineSlotRecipe({
       textStyle: 'mono',
       whiteSpace: 'pre-wrap',
       overflowWrap: 'anywhere',
+      _textDefault: unhung,
+      _textLarge: unhung,
       '& code': { font: 'inherit' },
     },
   },

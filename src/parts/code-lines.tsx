@@ -36,7 +36,8 @@ export type CodeLinesProps = {
    * column, as the phone's file preview draws a script (Toolkit M22). The
    * spaces stay, a word longer than the column breaks, the number stays on
    * the line's first visual line, the rest lines up with the text column, and
-   * nothing scrolls sideways.
+   * nothing scrolls sideways. At Default and Large (d-122) a space at the end of
+   * a wrapped line takes room and wraps too, so no line sticks out of the box.
    */
   wrap?: boolean | undefined
 }

@@ -3,6 +3,7 @@ import { expect, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { CodeLines, type CodeSegment } from './code-lines'
 import { expectScrollAreas, expectWheelScrollsPast } from '../controls/scroll-area.testing'
+import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // The viewer panel of Toolkit D6 (#0f1626, merged into surface.overlay).
@@ -236,4 +237,91 @@ export const WheelScrollsPage: StoryObj<typeof meta> = {
     if (!(code instanceof HTMLElement) || !(page instanceof HTMLElement)) throw new Error('no code or scroller')
     await expectWheelScrollsPast(code, page)
   },
+}
+
+// Toolkit M06 (435:504 to 435:552): the writer's `check` script on the phone, as the-bridge shows it with `wrap`.
+// Its indented lines wrap at a space; each wrapper pads the box by a spacing token, so the lines wrap at many widths.
+const m06 = [
+  '#!/usr/bin/env python3',
+  '"""check: deterministic checks of a',
+  'draft against toolkit/rules/writing.md.',
+  '',
+  'usage: check FILE... [--form doc|',
+  '  ticket|prd|artifact|chat|note] [--ste]',
+  '',
+  'Prints one JSON object per file to',
+  'stdout, one per line. Exit 0 when no',
+  'file has a "fail" finding, 1 when any',
+  'does, 2 on bad usage.',
+  '',
+  'Each finding has a kind:',
+  '  fail  a phrase or shape the writing',
+  '        rules name; rewrite it.',
+  '  lead  something a script can find but',
+  '        not judge; read it and decide.',
+]
+const insets = ['0', '2', '4', '6', '8', '10', '12', '16', '20', '24', '32', '40'] as const
+// Literal styles, so Panda writes each one.
+const inset = {
+  '0': css({ px: '0', bg: 'bg.canvas' }),
+  '2': css({ px: '2', bg: 'bg.canvas' }),
+  '4': css({ px: '4', bg: 'bg.canvas' }),
+  '6': css({ px: '6', bg: 'bg.canvas' }),
+  '8': css({ px: '8', bg: 'bg.canvas' }),
+  '10': css({ px: '10', bg: 'bg.canvas' }),
+  '12': css({ px: '12', bg: 'bg.canvas' }),
+  '16': css({ px: '16', bg: 'bg.canvas' }),
+  '20': css({ px: '20', bg: 'bg.canvas' }),
+  '24': css({ px: '24', bg: 'bg.canvas' }),
+  '32': css({ px: '32', bg: 'bg.canvas' }),
+  '40': css({ px: '40', bg: 'bg.canvas' }),
+} satisfies Record<(typeof insets)[number], string>
+
+function WrapAtSizes() {
+  return (
+    <main className={phonePage}>
+      {insets.map((p) => (
+        <div key={p} className={inset[p]}>
+          <div className={preview} data-testid={`inset-${p}`}>
+            <CodeLines lines={m06} wrap />
+          </div>
+        </div>
+      ))}
+    </main>
+  )
+}
+
+const wrapAtSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  await expect(window.innerWidth).toBe(390)
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      for (const p of insets) {
+        const box = codeBox(canvasElement, `inset-${p}`)
+        const rows = texts(canvasElement, `inset-${p}`)
+        await expect(rows.map((r) => r.textContent)).toEqual(m06.map((l) => `${l}\n`))
+        await expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth)
+        if (size === 'small') {
+          // Small wraps as before (M22), keeping the spaces.
+          for (const row of rows) await expect(getComputedStyle(row).whiteSpace).toBe('pre-wrap')
+        } else {
+          // Default and Large: no space hangs past the column, so no wrapped line sticks out of its box.
+          await expect({ inset: p, spills: textSpills(box) }).toEqual({ inset: p, spills: [] })
+        }
+      }
+    })
+  }
+}
+
+/** `wrap` at Small, Default and Large on a 390 px phone: no wrapped line sticks out of the box at any size. */
+export const WrapTextSizesDark: StoryObj<typeof meta> = {
+  render: () => <WrapAtSizes />,
+  parameters: { viewport: { options: phone } },
+  play: wrapAtSizesPlay,
+  globals: { mode: 'dark', textSize: 'small', viewport: { value: 'm22' } },
+}
+export const WrapTextSizesLight: StoryObj<typeof meta> = {
+  render: () => <WrapAtSizes />,
+  parameters: { viewport: { options: phone } },
+  play: wrapAtSizesPlay,
+  globals: { mode: 'light', textSize: 'small', viewport: { value: 'm22' } },
 }

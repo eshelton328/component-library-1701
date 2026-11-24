@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
+import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
 import { expectCutText } from '../controls/tooltip.testing'
 import { SkillIcon } from '../foundations/icons'
 import { CodeLines } from './code-lines'
@@ -241,3 +242,55 @@ const play: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, play }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' }, play }
+
+// The bar at each text size (d-122). Small keeps M20's cut (Read-only runs past the box's edge, as above); at
+// Default and Large the text is wider and the bar wraps, so the end group takes a row of its own and is never cut.
+function CutAtSizes() {
+  return (
+    <main className={page}>
+      <div className={narrow} data-testid="sizes-short">
+        <FileFrame name="agents/grader.md" meta="88 lines" readOnly barEnd="cut" />
+      </div>
+      <div className={narrow} data-testid="sizes-long">
+        <FileFrame name="agents/diagram-reviewer-long-name.md" meta="88 lines · the prompt" readOnly barEnd="cut" />
+      </div>
+      <div className={wide} data-testid="sizes-wide">
+        <FileFrame name="agents/eval-grader.md" meta="40 lines" readOnly barEnd="cut" />
+      </div>
+    </main>
+  )
+}
+
+const cutAtSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const frame = (id: string) => el(within(canvasElement).getByTestId(id), '.file-frame__root')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      const short = frame('sizes-short')
+      const readOnly = el(short, '.file-frame__readOnly')
+      const name = el(short, '.file-frame__name')
+      if (size === 'small') {
+        // As before: one 37 px bar, and the box cuts Read-only at its edge (M20 487:1650).
+        await expect(rect(el(short, '.file-frame__bar')).height).toBe(37)
+        await expect(rect(readOnly).right).toBeGreaterThan(rect(short).right)
+        await expect(getComputedStyle(el(short, '.file-frame__bar')).flexWrap).toBe('nowrap')
+        return
+      }
+      // Default and Large: no text is cut or spills, Read-only included, and it sits on a row under the name.
+      for (const id of ['sizes-short', 'sizes-long', 'sizes-wide']) await expect(textSpills(frame(id))).toEqual([])
+      await expect(rect(readOnly).right).toBeLessThanOrEqual(rect(short).right - 12)
+      await expect(rect(readOnly).top).toBeGreaterThanOrEqual(rect(name).bottom)
+      // Its row ends 12 in from the border, where the bar's end is.
+      await expect(rect(readOnly).right).toBe(rect(short).right - 13)
+      // A name too long for its row still ends with an ellipsis and its tooltip.
+      await expectCutText(el(frame('sizes-long'), '.file-frame__name'), 'agents/diagram-reviewer-long-name.md')
+      // With room to spare the bar keeps one row, Read-only at its end.
+      const roomy = frame('sizes-wide')
+      await expect(rect(el(roomy, '.file-frame__readOnly')).top).toBe(rect(el(roomy, '.file-frame__name')).top)
+      await expect(rect(el(roomy, '.file-frame__readOnly')).right).toBe(rect(roomy).right - 13)
+    })
+  }
+}
+
+/** `barEnd="cut"` at Small, Default and Large: Small cuts Read-only as M20; the larger sizes wrap it to its own row. */
+export const CutTextSizesDark: StoryObj<typeof meta> = { render: () => <CutAtSizes />, play: cutAtSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const CutTextSizesLight: StoryObj<typeof meta> = { render: () => <CutAtSizes />, play: cutAtSizesPlay, globals: { mode: 'light', textSize: 'small' } }

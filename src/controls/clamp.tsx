@@ -10,7 +10,11 @@ const lineVariants = { 1: '1', 2: '2', 3: '3', 4: '4', 5: '5', 6: '6', 8: '8' } 
 export type ClampProps = {
   /** The text, in the text style of the parent. Plain text or inline elements; a block holds its lines. */
   children: ReactNode
-  /** How many lines show before the text is cut; 4 when not set. */
+  /**
+   * How many lines show before the text is cut at the Small text size; 4 when not set. At Default and Large (the
+   * `text-default` and `text-large` classes, d-122) the count grows with the text, to ceil(lines × 8/7) and
+   * ceil(lines × 64/49) (5 shows 6 and 7 lines; 8 shows 10 and 11), so a text that fits at Small is never cut.
+   */
   lines?: 1 | 2 | 3 | 4 | 5 | 6 | 8 | undefined
   /**
    * How a text longer than its lines is cut. `false` (the default) cuts it with line-clamp, so the last

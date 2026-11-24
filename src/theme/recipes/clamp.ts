@@ -17,6 +17,14 @@ import { defineRecipe } from '@pandacss/dev'
 // data-cut when the text is longer than the lines; a block that fits has no
 // mask.
 //
+// Text sizes (d-122): `lines` counts lines at Small, the size of the Figma
+// frames. At Default each font size is 8/7 of Small's and at Large (8/7)²,
+// so a text that fits N lines at Small needs up to ceil(N × 8/7) lines at
+// Default and ceil(N × 64/49) at Large; --clamp-lines takes those counts
+// under the text-default and text-large classes (5 lines: 6 and 7; 8: 10
+// and 11), so the text is never cut sooner than at Small. The cut and the
+// fade work as at Small, from the new count.
+//
 // `reserve` keeps the height of the lines when the text is shorter: Figma
 // keeps the Inbox prompt box 128 px high for a prompt of three lines (D16
 // 403:1854), as for one of five (D1 346:370).
@@ -30,13 +38,13 @@ export const clamp = defineRecipe({
   },
   variants: {
     lines: {
-      '1': { '--clamp-lines': '1' },
-      '2': { '--clamp-lines': '2' },
-      '3': { '--clamp-lines': '3' },
-      '4': { '--clamp-lines': '4' },
-      '5': { '--clamp-lines': '5' },
-      '6': { '--clamp-lines': '6' },
-      '8': { '--clamp-lines': '8' },
+      '1': { '--clamp-lines': '1', _textDefault: { '--clamp-lines': '2' }, _textLarge: { '--clamp-lines': '2' } },
+      '2': { '--clamp-lines': '2', _textDefault: { '--clamp-lines': '3' }, _textLarge: { '--clamp-lines': '3' } },
+      '3': { '--clamp-lines': '3', _textDefault: { '--clamp-lines': '4' }, _textLarge: { '--clamp-lines': '4' } },
+      '4': { '--clamp-lines': '4', _textDefault: { '--clamp-lines': '5' }, _textLarge: { '--clamp-lines': '6' } },
+      '5': { '--clamp-lines': '5', _textDefault: { '--clamp-lines': '6' }, _textLarge: { '--clamp-lines': '7' } },
+      '6': { '--clamp-lines': '6', _textDefault: { '--clamp-lines': '7' }, _textLarge: { '--clamp-lines': '8' } },
+      '8': { '--clamp-lines': '8', _textDefault: { '--clamp-lines': '10' }, _textLarge: { '--clamp-lines': '11' } },
     },
     fade: {
       true: {

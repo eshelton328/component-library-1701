@@ -15,6 +15,13 @@ import { scrollAreaX } from './scroll-area'
 // Toolkit M22 script draws it (`code` 487:2231): lines 3, 4, 5 and 8
 // (487:2238, 487:2241, 487:2244, 487:2253) are two lines high in the text
 // column, the number on the first. Same tokens; only white-space changes.
+// At Default and Large (d-122) a wrapped line takes `break-spaces`: with
+// `pre-wrap` a space at the end of a wrapped line hangs past the column,
+// so the line's box sticks out of the code box (the-bridge check:text-sizes,
+// M06 at 390 px). Small keeps `pre-wrap`, as M22 draws it.
+// A preserved space takes room and wraps, so none hangs past the column.
+const unhung = { whiteSpace: 'break-spaces' } as const
+
 export const codeLines = defineSlotRecipe({
   className: 'code-lines',
   jsx: ['CodeLines'],
@@ -58,7 +65,7 @@ export const codeLines = defineSlotRecipe({
     wrap: {
       true: {
         root: { overflowX: 'visible' },
-        text: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
+        text: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', _textDefault: unhung, _textLarge: unhung },
       },
       false: {},
     },

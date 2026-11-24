@@ -10,9 +10,19 @@ export type SkeletonProps = Scalar<SkeletonVariantProps>
 // The shared band (screen review R65). Each bar's fill is placed from the page's left edge, so a bar needs its own
 // left in --skeleton-x, and its shimmer starts at time 0 of the document timeline, so all bars are in step whenever
 // they mounted. Both are set when a bar's shimmer starts, which is also when a hidden bar is shown again (an
-// inactive tab panel), and again when the window changes size; nothing runs per frame. A bar that moves sideways
-// for another cause keeps its old left until the next resize or start.
+// inactive tab panel), and again when the window or a box that holds a bar changes size, such as a pane whose
+// divider moves; nothing runs per frame. A bar that moves sideways while no box that holds it changes size, such as
+// after a sibling grows, keeps its old left until the next resize or start.
 const bars = new Set<HTMLElement>()
+// The boxes that hold a bar, with how many bars each holds, watched by one ResizeObserver.
+const holders = new Map<Element, number>()
+let watcher: ResizeObserver | undefined
+
+function holdersOf(bar: HTMLElement) {
+  const found: Element[] = []
+  for (let el = bar.parentElement; el !== null; el = el.parentElement) found.push(el)
+  return found
+}
 
 function place(bar: HTMLElement) {
   bar.style.setProperty('--skeleton-x', `${String(bar.getBoundingClientRect().left)}px`)
@@ -35,6 +45,13 @@ function useSharedBand() {
     if (bar === null) return
     if (bars.size === 0) window.addEventListener('resize', placeAll)
     bars.add(bar)
+    watcher ??= new ResizeObserver(placeAll)
+    const held = holdersOf(bar)
+    for (const box of held) {
+      const count = holders.get(box) ?? 0
+      if (count === 0) watcher.observe(box)
+      holders.set(box, count + 1)
+    }
     // A shimmer starts when the bar mounts and again each time a hidden bar is shown, as a new animation.
     const start = (event: AnimationEvent) => {
       if (event.animationName !== 'shimmer') return
@@ -46,6 +63,13 @@ function useSharedBand() {
     inStep(bar)
     return () => {
       bar.removeEventListener('animationstart', start)
+      for (const box of held) {
+        const count = (holders.get(box) ?? 1) - 1
+        if (count === 0) {
+          holders.delete(box)
+          watcher?.unobserve(box)
+        } else holders.set(box, count)
+      }
       bars.delete(bar)
       if (bars.size === 0) window.removeEventListener('resize', placeAll)
     }

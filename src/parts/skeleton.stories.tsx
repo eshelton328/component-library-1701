@@ -237,6 +237,40 @@ function Reveal() {
   )
 }
 
+// A bar in a pane that moves when the pane beside it grows 400 ms later, as when a SplitPanes divider moves,
+// stays on the band.
+function Move() {
+  const [wide, setWide] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWide(true)
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={heading}>A pane that moves</span>
+        <div className={styles.body} data-testid="first">
+          <Skeleton width="full" />
+        </div>
+        <div className={wide ? movedGrid.wide : movedGrid.narrow}>
+          <div />
+          <div data-testid="second" data-shown={wide}>
+            <Skeleton shape="block" size="thumbnailLg" />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+const movedGrid = {
+  narrow: css({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 3fr)' }),
+  wide: css({ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)' }),
+}
+
 // No colours of their own beyond the Skeleton's, but Dark and Light keep the axe test on both modes.
 export const SharedBandDark: Story = { render: () => <Band />, globals: { mode: 'dark' }, play: bandPlay }
 export const SharedBandLight: Story = { render: () => <Band />, globals: { mode: 'light' }, play: bandPlay }
@@ -249,6 +283,9 @@ const revealPlay: Story['play'] = async (context) => {
 
 export const SharedBandRevealDark: Story = { render: () => <Reveal />, globals: { mode: 'dark' }, play: revealPlay }
 export const SharedBandRevealLight: Story = { render: () => <Reveal />, globals: { mode: 'light' }, play: revealPlay }
+
+export const SharedBandMoveDark: Story = { render: () => <Move />, globals: { mode: 'dark' }, play: revealPlay }
+export const SharedBandMoveLight: Story = { render: () => <Move />, globals: { mode: 'light' }, play: revealPlay }
 
 function Pair({ name, real, skeleton }: { name: string; real: ReactNode; skeleton: ReactNode }) {
   return (

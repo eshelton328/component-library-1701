@@ -225,13 +225,16 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
     // focus to the body itself (its `tabIndex` 0), and a body skipped then lost the reader's place by the rest of the
     // fall (the-bridge's iPhone probe: 211 px on each open and close, `TapClosesKeyboard`).
     // The docking layer that holds the focused field (`sheetDock`), kept after the field's focusout so that the close
-    // moves it down. A field outside such a layer takes the dock back to the shell's own parts.
+    // moves it down. A field in the shell takes the dock back to the shell's own parts. A field in another layer
+    // outside the shell, such as a popover that the sheet opened (portalled after it), keeps the sheet's dock: the
+    // sheet and the popover anchored in it then stay over the keyboard (Codex review of #347).
     let sheet: HTMLElement | null = null
     const heldSheet = () => {
       const focused = document.activeElement
       if (editable(focused)) {
         const layer = focused.closest(sheetDock)
-        sheet = layer instanceof HTMLElement ? layer : null
+        if (layer instanceof HTMLElement) sheet = layer
+        else if (root.contains(focused)) sheet = null
       }
       if (sheet !== null && !sheet.isConnected) sheet = null
       return sheet

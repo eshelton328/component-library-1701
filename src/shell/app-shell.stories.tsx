@@ -6,6 +6,8 @@ import { token } from '../../styled-system/tokens'
 import { BottomSheet } from '../controls/bottom-sheet'
 import { motionDone, unmounted } from '../controls/bottom-sheet.testing'
 import { Button } from '../controls/button'
+import { layerSettled } from '../controls/layer.testing'
+import { Popover } from '../controls/popover'
 import { Container } from '../controls/layout'
 import { expectScrollAreas, expectScrollsByWheelAndKeys } from '../controls/scroll-area.testing'
 import { ScrollFrame } from '../controls/scroll-frame'
@@ -4248,6 +4250,70 @@ const sheetKeyboardDock: StoryObj<typeof meta> = {
 /** iPad side chat: a `keyboardDock` sheet docks on the keyboard, and the chat's composer stays put. */
 export const SheetKeyboardDockDark: StoryObj<typeof meta> = { ...sheetKeyboardDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const SheetKeyboardDockLight: StoryObj<typeof meta> = { ...sheetKeyboardDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A field in a popover that the docked sheet opened: the popover portals after the sheet, outside its positioner, and
+// its field keeps the sheet's dock, so the sheet and the popover anchored in it stay over the keyboard and the chat's
+// composer stays put (Codex review of #347).
+function SheetPopoverChat() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            <p className={text}>Message 1 of the thread</p>
+          </ScrollFrame>
+        }
+      />
+      <BottomSheet label="Side chat" size="sm" scrim={false} closeOn="explicit" keyboardDock defaultOpen>
+        <textarea aria-label="Side message" rows={1} className={messageField} />
+        <Popover label="Find" trigger={<Button>Find</Button>} placement="top-start">
+          <input type="search" aria-label="Find a skill" />
+        </Popover>
+      </BottomSheet>
+    </div>
+  )
+}
+const sheetPopover: StoryObj<typeof meta> = {
+  ...withFakeViewport,
+  render: () => <SheetPopoverChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const body = within(document.body)
+    const root = shellRoot(canvasElement)
+    const sheet = await body.findByRole('dialog', { name: 'Side chat' })
+    await motionDone(sheet)
+    const positioner = sheet.parentElement
+    if (positioner === null) throw new Error('no positioner')
+    // The sheet's field docks the sheet.
+    await userEvent.click(within(sheet).getByRole('textbox', { name: 'Side message' }))
+    fakeViewport.move({ height: 544 })
+    await waitFor(() => expect(positioner.style.getPropertyValue('--keyboard-dock')).toBe('300px'))
+    await expect(keyboardInset(root)).toBe('')
+    // A field in the popover the sheet opened keeps the dock on the sheet.
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Find' }))
+    const find = await body.findByRole('searchbox', { name: 'Find a skill' })
+    await layerSettled()
+    await expect(sheet.contains(find)).toBe(false)
+    await userEvent.click(find)
+    await expect(find).toHaveFocus()
+    fakeViewport.move({ height: 543 })
+    fakeViewport.move({ height: 544 })
+    await expect(positioner.style.getPropertyValue('--keyboard-dock')).toBe('300px')
+    await expect(keyboardInset(root)).toBe('')
+    await expect(Math.round(rect(sheet).bottom)).toBe(544)
+  }),
+}
+/** A field in a popover over a docked sheet keeps the sheet on the keyboard. */
+export const SheetPopoverDockDark: StoryObj<typeof meta> = { ...sheetPopover, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const SheetPopoverDockLight: StoryObj<typeof meta> = { ...sheetPopover, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
 // The root attributes that a dock move writes in normal use: the keyboard's cover (`--app-shell-keyboard` in `style`)
 // and the move's end (`data-keyboard-end`). A move writes nothing more on the root, so a test or a trace that needs

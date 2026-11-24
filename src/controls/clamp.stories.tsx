@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, waitFor } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Clamp } from './clamp'
+import { atTextSize, textSizes, textSpills } from './text-size.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 // The prompt box of an Inbox task (D1 346:370): a raised inset with body text.
@@ -156,3 +157,67 @@ export const ReserveLight: StoryObj<typeof meta> = { globals: { mode: 'light' },
 
 export const FadeDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Fades />, play: fadePlay }
 export const FadeLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Fades />, play: fadePlay }
+
+// The Inbox prompt (PromptSection: `lines={wide ? 8 : 5} fade reserve`). Each box holds the prompt cut after more
+// words; the play takes the ones that fit their lines at Small and checks that none of them is cut at Default or Large.
+const longPrompt = `${prompt} ${prompt}`
+const words = longPrompt.split(' ')
+const prefixes = words.map((_, i) => words.slice(0, i + 1).join(' ')).filter((_, i) => i % 2 === 1)
+
+function PromptAtSizes({ lines }: { lines: 5 | 8 }) {
+  return (
+    <main className={page}>
+      {prefixes.map((text) => (
+        <div key={text} className={box} data-testid="prefix">
+          <Clamp lines={lines} fade reserve>
+            {text}
+          </Clamp>
+        </div>
+      ))}
+      {([1, 2, 3, 4, 5, 6, 8] as const).map((n) => (
+        <div key={n} className={box} data-testid={`lines-${String(n)}`}>
+          <Clamp lines={n} fade reserve>
+            {longPrompt}
+          </Clamp>
+        </div>
+      ))}
+    </main>
+  )
+}
+
+// The lines at each size: N at Small, ceil(N × 8/7) at Default and ceil(N × 64/49) at Large (d-122).
+const scaledLines = { small: (n: number) => n, default: (n: number) => Math.ceil((n * 8) / 7), large: (n: number) => Math.ceil((n * 64) / 49) }
+
+const promptAtSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const clamps = Array.from(canvasElement.querySelectorAll('[data-testid="prefix"] > .clamp')).filter((el) => el instanceof HTMLElement)
+  const cut = (el: HTMLElement) => el.scrollHeight - el.clientHeight > 1
+  let fits: HTMLElement[] = []
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      for (const n of [1, 2, 3, 4, 5, 6, 8]) {
+        const el = clampOf(canvasElement, `lines-${String(n)}`)
+        const line = parseFloat(getComputedStyle(el).lineHeight)
+        await expect({ n, size, lines: Math.round(el.getBoundingClientRect().height / line) }).toEqual({ n, size, lines: scaledLines[size](n) })
+      }
+      if (size === 'small') {
+        fits = clamps.filter((el) => !cut(el))
+        // Some prompts fit and the longest do not, so the check below has texts that just fit.
+        await expect(fits.length).toBeGreaterThan(0)
+        await expect(fits.length).toBeLessThan(clamps.length)
+        return
+      }
+      // A prompt that fits at Small is never cut at Default or Large.
+      for (const el of fits) {
+        await expect({ size, text: el.textContent, cut: cut(el) }).toEqual({ size, text: el.textContent, cut: false })
+        await expect(textSpills(el)).toEqual([])
+      }
+    })
+  }
+}
+
+/** A five-line prompt at Small, Default and Large: its lines grow with the text, so a prompt that fits stays whole. */
+export const PromptTextSizesDark: StoryObj<typeof meta> = { render: () => <PromptAtSizes lines={5} />, play: promptAtSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const PromptTextSizesLight: StoryObj<typeof meta> = { render: () => <PromptAtSizes lines={5} />, play: promptAtSizesPlay, globals: { mode: 'light', textSize: 'small' } }
+/** The wide eight-line prompt at Small, Default and Large. */
+export const WidePromptTextSizesDark: StoryObj<typeof meta> = { render: () => <PromptAtSizes lines={8} />, play: promptAtSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const WidePromptTextSizesLight: StoryObj<typeof meta> = { render: () => <PromptAtSizes lines={8} />, play: promptAtSizesPlay, globals: { mode: 'light', textSize: 'small' } }

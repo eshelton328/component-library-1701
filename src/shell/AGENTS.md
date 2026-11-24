@@ -67,6 +67,15 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   included (a child left out is drawn at its layout place), and a child
   that a scroll brings into view or a page adds during the move (R44,
   `DockEntries`).
+- A layer over the page that docks itself (`data-keyboard-dock`: a
+  BottomSheet with `keyboardDock`) moves on the same move as a footer:
+  `--keyboard-dock` set on it at the edges, a transform animation between
+  them. While its field has the focus it is the only part that moves; the
+  footers and bodies stay where they are (R71, `SheetKeyboardDock`).
+- `footerBase` subtracts the space under a footer's content, so a pad that
+  reads `--scroll-frame-dock` does not step the composer at the open's end
+  (R36, `PadEdges`). Read the composer's own box in such a test, not the
+  footer's.
 - A page changes its layout for a keyboard move in `appShellDockEvent`
   (a composer that grows), never at the focus; a footer that changes its
   height during a move restarts the move from where it is drawn

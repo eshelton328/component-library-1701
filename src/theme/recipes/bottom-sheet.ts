@@ -48,19 +48,35 @@ export const bottomSheet = defineSlotRecipe({
       _closed: { animationName: 'hold', animationDuration: 'sheetClose', animationFillMode: 'forwards' },
     },
     // The top padding keeps a strip of scrim above a tall sheet, so a click there can close it.
-    positioner: { position: 'fixed', inset: '0', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', pt: '40' },
+    // Keyboard dock (`keyboardDock`, screen review R71): AppShell sets --keyboard-dock on the positioner of the sheet
+    // whose field has the focus, the keyboard's height over the layout's foot, at the edges of each keyboard move (an
+    // open's end, a close's start), and moves the positioner with transform animations in between. At rest the
+    // positioner stands that far up, so the sheet's box ends on the keyboard; with no keyboard it is 0.
+    positioner: {
+      position: 'fixed',
+      inset: '0',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      pt: '40',
+      '&[data-keyboard-dock]': { transform: 'translateY(calc(-1 * var(--keyboard-dock, 0px)))' },
+    },
     content: {
       display: 'flex',
       flexDirection: 'column',
       w: '100%',
-      maxH: '100%',
+      maxH: 'calc(100% - var(--keyboard-dock, 0px))',
       overflowY: 'auto',
       ...scrollArea,
       // The sides pad by the device's side insets too, so in landscape no content sits under the cutout, and the end
       // keeps the home indicator's area or the device's bottom inset, the larger (the shell's own rule, d-089).
       pl: `calc(token(spacing.12) + ${safeInset('left')})`,
       pr: `calc(token(spacing.12) + ${safeInset('right')})`,
-      pb: `max(token(sizes.shell.safeAreaBottom), ${safeInset('bottom')})`,
+      // On the keyboard (--keyboard-dock, above) the home indicator's area is under the keyboard, so the end keeps 8
+      // px over it. The space changes at a move's edge, and the dock moves the content's bottom, not the box's, so the
+      // content does not step there (AppShell's `footerBase`). A sheet taller than the room above the keyboard gets
+      // shorter by as much, so its top stays in the window.
+      pb: `max(token(spacing.8), calc(max(token(sizes.shell.safeAreaBottom), ${safeInset('bottom')}) - var(--keyboard-dock, 0px)))`,
       bg: 'surface.overlay',
       color: 'fg.default',
       borderTopLeftRadius: '2xl',

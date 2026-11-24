@@ -208,6 +208,8 @@ export type BottomSheetProps = ({
     initialFocus?: (() => HTMLElement | null) | undefined;
     size?: 'sm' | 'md' | undefined;
     scrim?: boolean | undefined;
+    closeOn?: 'explicit' | 'scrim' | undefined;
+    keyboardDock?: boolean | undefined;
     lifted?: BottomSheetLifted | undefined;
 };
 

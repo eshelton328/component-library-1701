@@ -1315,3 +1315,52 @@ export const CloseOnScrimDark: StoryObj<typeof meta> = { render: () => <CloseOnP
 export const CloseOnScrimLight: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="scrim" scrim />, play: closeOnPlay('scrim', true), globals: { mode: 'light' } }
 /** `closeOn="scrim"` with no scrim is `explicit`: a press on the page keeps it open. */
 export const CloseOnScrimNoScrim: StoryObj<typeof meta> = { render: () => <CloseOnPage closeOn="scrim" scrim={false} />, play: closeOnPlay('scrim', false) }
+
+// A `keyboardDock` sheet taller than the room above the keyboard gets shorter at the open's end, when AppShell sets
+// `--keyboard-dock` on its positioner. A field near the end of its content stays in view: the content scrolls by as much
+// as the field would go under the sheet's end (Codex review of #347). The play sets the property as the shell does.
+function TallDockSheet() {
+  return (
+    <main className={page}>
+      <BottomSheet title="Notes" keyboardDock defaultOpen>
+        <Stack gap="2">
+          {snoozeRows.map((row) => (
+            <Button key={row} size="xl">
+              {row}
+            </Button>
+          ))}
+          <textarea aria-label="Last note" rows={2} />
+        </Stack>
+      </BottomSheet>
+    </main>
+  )
+}
+const keepFieldPlay: NonNullable<StoryObj<typeof meta>['play']> = async () => {
+  const body = within(document.body)
+  const sheet = await body.findByRole('dialog', { name: 'Notes' })
+  await motionDone(sheet)
+  const positioner = sheet.parentElement
+  if (positioner === null) throw new Error('no positioner')
+  const field = within(sheet).getByRole('textbox', { name: 'Last note' })
+  sheet.scrollTop = sheet.scrollHeight
+  field.focus()
+  await waitFor(() => expect(field).toHaveFocus())
+  const viewBottom = () => {
+    const box = sheet.getBoundingClientRect()
+    return box.top + sheet.clientTop + sheet.clientHeight - Number.parseFloat(getComputedStyle(sheet).paddingBottom)
+  }
+  await expect(field.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewBottom() + 0.5)
+  const tall = sheet.clientHeight
+  positioner.style.setProperty('--keyboard-dock', '300px')
+  // The frame after the change: its observers have run (they come after the frame's animation callbacks).
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+  // The sheet is shorter, and the field is still in view above its end.
+  await expect(sheet.clientHeight).toBeLessThan(tall)
+  await expect(field.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewBottom() + 0.5)
+  await expect(field.getBoundingClientRect().top).toBeGreaterThanOrEqual(sheet.getBoundingClientRect().top)
+  positioner.style.removeProperty('--keyboard-dock')
+}
+/** A tall docked sheet keeps its focused field in view as it gets shorter over the keyboard. */
+export const KeepFieldInViewDark: StoryObj<typeof meta> = { render: () => <TallDockSheet />, play: keepFieldPlay, globals: { mode: 'dark' } }
+export const KeepFieldInViewLight: StoryObj<typeof meta> = { render: () => <TallDockSheet />, play: keepFieldPlay, globals: { mode: 'light' } }

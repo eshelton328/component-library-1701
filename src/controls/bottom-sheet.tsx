@@ -192,7 +192,7 @@ export function SizedBottomSheet({
         {lifted === undefined ? null : <LiftedCopy lifted={lifted} />}
         <Positioner data-keyboard-dock={keyboardDock ? '' : undefined}>
           {/* The name stays set when a title replaces the label while the sheet is open: Ark looks for the title only when it opens. */}
-          <DraggableContent aria-label={title ?? label} returnToRef={returnToRef} grabberOnly={closeOn !== undefined}>
+          <DraggableContent aria-label={title ?? label} returnToRef={returnToRef} grabberOnly={closeOn !== undefined} keepFocusInView={keyboardDock}>
             <Grabber aria-hidden="true" data-drag-handle="grabber" />
             {title === undefined ? null : (
               <Header data-leading={hasLeading ? '' : undefined} data-drag-handle="title">
@@ -378,8 +378,16 @@ function reset(sheet: HTMLElement) {
 }
 
 // The sheet's box, with the drag that closes it. It must render inside the dialog's Root.
-// With `grabberOnly` (a sheet with `closeOn`), only a drag that starts on the grabber moves the sheet.
-function DraggableContent({ children, returnToRef, grabberOnly, ...props }: ComponentProps<typeof Content> & { returnToRef: RefObject<HTMLElement | null>; grabberOnly: boolean }) {
+// With `grabberOnly` (a sheet with `closeOn`), only a drag that starts on the grabber moves the sheet. With
+// `keepFocusInView` (a `keyboardDock` sheet), a sheet that gets shorter scrolls its content so the focused element
+// stays in view.
+function DraggableContent({
+  children,
+  returnToRef,
+  grabberOnly,
+  keepFocusInView,
+  ...props
+}: ComponentProps<typeof Content> & { returnToRef: RefObject<HTMLElement | null>; grabberOnly: boolean; keepFocusInView: boolean }) {
   const dialog = useDialogContext()
   const ref = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
@@ -393,6 +401,29 @@ function DraggableContent({ children, returnToRef, grabberOnly, ...props }: Comp
       if (sheet !== null && !sheet.isConnected) returnFocus(returnToRef)
     }
   }, [returnToRef])
+
+  // A docked sheet gets shorter by the keyboard's height at the open's end (its recipe's max height), and its content
+  // keeps its scroll position, so a field near the content's end went under the sheet's end (Codex review of #347).
+  // When the sheet gets shorter, its content scrolls just enough to show the focused element again. The observer
+  // reports after the layout and before the paint, so no frame shows the field cut off.
+  useEffect(() => {
+    const sheet = ref.current
+    if (!keepFocusInView || sheet === null || typeof ResizeObserver === 'undefined') return undefined
+    let height = sheet.clientHeight
+    const watch = new ResizeObserver(() => {
+      const was = height
+      height = sheet.clientHeight
+      const focused = sheet.ownerDocument.activeElement
+      if (height >= was || !(focused instanceof HTMLElement) || focused === sheet || !sheet.contains(focused)) return
+      const view = sheet.getBoundingClientRect().top + sheet.clientTop + sheet.clientHeight - (Number.parseFloat(getComputedStyle(sheet).paddingBottom) || 0)
+      const below = focused.getBoundingClientRect().bottom - view
+      if (below > 0) sheet.scrollTop += below
+    })
+    watch.observe(sheet)
+    return () => {
+      watch.disconnect()
+    }
+  }, [keepFocusInView])
 
   // A sheet that opens again while its swipe close still runs keeps its element, so it drops the drag offset
   // that the close slid down from, and opens at its rest.

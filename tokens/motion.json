@@ -31,6 +31,14 @@
         "unit": "ms"
       },
       "$description": "How long a bottom sheet takes to slide down and its scrim to fade out (screen review R13). Use with easing.sheet. Not for opening; use duration.sheetOpen."
+    },
+    "fade": {
+      "$type": "duration",
+      "$value": {
+        "value": 250,
+        "unit": "ms"
+      },
+      "$description": "How long a view that is done takes to fade out, such as the launch view of the-bridge when the app draws (screen review R66). Use with easing.fade. Not for a sheet; use duration.sheetClose."
     }
   },
   "easing": {
@@ -63,6 +71,16 @@
         1
       ],
       "$description": "The curve of a bottom sheet and its scrim as they open and close (screen review R13). Use with duration.sheetOpen or duration.sheetClose. Not for the keyboard dock; use easing.keyboard."
+    },
+    "fade": {
+      "$type": "cubicBezier",
+      "$value": [
+        0.4,
+        0,
+        0.2,
+        1
+      ],
+      "$description": "The curve of a view that fades out when it is done, such as the launch view: it leaves fast and settles. Use with duration.fade. Not for sheets or the keyboard dock."
     }
   }
 }

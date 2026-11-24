@@ -1,11 +1,13 @@
 import { defineRecipe } from '@pandacss/dev'
 
 // The fill of a Skeleton: skeleton.base with a band of skeleton.shine that crosses it slowly and repeats
-// (duration.shimmer, easing.shimmer). With prefers-reduced-motion it is a still block of skeleton.base.
+// (duration.shimmer, easing.shimmer). The band is one for the whole page (screen review R65): the fill is sized
+// in viewport units and the shimmer keyframes place it from the bar's own left, so bars of any width and place
+// show the same band at the same page x. With prefers-reduced-motion it is a still block of skeleton.base.
 const fill = {
   bg: 'skeleton.base',
   backgroundImage: 'linear-gradient(90deg, token(colors.skeleton.base) 25%, token(colors.skeleton.shine) 50%, token(colors.skeleton.base) 75%)',
-  backgroundSize: '200% 100%',
+  backgroundSize: '200vw 100%',
   animationName: 'shimmer',
   animationDuration: 'shimmer',
   animationTimingFunction: 'shimmer',

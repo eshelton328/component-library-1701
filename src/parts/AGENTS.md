@@ -31,6 +31,13 @@ under their purpose group, never under "Parts" (d-065).
   those parts with skeletons in their slots. Each preset's story stands it
   beside the part it stands for and checks that both have the same height
   (`skeleton.stories.tsx`); add such a pair for a new preset.
+- The shimmer is one band for the page (screen review R65): the fill is
+  sized in viewport units and placed from the bar's own left, which
+  `Skeleton` writes to `--skeleton-x` on mount and on a window resize,
+  and every shimmer starts at time 0 of the document timeline. Nothing
+  runs per frame. A part that draws its own placeholder uses `Skeleton`,
+  never the recipe alone, or its band is out of step (`SharedBand`
+  stories).
 - `Message from="peer"` is a message that another chat sent (the-bridge
   R55; the owner asked for "a yellow background or text to show that it's not
   from me"): no bubble, an amber start bar and "From <name>" with the chat

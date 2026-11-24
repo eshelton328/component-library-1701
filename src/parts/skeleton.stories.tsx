@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Card } from './card'
@@ -158,6 +158,134 @@ export const ReduceMotion: Story = {
     await expect([block.animationName, block.backgroundImage, block.backgroundColor]).toEqual(['none', 'none', swatch(canvasElement)])
   },
 }
+
+// The shared band (screen review R65): two bars of different width and left, the second one mounted later, show
+// the band at the same page x at one time, so one sweep crosses the page.
+function Band() {
+  const [late, setLate] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLate(true)
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={heading}>One band for the page</span>
+        <div className={styles.body} data-testid="first">
+          <Skeleton width="full" />
+        </div>
+        <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '12' })}>
+          <div data-testid="second">{late ? <Skeleton shape="block" size="thumbnailLg" /> : null}</div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+const bandX = (el: Element, pseudo?: string) => {
+  const s = getComputedStyle(el, pseudo)
+  return el.getBoundingClientRect().left + Number.parseFloat(s.backgroundPositionX) + window.innerWidth
+}
+
+const bandPlay: Story['play'] = async ({ canvasElement }) => {
+  const first = canvasElement.querySelector('[data-testid="first"] [data-skeleton="line"]')
+  await waitFor(() => expect(canvasElement.querySelector('[data-testid="second"] [data-skeleton="block"]')).not.toBeNull())
+  const second = canvasElement.querySelector('[data-testid="second"] [data-skeleton="block"]')
+  if (first === null || second === null) throw new Error('no bars')
+  // The bars differ in width and left, and the second mounted 400 ms after the first.
+  const [a, b] = [first.getBoundingClientRect(), second.getBoundingClientRect()]
+  await expect(Math.abs(a.left - b.left) > 100 && Math.abs(a.width - b.width) > 100).toBe(true)
+  // Read at one time (one task, so one animation time), the band's middle is at the same page x in both bars.
+  const one = [bandX(first, '::before'), bandX(second)]
+  await expect(Math.abs((one[0] ?? 0) - (one[1] ?? 0))).toBeLessThan(1)
+  // The band moves: a later read puts it at another page x, and the two bars still agree.
+  await new Promise((resolve) => setTimeout(resolve, 300))
+  const two = [bandX(first, '::before'), bandX(second)]
+  await expect(Math.abs((two[0] ?? 0) - (two[1] ?? 0))).toBeLessThan(1)
+  await expect(Math.abs((two[0] ?? 0) - (one[0] ?? 0))).toBeGreaterThan(1)
+}
+
+// A bar in a hidden box, such as an inactive tab panel, that is shown 400 ms later joins the band.
+function Reveal() {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShown(true)
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={heading}>A bar shown later</span>
+        <div className={styles.body} data-testid="first">
+          <Skeleton width="full" />
+        </div>
+        <div className={css({ display: 'flex', justifyContent: 'flex-end' })}>
+          <div data-testid="second" data-shown={shown} hidden={!shown}>
+            <Skeleton shape="block" size="thumbnailLg" />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+// A bar in a pane that moves when the pane beside it grows 400 ms later, as when a SplitPanes divider moves,
+// stays on the band.
+function Move() {
+  const [wide, setWide] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWide(true)
+    }, 400)
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [])
+  return (
+    <main className={page}>
+      <div className={pane}>
+        <span className={heading}>A pane that moves</span>
+        <div className={styles.body} data-testid="first">
+          <Skeleton width="full" />
+        </div>
+        <div className={wide ? movedGrid.wide : movedGrid.narrow}>
+          <div />
+          <div data-testid="second" data-shown={wide}>
+            <Skeleton shape="block" size="thumbnailLg" />
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+const movedGrid = {
+  narrow: css({ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 3fr)' }),
+  wide: css({ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 1fr)' }),
+}
+
+// No colours of their own beyond the Skeleton's, but Dark and Light keep the axe test on both modes.
+export const SharedBandDark: Story = { render: () => <Band />, globals: { mode: 'dark' }, play: bandPlay }
+export const SharedBandLight: Story = { render: () => <Band />, globals: { mode: 'light' }, play: bandPlay }
+
+const revealPlay: Story['play'] = async (context) => {
+  await waitFor(() => expect(context.canvasElement.querySelector('[data-testid="second"][data-shown="true"]')).not.toBeNull())
+  await new Promise((resolve) => setTimeout(resolve, 100))
+  await bandPlay(context)
+}
+
+export const SharedBandRevealDark: Story = { render: () => <Reveal />, globals: { mode: 'dark' }, play: revealPlay }
+export const SharedBandRevealLight: Story = { render: () => <Reveal />, globals: { mode: 'light' }, play: revealPlay }
+
+export const SharedBandMoveDark: Story = { render: () => <Move />, globals: { mode: 'dark' }, play: revealPlay }
+export const SharedBandMoveLight: Story = { render: () => <Move />, globals: { mode: 'light' }, play: revealPlay }
 
 function Pair({ name, real, skeleton }: { name: string; real: ReactNode; skeleton: ReactNode }) {
   return (

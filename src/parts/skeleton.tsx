@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { styled } from '../../styled-system/jsx'
 import { skeleton, skeletonGroup, type SkeletonVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -7,13 +7,84 @@ const Shape = styled('span', skeleton)
 
 export type SkeletonProps = Scalar<SkeletonVariantProps>
 
+// The shared band (screen review R65). Each bar's fill is placed from the page's left edge, so a bar needs its own
+// left in --skeleton-x, and its shimmer starts at time 0 of the document timeline, so all bars are in step whenever
+// they mounted. Both are set when a bar's shimmer starts, which is also when a hidden bar is shown again (an
+// inactive tab panel), and again when the window or a box that holds a bar changes size, such as a pane whose
+// divider moves; nothing runs per frame. A bar that moves sideways while no box that holds it changes size, such as
+// after a sibling grows, keeps its old left until the next resize or start.
+const bars = new Set<HTMLElement>()
+// The boxes that hold a bar, with how many bars each holds, watched by one ResizeObserver.
+const holders = new Map<Element, number>()
+let watcher: ResizeObserver | undefined
+
+function holdersOf(bar: HTMLElement) {
+  const found: Element[] = []
+  for (let el = bar.parentElement; el !== null; el = el.parentElement) found.push(el)
+  return found
+}
+
+function place(bar: HTMLElement) {
+  bar.style.setProperty('--skeleton-x', `${String(bar.getBoundingClientRect().left)}px`)
+}
+
+function placeAll() {
+  for (const bar of bars) place(bar)
+}
+
+function inStep(bar: HTMLElement) {
+  for (const animation of bar.getAnimations({ subtree: true })) {
+    if (animation instanceof CSSAnimation && animation.animationName === 'shimmer') animation.startTime = 0
+  }
+}
+
+function useSharedBand() {
+  const ref = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const bar = ref.current
+    if (bar === null) return
+    if (bars.size === 0) window.addEventListener('resize', placeAll)
+    bars.add(bar)
+    watcher ??= new ResizeObserver(placeAll)
+    const held = holdersOf(bar)
+    for (const box of held) {
+      const count = holders.get(box) ?? 0
+      if (count === 0) watcher.observe(box)
+      holders.set(box, count + 1)
+    }
+    // A shimmer starts when the bar mounts and again each time a hidden bar is shown, as a new animation.
+    const start = (event: AnimationEvent) => {
+      if (event.animationName !== 'shimmer') return
+      place(bar)
+      inStep(bar)
+    }
+    bar.addEventListener('animationstart', start)
+    place(bar)
+    inStep(bar)
+    return () => {
+      bar.removeEventListener('animationstart', start)
+      for (const box of held) {
+        const count = (holders.get(box) ?? 1) - 1
+        if (count === 0) {
+          holders.delete(box)
+          watcher?.unobserve(box)
+        } else holders.set(box, count)
+      }
+      bars.delete(bar)
+      if (bars.size === 0) window.removeEventListener('resize', placeAll)
+    }
+  }, [])
+  return ref
+}
+
 export type SkeletonShape = NonNullable<SkeletonProps['shape']>
 export type SkeletonWidth = NonNullable<SkeletonProps['width']>
 export type SkeletonSize = NonNullable<SkeletonProps['size']>
 
 /**
  * A placeholder in the shape of content that is still loading, so nothing moves when the content comes. It
- * shimmers slowly; with prefers-reduced-motion it is a still block. It is hidden from assistive technology:
+ * shimmers slowly, with one band for the whole page: every Skeleton shows the same band at the same page x. With
+ * prefers-reduced-motion it is a still block. It is hidden from assistive technology:
  * put the skeletons in a `SkeletonGroup`, which says what loads.
  *
  * - `line` (the default) is one line of the text style it sits in, such as a row's title or meta. `width`
@@ -25,9 +96,10 @@ export type SkeletonSize = NonNullable<SkeletonProps['size']>
  * - `circle` takes an icon size (`icon12` to `icon24`), such as a kind mark's.
  */
 export function Skeleton({ shape = 'line', width, size, ratio }: SkeletonProps) {
+  const ref = useSharedBand()
   const sized = shape === 'line' ? { width: width ?? 'full' } : { size: size ?? (shape === 'circle' ? 'icon16' : 'fill'), ratio }
   return (
-    <Shape shape={shape} {...sized} aria-hidden="true" data-skeleton={shape}>
+    <Shape ref={ref} shape={shape} {...sized} aria-hidden="true" data-skeleton={shape}>
       {shape === 'line' ? '\u{a0}' : null}
     </Shape>
   )

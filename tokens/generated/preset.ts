@@ -14,6 +14,10 @@ export default definePreset({
     "extend": {
       "tokens": {
         "durations": {
+          "fade": {
+            "value": "250ms",
+            "description": "How long a view that is done takes to fade out, such as the launch view of the-bridge when the app draws (screen review R66). Use with easing.fade. Not for a sheet; use duration.sheetClose."
+          },
           "keyboard": {
             "value": "300ms",
             "description": "How long the composer dock takes to follow the on-screen keyboard up or down: the iOS 26 keyboard's own motion, measured at 60 fps on the iPad mini (screen review R37). Use with easing.keyboard. Not for sheets or other overlays."
@@ -32,6 +36,10 @@ export default definePreset({
           }
         },
         "easings": {
+          "fade": {
+            "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+            "description": "The curve of a view that fades out when it is done, such as the launch view: it leaves fast and settles. Use with duration.fade. Not for sheets or the keyboard dock."
+          },
           "keyboard": {
             "value": "cubic-bezier(0.22, 0.17, 0.15, 1)",
             "description": "The curve of the composer dock as it follows the on-screen keyboard: the iOS 26 keyboard's spring (1 - (1 + wt) e^(-wt), w about 23.5/s), fitted within 1.1 % over duration.keyboard (screen review R37). Use with duration.keyboard. Not for sheets; use easing.sheet."

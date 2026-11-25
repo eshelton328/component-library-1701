@@ -40,7 +40,8 @@ export type TabBarProps = {
  */
 export function TabBar({ items, selected, onSelect, label = 'Main', size = 'phone' }: TabBarProps) {
   return (
-    <Root aria-label={label} size={size}>
+    // Chrome keeps the Small type at every text size (d-131): data-text-fixed sets the type tokens back.
+    <Root aria-label={label} size={size} data-text-fixed="">
       <List>
         {items.map((item) => {
           const count = badgeCount(item)

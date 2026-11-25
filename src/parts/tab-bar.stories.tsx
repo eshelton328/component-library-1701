@@ -7,6 +7,7 @@ import type { NavItem } from './nav-item'
 import { NavRail } from './nav-rail'
 import { TabBar } from './tab-bar'
 import { expectCutText } from '../controls/tooltip.testing'
+import { fixedTypePlay } from '../controls/text-size.testing'
 
 // A 360 px phone screen (Figma draws 390) with the bar at the bottom, as the caller places it.
 const page = css({ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', bg: 'bg.canvas', color: 'fg.default', w: 'shell.popoverLg', h: 'shell.popoverLg' })
@@ -335,3 +336,9 @@ export const FigmaNameDark: StoryObj<typeof meta> = {
   play: figmaPlay,
 }
 export const FigmaNameLight: StoryObj<typeof meta> = { ...FigmaNameDark, globals: { mode: 'light' } }
+
+
+/** The tab bar at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
+const fixedPlay = fixedTypePlay([".tab-bar__label"])
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

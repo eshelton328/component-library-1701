@@ -8,6 +8,7 @@ import { ViewSwitch } from '../controls/view-switch'
 import { PageHeader } from './page-header'
 import { StatusPill } from './status-pill'
 import { expectCutText } from '../controls/tooltip.testing'
+import { fixedTypePlay } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '12', borderRadius: 'xl', w: 'shell.listPane' })
@@ -263,3 +264,9 @@ const largeCount: StoryObj<typeof meta> = {
 
 export const LargeCountDark: StoryObj<typeof meta> = { ...largeCount, globals: { mode: 'dark' } }
 export const LargeCountLight: StoryObj<typeof meta> = { ...largeCount, globals: { mode: 'light' } }
+
+
+/** The page header's actions at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
+const fixedPlay = fixedTypePlay(['.page-header__actions button'])
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

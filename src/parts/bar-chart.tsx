@@ -226,7 +226,8 @@ export function HorizontalBarChart({ label, rows, max, tone = 'accent', formatVa
         return (
           <Row key={`${String(r)}:${row.label}`}>
             <RowLabel>
-              <TruncatedText>{row.label}</TruncatedText>
+              {/* At the larger text sizes (d-131) a row's label wraps and the row grows. */}
+              <TruncatedText grow>{row.label}</TruncatedText>
             </RowLabel>
             <Track>
               <HorizontalSvg width={percent} data-filled={share > 0 ? '' : undefined} aria-hidden="true" focusable="false">

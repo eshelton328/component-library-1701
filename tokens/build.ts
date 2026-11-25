@@ -278,7 +278,10 @@ const sized = (part: (set: TokenNormalizedSet) => string, theme: string) => {
   const value = (size: string): Modal => modal(part(setOf(theme, 'light', size)), part(setOf(theme, 'dark', size)))
   const plain = value(defaultSize)
   const changed = otherSizes.map(({ size, condition }): [string, Modal] => [`_${condition}`, value(size)]).filter(([, v]) => JSON.stringify(v) !== JSON.stringify(plain))
-  return changed.length ? { base: plain, ...Object.fromEntries(changed) } : plain
+  // d-131: chrome keeps the default size's type at any text size. A token
+  // that a text size changes takes the default value back under
+  // _textFixed, which a chrome part's root sets (data-text-fixed).
+  return changed.length ? { base: plain, ...Object.fromEntries(changed), _textFixed: plain } : plain
 }
 
 const tokens: Tree = {}
@@ -332,7 +335,9 @@ const preset = {
   name: 'component-library-1701',
   // A class on <html> picks a text size, as the dark class picks the mode:
   // `.text-default &` is the condition _textDefault.
-  conditions: { extend: Object.fromEntries(otherSizes.map(({ condition, className }) => [condition, `.${className} &`])) },
+  // _textFixed (d-131): an element with data-text-fixed, and all inside
+  // it, keep the default size's type: chrome such as a tab bar.
+  conditions: { extend: { ...Object.fromEntries(otherSizes.map(({ condition, className }) => [condition, `.${className} &`])), textFixed: '[data-text-fixed] &' } },
   theme: { extend: { tokens, semanticTokens: semantic(defaultTheme), textStyles } },
   themes: Object.fromEntries(otherThemes.map((t) => [t, { semanticTokens: semantic(t) }])),
   // Panda writes a theme's CSS only when staticCss lists it; then

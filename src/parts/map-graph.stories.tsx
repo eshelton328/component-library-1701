@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { MapGraph, type MapGraphEdge, type MapGraphNode, MapLegend, MapNode, MapSelectionCard } from './map-graph'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
 import { expectCutText } from '../controls/tooltip.testing'
+import { fixedTypePlay } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 // Swatches of the expected tokens, so the play function compares resolved colours.
@@ -1451,3 +1452,9 @@ const minimapPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasE
 
 export const MinimapDark: StoryObj<typeof meta> = { render: () => <MinimapMaps />, play: minimapPlay, globals: { mode: 'dark' } }
 export const MinimapLight: StoryObj<typeof meta> = { render: () => <MinimapMaps />, play: minimapPlay, globals: { mode: 'light' } }
+
+
+/** The map at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
+const fixedPlay = fixedTypePlay([".map-node__label"])
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -59,6 +59,37 @@ export async function expectGrown(root: Element, slots: readonly string[]): Prom
   }
 }
 
+/**
+ * The font size and line height of each element that `selectors` find inside `root`, in order. Read it at Small and
+ * again inside `atTextSize` at Default and Large: chrome with `data-text-fixed` (d-131) reads the same at each size.
+ */
+export function typeOf(root: Element, selectors: readonly string[]): string[] {
+  return selectors.flatMap((selector) => {
+    const found = [...root.querySelectorAll(selector)]
+    if (found.length === 0) throw new Error(`nothing matches ${selector}`)
+    return found.map((e) => {
+      const s = getComputedStyle(e)
+      return `${selector} ${s.fontSize}/${s.lineHeight}`
+    })
+  })
+}
+
+/**
+ * A play function for chrome (d-131): the type of each element that `selectors` find keeps its Small font size and
+ * line height at Default and Large. The story renders at Small (`globals: { textSize: 'small' }`).
+ */
+export function fixedTypePlay(selectors: readonly string[]) {
+  return async ({ canvasElement }: { canvasElement: HTMLElement }): Promise<void> => {
+    const small = typeOf(canvasElement, selectors)
+    for (const size of textSizes) {
+      if (size === 'small') continue
+      await atTextSize(size, async () => {
+        await expect(typeOf(canvasElement, selectors)).toEqual(small)
+      })
+    }
+  }
+}
+
 /** A run of text that sticks out of its box, and by how many px. */
 export type TextSpill = { text: string; by: number }
 

@@ -6,6 +6,7 @@ import { Button } from '../controls/button'
 import { PanelIcon, ResetIcon } from '../foundations/icons'
 import { Workbench } from './workbench'
 import { expectCutText } from '../controls/tooltip.testing'
+import { atTextSize, fixedTypePlay } from '../controls/text-size.testing'
 
 const frame = css({ h: 'shell.dialogLg', bg: 'bg.canvas' })
 const panes = css({ flex: '1', bg: 'surface.pane', borderWidth: 'default', borderColor: 'border.default', borderRadius: 'xl', textStyle: 'body', color: 'fg.default', p: '12' })
@@ -376,3 +377,21 @@ export const NoTrailing: StoryObj<typeof meta> = {
     await expect(Math.round(rect(within(canvasElement).getByRole('button', { name: 'New chat' })).left - rect(list).right)).toBe(8)
   },
 }
+
+
+/**
+ * The workspace tabs and the hint bar at Default and Large: chrome keeps its Small type (d-131, data-text-fixed), and
+ * the workspace's own content grows with the text size.
+ */
+const fixedChrome = fixedTypePlay(['.workbench__hint', '[role="tab"]'])
+const fixedPlay: StoryObj<typeof meta>['play'] = async (context) => {
+  await fixedChrome(context)
+  const panel = context.canvasElement.querySelector('[role="tabpanel"]:not([hidden]) div')
+  if (!(panel instanceof HTMLElement)) throw new Error('no panel content')
+  const small = Number.parseFloat(getComputedStyle(panel).fontSize)
+  await atTextSize('large', async () => {
+    await expect(Number.parseFloat(getComputedStyle(panel).fontSize)).toBeGreaterThan(small)
+  })
+}
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

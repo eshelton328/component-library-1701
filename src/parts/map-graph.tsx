@@ -760,7 +760,15 @@ export function MapGraph({
     }
   }
   return (
-    <GraphRoot role="group" aria-label={label} aria-describedby={range === null ? undefined : keysId} zoomable={range === null ? undefined : true}>
+    // The map is fixed like chrome at every text size (d-131): its nodes are placed boxes on a canvas, which a person
+    // zooms, so data-text-fixed keeps the Small type in it.
+    <GraphRoot
+      role="group"
+      aria-label={label}
+      aria-describedby={range === null ? undefined : keysId}
+      zoomable={range === null ? undefined : true}
+      data-text-fixed=""
+    >
       <Scroller
         ref={scroller}
         data-allow-pinch={range === null ? undefined : ''}

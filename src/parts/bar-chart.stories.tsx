@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Stack } from '../controls/layout'
 import { GroupedBarChart, HorizontalBarChart } from './bar-chart'
 import { expectCutText } from '../controls/tooltip.testing'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const panel = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
@@ -403,3 +404,43 @@ const narrowKeysMeta: StoryObj<typeof meta> = {
 // Only the story test runner has a real keyboard, so the Storybook UI leaves these out; the test runner runs them.
 export const NarrowKeysDark: StoryObj<typeof meta> = { ...narrowKeysMeta, tags: ['!dev'], globals: { mode: 'dark' } }
 export const NarrowKeysLight: StoryObj<typeof meta> = { ...narrowKeysMeta, tags: ['!dev'], globals: { mode: 'light' } }
+
+
+// A horizontal bar chart's row labels at each text size (d-131): Small cuts a long label with an ellipsis, as before;
+// at Default and Large the label wraps and its row grows.
+function GrowBars() {
+  return (
+    <main className={css({ bg: 'bg.canvas', color: 'fg.default', p: '24' })}>
+      <div className={css({ w: 'shell.popoverSm' })} data-testid="grow-bars">
+        <HorizontalBarChart
+          label="Runs per agent"
+          rows={[
+            { label: 'pr-description-checker-with-a-long-name', value: 12 },
+            { label: 'writer', value: 7 },
+          ]}
+        />
+      </div>
+    </main>
+  )
+}
+
+const growBarsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const bars = within(canvasElement).getByTestId('grow-bars')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      const label = bars.querySelector('.horizontal-bar-chart__label .truncated-text')
+      if (!(label instanceof HTMLElement)) throw new Error('no label')
+      if (size === 'small') {
+        await expect(getComputedStyle(label).textOverflow).toBe('ellipsis')
+        await waitFor(() => expect(label.scrollWidth).toBeGreaterThan(label.clientWidth))
+        return
+      }
+      await expectGrown(bars, ['.horizontal-bar-chart__label'])
+      await expect(textSpills(bars)).toEqual([])
+    })
+  }
+}
+
+/** Long row labels at Small, Default and Large: the larger sizes wrap them. */
+export const GrowTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowBars />, play: growBarsPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const GrowTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowBars />, play: growBarsPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -7,7 +7,8 @@ export default definePreset({
   "conditions": {
     "extend": {
       "textDefault": ".text-default &",
-      "textLarge": ".text-large &"
+      "textLarge": ".text-large &",
+      "textFixed": "[data-text-fixed] &"
     }
   },
   "theme": {
@@ -1238,7 +1239,8 @@ export default definePreset({
               "value": {
                 "base": "10px",
                 "_textDefault": "11px",
-                "_textLarge": "13px"
+                "_textLarge": "13px",
+                "_textFixed": "10px"
               },
               "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
             },
@@ -1246,7 +1248,8 @@ export default definePreset({
               "value": {
                 "base": "14px",
                 "_textDefault": "16px",
-                "_textLarge": "18px"
+                "_textLarge": "18px",
+                "_textFixed": "14px"
               },
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
@@ -1254,7 +1257,8 @@ export default definePreset({
               "value": {
                 "base": "15px",
                 "_textDefault": "17px",
-                "_textLarge": "20px"
+                "_textLarge": "20px",
+                "_textFixed": "15px"
               },
               "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
             },
@@ -1262,7 +1266,8 @@ export default definePreset({
               "value": {
                 "base": "13px",
                 "_textDefault": "15px",
-                "_textLarge": "17px"
+                "_textLarge": "17px",
+                "_textFixed": "13px"
               },
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
             },
@@ -1270,7 +1275,8 @@ export default definePreset({
               "value": {
                 "base": "14px",
                 "_textDefault": "16px",
-                "_textLarge": "18px"
+                "_textLarge": "18px",
+                "_textFixed": "14px"
               },
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
             },
@@ -1278,7 +1284,8 @@ export default definePreset({
               "value": {
                 "base": "11px",
                 "_textDefault": "13px",
-                "_textLarge": "14px"
+                "_textLarge": "14px",
+                "_textFixed": "11px"
               },
               "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
             },
@@ -1286,7 +1293,8 @@ export default definePreset({
               "value": {
                 "base": "28px",
                 "_textDefault": "32px",
-                "_textLarge": "37px"
+                "_textLarge": "37px",
+                "_textFixed": "28px"
               },
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
@@ -1294,7 +1302,8 @@ export default definePreset({
               "value": {
                 "base": "26px",
                 "_textDefault": "30px",
-                "_textLarge": "34px"
+                "_textLarge": "34px",
+                "_textFixed": "26px"
               },
               "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
@@ -1302,7 +1311,8 @@ export default definePreset({
               "value": {
                 "base": "14px",
                 "_textDefault": "16px",
-                "_textLarge": "18px"
+                "_textLarge": "18px",
+                "_textFixed": "14px"
               },
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
@@ -1310,7 +1320,8 @@ export default definePreset({
               "value": {
                 "base": "16px",
                 "_textDefault": "18px",
-                "_textLarge": "21px"
+                "_textLarge": "21px",
+                "_textFixed": "16px"
               },
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
@@ -1318,7 +1329,8 @@ export default definePreset({
               "value": {
                 "base": "13px",
                 "_textDefault": "15px",
-                "_textLarge": "17px"
+                "_textLarge": "17px",
+                "_textFixed": "13px"
               },
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
             },
@@ -1326,7 +1338,8 @@ export default definePreset({
               "value": {
                 "base": "13px",
                 "_textDefault": "15px",
-                "_textLarge": "17px"
+                "_textLarge": "17px",
+                "_textFixed": "13px"
               },
               "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
             },
@@ -1334,7 +1347,8 @@ export default definePreset({
               "value": {
                 "base": "12px",
                 "_textDefault": "14px",
-                "_textLarge": "16px"
+                "_textLarge": "16px",
+                "_textFixed": "12px"
               },
               "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
             },
@@ -1342,7 +1356,8 @@ export default definePreset({
               "value": {
                 "base": "12px",
                 "_textDefault": "14px",
-                "_textLarge": "16px"
+                "_textLarge": "16px",
+                "_textFixed": "12px"
               },
               "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
@@ -1350,7 +1365,8 @@ export default definePreset({
               "value": {
                 "base": "12px",
                 "_textDefault": "14px",
-                "_textLarge": "16px"
+                "_textLarge": "16px",
+                "_textFixed": "12px"
               },
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
             },
@@ -1358,7 +1374,8 @@ export default definePreset({
               "value": {
                 "base": "12px",
                 "_textDefault": "14px",
-                "_textLarge": "16px"
+                "_textLarge": "16px",
+                "_textFixed": "12px"
               },
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
@@ -1366,7 +1383,8 @@ export default definePreset({
               "value": {
                 "base": "11px",
                 "_textDefault": "13px",
-                "_textLarge": "14px"
+                "_textLarge": "14px",
+                "_textFixed": "11px"
               },
               "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
@@ -1374,7 +1392,8 @@ export default definePreset({
               "value": {
                 "base": "10px",
                 "_textDefault": "11px",
-                "_textLarge": "13px"
+                "_textLarge": "13px",
+                "_textFixed": "10px"
               },
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
@@ -1382,7 +1401,8 @@ export default definePreset({
               "value": {
                 "base": "16px",
                 "_textDefault": "18px",
-                "_textLarge": "21px"
+                "_textLarge": "21px",
+                "_textFixed": "16px"
               },
               "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
             },
@@ -1390,7 +1410,8 @@ export default definePreset({
               "value": {
                 "base": "15px",
                 "_textDefault": "17px",
-                "_textLarge": "20px"
+                "_textLarge": "20px",
+                "_textFixed": "15px"
               },
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
@@ -1398,7 +1419,8 @@ export default definePreset({
               "value": {
                 "base": "11px",
                 "_textDefault": "13px",
-                "_textLarge": "14px"
+                "_textLarge": "14px",
+                "_textFixed": "11px"
               },
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
@@ -1406,7 +1428,8 @@ export default definePreset({
               "value": {
                 "base": "9px",
                 "_textDefault": "10px",
-                "_textLarge": "12px"
+                "_textLarge": "12px",
+                "_textFixed": "9px"
               },
               "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
@@ -1414,7 +1437,8 @@ export default definePreset({
               "value": {
                 "base": "12px",
                 "_textDefault": "14px",
-                "_textLarge": "16px"
+                "_textLarge": "16px",
+                "_textFixed": "12px"
               },
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
@@ -1422,7 +1446,8 @@ export default definePreset({
               "value": {
                 "base": "11px",
                 "_textDefault": "13px",
-                "_textLarge": "14px"
+                "_textLarge": "14px",
+                "_textFixed": "11px"
               },
               "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
@@ -1430,7 +1455,8 @@ export default definePreset({
               "value": {
                 "base": "17px",
                 "_textDefault": "19px",
-                "_textLarge": "22px"
+                "_textLarge": "22px",
+                "_textFixed": "17px"
               },
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
             },
@@ -1438,7 +1464,8 @@ export default definePreset({
               "value": {
                 "base": "20px",
                 "_textDefault": "23px",
-                "_textLarge": "26px"
+                "_textLarge": "26px",
+                "_textFixed": "20px"
               },
               "description": "Part of the title text style. Use textStyle: 'title', not this token."
             }
@@ -1450,7 +1477,8 @@ export default definePreset({
               "value": {
                 "base": "1.2",
                 "_textDefault": "1.4546",
-                "_textLarge": "1.2308"
+                "_textLarge": "1.2308",
+                "_textFixed": "1.2"
               },
               "description": "Part of the badge text style. Use textStyle: 'badge', not this token."
             },
@@ -1458,14 +1486,16 @@ export default definePreset({
               "value": {
                 "base": "1.4286",
                 "_textDefault": "1.5",
-                "_textLarge": "1.5556"
+                "_textLarge": "1.5556",
+                "_textFixed": "1.4286"
               },
               "description": "Part of the body text style. Use textStyle: 'body', not this token."
             },
             "bodyLg": {
               "value": {
                 "base": "1.6",
-                "_textDefault": "1.6471"
+                "_textDefault": "1.6471",
+                "_textFixed": "1.6"
               },
               "description": "Part of the bodyLg text style. Use textStyle: 'bodyLg', not this token."
             },
@@ -1473,7 +1503,8 @@ export default definePreset({
               "value": {
                 "base": "1.5385",
                 "_textDefault": "1.6",
-                "_textLarge": "1.6471"
+                "_textLarge": "1.6471",
+                "_textFixed": "1.5385"
               },
               "description": "Part of the bodySm text style. Use textStyle: 'bodySm', not this token."
             },
@@ -1481,7 +1512,8 @@ export default definePreset({
               "value": {
                 "base": "1.4286",
                 "_textDefault": "1.5",
-                "_textLarge": "1.5556"
+                "_textLarge": "1.5556",
+                "_textFixed": "1.4286"
               },
               "description": "Part of the code text style. Use textStyle: 'code', not this token."
             },
@@ -1489,7 +1521,8 @@ export default definePreset({
               "value": {
                 "base": "1.4546",
                 "_textDefault": "1.5385",
-                "_textLarge": "1.4286"
+                "_textLarge": "1.4286",
+                "_textFixed": "1.4546"
               },
               "description": "Part of the eyebrow text style. Use textStyle: 'eyebrow', not this token."
             },
@@ -1497,7 +1530,8 @@ export default definePreset({
               "value": {
                 "base": "1.4286",
                 "_textDefault": "1.375",
-                "_textLarge": "1.4055"
+                "_textLarge": "1.4055",
+                "_textFixed": "1.4286"
               },
               "description": "Part of the heading text style. Use textStyle: 'heading', not this token."
             },
@@ -1505,7 +1539,8 @@ export default definePreset({
               "value": {
                 "base": "1.3847",
                 "_textDefault": "1.3334",
-                "_textLarge": "1.4118"
+                "_textLarge": "1.4118",
+                "_textFixed": "1.3847"
               },
               "description": "Part of the headingSm text style. Use textStyle: 'headingSm', not this token."
             },
@@ -1513,7 +1548,8 @@ export default definePreset({
               "value": {
                 "base": "1.4286",
                 "_textDefault": "1.5",
-                "_textLarge": "1.3334"
+                "_textLarge": "1.3334",
+                "_textFixed": "1.4286"
               },
               "description": "Part of the label text style. Use textStyle: 'label', not this token."
             },
@@ -1521,7 +1557,8 @@ export default definePreset({
               "value": {
                 "base": "1.5",
                 "_textDefault": "1.5556",
-                "_textLarge": "1.5239"
+                "_textLarge": "1.5239",
+                "_textFixed": "1.5"
               },
               "description": "Part of the labelLg text style. Use textStyle: 'labelLg', not this token."
             },
@@ -1529,7 +1566,8 @@ export default definePreset({
               "value": {
                 "base": "1.2308",
                 "_textDefault": "1.3334",
-                "_textLarge": "1.4118"
+                "_textLarge": "1.4118",
+                "_textFixed": "1.2308"
               },
               "description": "Part of the labelSm text style. Use textStyle: 'labelSm', not this token."
             },
@@ -1537,7 +1575,8 @@ export default definePreset({
               "value": {
                 "base": "1.2308",
                 "_textDefault": "1.3334",
-                "_textLarge": "1.4118"
+                "_textLarge": "1.4118",
+                "_textFixed": "1.2308"
               },
               "description": "Part of the labelSmStrong text style. Use textStyle: 'labelSmStrong', not this token."
             },
@@ -1545,7 +1584,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4286",
-                "_textLarge": "1.25"
+                "_textLarge": "1.25",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the labelXs text style. Use textStyle: 'labelXs', not this token."
             },
@@ -1553,7 +1593,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4286",
-                "_textLarge": "1.25"
+                "_textLarge": "1.25",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the labelXsStrong text style. Use textStyle: 'labelXsStrong', not this token."
             },
@@ -1561,7 +1602,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4286",
-                "_textLarge": "1.25"
+                "_textLarge": "1.25",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the mono text style. Use textStyle: 'mono', not this token."
             },
@@ -1569,7 +1611,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4286",
-                "_textLarge": "1.25"
+                "_textLarge": "1.25",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the monoCaps text style. Use textStyle: 'monoCaps', not this token."
             },
@@ -1577,7 +1620,8 @@ export default definePreset({
               "value": {
                 "base": "1.4546",
                 "_textDefault": "1.5385",
-                "_textLarge": "1.4286"
+                "_textLarge": "1.4286",
+                "_textFixed": "1.4546"
               },
               "description": "Part of the monoSm text style. Use textStyle: 'monoSm', not this token."
             },
@@ -1585,7 +1629,8 @@ export default definePreset({
               "value": {
                 "base": "1.2",
                 "_textDefault": "1.4546",
-                "_textLarge": "1.2308"
+                "_textLarge": "1.2308",
+                "_textFixed": "1.2"
               },
               "description": "Part of the navLabel text style. Use textStyle: 'navLabel', not this token."
             },
@@ -1593,7 +1638,8 @@ export default definePreset({
               "value": {
                 "base": "1.25",
                 "_textDefault": "1.3334",
-                "_textLarge": "1.3334"
+                "_textLarge": "1.3334",
+                "_textFixed": "1.25"
               },
               "description": "Part of the pageCount text style. Use textStyle: 'pageCount', not this token."
             },
@@ -1601,7 +1647,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4118",
-                "_textLarge": "1.4"
+                "_textLarge": "1.4",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the paneTitle text style. Use textStyle: 'paneTitle', not this token."
             },
@@ -1609,14 +1656,16 @@ export default definePreset({
               "value": {
                 "base": "1.4546",
                 "_textDefault": "1.5385",
-                "_textLarge": "1.4286"
+                "_textLarge": "1.4286",
+                "_textFixed": "1.4546"
               },
               "description": "Part of the pill text style. Use textStyle: 'pill', not this token."
             },
             "railLabel": {
               "value": {
                 "base": "1.3334",
-                "_textDefault": "1.2"
+                "_textDefault": "1.2",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the railLabel text style. Use textStyle: 'railLabel', not this token."
             },
@@ -1624,7 +1673,8 @@ export default definePreset({
               "value": {
                 "base": "1.3334",
                 "_textDefault": "1.4286",
-                "_textLarge": "1.25"
+                "_textLarge": "1.25",
+                "_textFixed": "1.3334"
               },
               "description": "Part of the small text style. Use textStyle: 'small', not this token."
             },
@@ -1632,7 +1682,8 @@ export default definePreset({
               "value": {
                 "base": "1.4546",
                 "_textDefault": "1.5385",
-                "_textLarge": "1.4286"
+                "_textLarge": "1.4286",
+                "_textFixed": "1.4546"
               },
               "description": "Part of the smallXs text style. Use textStyle: 'smallXs', not this token."
             },
@@ -1640,7 +1691,8 @@ export default definePreset({
               "value": {
                 "base": "1.4118",
                 "_textDefault": "1.4737",
-                "_textLarge": "1.4546"
+                "_textLarge": "1.4546",
+                "_textFixed": "1.4118"
               },
               "description": "Part of the subtitle text style. Use textStyle: 'subtitle', not this token."
             },
@@ -1648,7 +1700,8 @@ export default definePreset({
               "value": {
                 "base": "1.4",
                 "_textDefault": "1.3914",
-                "_textLarge": "1.3847"
+                "_textLarge": "1.3847",
+                "_textFixed": "1.4"
               },
               "description": "Part of the title text style. Use textStyle: 'title', not this token."
             }

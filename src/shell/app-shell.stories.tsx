@@ -5049,8 +5049,8 @@ const drawnOpacity = (entry: Element, body: HTMLElement) => {
 // any entry under full opacity; after the move, any entry under full opacity. An entry within the composer's travel in
 // the last frame of its top counts as at the top, not above it: a fade starts at a step of the keyboard's curve, which
 // can come up to a step before the frame that draws the entry under the top.
-// An entry in a glide (`data-keyboard-glide`) is never faded, wherever it is. After `flicked`, from the next frame on,
-// no entry is faded: a scroll ends the move's fades.
+// An entry in a glide (`data-keyboard-glide`) is never faded, wherever it is. After `flicked`, from the second frame on,
+// no entry is faded, and entries show plainly, also under the composer's top: a scroll ends the move's fades.
 const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: boolean, off: string[]) => (name: string) => {
   let frames = 0
   let on = true
@@ -5071,8 +5071,9 @@ const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: bool
         if (seen < 1) off.push(`${at}, in a glide, is at opacity ${String(seen)}`)
         return
       }
-      if (flickedAt !== undefined && frames > flickedAt + 1) {
-        if (seen < 1) off.push(`${at} is at opacity ${String(seen)} after a scroll`)
+      if (flickedAt !== undefined) {
+        // The frame right after the scroll may or may not have had the scroll event that ends the fades: not checked.
+        if (frames > flickedAt + 1 && seen < 1) off.push(`${at} is at opacity ${String(seen)} after a scroll`)
         return
       }
       if (reduce && seen < 1) off.push(`${at} fades with reduced motion`)

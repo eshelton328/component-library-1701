@@ -28,6 +28,10 @@ import { scrollAreaNested } from './scroll-area'
 // 403:4261), a pane with a red border: status.danger.border. Figma's stroke
 // alphas are not recorded, so both take their status border token, and the
 // fill stays the pane.
+// A `section` or `notice` panel is as tall as its content, so its body has nothing to scroll: its overflow is
+// visible (R72). A scrolling body clips on both axes, and it cut the 44 px touch area of a `Button touch` at
+// its edges, so a tap just past the dialog card's Send button missed it. A long section grows its page, which
+// scrolls; a `list` or `sidebar` panel keeps the height of its parent and its body scrolls.
 export const panel = defineSlotRecipe({
   className: 'panel',
   jsx: ['Panel'],
@@ -86,14 +90,14 @@ export const panel = defineSlotRecipe({
         root: { h: 'fit-content', py: '10', px: '12', gap: '8', borderRadius: 'xl' },
         title: { textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
         meta: { textStyle: 'small' },
-        body: { gap: '8' },
+        body: { gap: '8', overflowY: 'visible' },
       },
       section: {
         // fit-content keeps a Grid or a row from stretching it to its neighbours' height.
         root: { h: 'fit-content', py: '12', px: '16', gap: '8', borderRadius: 'xl' },
         title: { textStyle: 'eyebrow', textTransform: 'uppercase', color: 'fg.muted' },
         meta: { textStyle: 'small' },
-        body: { gap: '8' },
+        body: { gap: '8', overflowY: 'visible' },
       },
     },
   },

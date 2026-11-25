@@ -33,6 +33,23 @@ export const markdownView = defineRecipe({
     '& :where(h1, h2, h3, h4, h5, h6, p, ul, ol, pre, blockquote)': { m: '0' },
     '& h1': { textStyle: 'title', color: 'fg.default' },
     '& :where(h2, h3, h4, h5, h6)': { textStyle: 'label', color: 'fg.default' },
+    // Chat rich text (2026-11-25): h4 to h6 step down from h2 and h3 to labelSm in fg.muted.
+    '& :where(h4, h5, h6)': { textStyle: 'labelSm', color: 'fg.muted' },
+    '& em': { fontStyle: 'italic' },
+    // A block quote: a 2 px start bar (borderWidths.ring, as Message's peer bar) in border.default, 10 before
+    // the text, in fg.muted.
+    '& blockquote': {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10',
+      ps: '10',
+      borderInlineStartWidth: 'ring',
+      borderInlineStartStyle: 'solid',
+      borderInlineStartColor: 'border.default',
+      color: 'fg.muted',
+    },
+    // A horizontal rule: one border.default line across the column.
+    '& hr': { w: '100%', m: '0', borderWidth: '0', borderTopWidth: 'default', borderTopStyle: 'solid', borderTopColor: 'border.default' },
     // Figma types "1. " into each item, with no indent; a real list keeps
     // its marker inside the text column and its items 10 apart.
     '& :where(ul, ol)': { display: 'flex', flexDirection: 'column', gap: '10', p: '0', listStylePosition: 'inside' },
@@ -47,7 +64,8 @@ export const markdownView = defineRecipe({
     // Inline code and code blocks are not drawn; they take the `code` style
     // of the path line, with no fill.
     '& code': { textStyle: 'code' },
-    '& pre': { textStyle: 'code', whiteSpace: 'pre-wrap' },
+    // A MarkdownCodeBlock's body keeps its own one-line, sideways-scrolling style.
+    '& pre:not(.markdown-code-block__body)': { textStyle: 'code', whiteSpace: 'pre-wrap' },
     // Links are not drawn here; the inventory lists cyan for links.
     '& a': { color: 'fg.accent', textDecoration: 'underline' },
     '& a:focus-visible': { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
@@ -71,12 +89,19 @@ export const markdownView = defineRecipe({
   variants: {
     size: {
       md: {},
-      sm: { textStyle: 'bodySm', '& :where(h2, h3, h4, h5, h6)': { textStyle: 'labelSm' } },
+      sm: { textStyle: 'bodySm', '& :where(h2, h3, h4, h5, h6)': { textStyle: 'labelSm' }, '& :where(h4, h5, h6)': { color: 'fg.muted' } },
     },
     padding: {
       default: {},
       none: { py: '0', px: '0' },
     },
+    // `badge` draws inline code as a mono badge, as Slack does (chat rich text, 2026-11-25): surface.inset (the
+    // fill of chips set into a pane), radius sm and 4 by 2 of padding. `plain` keeps the Toolkit file preview's
+    // unfilled code (D3 427:290). Code in a `pre` never takes the badge.
+    inlineCode: {
+      plain: {},
+      badge: { '& :not(pre) > code': { bg: 'surface.inset', color: 'fg.default', borderRadius: 'sm', px: '4', py: '2', boxDecorationBreak: 'clone' } },
+    },
   },
-  defaultVariants: { size: 'md', padding: 'default' },
+  defaultVariants: { size: 'md', padding: 'default', inlineCode: 'plain' },
 })

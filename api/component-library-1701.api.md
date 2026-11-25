@@ -925,6 +925,19 @@ export type IconProps = {
 export type IconSize = Extract<IconVariantProps['size'], string>;
 
 // @public
+export function ImageFigure(input: ImageFigureProps): JSX.Element;
+
+// @public (undocumented)
+export type ImageFigureProps = {
+    src: string;
+    alt: string;
+    onStateChange?: ((state: ImageState) => void) | undefined;
+};
+
+// @public
+export type ImageState = 'loading' | 'ready' | 'error';
+
+// @public
 export function InboxIcon(props: IconProps): JSX.Element;
 
 // @public

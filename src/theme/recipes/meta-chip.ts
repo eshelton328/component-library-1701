@@ -65,7 +65,17 @@ export const metaChip = defineSlotRecipe({
   },
   variants: {
     size: {
-      sm: { root: { h: 'control.xs', px: '8', py: '0', textStyle: 'monoSm' } },
+      // At Default and Large (d-131) a long label wraps (TruncatedText grow), so the chip grows from its 24 px height.
+      sm: {
+        root: {
+          h: 'control.xs',
+          px: '8',
+          py: '0',
+          textStyle: 'monoSm',
+          _textDefault: { h: 'auto', minH: 'control.xs', py: '2' },
+          _textLarge: { h: 'auto', minH: 'control.xs', py: '2' },
+        },
+      },
       md: { root: { px: '10', py: '6' } },
     },
     // Artifacts draws the chip text in fg.default and the age chip in

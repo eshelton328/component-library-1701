@@ -674,6 +674,9 @@ function GrowChip() {
       <div className={css({ w: 'shell.popoverSm' })} data-testid="grow-chip">
         <MetaChip label="f-005-the-bridge-requirements-and-the-design-notes" icon={<FolderIcon size="12" />} />
       </div>
+      <div className={css({ w: 'shell.popoverSm' })} data-testid="grow-chip-sm">
+        <MetaChip size="sm" label="omni-brain f-005 the-bridge requirements and the design notes" />
+      </div>
     </main>
   )
 }
@@ -691,6 +694,14 @@ const growChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
       }
       await expectGrown(chip, ['.truncated-text'])
       await expect(textSpills(chip)).toEqual([])
+      // A small chip grows from its 24 px height, so its wrapped label stays inside it.
+      const sm = within(canvasElement).getByTestId('grow-chip-sm')
+      await expectGrown(sm, ['.truncated-text'])
+      const root = sm.querySelector('.meta-chip__root')
+      const smLabel = sm.querySelector('.truncated-text')
+      if (!(root instanceof HTMLElement) || !(smLabel instanceof HTMLElement)) throw new Error('no small chip')
+      await expect(smLabel.getBoundingClientRect().bottom).toBeLessThanOrEqual(root.getBoundingClientRect().bottom)
+      await expect(root.getBoundingClientRect().height).toBeGreaterThan(24)
     })
   }
 }

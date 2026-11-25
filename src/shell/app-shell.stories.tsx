@@ -4532,6 +4532,88 @@ const keepsTransform: StoryObj<typeof meta> = {
 export const KeepsTransformDark: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeepsTransformLight: StoryObj<typeof meta> = { ...keepsTransform, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// Every part of a keyboard move is the same kind of animation as the footer's (R44, the iPhone and the iPad at an open:
+// the thread stood still for 2 to 7 frames while the composer rose, then jumped onto the curve). WebKit runs a transform
+// animation on the compositor only when it replaces the transform, so a body child's animation replaces too, starts at
+// the footer's time, and carries the child's own transform first in each keyframe. Held at times of an open and a close,
+// at the thread's end and scrolled up, a line with its own transform stays 12 px aside of the plain line after it and
+// keeps its gap to it.
+const dockCompositorChildren: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <ShiftedThread />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const footer = slotOf(canvasElement, 'scroll-frame__footer')
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const off: string[] = []
+    const lines = () => [...body.children].filter((child): child is HTMLElement => child instanceof HTMLElement)
+    // A line with its own transform: Message 1, 3, 5 and on (`ShiftedThread`).
+    const isShifted = (line: HTMLElement) => lines().indexOf(line) % 2 === 0
+    const check = async (name: string) => {
+      await nextFrame()
+      await nextFrame()
+      const dock = footer.getAnimations()
+      const moving = lines().filter((line) => line.getAnimations().length > 0)
+      const startTime = dock[0]?.startTime
+      if (dock.length === 0 || moving.length === 0) {
+        off.push(`${name}: ${String(dock.length)} footer animations, ${String(moving.length)} lines moving`)
+        return
+      }
+      for (const line of moving) {
+        for (const animation of line.getAnimations()) {
+          const composite = animation.effect instanceof KeyframeEffect ? animation.effect.composite : 'none'
+          if (composite !== 'replace') off.push(`${name}: ${line.textContent} composite ${composite}`)
+          if (animation.startTime !== startTime) off.push(`${name}: ${line.textContent} starts at ${String(animation.startTime)}, footer at ${String(startTime)}`)
+        }
+      }
+      // Pairs of a shifted line and the plain line after it, both moving: their gap in the layout, read at rest below.
+      const pairs = moving.flatMap((line) => {
+        const next = line.nextElementSibling
+        return isShifted(line) && next instanceof HTMLElement && moving.includes(next) ? [{ line, next }] : []
+      })
+      if (pairs.length === 0) off.push(`${name}: no shifted line moves`)
+      const animations = [...dock, ...moving.flatMap((line) => line.getAnimations())]
+      const held = animations.map((animation) => ({ animation, startTime: animation.startTime }))
+      for (const animation of animations) animation.pause()
+      const gaps = pairs.map(({ line, next }) => {
+        for (const animation of animations) animation.currentTime = motionMs
+        return rect(next).top - rect(line).bottom
+      })
+      for (let ms = 0; ms <= motionMs; ms += motionMs / 8) {
+        for (const animation of animations) animation.currentTime = ms
+        pairs.forEach(({ line, next }, i) => {
+          const aside = rect(line).left - rect(next).left
+          const gap = rect(next).top - rect(line).bottom
+          if (Math.abs(aside - 12) > 0.5) off.push(`${name} @${ms.toFixed(0)}: ${line.textContent} ${aside.toFixed(1)} px aside`)
+          if (Math.abs(gap - (gaps[i] ?? gap)) > 0.5) off.push(`${name} @${ms.toFixed(0)}: ${line.textContent} gap ${gap.toFixed(1)}, ${(gaps[i] ?? 0).toFixed(1)} at the end`)
+        })
+      }
+      // Back on the move's own clock.
+      for (const { animation, startTime: time } of held) animation.startTime = time
+    }
+    for (const scrolled of [false, true]) {
+      body.scrollTop = scrolled ? 200 : body.scrollHeight
+      await wait(50)
+      const where = scrolled ? ' (scrolled up)' : ''
+      await userEvent.click(field)
+      await wait(110)
+      fakeViewport.move({ height: 844 - 336 })
+      await check(`open${where}`)
+      await wait(motionMs + 150)
+      field.blur()
+      await wait(iosCloseReport)
+      fakeViewport.move({ height: 844 })
+      await check(`close${where}`)
+      await wait(motionMs + 150)
+    }
+    await expect(off.slice(0, 8)).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a keyboard move animates the thread's lines as the footer, replacing their transform with their own and the move's. */
+export const DockCompositorChildrenDark: StoryObj<typeof meta> = { ...dockCompositorChildren, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockCompositorChildrenLight: StoryObj<typeof meta> = { ...dockCompositorChildren, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 // The dock's animations draw the keyboard's curve itself between their keyframes, not a straight line under it: with
 // its animations held at each time of an open, the composer is within 0.02 px of the curve (a line between two of 48
 // points was up to 0.1 px under it, and CI's `LateFirstFrame` found the composer 0.05 px under the keyboard).

@@ -768,14 +768,12 @@ export const GrowTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowCa
 const sameHeightLong =
   'Projects app for the-bridge: the projects overview and a project page, from the component-library-1701 Design System, with the held-out cases and the planted defects that check the graders'
 const sameHeightLongTitle = 'component-library-1701 Design System overview with every token, part and page of the-bridge'
-// TODO(R77): the prop is passed by spread until Card has it, so this story compiles and fails before the fix.
-const twoLines = { descriptionLines: 2 } as const
 
 function SameHeightCards() {
   const card = (testId: string, extra: { title?: string; description?: string; loading?: boolean; isNew?: boolean }) => (
     <div className={column} data-testid={testId}>
       <Card
-        {...twoLines}
+        descriptionLines={2}
         title={extra.loading === true ? '' : (extra.title ?? 'NCC-1701 Projects')}
         loading={extra.loading}
         media={<div className={thumbnail} />}

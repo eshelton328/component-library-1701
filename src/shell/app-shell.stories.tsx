@@ -1420,9 +1420,38 @@ export const VisualViewportUnmount: StoryObj<typeof meta> = {
 // A chat thread long enough to scroll, with the composer docked as the ScrollFrame's footer, as the-bridge's Inbox
 // chat on the phone.
 const messages = Array.from({ length: 40 }, (_, i) => `Message ${String(i + 1)} of the thread`)
+// One wrapper of a thread's entries, as a page's Stack.
+const entryStack = css({ display: 'flex', flexDirection: 'column', gap: '8' })
 // A line only screen readers read, positioned absolutely as Message's `message__srName` is.
 const srOnlyLine = css({ srOnly: true })
-function ThreadChat({ srLine = false, foot, send = false }: { srLine?: boolean; foot?: '12' | undefined; send?: boolean }) {
+// `wrap` puts the thread's entries in one wrapper, as pages do: `stack` a header and then a Stack of the entries in
+// the body (the-bridge's RunningDetail).
+function ThreadChat({
+  srLine = false,
+  foot,
+  send = false,
+  wrap,
+}: {
+  srLine?: boolean
+  foot?: '12' | undefined
+  send?: boolean
+  wrap?: 'stack' | undefined
+}) {
+  const entries = (
+    <>
+      {messages.map((m) => (
+        <p key={m} className={text}>
+          {m}
+        </p>
+      ))}
+      {srLine ? (
+        <p className={text}>
+          <span className={srOnlyLine}>Claude said:</span>
+          The last line of the thread.
+        </p>
+      ) : null}
+    </>
+  )
   return (
     <div className={screenFrame}>
       <AppShell
@@ -1443,17 +1472,14 @@ function ThreadChat({ srLine = false, foot, send = false }: { srLine?: boolean; 
               </div>
             }
           >
-            {messages.map((m) => (
-              <p key={m} className={text}>
-                {m}
-              </p>
-            ))}
-            {srLine ? (
-              <p className={text}>
-                <span className={srOnlyLine}>Claude said:</span>
-                The last line of the thread.
-              </p>
-            ) : null}
+            {wrap === 'stack' ? (
+              <>
+                <p className={text}>The thread's header</p>
+                <div className={entryStack}>{entries}</div>
+              </>
+            ) : (
+              entries
+            )}
           </ScrollFrame>
         }
       />
@@ -4994,52 +5020,70 @@ const keyboardGlideScroll: StoryObj<typeof meta> = {
 export const KeyboardGlideScrollDark: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardGlideScrollLight: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }
 
-// While the keyboard moves, no thread line shows under the composer's top: the body keeps the move's larger layout, so
-// lines lie there between the composer and the keyboard (screen review R44, the iPad), and each one fades out while it
-// does. A line that stays above the composer's top never fades, and every line is opaque after each move. With reduced
-// motion nothing fades, and the move ends as with motion. An open and a close, at the thread's end and scrolled up.
-const dockFade = (reduce: boolean): StoryObj<typeof meta> => ({
+// Each thread entry in a body, at any depth (a `p`), and its opacity as drawn: its own times each of its wrappers' up
+// to the body, as a wrapper's fade fades all it holds.
+const threadEntries = (body: HTMLElement) => [...body.querySelectorAll('p')]
+const drawnOpacity = (entry: Element, body: HTMLElement) => {
+  let opacity = 1
+  for (let node: Element | null = entry; node !== null && node !== body; node = node.parentElement)
+    opacity *= Number(getComputedStyle(node).opacity)
+  return opacity
+}
+// Records each frame of a move until `stop`, into `off`: with motion, an entry drawn under the composer's top that is
+// not faded out, and an entry wholly above the composer's top that is drawn at under full opacity; with reduced motion,
+// any entry under full opacity; after the move, any entry under full opacity. An entry within the composer's travel in
+// the last frame of its top counts as at the top, not above it: a fade starts at a step of the keyboard's curve, which
+// can come up to a step before the frame that draws the entry under the top.
+const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: boolean, off: string[]) => (name: string) => {
+  let frames = 0
+  let on = true
+  let lastTop: number | undefined
+  const tick = () => {
+    if (!on) return
+    frames += 1
+    const top = composerTop()
+    const travel = Math.abs(top - (lastTop ?? top))
+    lastTop = top
+    threadEntries(body).forEach((entry, i) => {
+      const shown = paintedLine(entry, body)
+      if (shown === null) return
+      const seen = drawnOpacity(entry, body)
+      const at = `${name} frame ${String(frames)}: entry ${String(i)}`
+      if (reduce && seen < 1) off.push(`${at} fades with reduced motion`)
+      if (!reduce && seen > 0 && shown.bottom > top + 1)
+        off.push(`${at} shows to ${shown.bottom.toFixed(1)}, under the composer's top ${top.toFixed(1)}`)
+      if (!reduce && seen < 1 && shown.bottom < top - travel - 1)
+        off.push(`${at} is at opacity ${String(seen)}, wholly above the composer's top ${top.toFixed(1)} (to ${shown.bottom.toFixed(1)})`)
+    })
+    requestAnimationFrame(tick)
+  }
+  requestAnimationFrame(tick)
+  return {
+    stop: () => {
+      on = false
+      threadEntries(body).forEach((entry, i) => {
+        const seen = drawnOpacity(entry, body)
+        if (seen !== 1) off.push(`${name}: entry ${String(i)} is at opacity ${String(seen)} after the move`)
+      })
+      return frames
+    },
+  }
+}
+
+// While the keyboard moves, no thread entry shows under the composer's top: the body keeps the move's larger layout, so
+// entries lie there between the composer and the keyboard (screen review R44, the iPad), and each one fades out while
+// it does. An entry wholly above the composer's top is never faded, also when the entries are in one wrapper (`wrap`),
+// and every entry is opaque after each move. With reduced motion nothing fades, and the move ends as with motion. An
+// open and a close, at the thread's end and scrolled up.
+const dockFade = ({ reduce = false, wrap }: { reduce?: boolean; wrap?: 'stack' }): StoryObj<typeof meta> => ({
   ...motionDevice(reduce),
-  render: () => <ThreadChat />,
+  render: () => <ThreadChat wrap={wrap} />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
     const { root, footer, field, composer } = threadParts(canvasElement)
     const body = slotOf(canvasElement, 'scroll-frame__body')
     const keyboard = 336
     const off: string[] = []
-    const lines = () => [...body.children].filter((c) => getComputedStyle(c).position !== 'absolute')
-    const opacity = (line: Element) => Number(getComputedStyle(line).opacity)
-    const record = (name: string) => {
-      let frames = 0
-      let on = true
-      // For each line: whether a frame drew it below the composer's top, and whether one faded it.
-      const below = new Set<Element>()
-      const faded = new Set<Element>()
-      const tick = () => {
-        if (!on) return
-        frames += 1
-        const top = composer().top
-        for (const line of lines()) {
-          const shown = paintedLine(line, body)
-          if (shown === null) continue
-          const seen = opacity(line)
-          if (shown.bottom > top + 0.5) below.add(line)
-          if (seen < 1) faded.add(line)
-          if (reduce && seen < 1) off.push(`${name} frame ${String(frames)}: a line fades with reduced motion`)
-          if (!reduce && seen > 0 && shown.bottom > top + 1)
-            off.push(`${name} frame ${String(frames)}: a line shows to ${shown.bottom.toFixed(1)}, under the composer's top ${top.toFixed(1)}`)
-        }
-        requestAnimationFrame(tick)
-      }
-      requestAnimationFrame(tick)
-      return {
-        stop: () => {
-          on = false
-          for (const line of faded) if (!below.has(line)) off.push(`${name}: a line that stayed above the composer's top faded`)
-          for (const line of lines()) if (opacity(line) !== 1) off.push(`${name}: a line is at opacity ${String(opacity(line))} after the move`)
-          return frames
-        },
-      }
-    }
+    const record = fadeRecorder(body, () => composer().top, reduce, off)
     for (const scrolled of [false, true]) {
       body.scrollTop = scrolled ? 200 : body.scrollHeight
       await nextFrame()
@@ -5063,8 +5107,11 @@ const dockFade = (reduce: boolean): StoryObj<typeof meta> => ({
     await expect(off.slice(0, 6)).toEqual([])
   }),
 })
-/** Phone chat on iOS: while the keyboard moves, a line under the composer's top fades out, and only such a line. */
-export const DockFadeDark: StoryObj<typeof meta> = { ...dockFade(false), globals: { mode: 'dark', viewport: { value: 'm390' } } }
-export const DockFadeLight: StoryObj<typeof meta> = { ...dockFade(false), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat on iOS: while the keyboard moves, an entry under the composer's top fades out, and only such an entry. */
+export const DockFadeDark: StoryObj<typeof meta> = { ...dockFade({}), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFadeLight: StoryObj<typeof meta> = { ...dockFade({}), globals: { mode: 'light', viewport: { value: 'm390' } } }
 /** Phone chat on iOS with reduced motion: nothing fades, and the keyboard's move ends as with motion. */
-export const DockFadeReducedDark: StoryObj<typeof meta> = { ...dockFade(true), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFadeReducedDark: StoryObj<typeof meta> = { ...dockFade({ reduce: true }), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+/** Phone chat on iOS, the entries in one Stack: an entry above the composer's top stays opaque while the keyboard moves. */
+export const DockFadeStackDark: StoryObj<typeof meta> = { ...dockFade({ wrap: 'stack' }), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const DockFadeStackLight: StoryObj<typeof meta> = { ...dockFade({ wrap: 'stack' }), globals: { mode: 'light', viewport: { value: 'm390' } } }

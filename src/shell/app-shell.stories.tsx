@@ -4595,3 +4595,399 @@ export const DockEntriesFlickLight: StoryObj<typeof meta> = { ...dockEntries('fl
 /** Phone chat on iOS: an entry added while the keyboard moves keeps its gap. */
 export const DockEntriesAddDark: StoryObj<typeof meta> = { ...dockEntries('add'), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const DockEntriesAddLight: StoryObj<typeof meta> = { ...dockEntries('add'), globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A new chat's centred group, as the-bridge's empty chat draws it (screen review R73): the body has no scroll room, so
+// the dock gives it no scroll shift, and the group's place changes with the body's layout. `glide` puts
+// `data-keyboard-glide` on the group.
+const glideBody = css({ display: 'flex', flexDirection: 'column', px: '16' })
+const glideGroup = css({ my: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8' })
+const glideHolder = css({ flex: '1', display: 'flex', flexDirection: 'column', overflow: 'hidden' })
+const glideAbove = css({ flexShrink: '0', h: 'dvh' })
+function GlideChat({ glide, below = false }: { glide: boolean; below?: boolean }) {
+  const group = (
+    <div role="group" aria-label="New chat" data-keyboard-glide={glide ? '' : undefined} className={glideGroup}>
+      <p className={text}>New chat</p>
+      <p className={text}>Write a message to start.</p>
+    </div>
+  )
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={glideBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {below ? (
+              <div className={glideHolder}>
+                <div className={glideAbove} />
+                <div role="group" aria-label="Below the view" data-keyboard-glide="">
+                  <p className={text}>Under the view</p>
+                </div>
+              </div>
+            ) : (
+              group
+            )}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+type GlideFrame = { composer: DOMRect; glide: DOMRect; animations: number }
+// Records the composer's box, the glide element's box and the glide element's animations at each frame until `stop`.
+const recordGlide = (glide: HTMLElement, composer: HTMLElement) => {
+  const frames: GlideFrame[] = []
+  const read = () => ({ composer: rect(composer), glide: rect(glide), animations: glide.getAnimations().length })
+  let id = requestAnimationFrame(function tick() {
+    frames.push(read())
+    id = requestAnimationFrame(tick)
+  })
+  return {
+    frames,
+    stop: () => {
+      cancelAnimationFrame(id)
+      frames.push(read())
+    },
+  }
+}
+// The check of a glide (R73), shared by the glide story and its planted fault: in each frame of a move, the element's
+// top is where the composer's travel puts it: the part of its own travel that the composer has made, within 1 px, as
+// both move on the keyboard's reach over the frame. Its bottom stays over the composer's top. A frame where the element
+// steps at a layout change, and not with the composer, is named with "off the composer's curve". `first` and `last`
+// are the frames at the two ends of the travel: by default the record's first and last.
+const glideOff = (name: string, frames: GlideFrame[], first = frames[0], last = frames.at(-1)) => {
+  if (first === undefined || last === undefined) return [`${name}: no frames`]
+  const span = last.composer.bottom - first.composer.bottom
+  const travel = last.glide.top - first.glide.top
+  const off: string[] = []
+  if (Math.abs(span) < 20) off.push(`${name}: the composer moved ${span.toFixed(1)} px`)
+  if (Math.abs(travel) < 20) off.push(`${name}: the element moved ${travel.toFixed(1)} px`)
+  const during = frames.filter((f) => Math.abs(f.composer.bottom - first.composer.bottom) > 0.5 && Math.abs(f.composer.bottom - last.composer.bottom) > 0.5)
+  if (during.length < 4) off.push(`${name}: ${String(during.length)} frames in the move`)
+  frames.forEach((f, i) => {
+    const want = first.glide.top + (travel * (f.composer.bottom - first.composer.bottom)) / span
+    if (Math.abs(f.glide.top - want) > 1) off.push(`${name} frame ${String(i)}: top ${f.glide.top.toFixed(1)}, off the composer's curve at ${want.toFixed(1)}`)
+    if (f.glide.bottom > f.composer.top + 0.5) off.push(`${name} frame ${String(i)}: bottom ${f.glide.bottom.toFixed(1)} under the composer at ${f.composer.top.toFixed(1)}`)
+  })
+  return off
+}
+// The element is in the canvas and drawn in the body's view, so a check that fails is about its frames, not a missing
+// element.
+const expectDrawn = async (canvasElement: HTMLElement, el: HTMLElement) => {
+  const box = rect(el)
+  const view = rect(slotOf(canvasElement, 'scroll-frame__body'))
+  await expect(box.height).toBeGreaterThan(0)
+  await expect(box.top >= view.top && box.bottom <= view.bottom).toBe(true)
+}
+// Opens the keyboard and closes it, with a record of each move.
+const openAndClose = async (canvasElement: HTMLElement, fakeViewport: FakeViewport, glide: HTMLElement) => {
+  const { field } = threadParts(canvasElement)
+  const composer = within(canvasElement).getByRole('group', { name: 'Composer' })
+  const keyboard = 336
+  await userEvent.click(field)
+  await wait(110)
+  const opening = recordGlide(glide, composer)
+  await nextFrame()
+  fakeViewport.move({ height: 844 - keyboard })
+  await wait(motionMs + 150)
+  opening.stop()
+  const closing = recordGlide(glide, composer)
+  await nextFrame()
+  field.blur()
+  await wait(iosCloseReport)
+  fakeViewport.move({ height: 844 })
+  await wait(motionMs + 150)
+  closing.stop()
+  return { opening: opening.frames, closing: closing.frames }
+}
+const keyboardGlide: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GlideChat glide />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const glide = within(canvasElement).getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const at = rect(glide).top
+    const { opening, closing } = await openAndClose(canvasElement, fakeViewport, glide)
+    await expect([...glideOff('open', opening), ...glideOff('close', closing)]).toEqual([])
+    // Each move has one animation on the element, and none stays after it ends.
+    await expect(Math.max(...opening.map((f) => f.animations))).toBe(1)
+    await expect(glide.getAnimations()).toEqual([])
+    await expect(rect(glide).top).toBeCloseTo(at, 0)
+  }),
+}
+/** Phone new chat: the centred group with `data-keyboard-glide` moves with the composer on the keyboard's curve, also at the layout's change, and never goes under it. */
+export const KeyboardGlideDark: StoryObj<typeof meta> = { ...keyboardGlide, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideLight: StoryObj<typeof meta> = { ...keyboardGlide, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// The planted fault of `KeyboardGlide`: the same group with no `data-keyboard-glide` gets no animation, so it steps at
+// the open's end and the close's start. The same check names those frames, and only for that reason.
+const keyboardGlideFault: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GlideChat glide={false} />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const glide = within(canvasElement).getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const { opening, closing } = await openAndClose(canvasElement, fakeViewport, glide)
+    await expect([...opening, ...closing].filter((f) => f.animations > 0)).toEqual([])
+    const off = [...glideOff('open', opening), ...glideOff('close', closing)]
+    await expect(off.filter((line) => line.includes('open frame'))).not.toEqual([])
+    await expect(off.filter((line) => line.includes('close frame'))).not.toEqual([])
+    await expect(off.filter((line) => !line.includes("off the composer's curve"))).toEqual([])
+  }),
+}
+/** Phone new chat with no `data-keyboard-glide`: the group gets no animation and steps at the layout's change, which the glide check finds. */
+export const KeyboardGlideFaultDark: StoryObj<typeof meta> = { ...keyboardGlideFault, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideFaultLight: StoryObj<typeof meta> = { ...keyboardGlideFault, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A glide element under the body's view at the move's start and at its end gets no animation.
+const keyboardGlideHidden: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GlideChat glide below />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const below = within(canvasElement).getByRole('group', { name: 'Below the view', hidden: true })
+    const view = rect(slotOf(canvasElement, 'scroll-frame__body'))
+    await expect(rect(below).top).toBeGreaterThanOrEqual(view.bottom - 0.5)
+    const { opening, closing } = await openAndClose(canvasElement, fakeViewport, below)
+    await expect(opening.at(-1)?.composer.bottom).toBeCloseTo(844 - 336, 0)
+    await expect([...opening, ...closing].filter((f) => f.animations > 0)).toEqual([])
+  }),
+}
+/** Phone: a glide element out of the body's view does not move. */
+export const KeyboardGlideHiddenDark: StoryObj<typeof meta> = { ...keyboardGlideHidden, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideHiddenLight: StoryObj<typeof meta> = { ...keyboardGlideHidden, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A turn: the keyboard closes half way through its open. The new move stops the old one (`stopMotion`), so the element
+// never has two animations, it turns from where it is drawn with no step, and it ends at its place with none.
+const keyboardGlideTurn: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GlideChat glide />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const glide = within(canvasElement).getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const at = rect(glide).top
+    const { field } = threadParts(canvasElement)
+    const composer = within(canvasElement).getByRole('group', { name: 'Composer' })
+    await userEvent.click(field)
+    await wait(110)
+    const record = recordGlide(glide, composer)
+    fakeViewport.move({ height: 844 - 336 })
+    await wait(motionMs / 2)
+    field.blur()
+    await wait(iosCloseReport)
+    fakeViewport.move({ height: 844 })
+    await wait(motionMs + 150)
+    record.stop()
+    const { frames } = record
+    await expect(frames.filter((f) => f.animations > 1)).toEqual([])
+    // The glide check from the rest to the highest frame: the turn starts from where the element is drawn, so it stays
+    // on the composer's curve through the open, the turn and the close.
+    const highest = frames.reduce<GlideFrame | undefined>((high, f) => (high === undefined || f.composer.bottom < high.composer.bottom ? f : high), undefined)
+    await expect(glideOff('turn', frames, frames[0], highest)).toEqual([])
+    await expect(glide.getAnimations()).toEqual([])
+    await expect(rect(glide).top).toBeCloseTo(at, 0)
+  }),
+}
+// The list pane's footer grows near the open's end (a footer of another frame, so the group's end place stays): the
+// move restarts with the group less than 0.5 px from its end, while the open's larger layout stays until its end. The
+// group holds its drawn place to the end and does not jump to its place in that layout (Codex review of #355).
+function GlideTablet() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [grown, setGrown] = useState(false)
+  useEffect(() => {
+    const root = ref.current?.closest('.app-shell__root')
+    if (!root) return
+    const onDock = (event: Event) => {
+      if (!(event instanceof CustomEvent) || !('detail' in event)) return
+      const detail: unknown = event.detail
+      if (typeof detail !== 'object' || detail === null || !('inset' in detail) || !('at' in detail)) return
+      // 22 ms before the move's end, read after the move has written it: a frame or so before the end.
+      if (Number(detail.inset) > 0)
+        setTimeout(() => {
+          setTimeout(() => { setGrown(true) }, Number(root instanceof HTMLElement ? root.dataset.keyboardEnd : 0) - 22 - performance.now())
+        }, 0)
+    }
+    root.addEventListener(appShellDockEvent, onDock)
+    return () => {
+      root.removeEventListener(appShellDockEvent, onDock)
+    }
+  }, [])
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="desktop"
+        view="detail"
+        list={
+          <ScrollFrame bodyClassName={frameBody} footer={<div ref={ref} role="group" aria-label="List footer" className={composerBox}>New chat{grown ? <div className={growRow} /> : null}</div>}>
+            {listLines.map((line) => (
+              <p key={line} className={text}>
+                {line}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+        detail={
+          <ScrollFrame
+            bodyClassName={glideBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            <div role="group" aria-label="New chat" data-keyboard-glide="" className={glideGroup}>
+              <p className={text}>New chat</p>
+              <p className={text}>Write a message to start.</p>
+            </div>
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const keyboardGlideLateGrow: StoryObj<typeof meta> = {
+  ...withMotion,
+  parameters: { viewport: { options: tabletScreen } },
+  render: () => <GlideTablet />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const glide = canvas.getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const listFooter = canvas.getByRole('group', { name: 'List footer' })
+    const footerHeight = rect(listFooter).height
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const composer = canvas.getByRole('group', { name: 'Composer' })
+    await userEvent.click(field)
+    await wait(110)
+    const record = recordGlide(glide, composer)
+    // The frame of the growth, read after the shell's own observer restarted the move (observers run in the order they
+    // were made), as the rAF read of that frame comes before it.
+    const atGrowth: number[] = []
+    const sized = new ResizeObserver(() => {
+      atGrowth.push(rect(glide).top)
+    })
+    sized.observe(listFooter)
+    fakeViewport.move({ height: 1133 - 400 })
+    await wait(motionMs + 150)
+    record.stop()
+    sized.disconnect()
+    await expect(rect(listFooter).height).toBeGreaterThan(footerHeight + 10)
+    await expect(atGrowth.length).toBeGreaterThan(1)
+    const final = rect(glide).top
+    const reached = record.frames.findIndex((f) => Math.abs(f.glide.top - final) <= 1)
+    await expect(reached).toBeGreaterThan(0)
+    const left = [...record.frames.slice(reached).map((f) => f.glide.top), ...atGrowth.slice(1)].filter((top) => Math.abs(top - final) > 1).map((top) => top.toFixed(1))
+    await expect(left).toEqual([])
+  }),
+}
+/** iPad: a footer of another pane grows near the open's end, and the new chat's group stays at its end place. */
+export const KeyboardGlideLateGrowDark: StoryObj<typeof meta> = { ...keyboardGlideLateGrow, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const KeyboardGlideLateGrowLight: StoryObj<typeof meta> = { ...keyboardGlideLateGrow, globals: { mode: 'light', viewport: { value: 't02b' } } }
+
+/** Phone new chat: a close half way through the open turns the glide from where it is drawn, with one animation at a time. */
+export const KeyboardGlideTurnDark: StoryObj<typeof meta> = { ...keyboardGlideTurn, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideTurnLight: StoryObj<typeof meta> = { ...keyboardGlideTurn, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A mouse with reduced motion: the dock jumps, so the glide element gets no animation and is at its place in the same
+// frame as the layout.
+const keyboardGlideReduced: StoryObj<typeof meta> = {
+  ...withMotion,
+  beforeEach: () => {
+    const restore = withMotion.beforeEach()
+    const restoreMedia = emulateMedia({ coarse: false, reduce: true })
+    return () => {
+      restoreMedia()
+      restore()
+    }
+  },
+  render: () => <GlideChat glide />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const glide = within(canvasElement).getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const at = rect(glide).top
+    const { field } = threadParts(canvasElement)
+    const composer = within(canvasElement).getByRole('group', { name: 'Composer' })
+    field.focus()
+    await nextFrame()
+    const record = recordGlide(glide, composer)
+    fakeViewport.move({ height: 844 - 336 })
+    await nextFrame()
+    await nextFrame()
+    record.stop()
+    await expect(record.frames.filter((f) => f.animations > 0)).toEqual([])
+    await expect(rect(glide).top).toBeLessThan(at - 20)
+    await expect(rect(glide).bottom).toBeLessThanOrEqual(rect(composer).top + 0.5)
+  }),
+}
+/** Phone new chat with a mouse and reduced motion: the group is at its place at once, with no animation. */
+export const KeyboardGlideReducedDark: StoryObj<typeof meta> = { ...keyboardGlideReduced, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideReducedLight: StoryObj<typeof meta> = { ...keyboardGlideReduced, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
+// A thread at its end with a glide element in it: the body scrolls during the move, so the element moves with its
+// lines on the body's shift and gets no glide of its own, which would add to the shift (one animation, and each frame
+// moves it as much as the line under it).
+function GlideThread() {
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="phone"
+        view="detail"
+        detail={
+          <ScrollFrame
+            bodyClassName={frameBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            {messages.map((m, i) => (
+              <p key={m} className={text} data-keyboard-glide={i === messages.length - 2 ? '' : undefined}>
+                {m}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const keyboardGlideScroll: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GlideThread />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    body.scrollTop = body.scrollHeight
+    await nextFrame()
+    const glide = canvas.getByText('Message 39 of the thread')
+    const line = canvas.getByText('Message 40 of the thread')
+    await expectDrawn(canvasElement, glide)
+    const { field } = threadParts(canvasElement)
+    await userEvent.click(field)
+    await wait(110)
+    const frames: { glide: number; line: number; animations: number }[] = []
+    let id = requestAnimationFrame(function tick() {
+      frames.push({ glide: rect(glide).top, line: rect(line).top, animations: glide.getAnimations().length })
+      id = requestAnimationFrame(tick)
+    })
+    fakeViewport.move({ height: 844 - 336 })
+    await wait(motionMs + 150)
+    cancelAnimationFrame(id)
+    await expect(Math.max(...frames.map((f) => f.animations))).toBe(1)
+    const first = frames[0]
+    const last = frames.at(-1)
+    await expect(first !== undefined && last !== undefined && first.line - last.line > 20).toBe(true)
+    const apart = frames.filter((f) => first !== undefined && Math.abs(f.line - f.glide - (first.line - first.glide)) > 1)
+    await expect(apart).toEqual([])
+  }),
+}
+/** Phone thread at its end: a glide element in a body that scrolls on the move moves with its lines, with one animation. */
+export const KeyboardGlideScrollDark: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const KeyboardGlideScrollLight: StoryObj<typeof meta> = { ...keyboardGlideScroll, globals: { mode: 'light', viewport: { value: 'm390' } } }

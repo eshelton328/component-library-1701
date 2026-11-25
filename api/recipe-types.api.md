@@ -362,7 +362,7 @@ export type DiagramFrameVariantProps = {
 
 export type DiagramFrameVariantMap = RecipeVariantMap<DiagramFrameVariant>
 
-export type DiagramFrameSlot = "root" | "header" | "label" | "actions" | "body" | "source" | "message"
+export type DiagramFrameSlot = "root" | "header" | "label" | "actions" | "body" | "placeholder" | "source" | "message"
 
 export type DiagramFrameRecipe = ConfigSlotRecipeRuntimeFn<DiagramFrameSlot, DiagramFrameVariantProps, DiagramFrameVariantMap>
 

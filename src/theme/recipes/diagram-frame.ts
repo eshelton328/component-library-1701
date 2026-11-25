@@ -14,7 +14,7 @@ export const diagramFrame = defineSlotRecipe({
   className: 'diagram-frame',
   jsx: ['DiagramFrame'],
   staticCss: ['*'],
-  slots: ['root', 'header', 'label', 'actions', 'body', 'source', 'message'],
+  slots: ['root', 'header', 'label', 'actions', 'body', 'placeholder', 'source', 'message'],
   base: {
     root: {
       display: 'flex',
@@ -32,7 +32,8 @@ export const diagramFrame = defineSlotRecipe({
     actions: { display: 'flex', alignItems: 'center', gap: '4', flexShrink: '0' },
     body: {
       display: 'flex',
-      justifyContent: 'center',
+      // safe: a picture wider than the body starts at its left edge, where the scroll reaches it (Codex review of #351).
+      justifyContent: 'safe center',
       minW: '0',
       p: '12',
       overflowX: 'auto',
@@ -42,6 +43,8 @@ export const diagramFrame = defineSlotRecipe({
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
     },
+    // The loading skeleton's box: the body's full width, so a block skeleton has a width to take (Codex review of #351).
+    placeholder: { w: '100%', minW: '0' },
     source: { m: '0', p: '12', minW: '0', textStyle: 'code', color: 'fg.default', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
     message: { m: '0', px: '12', pt: '8', textStyle: 'small', color: 'status.danger.fg' },
   },

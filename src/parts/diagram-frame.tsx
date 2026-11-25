@@ -11,6 +11,7 @@ const Header = withContext('div', 'header')
 const Label = withContext('figcaption', 'label')
 const Actions = withContext('div', 'actions')
 const Body = withContext('div', 'body')
+const Placeholder = withContext('div', 'placeholder')
 const Source = withContext('pre', 'source')
 const Message = withContext('p', 'message')
 
@@ -70,9 +71,11 @@ export function DiagramFrame({ label, source, state = 'ready', error, children, 
       </Header>
       {state === 'loading' ? (
         <Body>
-          <SkeletonGroup label={`Loading the ${label} diagram`}>
-            <Skeleton shape="block" ratio="wide" />
-          </SkeletonGroup>
+          <Placeholder>
+            <SkeletonGroup label={`Loading the ${label} diagram`}>
+              <Skeleton shape="block" ratio="wide" />
+            </SkeletonGroup>
+          </Placeholder>
         </Body>
       ) : null}
       {state === 'error' ? (

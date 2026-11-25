@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, fn, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
 import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
@@ -92,6 +92,13 @@ const meta = {
     const loading = canvas.getByTestId('loading')
     await expect(within(loading).getByRole('status')).toHaveTextContent('Loading the Mermaid diagram')
     await expect(within(loading).queryByRole('button')).toBeNull()
+    // The skeleton is visible: it takes the body's width and the wide ratio's height.
+    const bar = loading.querySelector('[data-skeleton="block"]')
+    const body = loading.querySelector('.diagram-frame__body')
+    if (!(bar instanceof HTMLElement) || !(body instanceof HTMLElement)) throw new Error('no skeleton')
+    const inner = body.clientWidth - Number.parseFloat(getComputedStyle(body).paddingLeft) - Number.parseFloat(getComputedStyle(body).paddingRight)
+    await waitFor(() => expect(Math.round(bar.getBoundingClientRect().width)).toBe(Math.round(inner)))
+    await expect(bar.getBoundingClientRect().height).toBeGreaterThan(0)
     // Error: the reason in red and the source, with no toggle.
     const error = canvas.getByTestId('error')
     const reason = within(error).getByText(/did not draw: Parse error on line 2/)
@@ -119,6 +126,11 @@ export const WidePhone: StoryObj<typeof meta> = {
     const body = canvasElement.querySelector('.diagram-frame__body')
     if (!(body instanceof HTMLElement)) throw new Error('no body')
     await expect(body.scrollWidth).toBeGreaterThan(body.clientWidth)
+    // The picture starts inside the body, so the scroll reaches its left edge: none of it overflows to the left.
+    const img = body.querySelector('img')
+    if (img === null) throw new Error('no picture')
+    body.scrollLeft = 0
+    await expect(Math.round(img.getBoundingClientRect().left)).toBeGreaterThanOrEqual(Math.round(body.getBoundingClientRect().left))
     const main = canvasElement.querySelector('main')
     if (main === null) throw new Error('no main')
     await expect(main.scrollWidth).toBeLessThanOrEqual(main.clientWidth)

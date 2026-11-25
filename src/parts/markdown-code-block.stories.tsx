@@ -160,6 +160,26 @@ export const DiffHunk: Story = {
   },
 }
 
+const colouredDiff = ['@@ -1 +1 @@', '-// old note', '+// new note', ' // same'].join('\n')
+const colouredSegments: CodeSegment[][] = [[], [{ text: '-' }, { text: '// old note', kind: 'comment' }], [{ text: '+' }, { text: '// new note', kind: 'comment' }], [{ text: ' ' }, { text: '// same', kind: 'comment' }]]
+
+/** A changed line's syntax pieces take its diff colour, so they keep the diff tokens' contrast; a context line keeps its own. */
+const diffColoursPlay: Story['play'] = async ({ canvasElement }) => {
+  const lines = [...canvasElement.querySelectorAll<HTMLElement>('.markdown-code-block__line')]
+  for (const line of lines.filter((l) => l.dataset.change !== undefined)) {
+    const piece = line.querySelector<HTMLElement>('[data-kind]')
+    if (piece === null) throw new Error('no piece')
+    await expect(getComputedStyle(piece).color).toBe(getComputedStyle(line).color)
+  }
+  const context = lines.at(-1)?.querySelector<HTMLElement>('[data-kind]')
+  const contextLine = lines.at(-1)
+  if (context === null || context === undefined || contextLine === undefined) throw new Error('no context piece')
+  await expect(getComputedStyle(context).color).not.toBe(getComputedStyle(contextLine).color)
+}
+
+export const DiffColoursDark: Story = { args: { code: colouredDiff, language: 'diff', segments: colouredSegments }, play: diffColoursPlay, globals: { mode: 'dark' } }
+export const DiffColoursLight: Story = { args: { code: colouredDiff, language: 'diff', segments: colouredSegments }, play: diffColoursPlay, globals: { mode: 'light' } }
+
 /** A long block folds after 20 lines; "Show all 30 lines" shows the rest, and Copy still copies all 30. */
 export const Fold: Story = {
   args: { code: longCode, language: 'txt', segments: undefined, onCopy: fn(() => Promise.resolve(true)) },

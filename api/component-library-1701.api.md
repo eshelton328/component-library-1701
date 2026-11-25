@@ -582,7 +582,7 @@ export type DialogProps = Scalar<DialogVariantProps> & {
 export type DiffChange = 'added' | 'removed';
 
 // @public
-export function diffChange(line: string): DiffChange | undefined;
+export function diffChanges(lines: readonly string[]): (DiffChange | undefined)[];
 
 // @public
 export function DragPreview(input: DragPreviewProps): JSX.Element;

@@ -56,7 +56,7 @@ export type MarkdownCodeBlockProps = {
   segments?: readonly (readonly CodeSegment[] | undefined)[] | undefined
   /**
    * Draws the code as a diff: a line that starts with "+" takes the added
-   * tint and colour, one with "-" the removed ones; its syntax colours stay.
+   * tint and colour, one with "-" the removed ones, its syntax pieces in that colour; context lines keep theirs.
    * Defaults to `true` when `language` is `diff` or `patch`.
    */
   diff?: boolean | undefined

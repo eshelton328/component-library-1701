@@ -11,7 +11,7 @@ import { scrollAreaX } from './scroll-area'
 // and never wraps, and the body is then a tab stop. Syntax colours are the
 // `code.*` tokens of CodeLines. In a diff, an added line takes the
 // diff.added tint and text colour, a removed line diff.removed, as the
-// ProposalDiff lines do; a line's syntax colours stay on top. A long block
+// ProposalDiff lines do, its syntax pieces in the line's diff colour. A long block
 // folds: the foot holds "Show all" under the first lines.
 export const markdownCodeBlock = defineSlotRecipe({
   className: 'markdown-code-block',
@@ -62,6 +62,9 @@ export const markdownCodeBlock = defineSlotRecipe({
       display: 'block',
       '&[data-change=added]': { bg: 'diff.added.bg', color: 'diff.added.fg' },
       '&[data-change=removed]': { bg: 'diff.removed.bg', color: 'diff.removed.fg' },
+      // A changed line's syntax pieces take its diff colour: a `code.*` colour on a diff tint is not checked for
+      // contrast (code.comment on diff.removed.bg is 4.45:1 in Light), and the diff colour is.
+      '&[data-change] [data-kind]': { color: 'inherit' },
     },
     foot: {
       display: 'flex',

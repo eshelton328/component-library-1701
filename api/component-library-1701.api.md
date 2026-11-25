@@ -579,6 +579,12 @@ export type DialogProps = Scalar<DialogVariantProps> & {
 } & PopoverDataAttributes;
 
 // @public
+export type DiffChange = 'added' | 'removed';
+
+// @public
+export function diffChanges(lines: readonly string[]): (DiffChange | undefined)[];
+
+// @public
 export function DragPreview(input: DragPreviewProps): JSX.Element;
 
 // @public (undocumented)
@@ -1204,6 +1210,19 @@ export type MapSelectionCardProps = {
 };
 
 // @public
+export function MarkdownCodeBlock(input: MarkdownCodeBlockProps): JSX.Element;
+
+// @public (undocumented)
+export type MarkdownCodeBlockProps = {
+    code: string;
+    language?: string | undefined;
+    segments?: readonly (readonly CodeSegment[] | undefined)[] | undefined;
+    diff?: boolean | undefined;
+    onCopy?: ((code: string) => Promise<boolean>) | undefined;
+    fold?: number | false | undefined;
+};
+
+// @public
 export type MarkdownHighlight = (code: string, lang: string | undefined) => readonly (readonly CodeSegment[] | undefined)[] | undefined;
 
 // @public
@@ -1220,6 +1239,7 @@ export type MarkdownViewProps = {
     highlight?: MarkdownHighlight | undefined;
     size?: Scalar<MarkdownViewVariantProps>['size'];
     padding?: Scalar<MarkdownViewVariantProps>['padding'];
+    inlineCode?: Scalar<MarkdownViewVariantProps>['inlineCode'];
 };
 
 // @public

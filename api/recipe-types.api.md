@@ -783,6 +783,7 @@ export * from './map-graph.js';
 export * from './map-legend.js';
 export * from './map-node.js';
 export * from './map-selection-card.js';
+export * from './markdown-code-block.js';
 export * from './menu.js';
 export * from './message.js';
 export * from './meta-chip.js';
@@ -1163,6 +1164,24 @@ export type MapSelectionCardRecipe = ConfigSlotRecipeRuntimeFn<MapSelectionCardS
 
 export declare const mapSelectionCard: MapSelectionCardRecipe;
 
+// markdown-code-block.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type MarkdownCodeBlockVariant = {}
+
+export type MarkdownCodeBlockVariantProps = {
+  [K in keyof MarkdownCodeBlockVariant]?: ConditionalValue<MarkdownCodeBlockVariant[K]>
+}
+
+export type MarkdownCodeBlockVariantMap = RecipeVariantMap<MarkdownCodeBlockVariant>
+
+export type MarkdownCodeBlockSlot = "root" | "head" | "label" | "status" | "body" | "code" | "line" | "foot"
+
+export type MarkdownCodeBlockRecipe = ConfigSlotRecipeRuntimeFn<MarkdownCodeBlockSlot, MarkdownCodeBlockVariantProps, MarkdownCodeBlockVariantMap>
+
+export declare const markdownCodeBlock: MarkdownCodeBlockRecipe;
+
 // markdown-view.d.ts
 import type { ConditionalValue } from '../types/system.js';
 import type { ConfigRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
@@ -1170,6 +1189,7 @@ import type { ConfigRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js
 export type MarkdownViewVariant = {
   size?: "md" | "sm"
   padding?: "default" | "none"
+  inlineCode?: "plain" | "badge"
 }
 
 export type MarkdownViewVariantProps = {

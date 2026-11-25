@@ -64,3 +64,9 @@ under their purpose group, never under "Parts" (d-065).
   alignment (`style.textAlign` or `align`) into the recipe's `data-align`,
   never an inline style. MarkdownView styles the other GFM elements
   (`del`, task list items); it draws no table itself.
+- `MarkdownCodeBlock` is a fenced code block for a react-markdown `pre`
+  override inside a MarkdownView: the language and `onCopy`'s button in
+  its head, one line each with sideways scroll, CodeLines' `segments`, a
+  diff's line tints, and a fold after `fold` lines (default 20). It
+  parses no code and copies nothing itself; MarkdownView's own `pre`
+  style skips its body (`markdown-code-block.stories.tsx`).

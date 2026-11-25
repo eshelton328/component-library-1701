@@ -40,6 +40,11 @@ export type MarkdownViewProps = {
   size?: Scalar<MarkdownViewVariantProps>['size']
   /** `default` pads the text 20 by 24, as the Toolkit file preview does; `none` draws it flush, for a box that sets its own padding, such as an Inbox detail section. */
   padding?: Scalar<MarkdownViewVariantProps>['padding']
+  /**
+   * `plain` (the default) draws inline code in the `code` style with no fill, as the Toolkit file preview does;
+   * `badge` draws it as a mono badge on a tint, as a chat's text does. Code in a block never takes the badge.
+   */
+  inlineCode?: Scalar<MarkdownViewVariantProps>['inlineCode']
 }
 
 /**
@@ -52,8 +57,8 @@ export type MarkdownViewProps = {
  * (`md`) keeps `body` and `label`. `padding="none"` drops the view's own
  * padding, so the text lines up with the box around it.
  */
-export function MarkdownView({ children, highlight, size, padding }: MarkdownViewProps) {
-  return <Root size={size} padding={padding}>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
+export function MarkdownView({ children, highlight, size, padding, inlineCode }: MarkdownViewProps) {
+  return <Root size={size} padding={padding} inlineCode={inlineCode}>{highlight === undefined ? children : highlightFences(children, highlight)}</Root>
 }
 
 type WithChildren = { children?: ReactNode }

@@ -578,8 +578,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         if (end === undefined) return []
         const room = Math.max(0, end.height - end.view)
         const toScroll = atEnd ? room : Math.min(room, Math.max(0, scroll + bottom - end.bottom))
-        // The scroll position of the move's layout: the end's, where the end's layout is the move's, else as it was.
-        const real = layout === target ? toScroll : (keptScroll[i] ?? el.scrollTop)
+        // The scroll position of the move's layout: the end's, where the end's layout is the move's, else as it was. A
+        // body at its end is at the end of the move's layout too: a page that pins it there scrolls it after a footer
+        // grows in the move (the-bridge's usePinnedEnd), after this, and the thread would then rise by the growth ahead
+        // of the move and fall back at its end (screen review R76, `PinnedGrowOnDock`).
+        const real =
+          layout === target ? toScroll : atEnd ? Math.max(0, el.scrollHeight - el.clientHeight) : (keptScroll[i] ?? el.scrollTop)
         if (Math.abs(el.scrollTop - real) > 0.5) el.scrollTop = real
         return [{ el, bottom, scroll, atEnd, end, toScroll }]
       })

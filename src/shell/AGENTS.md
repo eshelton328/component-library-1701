@@ -77,9 +77,10 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   carries `data-keyboard-glide`: the move glides it from where it is drawn
   to its place at the move's end, on the footer's curve. Put it on one
   element in a body. The shell owns its transform during a move, so the
-  page sets no transform of its own on it. A body that scrolls during the
-  move moves it with its children, and one out of the view at both ends
-  does not move (`KeyboardGlide`, `KeyboardGlideFault`).
+  page sets no transform of its own on it. A body that has a scroll shift
+  in the move carries the element with its children, and the element gets
+  no glide then, so no two transforms add. One out of the view at both
+  ends does not move (`KeyboardGlide`, `KeyboardGlideFault`).
 - `footerBase` subtracts the space under a footer's content, so a pad that
   reads `--scroll-frame-dock` does not step the composer at the open's end
   (R36, `PadEdges`). Read the composer's own box in such a test, not the

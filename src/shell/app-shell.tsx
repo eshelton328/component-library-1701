@@ -624,7 +624,9 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // move with a scroll shift moves it with them, so it gets no glide of its own: the two transforms would add. One out
       // of the body's view at the start and at the end does not move.
       const glideMoves = glidesNow.flatMap(({ el, body, top, view }, i) => {
+        // `ends.glides` and `glidesNow` come from the same query in the same order, so they pair by index.
         const end = ends.glides[i]
+        // A body with no entry in `bodyShifts` (no end measured) counts as shifting: its element gets no glide.
         const shifting = bodyShifts.find((shift) => shift.el === body)?.shifts.some((shift) => Math.abs(shift) >= 0.5) ?? true
         if (end === undefined || shifting) return []
         const box = el.getBoundingClientRect()

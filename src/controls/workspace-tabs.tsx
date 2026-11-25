@@ -91,7 +91,8 @@ export function WorkspaceTabs({ label, items, value, defaultValue, onValueChange
         onValueChange?.(next)
       }}
     >
-      <Bar>
+      {/* The tab bar is chrome: it keeps the Small type at every text size (d-131); the panels below it do not. */}
+      <Bar data-text-fixed="">
         {isEmpty(leading) ? null : <Leading>{leading}</Leading>}
         <List aria-label={label}>
           {items.map((item) => (

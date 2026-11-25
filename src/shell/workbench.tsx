@@ -53,11 +53,11 @@ export function Workbench({ label = 'Workspaces', workspaces, value, defaultValu
   const hasSummary = summary !== undefined && summary !== ''
   const hasAlert = alert !== undefined && alert !== ''
   return (
-    // The workspace tabs and the hint bar are chrome: they keep the Small type at every text size (d-131).
-    <Root data-text-fixed="">
+    <Root>
       <WorkspaceTabs label={label} items={workspaces} value={value} defaultValue={defaultValue} onValueChange={onValueChange} leading={leading} actions={actions} trailing={trailing} size={size} />
       {hasSummary || hints.length > 0 || hasAlert ? (
-        <Status>
+        // The hint bar is chrome: it keeps the Small type at every text size (d-131). The workspace's content does not.
+        <Status data-text-fixed="">
           {hasSummary ? <Summary>{summary}</Summary> : null}
           {hints.map((hint) => (
             <Hint key={hint}>

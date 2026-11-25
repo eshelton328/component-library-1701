@@ -62,6 +62,12 @@ under their purpose group, never under "Parts" (d-065).
   Dialog, a skeleton while it loads and a line with its text alternative
   when it does not load. It loads only the `src` it gets; the caller
   decides which URLs may load.
+- `MentionChip` never breaks over two lines (the-bridge R75): it is one
+  inline flex box with its name in `TruncatedText`, so at a line end it
+  moves to the next line whole and a name wider than the column ends with
+  an ellipsis (`MentionLineEnd` and `MentionLongName` stories). A
+  negative block margin takes back its border, so its line is no taller
+  than the text. `FileChip` stays inline and wraps.
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
 - The Table parts (`table.tsx`) work as react-markdown overrides for

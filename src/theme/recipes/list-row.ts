@@ -100,6 +100,16 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   between the title and the age only keeps a long title off the age.
 //   The title button's ::after still covers the row, so a click on the
 //   age selects it. `column`, the default, keeps the trailing column.
+// A sidebar row's meta at Default and Large (d-131): it wraps, a row of items in it wraps onto more lines, and an item
+// may shrink and break a long word (an ID with no spaces), so nothing runs past the row into its trailing status.
+const growMeta = {
+  overflow: 'visible',
+  whiteSpace: 'normal',
+  overflowWrap: 'anywhere',
+  '& > *': { flexWrap: 'wrap', minW: '0' },
+  '& > * > *': { minW: '0' },
+} as const
+
 export const listRow = defineSlotRecipe({
   className: 'list-row',
   jsx: ['ListRow'],
@@ -187,7 +197,17 @@ export const listRow = defineSlotRecipe({
         // TruncatedText inside cuts a long title and shows it whole in a tooltip.
         title: { minW: '0' },
         // A text meta holds a TruncatedText, which cuts it and shows it whole in a tooltip; any other meta is cut here.
-        meta: { minW: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', '&:has(> .truncated-text)': { overflow: 'visible' } },
+        // At the Default and Large text sizes (d-131) any meta wraps instead, and a row of items in it (a model name
+        // and a ContextMeter) wraps onto more lines, so the row grows with its text and nothing is cut (growMeta).
+        meta: {
+          minW: '0',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          '&:has(> .truncated-text)': { overflow: 'visible' },
+          _textDefault: growMeta,
+          _textLarge: growMeta,
+        },
       },
     },
     density: {

@@ -2090,6 +2090,7 @@ export function TruncatedText(input: TruncatedTextProps): JSX.Element;
 export type TruncatedTextProps = {
     children: string;
     lines?: 1 | 2 | 3 | undefined;
+    grow?: boolean | undefined;
     placement?: TooltipProps['placement'];
     highlight?: string | readonly string[] | undefined;
     owner?: RefObject<HTMLElement | null> | undefined;

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Inline, Stack } from '../controls/layout'
@@ -14,6 +14,7 @@ import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
 import { Thumbnail } from './thumbnail'
 import { expectCutText } from '../controls/tooltip.testing'
+import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 const inboxList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
@@ -1191,3 +1192,76 @@ const activityPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** `padding="flush"` with `metaStyle="small"`: the Toolkit Activity list (D17), 52 px rows edge to edge. */
 export const ActivityDark: StoryObj<typeof meta> = { render: () => <ActivityRows />, globals: { mode: 'dark' }, play: activityPlay }
 export const ActivityLight: StoryObj<typeof meta> = { render: () => <ActivityRows />, globals: { mode: 'light' }, play: activityPlay }
+
+
+// A sidebar row at each text size (d-131): Small keeps one line of title and of meta, cut with an ellipsis, as before;
+// at Default and Large the title and the meta wrap, a row of meta items wraps onto more lines, and the row grows.
+function GrowRows() {
+  return (
+    <main className={page}>
+      <div className={sidebar} data-testid="grow-rows">
+        <Stack gap="4">
+          <ListRow variant="sidebar" title="Build the list row and its stories for the Data display group" meta="opus · 42% · a long meta line" onSelect={() => { onSelect('grow-1') }} />
+          <ListRow
+            variant="sidebar"
+            density="compact"
+            title="bridge themes · fork of the first chat"
+            meta={
+              <Inline gap="4">
+                <span>Opus 5.5 with a long model name</span>
+                <ContextMeter value={78} high />
+              </Inline>
+            }
+            onSelect={() => { onSelect('grow-2') }}
+          />
+          <ListRow
+            variant="sidebar"
+            density="compact"
+            title="An ID with no spaces"
+            meta={
+              <Inline gap="4">
+                <span>chat-01JD3Z8Q4W7XKM2RVA9N6T5BYC-fork-of-the-first-chat</span>
+                <ContextMeter value={4} high={false} />
+              </Inline>
+            }
+            trailing={<StatusPill tone="running" label="Running" />}
+            onSelect={() => { onSelect('grow-3') }}
+          />
+        </Stack>
+      </div>
+    </main>
+  )
+}
+
+const growRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const rows = within(canvasElement).getByTestId('grow-rows')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      if (size === 'small') {
+        const title = rows.querySelector('.list-row__title .truncated-text')
+        if (!(title instanceof HTMLElement)) throw new Error('no title')
+        await waitFor(() => expect(title.scrollWidth).toBeGreaterThan(title.clientWidth))
+        const meta = rows.querySelectorAll('.list-row__meta')[1]
+        if (!(meta instanceof HTMLElement)) throw new Error('no meta')
+        await expect(getComputedStyle(meta).whiteSpace).toBe('nowrap')
+        return
+      }
+      await expectGrown(rows, ['.list-row__title'])
+      const textMeta = rows.querySelector('.list-row__meta')
+      if (textMeta === null) throw new Error('no text meta')
+      await expectGrown(textMeta, ['.truncated-text'])
+      await expect(textSpills(rows)).toEqual([])
+      // The meter's value stays inside the row's meta, on a line of its own if it must, and a long ID breaks inside
+      // the meta instead of running under the trailing status.
+      for (const meta of rows.querySelectorAll('.list-row__meta')) {
+        await expect(meta.scrollWidth).toBeLessThanOrEqual(meta.clientWidth)
+        const metaBox = meta.getBoundingClientRect()
+        for (const item of meta.querySelectorAll('span')) await expect(item.getBoundingClientRect().right).toBeLessThanOrEqual(metaBox.right + 1)
+      }
+    })
+  }
+}
+
+/** Sidebar rows at Small, Default and Large: the larger sizes wrap the title and the meta. */
+export const GrowTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowRows />, play: growRowsPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const GrowTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowRows />, play: growRowsPlay, globals: { mode: 'light', textSize: 'small' } }

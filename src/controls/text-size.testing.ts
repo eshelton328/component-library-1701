@@ -1,6 +1,7 @@
 // Story checks for the text sizes (d-122), shared by the stories of the
 // parts that must grow with their text. Only story files import it;
 // `../index.ts` never exports it.
+import { expect, waitFor } from 'storybook/test'
 import { textSizeClass, type TextSize } from '../foundations/text-size'
 
 /** The three text sizes, Small first. */
@@ -34,6 +35,26 @@ export async function atTextSize(size: TextSize, check: () => Promise<void>): Pr
     for (const s of textSizes) {
       const name = textSizeClass[s]
       if (name !== null) root.classList.remove(name)
+    }
+  }
+}
+
+/**
+ * Checks that the TruncatedText in each of `slots` (selectors inside `root`, such as `.card__description`) shows its
+ * whole text: no ellipsis, nothing past its box on either axis, and no tab stop of its own (only cut text takes one).
+ * Call it inside `atTextSize` at Default or Large (d-131) for the slots whose text has `grow`; at Small such a text
+ * is cut as any TruncatedText is.
+ */
+export async function expectGrown(root: Element, slots: readonly string[]): Promise<void> {
+  for (const slot of slots) {
+    const texts = [...root.querySelectorAll(`${slot} .truncated-text, ${slot}.truncated-text`)]
+    if (texts.length === 0) throw new Error(`no TruncatedText in ${slot}`)
+    for (const text of texts) {
+      if (!(text instanceof HTMLElement)) throw new Error(`${slot} is not an HTML element`)
+      await expect(getComputedStyle(text).textOverflow).toBe('clip')
+      await expect(text.scrollWidth).toBeLessThanOrEqual(text.clientWidth)
+      await expect(text.scrollHeight - text.clientHeight).toBeLessThanOrEqual(1)
+      await waitFor(() => expect(text).not.toHaveAttribute('tabindex'))
     }
   }
 }

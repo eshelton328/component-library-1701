@@ -130,19 +130,22 @@ export type ListRowProps = Scalar<ListRowVariantProps> & {
  *   body.
  */
 export function ListRow({ title, loading = false, highlight, meta, metaTrailing, leading, trailing, children, actions, selected = false, running = false, snoozed = false, finished = false, level = 0, onSelect, dotLabel, variant, density, padding, metaStyle, surface, trailingAlign, leadingGap, bodyAlign, dot, dotPosition, trailingPlacement }: ListRowProps) {
-  // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps.
+  // A sidebar row has one line of title; a cut title shows in full in a tooltip. An Inbox title wraps. At the Default
+  // and Large text sizes (d-131) the sidebar title and text meta wrap too and the row grows, as an iOS list row does.
   // With `highlight`, the matches of the query are marked; a cut title's tooltip shows the plain title.
   const titleText = loading ? (
     <Skeleton width="long" />
   ) : variant === 'sidebar' ? (
-      <TruncatedText highlight={highlight}>{title}</TruncatedText>
+      <TruncatedText highlight={highlight} grow>
+        {title}
+      </TruncatedText>
     ) : highlight === undefined ? (
       title
     ) : (
       <Highlight text={title} query={highlight} />
     )
   // A sidebar row's text meta is one line too, and a cut one shows in full in a tooltip. Other meta is cut as it is.
-  const metaText = variant === 'sidebar' && (typeof meta === 'string' || typeof meta === 'number') ? <TruncatedText>{String(meta)}</TruncatedText> : meta
+  const metaText = variant === 'sidebar' && (typeof meta === 'string' || typeof meta === 'number') ? <TruncatedText grow>{String(meta)}</TruncatedText> : meta
   // Cut text with its own tab stop sits above the title button's hit area, so a click on it selects the row here.
   const selectFromText = (event: MouseEvent<HTMLElement>) => {
     if (onSelect !== undefined && event.target instanceof Element && event.target.closest('.truncated-text[tabindex]') !== null) onSelect()

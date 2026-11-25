@@ -67,6 +67,12 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   included (a child left out is drawn at its layout place), and a child
   that a scroll brings into view or a page adds during the move (R44,
   `DockEntries`).
+- Every part of a move replaces its transform (`composite: 'replace'`),
+  with a body child's or glide element's own transform first in each
+  keyframe: WebKit runs an `add` animation on the main thread, so the
+  thread stood still for frames of an open while the composer rose (R44,
+  `DockCompositorChildren`, `KeepsTransform`). A part that runs a
+  transform animation of its own keeps `add`, so that animation goes on.
 - A layer over the page that docks itself (`data-keyboard-dock`: a
   BottomSheet with `keyboardDock`) moves on the same move as a footer:
   `--keyboard-dock` set on it at the edges, a transform animation between

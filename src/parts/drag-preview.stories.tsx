@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, within } from 'storybook/test'
+import { atTextSize, brokenWords, textSizes, textSpills } from '../controls/text-size.testing'
 import { css } from '../../styled-system/css'
 import { DragPreview } from './drag-preview'
 import { KindMark } from './kind-mark'
@@ -88,3 +89,42 @@ export default meta
 
 export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+
+// The Workbench sidebar's drag (D2): the copy of a compact row with a model and a context meter, in a sidebar row's
+// width, and the hint under it.
+const sidebarSlot = css({ w: 'shell.sidebar', px: '24', bg: 'surface.pane' })
+
+function SidebarDrag() {
+  return (
+    <main className={page}>
+      <div className={sidebarSlot} data-testid="sidebar-drag">
+        <DragPreview tilt hint="Drop to move drift check into the-bridge">
+          <ListRow variant="sidebar" density="compact" title="drift check" meta="GPT-5.5 · 23%" leading={<KindMark kind="codex" size="16" />} onSelect={() => undefined} />
+        </DragPreview>
+      </div>
+    </main>
+  )
+}
+
+const dragTextSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const drag = within(canvasElement).getByTestId('sidebar-drag')
+  const hint = drag.querySelector('.drag-preview__hint')
+  if (!(hint instanceof HTMLElement)) throw new Error('no hint')
+  // Small is as before: one line in a 24 px pill.
+  await expect(hint.getBoundingClientRect().height).toBe(24)
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // The hint's text stays inside its pill, which grows with it, and no word breaks inside.
+      await expect(textSpills(drag)).toEqual([])
+      await expect(brokenWords(drag)).toEqual([])
+      const text = document.createRange()
+      text.selectNodeContents(hint)
+      await expect(text.getBoundingClientRect().bottom).toBeLessThanOrEqual(hint.getBoundingClientRect().bottom)
+      await expect(hint.getBoundingClientRect().height).toBeGreaterThanOrEqual(24)
+    })
+  }
+}
+
+/** The sidebar's drag at Small, Default and Large (d-122): the hint pill grows with its text. */
+export const DragTextSizesDark: StoryObj<typeof meta> = { render: () => <SidebarDrag />, play: dragTextSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const DragTextSizesLight: StoryObj<typeof meta> = { render: () => <SidebarDrag />, play: dragTextSizesPlay, globals: { mode: 'light', textSize: 'small' } }

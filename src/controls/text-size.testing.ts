@@ -133,3 +133,45 @@ export function textSpills(root: Element): TextSpill[] {
   }
   return out
 }
+
+/**
+ * The words inside `root` that break across two lines inside the word ("Opu/s"), as `overflow-wrap: anywhere` does
+ * in a box too narrow for the word; the same measure as the-bridge's `check:text-sizes`. A break after a hyphen or a
+ * slash is a normal break point and does not count. An empty list means every word is whole.
+ */
+export function brokenWords(root: Element): string[] {
+  const out: string[] = []
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const source = node.textContent ?? ''
+    for (const match of source.matchAll(/[^\s\-/]+/g)) {
+      const word = document.createRange()
+      word.setStart(node, match.index)
+      word.setEnd(node, match.index + match[0].length)
+      const tops = new Set([...word.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)))
+      if (tops.size > 1) out.push(match[0])
+    }
+  }
+  return out
+}
+
+/** A text field whose line is taller than its content box, and by how many px; its placeholder or value is cut. */
+export type ShortField = { name: string; by: number }
+
+/**
+ * The inputs and text areas inside `root` whose line of text is taller than their content box by more than 1 px, so
+ * the top or the bottom of the text is cut; the same measure as the-bridge's `check:text-sizes`.
+ */
+export function shortFields(root: Element): ShortField[] {
+  const out: ShortField[] = []
+  for (const field of root.querySelectorAll('input, textarea')) {
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) continue
+    if (field instanceof HTMLInputElement && !['text', 'search', 'email', 'url', 'password', ''].includes(field.type)) continue
+    const s = getComputedStyle(field)
+    const content = field.clientHeight - Number.parseFloat(s.paddingTop) - Number.parseFloat(s.paddingBottom)
+    const line = s.lineHeight === 'normal' ? Number.parseFloat(s.fontSize) * 1.2 : Number.parseFloat(s.lineHeight)
+    const by = line - content
+    if (by > 1) out.push({ name: field.getAttribute('aria-label') ?? field.placeholder, by: Math.round(by) })
+  }
+  return out
+}

@@ -48,6 +48,10 @@ export const dragPreview = defineSlotRecipe({
       borderWidth: 'default',
       borderStyle: 'solid',
       borderColor: 'border.active',
+      // At Default and Large (d-122) the hint's text can take more than one line in the sidebar's width: the pill
+      // grows with it, 2 above and below, and never gets shorter than control.xs.
+      _textDefault: { h: 'auto', minH: 'control.xs', py: '2' },
+      _textLarge: { h: 'auto', minH: 'control.xs', py: '2' },
     },
   },
   variants: {

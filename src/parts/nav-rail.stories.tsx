@@ -7,6 +7,7 @@ import { Logo } from './logo'
 import type { NavItem } from './nav-item'
 import { NavRail } from './nav-rail'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { atTextSize, brokenWords, fixedTypePlay, textSizes } from '../controls/text-size.testing'
 import { Switch } from '../controls/switch'
 
 const page = css({ display: 'flex', overflow: 'hidden', bg: 'bg.canvas', color: 'fg.default', w: 'shell.dialogLg', h: 'shell.dialogLg' })
@@ -266,3 +267,19 @@ const railFooterPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
 /** A footer at the rail's end, such as the stacked Notifications switch (d-118). */
 export const FooterDark: StoryObj<typeof meta> = { render: () => <RailWithFooter />, play: railFooterPlay, globals: { mode: 'dark' } }
 export const FooterLight: StoryObj<typeof meta> = { render: () => <RailWithFooter />, play: railFooterPlay, globals: { mode: 'light' } }
+
+type FixedPlayContext = Parameters<ReturnType<typeof fixedTypePlay>>[0]
+
+const railTextSizesPlay = async (context: FixedPlayContext) => {
+  // The rail is chrome (d-131): its labels keep the Small type at every size, so "Workspaces" stays whole.
+  await fixedTypePlay(['.nav-rail__label'])(context)
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      await expect(brokenWords(context.canvasElement)).toEqual([])
+    })
+  }
+}
+
+/** The rail at Small, Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: railTextSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: railTextSizesPlay, globals: { mode: 'light', textSize: 'small' } }

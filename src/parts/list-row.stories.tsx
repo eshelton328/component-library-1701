@@ -14,7 +14,7 @@ import { StatusPill } from './status-pill'
 import { TagsLine } from './meta-line'
 import { Thumbnail } from './thumbnail'
 import { expectCutText } from '../controls/tooltip.testing'
-import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
+import { atTextSize, brokenWords, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '24', justifyItems: 'start' })
 const inboxList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
@@ -581,6 +581,7 @@ function SidebarMeta() {
           <ListRow variant="sidebar" density="compact" title="hono server" meta={chatMeta('Sonnet 5.5', 78)} leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill tone="needsYou" label="Needs you" dot />} onSelect={() => undefined} />
           <ListRow variant="sidebar" density="compact" level={1} title="theme tokens" meta={chatMeta('Opus 5.5', 26)} leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill tone="running" label="Running" dot />} onSelect={() => undefined} />
           <ListRow variant="sidebar" title="A default sidebar row" meta="Opus 5.5" leading={<KindMark kind="claude" size="16" />} onSelect={() => undefined} />
+          <ListRow variant="sidebar" density="compact" level={1} title="nested and waiting" meta={chatMeta('Sonnet 5.5', 78)} leading={<KindMark kind="claude" size="16" />} trailing={<StatusPill tone="needsYou" label="Needs you" dot />} onSelect={() => undefined} />
         </Stack>
       </div>
     </main>
@@ -619,6 +620,29 @@ const sidebarMetaPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `variant="sidebar" density="compact"`: the Workbench sidebar chat, whose model and context meter fit beside its pill. */
 export const SidebarMetaDark: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'dark' }, play: sidebarMetaPlay }
 export const SidebarMetaLight: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'light' }, play: sidebarMetaPlay }
+
+const sidebarMetaTextSizesPlay: StoryObj<typeof meta>['play'] = async (context) => {
+  // Small is as before.
+  await sidebarMetaPlay(context)
+  const { canvasElement } = context
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // The meta wraps between words: "Opus 5.5" and "Sonnet 5.5" stay whole, and nothing is cut.
+      await expect(brokenWords(canvasElement)).toEqual([])
+      await expect(textSpills(canvasElement)).toEqual([])
+      // The whole meter, "78%" included, stays inside the row's meta.
+      const row = within(canvasElement).getByRole('button', { name: 'hono server' }).closest('.list-row__root')
+      const meta = row?.querySelector('.list-row__meta')
+      const value = row?.querySelector('.context-meter__value')
+      if (!(meta instanceof HTMLElement) || !(value instanceof HTMLElement)) throw new Error('no meta or meter')
+      await expect(value.getBoundingClientRect().right).toBeLessThanOrEqual(meta.getBoundingClientRect().right + 1)
+    })
+  }
+}
+
+/** The sidebar meta at Small, Default and Large (d-131): it wraps between words and the meter moves to its own line. */
+export const SidebarMetaTextSizesDark: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'dark', textSize: 'small' }, play: sidebarMetaTextSizesPlay }
+export const SidebarMetaTextSizesLight: StoryObj<typeof meta> = { render: () => <SidebarMeta />, globals: { mode: 'light', textSize: 'small' }, play: sidebarMetaTextSizesPlay }
 
 const artifactList = css({ bg: 'surface.pane', w: 'shell.listPane', px: '12', py: '12', borderRadius: 'xl' })
 const libraryList = css({ bg: 'bg.canvas', w: 'shell.listPane', display: 'grid', gap: '6' })

@@ -67,6 +67,9 @@ const iconStart = (side: '10' | '12') => `calc(token(spacing.${side}) + token(si
 // The icon's place: inside the input's border and its side padding.
 const iconInset = (side: '10' | '12') => `calc(token(borderWidths.default) + token(spacing.${side}))`
 
+// An input at Default and Large: as tall as its line and 2 above and below, never shorter than its size's height.
+const growInput = (size: 'sm' | 'md' | 'lg' | 'xl' | 'form') => ({ h: 'auto', minH: `control.${size}`, py: '2' }) as const
+
 export const textField = defineSlotRecipe({
   className: 'text-field',
   jsx: ['TextField', 'TextArea'],
@@ -111,12 +114,14 @@ export const textField = defineSlotRecipe({
       true: { label: { srOnly: true } },
       false: {},
     },
+    // At Default and Large (d-122) the line of text can be taller than the size's height less the border: the input
+    // then grows with its line, with 2 above and below, and the size's height stays its least (growInput).
     size: {
-      sm: { input: { h: 'control.sm' } },
-      md: { input: { h: 'control.md' } },
-      lg: { input: { h: 'control.lg' } },
-      xl: { input: { h: 'control.xl' } },
-      form: { input: { h: 'control.form' } },
+      sm: { input: { h: 'control.sm', _textDefault: growInput('sm'), _textLarge: growInput('sm') } },
+      md: { input: { h: 'control.md', _textDefault: growInput('md'), _textLarge: growInput('md') } },
+      lg: { input: { h: 'control.lg', _textDefault: growInput('lg'), _textLarge: growInput('lg') } },
+      xl: { input: { h: 'control.xl', _textDefault: growInput('xl'), _textLarge: growInput('xl') } },
+      form: { input: { h: 'control.form', _textDefault: growInput('form'), _textLarge: growInput('form') } },
     },
     padding: {
       default: {},

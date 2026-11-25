@@ -45,7 +45,7 @@ export function NavRail({ items, selected, onSelect, logo, label = 'Main', foote
   const hasLogo = logo !== undefined && logo !== null && logo !== false
   const hasFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean' && footer !== ''
   return (
-    <Root aria-label={label}>
+    <Root aria-label={label} data-text-fixed="">
       {hasLogo ? (
         <>
           <Logo>{logo}</Logo>

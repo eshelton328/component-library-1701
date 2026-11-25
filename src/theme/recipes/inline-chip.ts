@@ -5,11 +5,16 @@ import { focusRing } from './focus'
 // (`FileChip`, the path in mono) or a chat (`MentionChip`). No Figma frame
 // draws it; it takes the tokens of the chips beside it (meta chip:
 // surface.inset, border.default, radius sm) and the accent of a Markdown
-// link, so it reads as a link. The chip is inline, not a box: its text
-// takes the font size and line height of the text around it, so it grows
-// with the text sizes (d-122) and with a `sm` MarkdownView, and a long
+// link, so it reads as a link. Its text takes the font size and line
+// height of the text around it, so it grows with the text sizes (d-122)
+// and with a `sm` MarkdownView. A file chip is inline, not a box: a long
 // path breaks anywhere and wraps with its fill and border on each line
-// (`boxDecorationBreak: clone`). The icon is 12 at Small and 16 at
+// (`boxDecorationBreak: clone`). A mention chip never breaks (the owner,
+// R75: "It should never break"): it is one inline flex box that moves to
+// the next line whole. Its negative block margin takes back its border, so
+// its line is no taller than the text round it. A name wider than the
+// column ends with an ellipsis (TruncatedText). Its text and icon are
+// fg.default, not the accent (R75: "the chat links have white text"). The icon is 12 at Small and 16 at
 // Default and Large (no 14 size token). Like a Markdown link it takes no
 // touch target (d-121): a target round a word in a paragraph would take
 // the taps of the lines above and below it.
@@ -50,7 +55,18 @@ export const inlineChip = defineSlotRecipe({
   variants: {
     kind: {
       file: { label: { fontFamily: 'mono' }, detail: { fontFamily: 'mono' } },
-      mention: { label: { fontWeight: 'text.heading' } },
+      mention: {
+        root: {
+          display: 'inline-flex',
+          alignItems: 'center',
+          verticalAlign: 'top',
+          maxW: '100%',
+          my: 'calc(-1 * token(borderWidths.default))',
+          color: 'fg.default',
+        },
+        icon: { flexShrink: '0' },
+        label: { minW: '0', fontWeight: 'text.heading' },
+      },
     },
   },
   defaultVariants: { kind: 'file' },

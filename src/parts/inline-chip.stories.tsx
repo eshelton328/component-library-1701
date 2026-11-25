@@ -3,12 +3,14 @@ import type { MouseEvent } from 'react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
+import { expectCutText } from '../controls/tooltip.testing'
 import { FileChip, MentionChip } from './inline-chip'
 import { MarkdownView } from './markdown-view'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const column = css({ w: 'shell.listPane', bg: 'surface.pane' })
 const accent = css({ bg: 'fg.accent' })
+const textColour = css({ bg: 'fg.default' })
 
 // The chips' press handler; each play clears it first.
 const onOpen = fn()
@@ -37,6 +39,7 @@ function Chips() {
         ))}
       </div>
       <div className={accent} data-testid="accent" />
+      <div className={textColour} data-testid="text" />
     </main>
   )
 }
@@ -60,10 +63,15 @@ const chipsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   const file = files[0]
   const mention = mentions[0]
   if (file === undefined || mention === undefined) throw new Error('no chips')
-  // The text is the accent of a Markdown link; the path is mono, the name is not.
+  // A file's text is the accent of a Markdown link; a chat's name is the text colour (R75). The path is mono, the
+  // name is not.
   const accentColour = getComputedStyle(canvas.getByTestId('accent')).backgroundColor
   await expect(getComputedStyle(file).color).toBe(accentColour)
-  await expect(getComputedStyle(mention).color).toBe(accentColour)
+  await expect(getComputedStyle(mention).color).toBe(getComputedStyle(canvas.getByTestId('text')).backgroundColor)
+  // The name keeps the text contrast of fg.default on the chip's fill, laid over the pane.
+  const fill = painted(mention)
+  await expect(fill[3]).toBe(1)
+  await expect(contrast(rgb(getComputedStyle(mention).color), fill)).toBeGreaterThanOrEqual(4.5)
   const fileLabel = file.querySelector('.inline-chip__label')
   const mentionLabel = mention.querySelector('.inline-chip__label')
   if (fileLabel === null || mentionLabel === null) throw new Error('no labels')
@@ -118,3 +126,129 @@ const textSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
 /** The chips at Small, Default and Large. */
 export const ChipsTextSizesDark: StoryObj<typeof meta> = { render, play: textSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const ChipsTextSizesLight: StoryObj<typeof meta> = { render, play: textSizesPlay, globals: { mode: 'light', textSize: 'small' } }
+
+/** An `rgb()` or `rgba()` colour as its four parts. */
+function rgb(value: string): Rgba {
+  const parts = value.match(/[\d.]+/g)?.map(Number)
+  if (parts === undefined || parts.length < 3 || parts.some(Number.isNaN)) throw new Error(`not an rgb colour: ${value}`)
+  const [r = 0, g = 0, b = 0, a = 1] = parts
+  return [r, g, b, a]
+}
+
+type Rgba = [number, number, number, number]
+
+/** Lays `top` over `under` (source-over), as the browser paints it. */
+function over(top: Rgba, under: Rgba): Rgba {
+  const a = top[3] + under[3] * (1 - top[3])
+  if (a === 0) return [0, 0, 0, 0]
+  const mix = (t: number, u: number) => (t * top[3] + u * under[3] * (1 - top[3])) / a
+  return [mix(top[0], under[0]), mix(top[1], under[1]), mix(top[2], under[2]), a]
+}
+
+/** The colour behind an element's text: its own fill and its ancestors' fills, laid over each other. */
+function painted(el: Element): Rgba {
+  let colour: Rgba = [0, 0, 0, 0]
+  for (let node: Element | null = el; node !== null && colour[3] < 1; node = node.parentElement) {
+    colour = over(colour, rgb(getComputedStyle(node).backgroundColor))
+  }
+  return colour
+}
+
+/** WCAG 2 contrast ratio of two opaque colours. */
+function contrast(a: readonly number[], b: readonly number[]) {
+  const luminance = (c: readonly number[]) => {
+    const [r = 0, g = 0, bl = 0] = c.slice(0, 3).map((v) => {
+      const s = v / 255
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+    })
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl
+  }
+  const [hi = 0, lo = 0] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+// The words before the mention: each paragraph has one word more, so some paragraph puts the chip at a line end.
+const filler = 'the next step waits for a review from'.split(' ')
+const mentionParagraphs = Array.from({ length: 24 }, (_, n) => Array.from({ length: n + 1 }, (_, k) => filler[k % filler.length]).join(' '))
+
+// Mentions at every place on a line in a narrow column (the owner's iPad, R75: "the chat bubble breaks over two
+// lines. It should never break").
+function MentionLineEnd() {
+  return (
+    <main className={page}>
+      <div className={column} data-testid="column">
+        <MarkdownView>
+          {mentionParagraphs.map((words) => (
+            <p key={words}>
+              {words} <MentionChip name="bridge-workbench" href="#chat" /> before the merge.
+            </p>
+          ))}
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+const mentionLineEndPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const column = canvas.getByTestId('column')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      const chips = canvas.getAllByRole('link', { name: 'bridge-workbench' })
+      await expect(chips).toHaveLength(mentionParagraphs.length)
+      let wrapped = 0
+      for (const chip of chips) {
+        const paragraph = chip.closest('p')
+        if (paragraph === null) throw new Error('no paragraph')
+        const lineHeight = Number.parseFloat(getComputedStyle(paragraph).lineHeight)
+        // One box on one line: the chip never splits, and it makes its line no taller than the text's line height.
+        await expect(chip.getClientRects()).toHaveLength(1)
+        const box = chip.getBoundingClientRect()
+        const lines = paragraph.getBoundingClientRect().height / lineHeight
+        await expect(Math.abs(lines - Math.round(lines))).toBeLessThan(0.05)
+        const top = paragraph.getBoundingClientRect().top
+        if (box.left - paragraph.getBoundingClientRect().left < 1 && box.top - top > lineHeight / 2) wrapped += 1
+        await expect(box.right).toBeLessThanOrEqual(column.getBoundingClientRect().right)
+      }
+      // At least one chip came at a line end and moved whole to the start of the next line.
+      await expect(wrapped).toBeGreaterThan(0)
+      await expect(textSpills(column)).toEqual([])
+    })
+  }
+}
+
+/** A mention at each place on a line: at a line end the chip moves whole to the next line, at each text size. */
+export const MentionLineEndDark: StoryObj<typeof meta> = { render: () => <MentionLineEnd />, play: mentionLineEndPlay, globals: { mode: 'dark' } }
+export const MentionLineEndLight: StoryObj<typeof meta> = { render: () => <MentionLineEnd />, play: mentionLineEndPlay, globals: { mode: 'light' } }
+
+const longName = 'bridge-richtext-mentions-and-file-chips-in-a-very-long-chat-name-that-fills-the-column'
+
+// A chat name wider than the column.
+function MentionLongName() {
+  return (
+    <main className={page}>
+      <div className={column} data-testid="column">
+        <MarkdownView>
+          <p>
+            Ask <MentionChip name={longName} href="#chat" /> first.
+          </p>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+const mentionLongNamePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const column = canvas.getByTestId('column')
+  const chip = canvas.getByRole('link', { name: longName })
+  // The chip stays one box inside the column, and the name ends with an ellipsis and shows whole in the tooltip.
+  await expect(chip.getClientRects()).toHaveLength(1)
+  await expect(chip.getBoundingClientRect().right).toBeLessThanOrEqual(column.getBoundingClientRect().right)
+  await expectCutText(chip, longName, chip)
+  await expect(textSpills(column)).toEqual([])
+}
+
+/** A chat name wider than the column ends with an ellipsis inside the chip. */
+export const MentionLongNameDark: StoryObj<typeof meta> = { render: () => <MentionLongName />, play: mentionLongNamePlay, globals: { mode: 'dark' } }
+export const MentionLongNameLight: StoryObj<typeof meta> = { render: () => <MentionLongName />, play: mentionLongNamePlay, globals: { mode: 'light' } }

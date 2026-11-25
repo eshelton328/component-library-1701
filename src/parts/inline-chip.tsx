@@ -1,6 +1,7 @@
 import type { ComponentPropsWithRef } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { inlineChip } from '../../styled-system/recipes'
+import { TruncatedText } from '../controls/tooltip'
 import { ChatIcon, FileIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(inlineChip)
@@ -46,7 +47,9 @@ export type MentionChipProps = InlineChipLinkProps & {
 
 /**
  * A chat's name in running text that opens the chat, such as a mention of "bridge-coord" in a message. The name is
- * drawn with a chat icon and no at sign. The chip is a link: the caller gives it `href` and handles the press.
+ * drawn with a chat icon and no at sign, in the text colour. The chip never breaks over two lines: at a line end it
+ * moves to the next line whole, and a name wider than the column ends with an ellipsis and shows whole in a tooltip.
+ * The chip is a link: the caller gives it `href` and handles the press.
  */
 export function MentionChip({ name, ...link }: MentionChipProps) {
   return (
@@ -54,7 +57,9 @@ export function MentionChip({ name, ...link }: MentionChipProps) {
       <Icon aria-hidden>
         <ChatIcon />
       </Icon>
-      <Label>{name}</Label>
+      <Label>
+        <TruncatedText>{name}</TruncatedText>
+      </Label>
     </Root>
   )
 }

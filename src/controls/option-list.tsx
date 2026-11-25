@@ -1,5 +1,5 @@
 import { RadioGroup as ArkRadioGroup } from '@ark-ui/react/radio-group'
-import { useId, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { useId, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { CheckIcon } from '../foundations/icons'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { optionList } from '../../styled-system/recipes'
@@ -139,6 +139,14 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
     onItemSelect?.(target.value)
   }
 
+  // The pressed fill (R72, as ListRow's R38 fill): the row under a primary press, from pointerdown to its end. iOS draws
+  // no :active look on a tap, so the state is ours. Touch fires pointercancel when the press becomes a scroll, so a
+  // scroll drops the fill too. A disabled row or list shows none.
+  const [pressed, setPressed] = useState<string | null>(null)
+  const release = () => {
+    setPressed(null)
+  }
+
   // A mono label (a skill's /name) and a compact row keep each line to one line, cut with a tooltip.
   const oneLine = density === 'compact' || labelStyle === 'mono'
   return (
@@ -178,7 +186,18 @@ export function OptionList({ label, items, value, defaultValue, onValueChange, o
           .join(' ')
         return (
           // Only `true` is passed: Ark lets an item's `false` clear a disabled group.
-          <Item key={item.value} value={item.value} disabled={item.disabled === true ? true : undefined}>
+          <Item
+            key={item.value}
+            value={item.value}
+            disabled={item.disabled === true ? true : undefined}
+            data-pressed={pressed === item.value ? '' : undefined}
+            onPointerDown={(event) => {
+              if (event.button === 0 && disabled !== true && item.disabled !== true) setPressed(item.value)
+            }}
+            onPointerUp={release}
+            onPointerCancel={release}
+            onPointerLeave={release}
+          >
             {variant === 'card' ? <ItemRadio aria-hidden="true" /> : null}
             {shown(item.leading) ? <ItemLeading aria-hidden="true">{item.leading}</ItemLeading> : null}
             <ItemBody>

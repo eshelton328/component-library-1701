@@ -98,7 +98,10 @@ const textSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
   const column = canvas.getByTestId('column')
   for (const size of textSizes) {
     await atTextSize(size, async () => {
-      for (const chip of column.querySelectorAll('.inline-chip')) {
+      // Six chips: three in each of the two MarkdownViews.
+      const chips = column.querySelectorAll('.inline-chip__root')
+      await expect(chips).toHaveLength(6)
+      for (const chip of chips) {
         const paragraph = chip.closest('p')
         const label = chip.querySelector('.inline-chip__label')
         const icon = chip.querySelector('.inline-chip__icon svg')

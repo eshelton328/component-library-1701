@@ -77,13 +77,11 @@ const sheetDock = '[data-keyboard-dock]'
 // An element in a docked ScrollFrame body that the dock moves on the keyboard's curve from where it is drawn to its place
 // in the move's last layout (screen review R73: a new chat's centred mark, name and line, which a body with no scroll
 // shift left to jump when the layout changed at a close's start or an open's end). One element in a body; the shell owns
-// its transform during a move.
+// its transform during a move. A move never fades it or anything in it (R44): a faded group in it would be a gap of
+// its own.
 const keyboardGlide = '[data-keyboard-glide]'
 const sheetRise = '--keyboard-dock'
 const fieldSelector = 'input, textarea, [contenteditable]'
-// A part the shell moves on the keyboard itself (`data-keyboard-glide`): a move never fades it or anything in it, as
-// the shell owns its transform and a faded group in it would be a gap of its own.
-const glideSelector = '[data-keyboard-glide]'
 // A move's fades (screen review R44): how deep a fade looks into a body child for the parts that cross the footer's
 // top, the child being level 1, and the most fades a body takes in one move. A page that holds its thread in one
 // wrapper (a Stack of entries) fades entry by entry, and a long thread adds no more animations than this.
@@ -621,13 +619,13 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         const faded = (moves: boolean) => (child: Element) => {
           const shiftAt = (i: number) => (moves ? (shifts[i] ?? 0) : 0)
           const parts = (part: Element, depth: number): { child: HTMLElement; opacities: number[] }[] => {
-            if (!(part instanceof HTMLElement) || part.closest(glideSelector) !== null) return []
+            if (!(part instanceof HTMLElement) || part.closest(keyboardGlide) !== null) return []
             const box = part.getBoundingClientRect()
             const edges = tracks.bottom.values
             const opacities = edges.map((edge, i) => (box.bottom + shiftAt(i) > edge + 0.5 && box.top + shiftAt(i) < foot ? 0 : 1))
             if (!opacities.includes(0)) return []
             const spans = opacities.some((opacity, i) => opacity === 0 && box.top + shiftAt(i) < (edges[i] ?? 0) - 0.5)
-            const holdsGlide = part.querySelector(glideSelector) !== null
+            const holdsGlide = part.querySelector(keyboardGlide) !== null
             if ((spans || holdsGlide) && depth < fadeDepth && part.children.length > 0)
               return [...part.children].flatMap((inner) => parts(inner, depth + 1))
             return holdsGlide ? [] : [{ child: part, opacities }]

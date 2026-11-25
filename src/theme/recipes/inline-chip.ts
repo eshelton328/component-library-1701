@@ -11,8 +11,10 @@ import { focusRing } from './focus'
 // path breaks anywhere and wraps with its fill and border on each line
 // (`boxDecorationBreak: clone`). A mention chip never breaks (the owner,
 // R75: "It should never break"): it is one inline flex box that moves to
-// the next line whole. Its negative block margin takes back its border, so
-// its line is no taller than the text round it. A name wider than the
+// the next line whole. Its box is 4 px shorter than the line, with a 2 px
+// margin above and below, so its line is no taller than the text round it
+// and a chip on the next line keeps a gap (the Design System gate's
+// no-touching-boxes, beta.129). A name wider than the
 // column ends with an ellipsis (TruncatedText). Its text and icon are
 // fg.default, not the accent (R75: "the chat links have white text"). The icon is 12 at Small and 16 at
 // Default and Large (no 14 size token). Like a Markdown link it takes no
@@ -61,7 +63,8 @@ export const inlineChip = defineSlotRecipe({
           alignItems: 'center',
           verticalAlign: 'top',
           maxW: '100%',
-          my: 'calc(-1 * token(borderWidths.default))',
+          h: 'calc(1lh - token(spacing.4))',
+          my: '2',
           color: 'fg.default',
         },
         icon: { flexShrink: '0' },

@@ -339,6 +339,11 @@ const searchTextSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElemen
     await atTextSize(size, async () => {
       // Each field is at least as tall as its line of text: no placeholder or value is cut at the top or bottom.
       await expect(shortFields(canvasElement)).toEqual([])
+      // The input still fills the field's height, so a click anywhere in the field focuses it.
+      for (const s of sizes) {
+        const input = canvas.getByRole('searchbox', { name: `Search, ${s}` })
+        await expect(input.getBoundingClientRect().height).toBe(input.parentElement?.clientHeight)
+      }
       const now = heights()
       for (const [i, h] of [28, 32, 36].entries()) await expect(now[i]).toBeGreaterThanOrEqual(h)
     })

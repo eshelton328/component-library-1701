@@ -25,9 +25,10 @@ import { focusRing } from './focus'
 // token; `clearSize="16"` is the nearest (12 and 16 tie; d-072 takes the
 // larger).
 // At Default and Large (d-122) the line of text can be taller than the size's height less the border: the field then
-// grows with its line, with 2 above and below, and the size's height stays its least; the input takes its line's height.
-const growRoot = (size: 'sm' | 'md' | 'lg') => ({ h: 'auto', minH: `control.${size}`, py: '2' }) as const
-const lineHeight = { h: 'auto' } as const
+// grows with its line and the size's height stays its least. The input stretches to the field's whole height, with 2
+// above and below its line, so a click anywhere in the field still focuses it (growInput).
+const growRoot = (size: 'sm' | 'md' | 'lg') => ({ h: 'auto', minH: `control.${size}` }) as const
+const growInput = { h: 'auto', py: '2', alignSelf: 'stretch' } as const
 
 export const searchField = defineSlotRecipe({
   className: 'search-field',
@@ -59,8 +60,8 @@ export const searchField = defineSlotRecipe({
       flex: '1',
       minWidth: '0',
       height: '100%',
-      _textDefault: lineHeight,
-      _textLarge: lineHeight,
+      _textDefault: growInput,
+      _textLarge: growInput,
       bg: 'transparent',
       color: 'fg.default',
       textStyle: 'body',

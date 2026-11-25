@@ -5,6 +5,7 @@ import { expect, fireEvent, fn, userEvent, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { CloseCircleIcon, CloseIcon, SearchIcon } from '../foundations/icons'
 import { SearchField } from './search-field'
+import { atTextSize, shortFields, textSizes } from './text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const column = css({ display: 'grid', gap: '16' })
@@ -328,3 +329,22 @@ const strongClearPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** `clearFocus="strong"`: the bold, bright clear button of the focused Artifacts search. */
 export const StrongClearDark: StoryObj<typeof meta> = { render: () => <StrongClear />, play: strongClearPlay, globals: { mode: 'dark' } }
 export const StrongClearLight: StoryObj<typeof meta> = { render: () => <StrongClear />, play: strongClearPlay, globals: { mode: 'light' } }
+
+const searchTextSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const heights = () => sizes.map((s) => canvas.getByRole('searchbox', { name: `Search, ${s}` }).parentElement?.getBoundingClientRect().height ?? 0)
+  // Small is as before: each size keeps its height.
+  await expect(heights()).toEqual([28, 32, 36])
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // Each field is at least as tall as its line of text: no placeholder or value is cut at the top or bottom.
+      await expect(shortFields(canvasElement)).toEqual([])
+      const now = heights()
+      for (const [i, h] of [28, 32, 36].entries()) await expect(now[i]).toBeGreaterThanOrEqual(h)
+    })
+  }
+}
+
+/** The search fields at Small, Default and Large (d-122): a field grows with its line of text, never below its size. */
+export const SearchTextSizesDark: StoryObj<typeof meta> = { play: searchTextSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const SearchTextSizesLight: StoryObj<typeof meta> = { play: searchTextSizesPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { LinkIcon } from '../foundations/icons'
 import { TextArea, TextField } from './text-field'
 import { expectScrollAreas } from './scroll-area.testing'
+import { atTextSize, shortFields, textSizes } from './text-size.testing'
 
 const page = css({ bg: 'bg.canvas', color: 'fg.default', p: '24', display: 'grid', gap: '20', w: 'shell.dialog' })
 const sizes = ['sm', 'md', 'lg', 'xl'] as const
@@ -216,3 +217,23 @@ const addLinkPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => 
 
 export const AddLinkDark: StoryObj<typeof meta> = { render: () => <AddLinkFields />, play: addLinkPlay, globals: { mode: 'dark' } }
 export const AddLinkLight: StoryObj<typeof meta> = { render: () => <AddLinkFields />, play: addLinkPlay, globals: { mode: 'light' } }
+
+const fieldTextSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  // Small is as before: each size keeps its height.
+  const heights = () => sizes.map((s) => canvas.getByRole('textbox', { name: `Name, ${s}` }).getBoundingClientRect().height)
+  await expect(heights()).toEqual([28, 32, 36, 44])
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // Each field is at least as tall as its line of text: no placeholder or value is cut at the top or bottom.
+      await expect(shortFields(canvasElement)).toEqual([])
+      // A field never gets shorter than its size's height.
+      const now = heights()
+      for (const [i, h] of [28, 32, 36, 44].entries()) await expect(now[i]).toBeGreaterThanOrEqual(h)
+    })
+  }
+}
+
+/** The fields at Small, Default and Large (d-122): an input grows with its line of text, never below its size. */
+export const FieldTextSizesDark: StoryObj<typeof meta> = { play: fieldTextSizesPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FieldTextSizesLight: StoryObj<typeof meta> = { play: fieldTextSizesPlay, globals: { mode: 'light', textSize: 'small' } }

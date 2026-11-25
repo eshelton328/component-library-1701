@@ -24,6 +24,11 @@ import { focusRing } from './focus'
 // the icons' own stroke of 2, so the bold x is its own icon. Figma's 14 px has no icon
 // token; `clearSize="16"` is the nearest (12 and 16 tie; d-072 takes the
 // larger).
+// At Default and Large (d-122) the line of text can be taller than the size's height less the border: the field then
+// grows with its line, with 2 above and below, and the size's height stays its least; the input takes its line's height.
+const growRoot = (size: 'sm' | 'md' | 'lg') => ({ h: 'auto', minH: `control.${size}`, py: '2' }) as const
+const lineHeight = { h: 'auto' } as const
+
 export const searchField = defineSlotRecipe({
   className: 'search-field',
   jsx: ['SearchField'],
@@ -54,6 +59,8 @@ export const searchField = defineSlotRecipe({
       flex: '1',
       minWidth: '0',
       height: '100%',
+      _textDefault: lineHeight,
+      _textLarge: lineHeight,
       bg: 'transparent',
       color: 'fg.default',
       textStyle: 'body',
@@ -79,9 +86,9 @@ export const searchField = defineSlotRecipe({
   },
   variants: {
     size: {
-      sm: { root: { h: 'control.sm' } },
-      md: { root: { h: 'control.md' } },
-      lg: { root: { h: 'control.lg' } },
+      sm: { root: { h: 'control.sm', _textDefault: growRoot('sm'), _textLarge: growRoot('sm') } },
+      md: { root: { h: 'control.md', _textDefault: growRoot('md'), _textLarge: growRoot('md') } },
+      lg: { root: { h: 'control.lg', _textDefault: growRoot('lg'), _textLarge: growRoot('lg') } },
     },
     // The clear icon size: 12 (the default), or 16 for the x in a circle of
     // Inbox D10 (346:4201, 15 in Figma). An important size in `base` would

@@ -18,15 +18,29 @@ const Foot = withContext('div', 'foot')
 /** How long "Copied" or "Copy failed" shows after a copy, in milliseconds. */
 const statusMs = 2000
 
-/** A diff line's change: `added` for a line that starts with "+", `removed` with "-"; file headers ("+++", "---") are neither. */
+/** A diff line's change: `added` for a line that starts with "+", `removed` with "-". */
 export type DiffChange = 'added' | 'removed'
 
-/** The change of one line of a diff, or undefined for a context or header line. */
-export function diffChange(line: string): DiffChange | undefined {
-  if (line.startsWith('+++') || line.startsWith('---')) return undefined
-  if (line.startsWith('+')) return 'added'
-  if (line.startsWith('-')) return 'removed'
-  return undefined
+// The lines a diff starts with before its first change: git's header lines and the file names.
+const headerLine = /^(diff |index |--- |\+\+\+ |new file|deleted file|similarity |rename |old mode|new mode)/
+
+/**
+ * The change of each line of a diff: `added` for a line that starts with "+", `removed` with "-", undefined for a
+ * context line or a header. Headers ("--- a/x", "+++ b/x", "diff --git …") are only the lines before the first hunk
+ * ("@@"), or with no hunk the leading run of header lines, so a changed line such as "+++count" or "---x" in a hunk
+ * stays a change.
+ */
+export function diffChanges(lines: readonly string[]): (DiffChange | undefined)[] {
+  const hunk = lines.findIndex((l) => l.startsWith('@@'))
+  let lead = 0
+  while (lead < lines.length && headerLine.test(lines[lead] ?? '')) lead++
+  const headers = hunk === -1 ? lead : hunk
+  return lines.map((line, i) => {
+    if (i < headers && headerLine.test(line)) return undefined
+    if (line.startsWith('+')) return 'added'
+    if (line.startsWith('-')) return 'removed'
+    return undefined
+  })
 }
 
 export type MarkdownCodeBlockProps = {
@@ -77,6 +91,7 @@ export function MarkdownCodeBlock({ code, language, segments, diff, onCopy, fold
   const folds = fold !== false && lines.length > fold + 5
   const shown = folds && !open ? lines.slice(0, fold) : lines
   const isDiff = diff ?? (language === 'diff' || language === 'patch')
+  const changes = isDiff ? diffChanges(lines) : []
   const head = language !== undefined || onCopy !== undefined
   return (
     <Root data-language={language}>
@@ -90,7 +105,7 @@ export function MarkdownCodeBlock({ code, language, segments, diff, onCopy, fold
       <Body tabIndex={0}>
         <Code>
           {shown.map((line, i) => (
-            <Line key={String(i)} data-change={isDiff ? diffChange(line) : undefined}>
+            <Line key={String(i)} data-change={changes[i]}>
               {/* The line break keeps the lines apart when the code is selected and copied. */}
               {[...codePieces(line, segments?.[i], `${String(i)}:`), i < shown.length - 1 ? '\n' : '']}
             </Line>

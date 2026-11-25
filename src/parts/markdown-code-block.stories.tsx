@@ -149,6 +149,17 @@ export const NoHead: Story = {
 
 const longCode = Array.from({ length: 30 }, (_, i) => `line ${String(i + 1)}`).join('\n')
 
+const hunkCode = ['diff --git a/count.ts b/count.ts', '--- a/count.ts', '+++ b/count.ts', '@@ -1,3 +1,3 @@', ' let count = 0', '---count', '+++count', ' export { count }'].join('\n')
+
+/** A hunk whose changed lines start like headers: "---count" is removed and "+++count" added; only the lines before "@@" are headers. */
+export const DiffHunk: Story = {
+  args: { code: hunkCode, language: 'diff', segments: undefined },
+  play: async ({ canvasElement }) => {
+    const changes = [...canvasElement.querySelectorAll('.markdown-code-block__line')].map((l) => l.getAttribute('data-change'))
+    await expect(changes).toEqual([null, null, null, null, null, 'removed', 'added', null])
+  },
+}
+
 /** A long block folds after 20 lines; "Show all 30 lines" shows the rest, and Copy still copies all 30. */
 export const Fold: Story = {
   args: { code: longCode, language: 'txt', segments: undefined, onCopy: fn(() => Promise.resolve(true)) },

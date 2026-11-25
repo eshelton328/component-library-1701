@@ -267,6 +267,8 @@ export const LargeCountLight: StoryObj<typeof meta> = { ...largeCount, globals: 
 
 
 /** The page header's actions at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
-const fixedPlay = fixedTypePlay(['.page-header__actions button'])
+// A preview build replaces the .testing helpers with functions that throw, so the helper is called inside play, never when the module loads.
+type FixedPlayContext = Parameters<ReturnType<typeof fixedTypePlay>>[0]
+const fixedPlay = (context: FixedPlayContext) => fixedTypePlay(['.page-header__actions button'])(context)
 export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

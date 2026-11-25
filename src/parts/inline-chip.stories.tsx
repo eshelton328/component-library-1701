@@ -252,3 +252,75 @@ const mentionLongNamePlay: StoryObj<typeof meta>['play'] = async ({ canvasElemen
 /** A chat name wider than the column ends with an ellipsis inside the chip. */
 export const MentionLongNameDark: StoryObj<typeof meta> = { render: () => <MentionLongName />, play: mentionLongNamePlay, globals: { mode: 'dark' } }
 export const MentionLongNameLight: StoryObj<typeof meta> = { render: () => <MentionLongName />, play: mentionLongNamePlay, globals: { mode: 'light' } }
+
+// Mentions and a file chip in one narrow paragraph, so chips sit on lines next to each other (the Design System gate,
+// beta.129: two chips on adjacent lines touched).
+function MentionAdjacentLines() {
+  return (
+    <main className={page}>
+      <div className={column} data-testid="column">
+        {(['md', 'sm'] as const).map((size) => (
+          <MarkdownView key={size} size={size}>
+            <p>
+              Ask <MentionChip name="bridge-coord" href="#a" /> or <MentionChip name="bridge-workbench" href="#b" /> or{' '}
+              <MentionChip name="bridge-settings" href="#c" /> about <FileChip path="web/src/blocks/MarkdownText.tsx" href="#d" />{' '}
+              and <MentionChip name="bridge-release" href="#e" /> then <MentionChip name="bridge-review" href="#f" /> and{' '}
+              <MentionChip name="bridge-loading" href="#g" /> last.
+            </p>
+          </MarkdownView>
+        ))}
+      </div>
+    </main>
+  )
+}
+
+/** The gaps between chips on lines next to each other, where at least one chip of the pair is a mention. */
+function mentionGaps(root: Element): number[] {
+  const chips = [...root.querySelectorAll('.inline-chip__root')]
+  const gaps: number[] = []
+  for (const a of chips) {
+    for (const b of chips) {
+      // A mention draws its name in TruncatedText; a file chip does not.
+      const mention = (chip: Element) => chip.querySelector('.truncated-text') !== null
+      if (a === b || !(mention(a) || mention(b))) continue
+      for (const top of a.getClientRects()) {
+        for (const low of b.getClientRects()) {
+          const across = Math.min(top.right, low.right) - Math.max(top.left, low.left)
+          if (across > 0 && low.top >= top.bottom - 1 && low.top - top.bottom < top.height) gaps.push(low.top - top.bottom)
+        }
+      }
+    }
+  }
+  return gaps
+}
+
+const mentionAdjacentPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  const column = canvas.getByTestId('column')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // Chips on lines next to each other keep a gap of 2 px or more, at each text size and MarkdownView size.
+      const gaps = mentionGaps(column)
+      await expect(gaps.length).toBeGreaterThan(0)
+      for (const gap of gaps) await expect(gap).toBeGreaterThanOrEqual(2)
+      // The lines keep the text's line height: each paragraph is a whole number of lines.
+      for (const paragraph of column.querySelectorAll('p')) {
+        const lines = paragraph.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(paragraph).lineHeight)
+        await expect(Math.abs(lines - Math.round(lines))).toBeLessThan(0.05)
+      }
+      await expect(textSpills(column)).toEqual([])
+    })
+  }
+}
+
+/** Mentions on lines next to each other keep a gap, at each text size. */
+export const MentionAdjacentLinesDark: StoryObj<typeof meta> = {
+  render: () => <MentionAdjacentLines />,
+  play: mentionAdjacentPlay,
+  globals: { mode: 'dark' },
+}
+export const MentionAdjacentLinesLight: StoryObj<typeof meta> = {
+  render: () => <MentionAdjacentLines />,
+  play: mentionAdjacentPlay,
+  globals: { mode: 'light' },
+}

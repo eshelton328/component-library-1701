@@ -1259,7 +1259,7 @@
           "$value": {
             "colorSpace": "srgb",
             "components": [0.8118, 0.9137, 0.9686],
-            "alpha": 0.85,
+            "alpha": 0,
             "hex": "#cfe9f7"
           }
         },

@@ -12,6 +12,7 @@ import { scrollArea } from './scroll-area'
 // centred ellipse is half the width and half the height.
 // The stars come from the theme too: backdrop.star, which the light mode
 // sets to alpha 0, as it sets glowEdge, so a theme can drop them (d-035).
+// Light sets backdrop.glow to alpha 0 too (R52), so it draws no glow and the page is the plain canvas.
 // Each star is one radial gradient layer at its Figma centre. Its 0.5 px
 // anti-aliased edge is centred on the radius (solid to r - 0.25, clear at
 // r + 0.25), so the star covers the area of its Figma circle.

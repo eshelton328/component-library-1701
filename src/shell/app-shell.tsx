@@ -74,6 +74,11 @@ const keyboardKeep = '[data-keyboard-keep]'
 // At an edge of a move the dock sets `sheetRise` on it, the keyboard's height over the layout's foot, and its recipe
 // stands it that far up; between the edges the dock moves it with a transform animation, as it moves a footer.
 const sheetDock = '[data-keyboard-dock]'
+// An element in a docked ScrollFrame body that the dock moves on the keyboard's curve from where it is drawn to its place
+// in the move's last layout (screen review R73: a new chat's centred mark, name and line, which a body with no scroll
+// shift left to jump when the layout changed at a close's start or an open's end). One element in a body; the shell owns
+// its transform during a move.
+const keyboardGlide = '[data-keyboard-glide]'
 const sheetRise = '--keyboard-dock'
 const fieldSelector = 'input, textarea, [contenteditable]'
 
@@ -348,6 +353,8 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       // `real` is the scroll position the move set or kept: a scroll by the reader or the page during the move moves
       // the end's by as much.
       bodies: Map<HTMLElement, { bottom: Track; scroll: Track; atEnd: boolean; real: number }>
+      // Each glide element's top on its track (`keyboardGlide`).
+      glides: Map<HTMLElement, Track>
       // Called when the move ends: each body's scroll listener and child observer of the move.
       cleanups: (() => void)[]
     }
@@ -388,7 +395,12 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           atEnd: tracks.atEnd && (Math.abs(moved) <= 1 || pulled),
         }
       }
-      return { footerBottom, body }
+      // A glide element's top: on its move's track, at the same time as the footers, or where the layout has it.
+      const glideTop = (el: HTMLElement) => {
+        const track = move?.glides.get(el)
+        return move === undefined || track === undefined ? el.getBoundingClientRect().top : valueAt(move, track, now)
+      }
+      return { footerBottom, body, glideTop }
     }
     const stopMotion = () => {
       const move = moving
@@ -466,6 +478,17 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const parts = dockedParts()
       const footersNow = parts.footers.map((el) => ({ el, bottom: look.footerBottom(el) }))
       const bodiesNow = parts.bodies.map((el) => ({ el, ...look.body(el) }))
+      // Each glide element of a body that moves: its top as drawn now, on the track of the move it is in, and the body's
+      // view then.
+      const viewOf = (body: HTMLElement) => {
+        const top = body.getBoundingClientRect().top + body.clientTop
+        return { top, foot: top + body.clientHeight }
+      }
+      const glidesNow = bodiesNow.flatMap(({ el: body }) =>
+        [...body.querySelectorAll(keyboardGlide)].flatMap((el) =>
+          el instanceof HTMLElement ? [{ el, body, top: look.glideTop(el), view: viewOf(body) }] : [],
+        ),
+      )
       stopMotion()
       announce(target, now)
       // The layout of the move: the one the page has, when its view is already the larger; else the larger view, of
@@ -478,6 +501,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const ends = {
         footers: footersNow.map(({ el }) => footerBase(el)),
         bodies: bodiesNow.map(({ el }) => ({ bottom: viewBottom(el), view: el.clientHeight, height: el.scrollHeight })),
+        glides: glidesNow.map(({ el, body }) => ({ top: el.getBoundingClientRect().top, view: viewOf(body) })),
       }
       if (layout !== target) lay(layout)
       // How far the keyboard reaches over a frame's moving parts at an inset: none under the detail's foot, and none
@@ -529,7 +553,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         const easings = points.map((point, i) => partEasing(point.param, points[i + 1]?.param ?? point.param))
         return { from: values[0] ?? valueNow, to, offsets, values, progress: points.map((point) => point.progress), easings }
       }
-      const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map(), cleanups: [] }
+      const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map(), glides: new Map(), cleanups: [] }
       const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
       // A footer's animation replaces its transform, the dock's own; a body's child's adds to the child's own transform
       // (Codex review of #314).
@@ -594,6 +618,20 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         }
         return { el, tracks, shifts, inView, children: [...el.children].filter(inView) }
       })
+      // A glide element moves from where it is drawn to its top at the target's layout, in step with the keyboard's reach
+      // over its frame, as a footer does: the layout of the move is its place, so a layout change at a close's start or an
+      // open's end, with the animation started or ended in the same frame, does not move it (R73). A body whose children
+      // move with a scroll shift moves it with them, so it gets no glide of its own: the two transforms would add. One out
+      // of the body's view at the start and at the end does not move.
+      const glideMoves = glidesNow.flatMap(({ el, body, top, view }, i) => {
+        const end = ends.glides[i]
+        const shifting = bodyShifts.find((shift) => shift.el === body)?.shifts.some((shift) => Math.abs(shift) >= 0.5) ?? true
+        if (end === undefined || shifting || Math.abs(end.top - top) < 0.5) return []
+        const box = el.getBoundingClientRect()
+        const seen = (at: number, { top: viewTop, foot }: { top: number; foot: number }) => at + box.height > viewTop && at < foot
+        if (!seen(top, view) && !seen(end.top, end.view)) return []
+        return [{ el, steps: track(frameUnder(body.parentElement), top, end.top), place: box.top }]
+      })
       for (const { el, steps, place, height } of footerMoves) {
         move.footers.set(el, steps)
         sizes.set(el, height)
@@ -605,6 +643,15 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           el,
           steps,
           steps.values.map((value) => value - place),
+        )
+      }
+      for (const { el, steps, place } of glideMoves) {
+        move.glides.set(el, steps)
+        animate(
+          el,
+          steps,
+          steps.values.map((value) => value - place),
+          'add',
         )
       }
       for (const { el, tracks, shifts, inView, children } of bodyShifts) {

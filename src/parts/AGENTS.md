@@ -57,6 +57,11 @@ under their purpose group, never under "Parts" (d-065).
   the frame shows a skeleton, the diagram or the reason and source, and
   a "Show source" toggle. Its body takes the focus, so a wide diagram
   scrolls with the arrow keys, as the Table frame does.
+- `ImageFigure` is an image in a Markdown message: the picture at its own
+  size up to the column's width, a button that opens it in a `wide`
+  Dialog, a skeleton while it loads and a line with its text alternative
+  when it does not load. It loads only the `src` it gets; the caller
+  decides which URLs may load.
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
 - The Table parts (`table.tsx`) work as react-markdown overrides for

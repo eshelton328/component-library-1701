@@ -724,6 +724,24 @@ export type IconRecipe = ConfigRecipeRuntimeFn<IconVariantProps, IconVariantMap>
 
 export declare const icon: IconRecipe;
 
+// image-figure.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type ImageFigureVariant = {}
+
+export type ImageFigureVariantProps = {
+  [K in keyof ImageFigureVariant]?: ConditionalValue<ImageFigureVariant[K]>
+}
+
+export type ImageFigureVariantMap = RecipeVariantMap<ImageFigureVariant>
+
+export type ImageFigureSlot = "root" | "trigger" | "image" | "placeholder" | "message" | "zoom"
+
+export type ImageFigureRecipe = ConfigSlotRecipeRuntimeFn<ImageFigureSlot, ImageFigureVariantProps, ImageFigureVariantMap>
+
+export declare const imageFigure: ImageFigureRecipe;
+
 // index.d.ts
 export * from './backdrop.js';
 export * from './bare-icon-button.js';
@@ -773,6 +791,7 @@ export * from './glyph.js';
 export * from './group-header.js';
 export * from './grouped-bar-chart.js';
 export * from './horizontal-bar-chart.js';
+export * from './image-figure.js';
 export * from './inline-chip.js';
 export * from './item-tabs.js';
 export * from './kind-badge.js';

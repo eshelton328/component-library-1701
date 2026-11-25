@@ -732,6 +732,7 @@ export * from './glyph.js';
 export * from './group-header.js';
 export * from './grouped-bar-chart.js';
 export * from './horizontal-bar-chart.js';
+export * from './inline-chip.js';
 export * from './item-tabs.js';
 export * from './kind-badge.js';
 export * from './kpi-tile.js';
@@ -776,6 +777,26 @@ export * from './tree-view.js';
 export * from './view-switch.js';
 export * from './workbench.js';
 export * from './workspace-tabs.js';
+
+// inline-chip.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type InlineChipVariant = {
+  kind?: "file" | "mention"
+}
+
+export type InlineChipVariantProps = {
+  [K in keyof InlineChipVariant]?: ConditionalValue<InlineChipVariant[K]>
+}
+
+export type InlineChipVariantMap = RecipeVariantMap<InlineChipVariant>
+
+export type InlineChipSlot = "root" | "icon" | "label" | "detail"
+
+export type InlineChipRecipe = ConfigSlotRecipeRuntimeFn<InlineChipSlot, InlineChipVariantProps, InlineChipVariantMap>
+
+export declare const inlineChip: InlineChipRecipe;
 
 // item-tabs.d.ts
 import type { ConditionalValue } from '../types/system.js';

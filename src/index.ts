@@ -188,6 +188,8 @@ export {
   WorkspacesIcon,
 } from './foundations/icons'
 export type { IconProps, IconSize } from './foundations/icons'
+export { FileChip, MentionChip } from './parts/inline-chip'
+export type { FileChipProps, InlineChipLinkProps, MentionChipProps } from './parts/inline-chip'
 export { KindBadge, MetaChip, MetaChipButton, MetaLine, PathBadge, TagsLine } from './parts/meta-line'
 export type { KindBadgeProps, MetaChipButtonProps, MetaChipProps, MetaLineProps, PathBadgeProps, TagsLineProps, ToolkitKind } from './parts/meta-line'
 export { GroupHeader } from './parts/group-header'

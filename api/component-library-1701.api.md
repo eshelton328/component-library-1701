@@ -9,6 +9,7 @@ import { BackdropVariantProps } from '../../styled-system/recipes';
 import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
 import { ErrorStateVariantProps } from '../../styled-system/recipes';
 import { FileBrowserVariantProps } from '../../styled-system/recipes';
@@ -611,6 +612,15 @@ export type FileBrowserProps = Scalar<FileBrowserVariantProps> & {
 };
 
 // @public
+export function FileChip(input: FileChipProps): JSX.Element;
+
+// @public (undocumented)
+export type FileChipProps = InlineChipLinkProps & {
+    path: string;
+    line?: number | undefined;
+};
+
+// @public
 export function FileFrame(input: FileFrameProps): JSX.Element;
 
 // @public
@@ -888,6 +898,9 @@ export type InboxRowSkeletonProps = {
 
 // @public
 export function Inline(props: InlineProps): JSX.Element;
+
+// @public
+export type InlineChipLinkProps = Omit<ComponentPropsWithRef<'a'>, 'children' | 'className' | 'style'>;
 
 // @public
 export type InlineProps = ComponentProps<'div'> & Scalar<LayoutInlineVariantProps>;
@@ -1175,6 +1188,14 @@ export type MarkdownViewProps = {
 
 // @public
 export function MaximizeIcon(props: IconProps): JSX.Element;
+
+// @public
+export function MentionChip(input: MentionChipProps): JSX.Element;
+
+// @public (undocumented)
+export type MentionChipProps = InlineChipLinkProps & {
+    name: string;
+};
 
 // @public
 export function Menu(input: MenuProps): JSX.Element;

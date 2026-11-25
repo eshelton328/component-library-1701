@@ -177,6 +177,7 @@ export type CardVariant = {
   padding?: "default" | "compact"
   metaSpacer?: boolean
   badgePosition?: "title" | "end"
+  descriptionLines?: "1" | "2"
 }
 
 export type CardVariantProps = {

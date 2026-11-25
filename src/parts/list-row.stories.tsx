@@ -1214,6 +1214,19 @@ function GrowRows() {
             }
             onSelect={() => { onSelect('grow-2') }}
           />
+          <ListRow
+            variant="sidebar"
+            density="compact"
+            title="An ID with no spaces"
+            meta={
+              <Inline gap="4">
+                <span>chat-01JD3Z8Q4W7XKM2RVA9N6T5BYC-fork-of-the-first-chat</span>
+                <ContextMeter value={4} high={false} />
+              </Inline>
+            }
+            trailing={<StatusPill tone="running" label="Running" />}
+            onSelect={() => { onSelect('grow-3') }}
+          />
         </Stack>
       </div>
     </main>
@@ -1238,9 +1251,12 @@ const growRowsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
       if (textMeta === null) throw new Error('no text meta')
       await expectGrown(textMeta, ['.truncated-text'])
       await expect(textSpills(rows)).toEqual([])
-      // The meter's value stays inside the row's meta, on a line of its own if it must.
+      // The meter's value stays inside the row's meta, on a line of its own if it must, and a long ID breaks inside
+      // the meta instead of running under the trailing status.
       for (const meta of rows.querySelectorAll('.list-row__meta')) {
         await expect(meta.scrollWidth).toBeLessThanOrEqual(meta.clientWidth)
+        const metaBox = meta.getBoundingClientRect()
+        for (const item of meta.querySelectorAll('span')) await expect(item.getBoundingClientRect().right).toBeLessThanOrEqual(metaBox.right + 1)
       }
     })
   }

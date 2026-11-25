@@ -100,14 +100,17 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   between the title and the age only keeps a long title off the age.
 //   The title button's ::after still covers the row, so a click on the
 //   age selects it. `column`, the default, keeps the trailing column.
-// A sidebar row's meta at Default and Large (d-131): it wraps, a row of items in it wraps onto more lines, and an item
-// may shrink and break a long word (an ID with no spaces), so nothing runs past the row into its trailing status.
+// A sidebar row's meta at Default and Large (d-131): it wraps, and a row of items in it (an Inline) wraps onto more
+// lines; the wrap is important, as the Inline's own nowrap wins over this recipe otherwise and its items shrink. An item
+// never shrinks below its text's width (flexShrink 0), so a model name stays whole and a ContextMeter that no longer
+// fits beside it moves to its own line; an item is at most as wide as the row, so only a word longer than the row (an
+// ID with no spaces) breaks, and nothing runs past the row into its trailing status.
 const growMeta = {
   overflow: 'visible',
   whiteSpace: 'normal',
   overflowWrap: 'anywhere',
-  '& > *': { flexWrap: 'wrap', minW: '0' },
-  '& > * > *': { minW: '0' },
+  '& > *': { flexWrap: 'wrap!', minW: '0' },
+  '& > * > *': { minW: '0', flexShrink: '0', maxW: '100%' },
 } as const
 
 export const listRow = defineSlotRecipe({

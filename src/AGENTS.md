@@ -31,8 +31,8 @@ you add a file. `theme/` is not a tier.
   (a tab, a pane header, a tree row) never takes `grow`. Its
   `TextSizes` story calls `expectGrown` with the slots that grow.
 - Chrome keeps the Small type at every text size (d-131): the tab bar,
-  the page header's actions, the pane header, the workspace tabs and hint
-  bar, and the map canvas set `data-text-fixed` on their root, which sets
+  the nav rail, the page header's actions, the pane header, the workspace
+  tabs and hint bar, and the map canvas set `data-text-fixed` on their root, which sets
   the type tokens back (`_textFixed` in the token build). Its
   `FixedTextSizes` story uses `fixedTypePlay`. Text there that sets no
   text style of its own inherits the page's size; give it one.
@@ -55,7 +55,9 @@ you add a file. `theme/` is not a tier.
 - A part whose text must not be cut at the Default and Large text sizes
   (d-122) has a `<Name>TextSizes` Dark and Light pair that renders it at
   Small and checks Small is as before, then at the larger sizes with
-  `atTextSize` and `textSpills` (`controls/text-size.testing.ts`). The
+  `atTextSize` and `textSpills` (`controls/text-size.testing.ts`);
+  `brokenWords` for text that wraps (no word broken inside), and
+  `shortFields` for a field (its line fits its height). The
   larger sizes change a recipe only under `_textDefault` and
   `_textLarge`, so Small stays the Figma frames' size.
 - A play that moves a fake `visualViewport` takes it from `viewportPlay`,

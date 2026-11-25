@@ -8,6 +8,7 @@ import { AppShellVariantProps } from '../../styled-system/recipes';
 import { BackdropVariantProps } from '../../styled-system/recipes';
 import { BadgeVariantProps } from '../../styled-system/recipes';
 import { ButtonVariantProps } from '../../styled-system/recipes';
+import { CalloutVariantProps } from '../../styled-system/recipes';
 import type { ComponentProps } from 'react';
 import type { ComponentPropsWithRef } from 'react';
 import { DialogVariantProps } from '../../styled-system/recipes';
@@ -224,6 +225,9 @@ export function BranchIcon(props: IconProps): JSX.Element;
 export function BubbleIcon(props: IconProps): JSX.Element;
 
 // @public
+export function BulbIcon(props: IconProps): JSX.Element;
+
+// @public
 export function Button(input: ButtonProps): JSX.Element;
 
 // @public
@@ -234,6 +238,18 @@ export type ButtonProps = ComponentProps<'button'> & Scalar<ButtonVariantProps> 
 
 // @public
 export function CalendarIcon(props: IconProps): JSX.Element;
+
+// @public
+export function Callout(input: CalloutProps): JSX.Element;
+
+// @public (undocumented)
+export type CalloutProps = Scalar<CalloutVariantProps> & {
+    title?: string | undefined;
+    children?: ReactNode;
+};
+
+// @public
+export type CalloutTone = NonNullable<CalloutProps['tone']>;
 
 // @public
 export function Card(input: CardProps): JSX.Element;
@@ -518,6 +534,23 @@ export type DetailSplitProps = {
     children?: ReactNode;
     side?: ReactNode;
 };
+
+// @public
+export function DiagramFrame(input: DiagramFrameProps): JSX.Element;
+
+// @public (undocumented)
+export type DiagramFrameProps = {
+    label: string;
+    source: string;
+    state?: DiagramState | undefined;
+    error?: string | undefined;
+    children?: ReactNode;
+    showSource?: boolean | undefined;
+    onShowSourceChange?: ((showSource: boolean) => void) | undefined;
+};
+
+// @public
+export type DiagramState = 'loading' | 'ready' | 'error';
 
 // @public
 export function Dialog(input: DialogProps): JSX.Element;
@@ -895,6 +928,9 @@ export function InboxRowSkeleton(input: InboxRowSkeletonProps): JSX.Element;
 export type InboxRowSkeletonProps = {
     phone?: boolean | undefined;
 };
+
+// @public
+export function InfoIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Inline(props: InlineProps): JSX.Element;
@@ -1602,6 +1638,9 @@ export type RadioMenuProps = {
 export function RefreshIcon(props: IconProps): JSX.Element;
 
 // @public
+export function ReportIcon(props: IconProps): JSX.Element;
+
+// @public
 export function ResetIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -1799,6 +1838,9 @@ export type StatusPillProps = Scalar<StatusPillVariantProps> & {
 
 // @public
 export function StopIcon(props: IconProps): JSX.Element;
+
+// @public
+export function StopSignIcon(props: IconProps): JSX.Element;
 
 // @public
 export function Switch(input: SwitchProps): JSX.Element;

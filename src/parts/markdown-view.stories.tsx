@@ -5,6 +5,7 @@ import { css } from '../../styled-system/css'
 import { CodeLines, type CodeKind, type CodeSegment } from './code-lines'
 import { MarkdownView, type MarkdownHighlight } from './markdown-view'
 import { ScriptExplanation, type ScriptStep } from './script-explanation'
+import { expectScrollAreas } from '../controls/scroll-area.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'flex', flexWrap: 'wrap', gap: '24', alignItems: 'flex-start' })
 // The file preview and viewer panels of Toolkit D3, D6 and D10 (#0f1626, merged into surface.overlay).
@@ -668,3 +669,46 @@ export const NarrowLight: StoryObj<typeof meta> = {
   parameters: { viewport: { options: phone } },
   globals: { mode: 'light', viewport: { value: 'm08' } },
 }
+
+const phoneColumn = css({ w: 'shell.popover', bg: 'surface.pane' })
+const wideFormula = css({ display: 'inline-block', w: 'shell.dialogLg' })
+// Math as KaTeX writes it: `.katex` inline and a `.katex-display` block. The app gives the block a tab stop.
+function MathText() {
+  return (
+    <main className={page}>
+      <div className={phoneColumn}>
+        <MarkdownView>
+          <p>
+            The area is <span className="katex">πr²</span> here.
+          </p>
+          <div className="katex-display" tabIndex={0} data-testid="display">
+            <span className="katex">
+              <span className={wideFormula}>a wide display formula that is wider than the phone column</span>
+            </span>
+          </div>
+          <p>After the formula.</p>
+        </MarkdownView>
+      </div>
+    </main>
+  )
+}
+
+const mathPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const display = within(canvasElement).getByTestId('display')
+  // A wide display formula scrolls sideways in its own box; the column does not.
+  await expectScrollAreas(canvasElement, 'x', '.katex-display')
+  await expect(display.scrollWidth).toBeGreaterThan(display.clientWidth)
+  const column = display.closest('.markdown-view')
+  if (!(column instanceof HTMLElement)) throw new Error('no view')
+  await expect(column.scrollWidth).toBeLessThanOrEqual(column.clientWidth)
+  // No margin of its own: the view's 10 px gap sets it apart, as every block.
+  await expect(getComputedStyle(display).marginTop).toBe('0px')
+  // The formula keeps the text colour round it.
+  const inline = canvasElement.querySelector('p .katex')
+  if (!(inline instanceof HTMLElement)) throw new Error('no inline formula')
+  await expect(getComputedStyle(inline).color).toBe(getComputedStyle(inline.parentElement ?? inline).color)
+}
+
+/** KaTeX math in the phone column: a wide display formula scrolls in its own box, and a formula keeps the text colour. */
+export const MathDark: StoryObj<typeof meta> = { render: () => <MathText />, play: mathPlay, globals: { mode: 'dark' } }
+export const MathLight: StoryObj<typeof meta> = { render: () => <MathText />, play: mathPlay, globals: { mode: 'light' } }

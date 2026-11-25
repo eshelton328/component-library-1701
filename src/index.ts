@@ -91,6 +91,10 @@ export { TerminalLines } from './parts/terminal-lines'
 export type { TerminalLine, TerminalLinesProps } from './parts/terminal-lines'
 export { MarkdownView } from './parts/markdown-view'
 export type { MarkdownHighlight, MarkdownViewProps } from './parts/markdown-view'
+export { Callout } from './parts/callout'
+export type { CalloutProps, CalloutTone } from './parts/callout'
+export { DiagramFrame } from './parts/diagram-frame'
+export type { DiagramFrameProps, DiagramState } from './parts/diagram-frame'
 export { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from './parts/table'
 export type { MarkdownNodeProps, TableAlign, TableBodyProps, TableCellProps, TableHeadProps, TableHeaderCellProps, TableProps, TableRowProps } from './parts/table'
 export { ScriptExplanation } from './parts/script-explanation'
@@ -117,6 +121,7 @@ export {
   BrainIcon,
   BranchIcon,
   BubbleIcon,
+  BulbIcon,
   CalendarIcon,
   ChartIcon,
   ChatIcon,
@@ -146,6 +151,7 @@ export {
   HomeIcon,
   HookIcon,
   InboxIcon,
+  InfoIcon,
   LinearIcon,
   LinkIcon,
   LinkMarkIcon,
@@ -164,6 +170,7 @@ export {
   ProjectsIcon,
   QuestionIcon,
   RefreshIcon,
+  ReportIcon,
   ResetIcon,
   ReviewIcon,
   RuleIcon,
@@ -178,6 +185,7 @@ export {
   SparkleIcon,
   SplitIcon,
   StopIcon,
+  StopSignIcon,
   TagIcon,
   TerminalIcon,
   ToolkitIcon,

@@ -950,3 +950,47 @@ export function CompassIcon(props: IconProps) {
     </Svg>
   )
 }
+
+/** Information: a circle with an i. The icon of a note callout. Figma has no drawing of it; it is drawn on the 24 grid. */
+export function InfoIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M12 21C16.971 21 21 16.971 21 12C21 7.029 16.971 3 12 3C7.029 3 3 7.029 3 12C3 16.971 7.029 21 12 21Z" />
+      <path d="M12 16V11" />
+      <path d="M12 7.9V8.1" />
+    </Svg>
+  )
+}
+
+/** A light bulb. The icon of a tip callout. Figma has no drawing of it; it is drawn on the 24 grid. */
+export function BulbIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M9 18H15" />
+      <path d="M10 21H14" />
+      <path d="M15.1 14.5C15.3 13.6 15.8 12.9 16.4 12.2C17.4 11.2 18 9.9 18 8.5C18 5.2 15.3 2.5 12 2.5C8.7 2.5 6 5.2 6 8.5C6 9.9 6.6 11.2 7.6 12.2C8.2 12.9 8.7 13.6 8.9 14.5" />
+    </Svg>
+  )
+}
+
+/** A speech bubble with an exclamation mark. The icon of an important callout. Figma has no drawing of it; it is drawn on the 24 grid. */
+export function ReportIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M4 4H20V16H9L4 20V4Z" />
+      <path d="M12 7V10.5" />
+      <path d="M12 12.9V13.1" />
+    </Svg>
+  )
+}
+
+/** A stop sign: an octagon with an exclamation mark. The icon of a caution callout. Figma has no drawing of it; it is drawn on the 24 grid. */
+export function StopSignIcon(props: IconProps) {
+  return (
+    <Svg {...props} strokeWidth="2">
+      <path d="M8.3 3H15.7L21 8.3V15.7L15.7 21H8.3L3 15.7V8.3L8.3 3Z" />
+      <path d="M12 8V12.5" />
+      <path d="M12 15.9V16.1" />
+    </Svg>
+  )
+}

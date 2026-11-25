@@ -54,7 +54,8 @@ export function Pane({ title, leading, meta, actions, focused = false, onActivat
       onPointerDown={activate}
       onFocus={activate}
     >
-      <Header>
+      {/* The pane header is chrome: it keeps the Small type at every text size (d-131). */}
+      <Header data-text-fixed="">
         {shown(leading) ? <Leading>{leading}</Leading> : null}
         <Title id={titleId}>
           <TruncatedText>{title}</TruncatedText>

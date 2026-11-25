@@ -97,7 +97,7 @@ export function FileFrame({
       <Bar data-figma={figma?.bar}>
         <Icon>{icon === 'code' ? <CodeIcon size="16" /> : <FileIcon size="16" />}</Icon>
         <Name>
-          <TruncatedText>{name}</TruncatedText>
+          <TruncatedText grow>{name}</TruncatedText>
         </Name>
         {shown(meta) ? <Meta>{typeof meta === 'string' ? <TruncatedText grow>{meta}</TruncatedText> : meta}</Meta> : null}
         {hasActions || onCopy !== undefined || readOnly ? (

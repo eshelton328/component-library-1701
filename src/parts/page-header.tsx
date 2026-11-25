@@ -46,7 +46,7 @@ export function PageHeader({ title, count, countLabel, level = 1, size, countSiz
       </Title>
       {hasCount ? <Count aria-hidden={spoken === undefined ? undefined : true}>{count}</Count> : null}
       {hasCount && spoken !== undefined ? <CountLabel>{spoken}</CountLabel> : null}
-      {children === undefined || children === null ? null : <Actions>{children}</Actions>}
+      {children === undefined || children === null ? null : <Actions data-text-fixed="">{children}</Actions>}
     </Root>
   )
 }

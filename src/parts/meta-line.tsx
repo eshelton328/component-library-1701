@@ -87,7 +87,8 @@ export function MetaChip({ label, icon, size, tone, surface }: MetaChipProps) {
     <ChipRoot size={size} tone={tone} surface={surface}>
       {present(icon) ? <ChipIcon>{icon}</ChipIcon> : null}
       <ChipLabel>
-        <TruncatedText>{label}</TruncatedText>
+        {/* Content at the larger text sizes (d-131): the label wraps and the chip grows. */}
+        <TruncatedText grow>{label}</TruncatedText>
       </ChipLabel>
     </ChipRoot>
   )

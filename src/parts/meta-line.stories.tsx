@@ -6,6 +6,7 @@ import { Menu } from '../controls/menu'
 import { CopyIcon, FolderIcon, HookIcon, SkillIcon, TagIcon } from '../foundations/icons'
 import { KindBadge, MetaChip, MetaChipButton, MetaLine, PathBadge, TagsLine } from './meta-line'
 import { expectCutText } from '../controls/tooltip.testing'
+import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24' })
 const pane = css({ bg: 'surface.pane', p: '16', borderRadius: 'xl', w: 'shell.listPane' })
@@ -663,3 +664,37 @@ const pathCopyPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** `PathBadge onCopy`: the badge ends with a bare 12 px copy icon that reports the path, and keeps its height. */
 export const PathCopyDark: StoryObj<typeof meta> = { render: () => <CopyBadges />, globals: { mode: 'dark' }, play: pathCopyPlay }
 export const PathCopyLight: StoryObj<typeof meta> = { render: () => <CopyBadges />, globals: { mode: 'light' }, play: pathCopyPlay }
+
+
+// A MetaChip at each text size (d-131): Small cuts a long label with an ellipsis, as before; at Default and Large the
+// label wraps and the chip grows.
+function GrowChip() {
+  return (
+    <main className={css({ bg: 'bg.canvas', color: 'fg.default', p: '24' })}>
+      <div className={css({ w: 'shell.popoverSm' })} data-testid="grow-chip">
+        <MetaChip label="f-005-the-bridge-requirements-and-the-design-notes" icon={<FolderIcon size="12" />} />
+      </div>
+    </main>
+  )
+}
+
+const growChipPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const chip = within(canvasElement).getByTestId('grow-chip')
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      const label = chip.querySelector('.truncated-text')
+      if (!(label instanceof HTMLElement)) throw new Error('no label')
+      if (size === 'small') {
+        await expect(getComputedStyle(label).textOverflow).toBe('ellipsis')
+        await waitFor(() => expect(label.scrollWidth).toBeGreaterThan(label.clientWidth))
+        return
+      }
+      await expectGrown(chip, ['.truncated-text'])
+      await expect(textSpills(chip)).toEqual([])
+    })
+  }
+}
+
+/** A long MetaChip label at Small, Default and Large: the larger sizes wrap it. */
+export const ChipTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowChip />, play: growChipPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const ChipTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowChip />, play: growChipPlay, globals: { mode: 'light', textSize: 'small' } }

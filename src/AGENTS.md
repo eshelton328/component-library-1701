@@ -30,6 +30,12 @@ you add a file. `theme/` is not a tier.
   ellipsis, Default and Large wrap it and the box grows. One-line chrome
   (a tab, a pane header, a tree row) never takes `grow`. Its
   `TextSizes` story calls `expectGrown` with the slots that grow.
+- Chrome keeps the Small type at every text size (d-131): the tab bar,
+  the page header's actions, the pane header, the workspace tabs and hint
+  bar, and the map canvas set `data-text-fixed` on their root, which sets
+  the type tokens back (`_textFixed` in the token build). Its
+  `FixedTextSizes` story uses `fixedTypePlay`. Text there that sets no
+  text style of its own inherits the page's size; give it one.
 - `fg.subtle` only on the surfaces its description names; on
   `surface.raised` or `surface.selected`, use `fg.muted`.
 

@@ -7,6 +7,7 @@ import { Pane } from './pane'
 import { SplitPanes, type SplitPart } from './split-panes'
 import { expectCutText } from '../controls/tooltip.testing'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { fixedTypePlay } from '../controls/text-size.testing'
 
 const frame = css({ h: 'shell.dialogLg', p: '10', bg: 'bg.canvas' })
 const body = css({ textStyle: 'body', color: 'fg.default', p: '12' })
@@ -296,3 +297,9 @@ export const LongTitle: StoryObj<typeof meta> = {
     await expect(within(canvasElement).getByRole('region', { name: 'skill-eval-round-with-held-out-cases-and-a-trigger-set' })).toBeInTheDocument()
   },
 }
+
+
+/** The pane headers at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
+const fixedPlay = fixedTypePlay(['.pane__title'])
+export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

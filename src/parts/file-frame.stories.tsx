@@ -281,8 +281,8 @@ const cutAtSizesPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) 
       await expect(rect(readOnly).top).toBeGreaterThanOrEqual(rect(name).bottom)
       // Its row ends 12 in from the border, where the bar's end is.
       await expect(rect(readOnly).right).toBe(rect(short).right - 13)
-      // A name too long for its row still ends with an ellipsis and its tooltip.
-      await expectCutText(el(frame('sizes-long'), '.file-frame__name'), 'agents/diagram-reviewer-long-name.md')
+      // A name too long for its row wraps and shows whole (d-131): content text gains no ellipsis at the larger sizes.
+      await expectGrown(frame('sizes-long'), ['.file-frame__name'])
       // With room to spare the bar keeps one row, Read-only at its end.
       const roomy = frame('sizes-wide')
       await expect(rect(el(roomy, '.file-frame__readOnly')).top).toBe(rect(el(roomy, '.file-frame__name')).top)

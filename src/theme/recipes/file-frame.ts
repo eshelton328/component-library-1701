@@ -40,7 +40,8 @@ import { defineSlotRecipe } from '@pandacss/dev'
 //   own when it does not fit after the name, at the bar's end, 8 under the
 //   name's row (the bar's gap). The meta takes only the room the name and
 //   the end group leave on the first row, so it gives way first, as at
-//   Small; a name too long for its row still ends with an ellipsis.
+//   Small. A name too long for its row wraps at those sizes (TruncatedText
+//   grow, d-131), as the meta does.
 // The fill is `surface.pane` with no glass blur, as Figma draws the box.
 // `barEnd: 'cut'` at Default and Large: the bar wraps and the end group keeps its width.
 const wrappedBar = { flexWrap: 'wrap' } as const

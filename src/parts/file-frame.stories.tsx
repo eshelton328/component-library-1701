@@ -304,6 +304,9 @@ function GrowMeta() {
       <div className={narrow} data-testid="grow-meta">
         <FileFrame name="hook.sh" meta="bash · 142 lines · run, not read, by the Stop hook" barEnd="keep" />
       </div>
+      <div className={narrow} data-testid="grow-meta-long-name">
+        <FileFrame name="agents/diagram-reviewer-with-a-very-long-name.md" meta="88 lines" readOnly />
+      </div>
     </main>
   )
 }
@@ -321,6 +324,14 @@ const growMetaPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
       }
       await expectGrown(frame, ['.file-frame__meta'])
       await expect(textSpills(frame)).toEqual([])
+      // A long name and Read-only never squeeze the meta into a column of letters: "88 lines" keeps its words whole,
+      // so it takes at most two lines, and the name gives way with its ellipsis.
+      const squeezed = within(canvasElement).getByTestId('grow-meta-long-name')
+      const shortMeta = squeezed.querySelector('.file-frame__meta .truncated-text')
+      if (!(shortMeta instanceof HTMLElement)) throw new Error('no meta')
+      const lineHeight = Number.parseFloat(getComputedStyle(shortMeta).lineHeight)
+      await expect(shortMeta.getBoundingClientRect().height).toBeLessThanOrEqual(2 * lineHeight + 1)
+      await expect(shortMeta.scrollWidth).toBeLessThanOrEqual(shortMeta.clientWidth)
     })
   }
 }

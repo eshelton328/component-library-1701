@@ -69,7 +69,18 @@ export const fileFrame = defineSlotRecipe({
     icon: { display: 'inline-flex', flexShrink: '0' },
     // The meta gives way before the name: it shrinks 4 times as fast.
     name: { textStyle: 'mono', color: 'fg.default', whiteSpace: 'nowrap', minW: '0', flexShrink: '1' },
-    meta: { textStyle: 'mono', color: 'fg.muted', whiteSpace: 'nowrap', minW: '0', flexShrink: '4', overflow: 'hidden' },
+    // At Default and Large (d-131) the meta wraps (TruncatedText grow) and keeps its longest word as its least width,
+    // so a long name or the end group never squeezes it into a column of single letters.
+    meta: {
+      textStyle: 'mono',
+      color: 'fg.muted',
+      whiteSpace: 'nowrap',
+      minW: '0',
+      flexShrink: '4',
+      overflow: 'hidden',
+      _textDefault: { minW: 'min-content' },
+      _textLarge: { minW: 'min-content' },
+    },
     end: { display: 'inline-flex', alignItems: 'center', gap: '8', ms: 'auto', flexShrink: '0' },
     readOnly: { display: 'inline-flex', alignItems: 'center', gap: '8', textStyle: 'small', whiteSpace: 'nowrap' },
     // In a bounded parent (a FileBrowser in a pane) the body scrolls, so a long file stays reachable.

@@ -531,6 +531,68 @@
           }
         }
       },
+      "callout": {
+        "note": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.3686, 0.8824, 1], "alpha": 1, "hex": "#5ee1ff" },
+            "$description": "The icon and title of a Markdown callout for a note: background or context worth knowing (GitHub's > [!NOTE]). Only in Callout; today the same value as status.working.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.3686, 0.8824, 1], "alpha": 0.5, "hex": "#5ee1ff" },
+            "$description": "The 1 px border of a Markdown callout for a note: background or context worth knowing. Only in Callout; today the same value as status.working.border, so a theme can change it alone."
+          }
+        },
+        "tip": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.4314, 0.9059, 0.6588], "alpha": 1, "hex": "#6ee7a8" },
+            "$description": "The icon and title of a Markdown callout for a tip: advice that helps but is optional (GitHub's > [!TIP]). Only in Callout; today the same value as status.done.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.4314, 0.9059, 0.6588], "alpha": 0.5, "hex": "#6ee7a8" },
+            "$description": "The 1 px border of a Markdown callout for a tip: advice that helps but is optional. Only in Callout; today the same value as status.done.border, so a theme can change it alone."
+          }
+        },
+        "important": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.6196, 0.5608, 1], "alpha": 1, "hex": "#9e8fff" },
+            "$description": "The icon and title of a Markdown callout for important: what the reader must know to succeed (GitHub's > [!IMPORTANT]). Only in Callout; today the same value as status.running.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.6196, 0.5608, 1], "alpha": 0.5, "hex": "#9e8fff" },
+            "$description": "The 1 px border of a Markdown callout for important: what the reader must know to succeed. Only in Callout; today the same value as status.running.border, so a theme can change it alone."
+          }
+        },
+        "warning": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [1, 0.7216, 0.4196], "alpha": 1, "hex": "#ffb86b" },
+            "$description": "The icon and title of a Markdown callout for a warning: a risk that needs the reader's attention (GitHub's > [!WARNING]). Only in Callout; today the same value as status.needsYou.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [1, 0.7216, 0.4196], "alpha": 0.5, "hex": "#ffb86b" },
+            "$description": "The 1 px border of a Markdown callout for a warning: a risk that needs the reader's attention. Only in Callout; today the same value as status.needsYou.border, so a theme can change it alone."
+          }
+        },
+        "caution": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [1, 0.4196, 0.502], "alpha": 1, "hex": "#ff6b80" },
+            "$description": "The icon and title of a Markdown callout for caution: an action with a bad or destructive outcome (GitHub's > [!CAUTION]). Only in Callout; today the same value as status.danger.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [1, 0.4196, 0.502], "alpha": 0.5, "hex": "#ff6b80" },
+            "$description": "The 1 px border of a Markdown callout for caution: an action with a bad or destructive outcome. Only in Callout; today the same value as status.danger.border, so a theme can change it alone."
+          }
+        }
+      },
       "diff": {
         "added": {
           "fg": {
@@ -1402,6 +1464,68 @@
               "alpha": 0.5,
               "hex": "#bc273e"
             }
+          }
+        }
+      },
+      "callout": {
+        "note": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.0549, 0.4157, 0.5216], "alpha": 1, "hex": "#0e6a85" },
+            "$description": "The icon and title of a Markdown callout for a note: background or context worth knowing (GitHub's > [!NOTE]). Only in Callout; today the same value as status.working.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.0549, 0.4157, 0.5216], "alpha": 0.5, "hex": "#0e6a85" },
+            "$description": "The 1 px border of a Markdown callout for a note: background or context worth knowing. Only in Callout; today the same value as status.working.border, so a theme can change it alone."
+          }
+        },
+        "tip": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.0863, 0.451, 0.2471], "alpha": 1, "hex": "#16733f" },
+            "$description": "The icon and title of a Markdown callout for a tip: advice that helps but is optional (GitHub's > [!TIP]). Only in Callout; today the same value as status.done.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.0863, 0.451, 0.2471], "alpha": 0.5, "hex": "#16733f" },
+            "$description": "The 1 px border of a Markdown callout for a tip: advice that helps but is optional. Only in Callout; today the same value as status.done.border, so a theme can change it alone."
+          }
+        },
+        "important": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.3569, 0.2941, 0.8392], "alpha": 1, "hex": "#5b4bd6" },
+            "$description": "The icon and title of a Markdown callout for important: what the reader must know to succeed (GitHub's > [!IMPORTANT]). Only in Callout; today the same value as status.running.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.3569, 0.2941, 0.8392], "alpha": 0.5, "hex": "#5b4bd6" },
+            "$description": "The 1 px border of a Markdown callout for important: what the reader must know to succeed. Only in Callout; today the same value as status.running.border, so a theme can change it alone."
+          }
+        },
+        "warning": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.6039, 0.2902, 0.0235], "alpha": 1, "hex": "#9a4a06" },
+            "$description": "The icon and title of a Markdown callout for a warning: a risk that needs the reader's attention (GitHub's > [!WARNING]). Only in Callout; today the same value as status.needsYou.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.6039, 0.2902, 0.0235], "alpha": 0.5, "hex": "#9a4a06" },
+            "$description": "The 1 px border of a Markdown callout for a warning: a risk that needs the reader's attention. Only in Callout; today the same value as status.needsYou.border, so a theme can change it alone."
+          }
+        },
+        "caution": {
+          "fg": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.7373, 0.1529, 0.2431], "alpha": 1, "hex": "#bc273e" },
+            "$description": "The icon and title of a Markdown callout for caution: an action with a bad or destructive outcome (GitHub's > [!CAUTION]). Only in Callout; today the same value as status.danger.fg, so a theme can change it alone."
+          },
+          "border": {
+            "$type": "color",
+            "$value": { "colorSpace": "srgb", "components": [0.7373, 0.1529, 0.2431], "alpha": 0.5, "hex": "#bc273e" },
+            "$description": "The 1 px border of a Markdown callout for caution: an action with a bad or destructive outcome. Only in Callout; today the same value as status.danger.border, so a theme can change it alone."
           }
         }
       },

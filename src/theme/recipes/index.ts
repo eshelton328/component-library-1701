@@ -32,6 +32,8 @@ import { flowBranch, flowElbow, flowLine, flowLoop } from './flow-connector'
 import { dailyBarChart, groupedBarChart, horizontalBarChart } from './bar-chart'
 import { listRow } from './list-row'
 import { markdownView } from './markdown-view'
+import { callout } from './callout'
+import { diagramFrame } from './diagram-frame'
 import { codeLines } from './code-lines'
 import { table } from './table'
 import { terminalLines } from './terminal-lines'
@@ -85,4 +87,4 @@ type Theme = NonNullable<Config['theme']>
 
 export const recipes: NonNullable<Theme['recipes']> = { backdrop, bareIconButton, button, clamp, highlight, icon, kindMark, kindTile, layoutChatColumn, layoutContainer, layoutGrid, layoutInline, layoutStack, markdownView, navBadge, skeleton, statusPill, truncatedText }
 
-export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, dialog, dragPreview, emptyPane, errorState, fileBrowser, fileFrame, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, glyph, groupHeader, groupedBarChart, horizontalBarChart, inlineChip, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, selectField, skeletonGroup, splitter, switchRecipe, tabBar, table, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }
+export const slotRecipes: NonNullable<Theme['slotRecipes']> = { appShell, backRow, badge, bottomSheet, callout, card, chatPath, checkbox, codeLines, composer, contextMeter, dailyBarChart, detailSplit, diagramFrame, dialog, dragPreview, emptyPane, errorState, fileBrowser, fileFrame, filterChips, flowBranch, flowDiagram, flowElbow, flowLine, flowLoop, glyph, groupHeader, groupedBarChart, horizontalBarChart, inlineChip, itemTabs, kindBadge, kpiTile, listRow, logo, mapGraph, mapLegend, mapNode, mapSelectionCard, menu, message, metaChip, metaLine, modelChip, moreDrawer, navRail, optionList, pageHeader, pane, panel, pathBadge, popover, proposalBlock, proposalSection, scriptExplanation, scrollFrame, searchField, selectField, skeletonGroup, splitter, switchRecipe, tabBar, table, tagsLine, terminalLines, textField, thumbnail, toast, toolLine, tooltip, treeView, viewSwitch, workbench, workspaceTabs }

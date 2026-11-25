@@ -47,6 +47,16 @@ under their purpose group, never under "Parts" (d-065).
   entries already cover it. A later peer token changes only the `peer`
   variant in `theme/recipes/message.ts` (`PeerDark` and `PeerLight`
   stories check the bar, the label and the contrast).
+- `Callout` is GitHub's Markdown alert (`> [!NOTE]`): five tones, each
+  with its own `callout.<tone>.fg` and `.border` tokens (the owner,
+  2026-11-25: they "should be able to change with a change in theme"),
+  today with the values of the status token of the same hue. It has no
+  fill, so its text stays on the surface that contrast.json checks.
+- `DiagramFrame` holds a diagram drawn from text, such as a Mermaid
+  block: the caller draws the diagram (as an `img`) and runs the engine;
+  the frame shows a skeleton, the diagram or the reason and source, and
+  a "Show source" toggle. Its body takes the focus, so a wide diagram
+  scrolls with the arrow keys, as the Table frame does.
 - Pure geometry may sit in a `.ts` file beside its part. `../index.ts`
   does not export it, and the part's stories test what it draws.
 - The Table parts (`table.tsx`) work as react-markdown overrides for

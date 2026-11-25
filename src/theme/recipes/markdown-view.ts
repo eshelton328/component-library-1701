@@ -1,4 +1,5 @@
 import { defineRecipe } from '@pandacss/dev'
+import { scrollAreaX } from './scroll-area'
 
 // Rendered Markdown, as the Toolkit D3 file preview draws it ("rendered
 // markdown" 427:284): padding 18 by 22 (no token: 20 by 24, d-072), the
@@ -59,6 +60,13 @@ export const markdownView = defineRecipe({
     '& del': { textDecoration: 'line-through' },
     '& :where(li.task-list-item)': { listStyleType: 'none' },
     '& :where(li.task-list-item) > input[type=checkbox]': { m: '0', me: '8', verticalAlign: 'middle', accentColor: 'accent.default' },
+    // Math (the-bridge rich text): KaTeX writes a formula as `.katex` in the
+    // text's own colour, and a display formula (`$$…$$`) as a
+    // `.katex-display` block. A display formula wider than the column
+    // scrolls sideways in its own box, so the page never does; its
+    // vertical margin is the view's gap, as every block's is.
+    '& .katex': { color: 'inherit' },
+    '& .katex-display': { m: '0', py: '4', minW: '0', maxW: '100%', overflowX: 'auto', overflowY: 'hidden', ...scrollAreaX },
   },
   variants: {
     size: {

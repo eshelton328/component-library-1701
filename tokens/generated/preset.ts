@@ -476,6 +476,88 @@ export default definePreset({
               "description": "The border of a selected or running item, and of a pressed Button with pressedBorder=\"selected\" (a selected toggle chip). Not for an open menu trigger or a pressed Sort or Filter, which use border.active. Laid over surface.selected it keeps 3:1 against bg.canvas, surface.pane and surface.raised (WCAG 1.4.11), which is why the light value is 0.75 alpha (Figma's 0.5 gives 2.13 on light bg.canvas); dark keeps Figma's 0.5."
             }
           },
+          "callout": {
+            "caution": {
+              "border": {
+                "value": {
+                  "base": "rgba(188, 39, 62, 0.5)",
+                  "_dark": "rgba(255, 107, 128, 0.5)"
+                },
+                "description": "The 1 px border of a Markdown callout for caution: an action with a bad or destructive outcome. Only in Callout; today the same value as status.danger.border, so a theme can change it alone."
+              },
+              "fg": {
+                "value": {
+                  "base": "#bc273e",
+                  "_dark": "#ff6b80"
+                },
+                "description": "The icon and title of a Markdown callout for caution: an action with a bad or destructive outcome (GitHub's > [!CAUTION]). Only in Callout; today the same value as status.danger.fg, so a theme can change it alone."
+              }
+            },
+            "important": {
+              "border": {
+                "value": {
+                  "base": "rgba(91, 75, 214, 0.5)",
+                  "_dark": "rgba(158, 143, 255, 0.5)"
+                },
+                "description": "The 1 px border of a Markdown callout for important: what the reader must know to succeed. Only in Callout; today the same value as status.running.border, so a theme can change it alone."
+              },
+              "fg": {
+                "value": {
+                  "base": "#5b4bd6",
+                  "_dark": "#9e8fff"
+                },
+                "description": "The icon and title of a Markdown callout for important: what the reader must know to succeed (GitHub's > [!IMPORTANT]). Only in Callout; today the same value as status.running.fg, so a theme can change it alone."
+              }
+            },
+            "note": {
+              "border": {
+                "value": {
+                  "base": "rgba(14, 106, 133, 0.5)",
+                  "_dark": "rgba(94, 225, 255, 0.5)"
+                },
+                "description": "The 1 px border of a Markdown callout for a note: background or context worth knowing. Only in Callout; today the same value as status.working.border, so a theme can change it alone."
+              },
+              "fg": {
+                "value": {
+                  "base": "#0e6a85",
+                  "_dark": "#5ee1ff"
+                },
+                "description": "The icon and title of a Markdown callout for a note: background or context worth knowing (GitHub's > [!NOTE]). Only in Callout; today the same value as status.working.fg, so a theme can change it alone."
+              }
+            },
+            "tip": {
+              "border": {
+                "value": {
+                  "base": "rgba(22, 115, 63, 0.5)",
+                  "_dark": "rgba(110, 231, 168, 0.5)"
+                },
+                "description": "The 1 px border of a Markdown callout for a tip: advice that helps but is optional. Only in Callout; today the same value as status.done.border, so a theme can change it alone."
+              },
+              "fg": {
+                "value": {
+                  "base": "#16733f",
+                  "_dark": "#6ee7a8"
+                },
+                "description": "The icon and title of a Markdown callout for a tip: advice that helps but is optional (GitHub's > [!TIP]). Only in Callout; today the same value as status.done.fg, so a theme can change it alone."
+              }
+            },
+            "warning": {
+              "border": {
+                "value": {
+                  "base": "rgba(154, 74, 6, 0.5)",
+                  "_dark": "rgba(255, 184, 107, 0.5)"
+                },
+                "description": "The 1 px border of a Markdown callout for a warning: a risk that needs the reader's attention. Only in Callout; today the same value as status.needsYou.border, so a theme can change it alone."
+              },
+              "fg": {
+                "value": {
+                  "base": "#9a4a06",
+                  "_dark": "#ffb86b"
+                },
+                "description": "The icon and title of a Markdown callout for a warning: a risk that needs the reader's attention (GitHub's > [!WARNING]). Only in Callout; today the same value as status.needsYou.fg, so a theme can change it alone."
+              }
+            }
+          },
           "code": {
             "comment": {
               "value": {

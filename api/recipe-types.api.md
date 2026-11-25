@@ -148,6 +148,27 @@ export type ButtonRecipe = ConfigRecipeRuntimeFn<ButtonVariantProps, ButtonVaria
 
 export declare const button: ButtonRecipe;
 
+// callout.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type CalloutVariant = {
+  tone?: "note" | "tip" | "important" | "warning" | "caution"
+  size?: "md" | "sm"
+}
+
+export type CalloutVariantProps = {
+  [K in keyof CalloutVariant]?: ConditionalValue<CalloutVariant[K]>
+}
+
+export type CalloutVariantMap = RecipeVariantMap<CalloutVariant>
+
+export type CalloutSlot = "root" | "header" | "title" | "body"
+
+export type CalloutRecipe = ConfigSlotRecipeRuntimeFn<CalloutSlot, CalloutVariantProps, CalloutVariantMap>
+
+export declare const callout: CalloutRecipe;
+
 // card.d.ts
 import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
 
@@ -328,6 +349,24 @@ export type DetailSplitSlot = "root" | "item" | "side"
 export type DetailSplitRecipe = ConfigSlotRecipeRuntimeFn<DetailSplitSlot, DetailSplitVariantProps, DetailSplitVariantMap>
 
 export declare const detailSplit: DetailSplitRecipe;
+
+// diagram-frame.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type DiagramFrameVariant = {}
+
+export type DiagramFrameVariantProps = {
+  [K in keyof DiagramFrameVariant]?: ConditionalValue<DiagramFrameVariant[K]>
+}
+
+export type DiagramFrameVariantMap = RecipeVariantMap<DiagramFrameVariant>
+
+export type DiagramFrameSlot = "root" | "header" | "label" | "actions" | "body" | "placeholder" | "source" | "message"
+
+export type DiagramFrameRecipe = ConfigSlotRecipeRuntimeFn<DiagramFrameSlot, DiagramFrameVariantProps, DiagramFrameVariantMap>
+
+export declare const diagramFrame: DiagramFrameRecipe;
 
 // dialog.d.ts
 import type { ConditionalValue } from '../types/system.js';
@@ -708,6 +747,7 @@ export * from './app-shell.js';
 export * from './back-row.js';
 export * from './badge.js';
 export * from './bottom-sheet.js';
+export * from './callout.js';
 export * from './card.js';
 export * from './chat-path.js';
 export * from './checkbox.js';
@@ -716,6 +756,7 @@ export * from './composer.js';
 export * from './context-meter.js';
 export * from './daily-bar-chart.js';
 export * from './detail-split.js';
+export * from './diagram-frame.js';
 export * from './dialog.js';
 export * from './drag-preview.js';
 export * from './empty-pane.js';

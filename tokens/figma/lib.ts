@@ -122,6 +122,8 @@ export function colourScopes(path: readonly string[]): string[] {
     if (last === 'border') return ['STROKE_COLOR']
     return fail(`no scopes for color/${name}`)
   }
+  // A callout's fg is its icon stroke and title text; its border is a stroke (Callout).
+  if (group === 'callout') return last === 'fg' ? ['TEXT_FILL', 'SHAPE_FILL', 'STROKE_COLOR'] : ['STROKE_COLOR']
   if (group === 'accent') return plus([...fill, 'STROKE_COLOR'])
   if (group === 'kind' || group === 'agent') return [...fill, 'TEXT_FILL', 'STROKE_COLOR']
   return fill // bg, surface, overlay, backdrop

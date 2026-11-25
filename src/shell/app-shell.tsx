@@ -626,8 +626,11 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       const glideMoves = glidesNow.flatMap(({ el, body, top, view }, i) => {
         const end = ends.glides[i]
         const shifting = bodyShifts.find((shift) => shift.el === body)?.shifts.some((shift) => Math.abs(shift) >= 0.5) ?? true
-        if (end === undefined || shifting || Math.abs(end.top - top) < 0.5) return []
+        if (end === undefined || shifting) return []
         const box = el.getBoundingClientRect()
+        // A move whose end is where the element is drawn still holds it there while the move's layout puts it elsewhere
+        // (a resize that retargets a move to where it is drawn, with the larger layout kept: Codex review of #355).
+        if (Math.abs(end.top - top) < 0.5 && Math.abs(box.top - top) < 0.5) return []
         const seen = (at: number, { top: viewTop, foot }: { top: number; foot: number }) => at + box.height > viewTop && at < foot
         if (!seen(top, view) && !seen(end.top, end.view)) return []
         return [{ el, steps: track(frameUnder(body.parentElement), top, end.top), place: box.top }]

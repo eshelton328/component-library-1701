@@ -4794,6 +4794,102 @@ const keyboardGlideTurn: StoryObj<typeof meta> = {
     await expect(rect(glide).top).toBeCloseTo(at, 0)
   }),
 }
+// The list pane's footer grows near the open's end (a footer of another frame, so the group's end place stays): the
+// move restarts with the group less than 0.5 px from its end, while the open's larger layout stays until its end. The
+// group holds its drawn place to the end and does not jump to its place in that layout (Codex review of #355).
+function GlideTablet() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [grown, setGrown] = useState(false)
+  useEffect(() => {
+    const root = ref.current?.closest('.app-shell__root')
+    if (!root) return
+    const onDock = (event: Event) => {
+      if (!(event instanceof CustomEvent) || !('detail' in event)) return
+      const detail: unknown = event.detail
+      if (typeof detail !== 'object' || detail === null || !('inset' in detail) || !('at' in detail)) return
+      // 22 ms before the move's end, read after the move has written it: a frame or so before the end.
+      if (Number(detail.inset) > 0)
+        setTimeout(() => {
+          setTimeout(() => { setGrown(true) }, Number(root instanceof HTMLElement ? root.dataset.keyboardEnd : 0) - 22 - performance.now())
+        }, 0)
+    }
+    root.addEventListener(appShellDockEvent, onDock)
+    return () => {
+      root.removeEventListener(appShellDockEvent, onDock)
+    }
+  }, [])
+  return (
+    <div className={screenFrame}>
+      <AppShell
+        size="desktop"
+        view="detail"
+        list={
+          <ScrollFrame bodyClassName={frameBody} footer={<div ref={ref} role="group" aria-label="List footer" className={composerBox}>New chat{grown ? <div className={growRow} /> : null}</div>}>
+            {listLines.map((line) => (
+              <p key={line} className={text}>
+                {line}
+              </p>
+            ))}
+          </ScrollFrame>
+        }
+        detail={
+          <ScrollFrame
+            bodyClassName={glideBody}
+            footer={
+              <div role="group" aria-label="Composer" className={composerBox}>
+                <textarea aria-label="Message" rows={1} className={messageField} />
+              </div>
+            }
+          >
+            <div role="group" aria-label="New chat" data-keyboard-glide="" className={glideGroup}>
+              <p className={text}>New chat</p>
+              <p className={text}>Write a message to start.</p>
+            </div>
+          </ScrollFrame>
+        }
+      />
+    </div>
+  )
+}
+const keyboardGlideLateGrow: StoryObj<typeof meta> = {
+  ...withMotion,
+  parameters: { viewport: { options: tabletScreen } },
+  render: () => <GlideTablet />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const canvas = within(canvasElement)
+    const glide = canvas.getByRole('group', { name: 'New chat' })
+    await expectDrawn(canvasElement, glide)
+    const listFooter = canvas.getByRole('group', { name: 'List footer' })
+    const footerHeight = rect(listFooter).height
+    const field = canvas.getByRole('textbox', { name: 'Message' })
+    const composer = canvas.getByRole('group', { name: 'Composer' })
+    await userEvent.click(field)
+    await wait(110)
+    const record = recordGlide(glide, composer)
+    // The frame of the growth, read after the shell's own observer restarted the move (observers run in the order they
+    // were made), as the rAF read of that frame comes before it.
+    const atGrowth: number[] = []
+    const sized = new ResizeObserver(() => {
+      atGrowth.push(rect(glide).top)
+    })
+    sized.observe(listFooter)
+    fakeViewport.move({ height: 1133 - 400 })
+    await wait(motionMs + 150)
+    record.stop()
+    sized.disconnect()
+    await expect(rect(listFooter).height).toBeGreaterThan(footerHeight + 10)
+    await expect(atGrowth.length).toBeGreaterThan(1)
+    const final = rect(glide).top
+    const reached = record.frames.findIndex((f) => Math.abs(f.glide.top - final) <= 1)
+    await expect(reached).toBeGreaterThan(0)
+    const left = [...record.frames.slice(reached).map((f) => f.glide.top), ...atGrowth.slice(1)].filter((top) => Math.abs(top - final) > 1).map((top) => top.toFixed(1))
+    await expect(left).toEqual([])
+  }),
+}
+/** iPad: a footer of another pane grows near the open's end, and the new chat's group stays at its end place. */
+export const KeyboardGlideLateGrowDark: StoryObj<typeof meta> = { ...keyboardGlideLateGrow, globals: { mode: 'dark', viewport: { value: 't02b' } } }
+export const KeyboardGlideLateGrowLight: StoryObj<typeof meta> = { ...keyboardGlideLateGrow, globals: { mode: 'light', viewport: { value: 't02b' } } }
+
 /** Phone new chat: a close half way through the open turns the glide from where it is drawn, with one animation at a time. */
 export const KeyboardGlideTurnDark: StoryObj<typeof meta> = { ...keyboardGlideTurn, globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const KeyboardGlideTurnLight: StoryObj<typeof meta> = { ...keyboardGlideTurn, globals: { mode: 'light', viewport: { value: 'm390' } } }

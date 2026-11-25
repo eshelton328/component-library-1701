@@ -164,6 +164,61 @@
    "why": "Status text, alone or on its tint."
   },
   {
+   "fg": "callout.note.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "A callout's title, on the surface of the Markdown it sits in."
+  },
+  {
+   "fg": "callout.tip.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "A callout's title, on the surface of the Markdown it sits in."
+  },
+  {
+   "fg": "callout.important.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "A callout's title, on the surface of the Markdown it sits in."
+  },
+  {
+   "fg": "callout.warning.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "A callout's title, on the surface of the Markdown it sits in."
+  },
+  {
+   "fg": "callout.caution.fg",
+   "on": [
+    "bg.canvas",
+    "surface.pane",
+    "surface.raised",
+    "surface.overlay"
+   ],
+   "min": 4.5,
+   "why": "A callout's title, on the surface of the Markdown it sits in."
+  },
+  {
    "fg": "diff.added.fg",
    "on": [
     "diff.added.bg@surface.pane"

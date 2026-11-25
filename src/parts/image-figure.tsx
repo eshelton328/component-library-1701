@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { imageFigure } from '../../styled-system/recipes'
 import { Dialog } from '../controls/dialog'
@@ -34,12 +34,24 @@ export type ImageFigureProps = {
 export function ImageFigure({ src, alt, onStateChange }: ImageFigureProps) {
   const [seen, setSeen] = useState<{ src: string; state: ImageState }>({ src, state: 'loading' })
   const [open, setOpen] = useState(false)
+  const image = useRef<HTMLImageElement>(null)
   const state: ImageState = seen.src === src ? seen.state : 'loading'
   const name = alt.trim()
+  // Each src settles once: a load event and the check after mount may both see it.
+  const settled = useRef<string | undefined>(undefined)
   const settle = (next: ImageState) => {
+    if (settled.current === src) return
+    settled.current = src
     setSeen({ src, state: next })
     onStateChange?.(next)
   }
+  // A picture that loaded or failed before React added its handlers (a server render that hydrates) fires no event,
+  // and an empty src (which React leaves out) loads nothing; both are complete by now, so read the result here.
+  useLayoutEffect(() => {
+    const img = image.current
+    if (img === null || !img.complete) return
+    settle(img.naturalWidth > 0 ? 'ready' : 'error')
+  })
   if (state === 'error') {
     return (
       <Root data-state={state}>
@@ -67,6 +79,7 @@ export function ImageFigure({ src, alt, onStateChange }: ImageFigureProps) {
         ) : null}
         <Image
           key={src}
+          ref={image}
           src={src}
           alt={alt}
           data-state={state}

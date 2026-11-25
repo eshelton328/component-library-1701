@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { atTextSize, textSizes, textSpills } from '../controls/text-size.testing'
@@ -100,6 +102,44 @@ export const WidePhone: StoryObj<typeof meta> = {
     await expect(Math.round(box.width)).toBe(Math.round(inner))
     await expect(Math.round(box.height)).toBe(Math.round(box.width / 2))
     await expect(main.scrollWidth).toBeLessThanOrEqual(main.clientWidth)
+  },
+}
+
+/** An empty src loads nothing and fires no event: it shows the line, not a skeleton that never ends. */
+export const EmptySource: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => (
+    <main className={phone}>
+      <ImageFigure src="" alt="No source" />
+    </main>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(await within(canvasElement).findByRole('status')).toHaveTextContent('This image did not load: No source')
+    await expect(canvasElement.querySelector('[data-skeleton]')).toBeNull()
+  },
+}
+
+/** A server-rendered picture that loads before hydration fires no load event for React; after hydration it shows. */
+export const LoadedBeforeHydration: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  render: () => <main className={phone} data-testid="host" />,
+  play: async ({ canvasElement }) => {
+    const host = within(canvasElement).getByTestId('host')
+    const figure = <ImageFigure src={picture(320, 180)} alt="Hydrated chart" />
+    const box = document.createElement('div')
+    box.innerHTML = renderToString(figure)
+    host.append(box)
+    const img = box.querySelector('img')
+    if (img === null) throw new Error('no picture')
+    await waitFor(() => expect(img.complete && img.naturalWidth > 0).toBe(true))
+    const root = hydrateRoot(box, figure)
+    try {
+      await waitFor(() => expect(box.querySelector('figure')).toHaveAttribute('data-state', 'ready'))
+      await expect(within(box).getByRole('button', { name: 'Open the image: Hydrated chart' })).toBeEnabled()
+    } finally {
+      root.unmount()
+      box.remove()
+    }
   },
 }
 

@@ -27,7 +27,7 @@ const headerLine = /^(diff |index |--- |\+\+\+ |new file|deleted file|similarity
 /**
  * The change of each line of a diff: `added` for a line that starts with "+", `removed` with "-", undefined for a
  * context line or a header. Headers ("--- a/x", "+++ b/x", "diff --git …") are only the lines before the first hunk
- * ("@@"), or with no hunk the leading run of header lines, so a changed line such as "+++count" or "---x" in a hunk
+ * line, or with no hunk the leading run of header lines, so a changed line such as "+++count" or "---x" in a hunk
  * stays a change.
  */
 export function diffChanges(lines: readonly string[]): (DiffChange | undefined)[] {

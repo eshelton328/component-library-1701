@@ -397,7 +397,7 @@ export default definePreset({
           "backdrop": {
             "glow": {
               "value": {
-                "base": "rgba(207, 233, 247, 0.85)",
+                "base": "rgba(207, 233, 247, 0)",
                 "_dark": "rgba(27, 42, 85, 0.85)"
               },
               "description": "Centre colour of the page backdrop's radial glow."

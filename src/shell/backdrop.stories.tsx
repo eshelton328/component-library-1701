@@ -64,6 +64,15 @@ const layers = (image: string) => {
   return out
 }
 
+// The alpha of each colour stop in the backdrop's glow layer (the last layer), in order.
+const glowAlphas = (root: HTMLElement) => {
+  const glow = layers(getComputedStyle(backdropOf(root)).backgroundImage).at(-1) ?? ''
+  return [...glow.matchAll(/rgba?\(([^)]*)\)/g)].map((m) => {
+    const parts = (m[1] ?? '').split(',')
+    return parts.length === 4 ? Number(parts[3]) : 1
+  })
+}
+
 const backdropOf = (root: HTMLElement) => {
   const el = root.querySelector('.backdrop')
   if (!(el instanceof HTMLElement)) throw new Error('no backdrop')
@@ -103,8 +112,80 @@ const meta = {
 } satisfies Meta<typeof Page>
 export default meta
 
-export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
-export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
+/** Dark draws the glow: its centre stop is backdrop.glow at alpha 0.85. */
+export const Dark: StoryObj<typeof meta> = {
+  globals: { mode: 'dark' },
+  play: async (ctx) => {
+    await meta.play(ctx)
+    const [centre = 0, edge = 0, ...rest] = glowAlphas(ctx.canvasElement)
+    // Chrome keeps alpha in 8 bits, so 0.425 reads as 0.424.
+    await expect(centre).toBeCloseTo(0.85, 2)
+    await expect(edge).toBeCloseTo(0.425, 2)
+    await expect(rest).toEqual([0])
+  },
+}
+/** Light drops the glow (R52): every stop has alpha 0, so the page is the plain canvas. */
+export const Light: StoryObj<typeof meta> = {
+  globals: { mode: 'light' },
+  play: async (ctx) => {
+    await meta.play(ctx)
+    await expect(glowAlphas(ctx.canvasElement)).toEqual([0, 0, 0])
+  },
+}
+
+// sRGB channels 0 to 255 of a computed colour, drawn onto a canvas so any CSS colour syntax works.
+const channels = (colour: string): [number, number, number] => {
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+  if (ctx === null) throw new Error('no canvas')
+  ctx.fillStyle = colour
+  ctx.fillRect(0, 0, 1, 1)
+  const [r = 0, g = 0, b = 0] = ctx.getImageData(0, 0, 1, 1).data
+  return [r, g, b]
+}
+
+// The pixel Chrome paints at the backdrop's centre, read from a screenshot of the element. Only the story test runner
+// can take one (vitest/browser), so the stories that call it carry `tags: ['!dev']`. No star lies within 1.3 % of the
+// centre (the nearest desktop star is at 51.35 %, 51.98 %), so the pixel is canvas and glow only.
+const centrePixel = async (el: HTMLElement): Promise<[number, number, number]> => {
+  const { page } = await import('vitest/browser')
+  const png = await page.screenshot({ element: el, save: false })
+  const img = new Image()
+  img.src = `data:image/png;base64,${png}`
+  await img.decode()
+  const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
+  if (ctx === null) throw new Error('no canvas')
+  ctx.drawImage(img, -Math.floor(img.naturalWidth / 2), -Math.floor(img.naturalHeight / 2))
+  const [r = 0, g = 0, b = 0] = ctx.getImageData(0, 0, 1, 1).data
+  return [r, g, b]
+}
+
+// The largest difference of one channel between two colours.
+const apart = (a: readonly number[], b: readonly number[]) => Math.max(...a.map((v, i) => Math.abs(v - (b[i] ?? 0))))
+
+// Up to 2 of 255 per channel is the same colour: Chrome dithers gradients by ±1 and rounds premultiplied alpha. The
+// old Light glow (backdrop.glow at alpha 0.85) paints (212, 235, 247) over bg.canvas (243, 245, 250), 31 apart in red.
+const SAME = 2
+
+/** Light paints no glow (R52): the pixel at the backdrop's centre is bg.canvas. */
+export const CentreLight: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  globals: { mode: 'light' },
+  play: async ({ canvasElement }) => {
+    const canvas = channels(swatch(canvasElement, 'canvas'))
+    await expect(apart(await centrePixel(backdropOf(canvasElement)), canvas)).toBeLessThanOrEqual(SAME)
+  },
+}
+
+/** Dark keeps its glow: the pixel at the backdrop's centre is lighter than bg.canvas. */
+export const CentreDark: StoryObj<typeof meta> = {
+  tags: ['!dev'],
+  globals: { mode: 'dark' },
+  play: async ({ canvasElement }) => {
+    const canvas = channels(swatch(canvasElement, 'canvas'))
+    // The glow paints about (24, 37, 75) over (7, 11, 20), 55 apart in blue; 20 proves a visible glow with room to spare.
+    await expect(apart(await centrePixel(backdropOf(canvasElement)), canvas)).toBeGreaterThan(20)
+  },
+}
 
 const sizes = css({ display: 'grid', gridTemplateColumns: '3fr 2fr 1fr', gap: '12', h: 'shell.dialogLg' })
 

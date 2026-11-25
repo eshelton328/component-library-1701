@@ -383,7 +383,9 @@ export const NoTrailing: StoryObj<typeof meta> = {
  * The workspace tabs and the hint bar at Default and Large: chrome keeps its Small type (d-131, data-text-fixed), and
  * the workspace's own content grows with the text size.
  */
-const fixedChrome = fixedTypePlay(['.workbench__hint', '[role="tab"]'])
+// A preview build replaces the .testing helpers with functions that throw, so the helper is called inside play, never when the module loads.
+type FixedPlayContext = Parameters<ReturnType<typeof fixedTypePlay>>[0]
+const fixedChrome = (context: FixedPlayContext) => fixedTypePlay(['.workbench__hint', '[role="tab"]'])(context)
 const fixedPlay: StoryObj<typeof meta>['play'] = async (context) => {
   await fixedChrome(context)
   const panel = context.canvasElement.querySelector('[role="tabpanel"]:not([hidden]) div')

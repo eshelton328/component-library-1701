@@ -339,6 +339,8 @@ export const FigmaNameLight: StoryObj<typeof meta> = { ...FigmaNameDark, globals
 
 
 /** The tab bar at Default and Large: chrome keeps its Small type (d-131, data-text-fixed). */
-const fixedPlay = fixedTypePlay([".tab-bar__label"])
+// A preview build replaces the .testing helpers with functions that throw, so the helper is called inside play, never when the module loads.
+type FixedPlayContext = Parameters<ReturnType<typeof fixedTypePlay>>[0]
+const fixedPlay = (context: FixedPlayContext) => fixedTypePlay(['.tab-bar__label'])(context)
 export const FixedTextSizesDark: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const FixedTextSizesLight: StoryObj<typeof meta> = { play: fixedPlay, globals: { mode: 'light', textSize: 'small' } }

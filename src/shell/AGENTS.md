@@ -61,6 +61,12 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
   below the drawn footer's top at some time of the move fades out for
   those times, with opacity only, in steps (R44, `DockFade`). A child
   that stays above it never fades, and none fades with reduced motion.
+  A child that crosses the footer's top (a wrapper of the entries) is
+  not faded whole: its parts are, down to `fadeDepth` (4) levels, at
+  most `fadeLimit` (48) fades a body in a move (`DockFadeStack`,
+  `DockFadeContainer`). A `data-keyboard-glide` part, and all in it,
+  never fades (`DockFadeGlide`). A scroll during the move ends the
+  body's fades (`DockFadeFlick`).
   No clip: a `clip-path` animation repaints the body in each frame on
   iOS, and a clip by transforms around the body cost frames in the R44
   Simulator gate.

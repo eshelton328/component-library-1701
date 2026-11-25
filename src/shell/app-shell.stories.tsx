@@ -1425,7 +1425,9 @@ const entryStack = css({ display: 'flex', flexDirection: 'column', gap: '8' })
 // A line only screen readers read, positioned absolutely as Message's `message__srName` is.
 const srOnlyLine = css({ srOnly: true })
 // `wrap` puts the thread's entries in one wrapper, as pages do: `stack` a header and then a Stack of the entries in
-// the body (the-bridge's RunningDetail).
+// the body (the-bridge's RunningDetail); `container` one Container that holds the header and that Stack (the-bridge's
+// DetailFrame); `glide` the Stack with a group the shell glides on the keyboard (`data-keyboard-glide`) after the
+// entries, as an empty chat's group.
 function ThreadChat({
   srLine = false,
   foot,
@@ -1435,7 +1437,7 @@ function ThreadChat({
   srLine?: boolean
   foot?: '12' | undefined
   send?: boolean
-  wrap?: 'stack' | undefined
+  wrap?: 'stack' | 'container' | 'glide' | undefined
 }) {
   const entries = (
     <>
@@ -1477,6 +1479,19 @@ function ThreadChat({
                 <p className={text}>The thread's header</p>
                 <div className={entryStack}>{entries}</div>
               </>
+            ) : wrap === 'container' ? (
+              <Container size="phone">
+                <p className={text}>The thread's header</p>
+                <div className={entryStack}>{entries}</div>
+              </Container>
+            ) : wrap === 'glide' ? (
+              <div className={entryStack}>
+                {entries}
+                <div role="group" aria-label="Glide" data-keyboard-glide="" className={entryStack}>
+                  <p className={text}>A line the shell glides</p>
+                  <p className={text}>Another line the shell glides</p>
+                </div>
+              </div>
             ) : (
               entries
             )}
@@ -5034,10 +5049,13 @@ const drawnOpacity = (entry: Element, body: HTMLElement) => {
 // any entry under full opacity; after the move, any entry under full opacity. An entry within the composer's travel in
 // the last frame of its top counts as at the top, not above it: a fade starts at a step of the keyboard's curve, which
 // can come up to a step before the frame that draws the entry under the top.
+// An entry in a glide (`data-keyboard-glide`) is never faded, wherever it is. After `flicked`, from the next frame on,
+// no entry is faded: a scroll ends the move's fades.
 const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: boolean, off: string[]) => (name: string) => {
   let frames = 0
   let on = true
   let lastTop: number | undefined
+  let flickedAt: number | undefined
   const tick = () => {
     if (!on) return
     frames += 1
@@ -5049,6 +5067,14 @@ const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: bool
       if (shown === null) return
       const seen = drawnOpacity(entry, body)
       const at = `${name} frame ${String(frames)}: entry ${String(i)}`
+      if (entry.closest('[data-keyboard-glide]') !== null) {
+        if (seen < 1) off.push(`${at}, in a glide, is at opacity ${String(seen)}`)
+        return
+      }
+      if (flickedAt !== undefined && frames > flickedAt + 1) {
+        if (seen < 1) off.push(`${at} is at opacity ${String(seen)} after a scroll`)
+        return
+      }
       if (reduce && seen < 1) off.push(`${at} fades with reduced motion`)
       if (!reduce && seen > 0 && shown.bottom > top + 1)
         off.push(`${at} shows to ${shown.bottom.toFixed(1)}, under the composer's top ${top.toFixed(1)}`)
@@ -5059,6 +5085,9 @@ const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: bool
   }
   requestAnimationFrame(tick)
   return {
+    flicked: () => {
+      flickedAt = frames
+    },
     stop: () => {
       on = false
       threadEntries(body).forEach((entry, i) => {
@@ -5074,8 +5103,17 @@ const fadeRecorder = (body: HTMLElement, composerTop: () => number, reduce: bool
 // entries lie there between the composer and the keyboard (screen review R44, the iPad), and each one fades out while
 // it does. An entry wholly above the composer's top is never faded, also when the entries are in one wrapper (`wrap`),
 // and every entry is opaque after each move. With reduced motion nothing fades, and the move ends as with motion. An
-// open and a close, at the thread's end and scrolled up.
-const dockFade = ({ reduce = false, wrap }: { reduce?: boolean; wrap?: 'stack' }): StoryObj<typeof meta> => ({
+// open and a close, at the thread's end and scrolled up. `flick` scrolls the thread 150 px during each move, as a
+// reader's flick does: from then on no entry is faded.
+const dockFade = ({
+  reduce = false,
+  wrap,
+  flick = false,
+}: {
+  reduce?: boolean
+  wrap?: 'stack' | 'container' | 'glide'
+  flick?: boolean
+}): StoryObj<typeof meta> => ({
   ...motionDevice(reduce),
   render: () => <ThreadChat wrap={wrap} />,
   play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
@@ -5091,6 +5129,11 @@ const dockFade = ({ reduce = false, wrap }: { reduce?: boolean; wrap?: 'stack' }
       await userEvent.click(field)
       await wait(110)
       fakeViewport.move({ height: 844 - keyboard })
+      if (flick) {
+        await wait(90)
+        body.scrollTop -= 150
+        opening.flicked()
+      }
       await wait(motionMs + 150)
       await expect(opening.stop()).toBeGreaterThan(10)
       // The same end with and without reduced motion: the composer on the keyboard's top.
@@ -5099,6 +5142,11 @@ const dockFade = ({ reduce = false, wrap }: { reduce?: boolean; wrap?: 'stack' }
       field.blur()
       await wait(iosCloseReport)
       fakeViewport.move({ height: 844 })
+      if (flick) {
+        await wait(90)
+        body.scrollTop -= 150
+        closing.flicked()
+      }
       await wait(motionMs + 150)
       await expect(closing.stop()).toBeGreaterThan(10)
       await expect(riseOf(footer)).toBe(0)
@@ -5115,3 +5163,15 @@ export const DockFadeReducedDark: StoryObj<typeof meta> = { ...dockFade({ reduce
 /** Phone chat on iOS, the entries in one Stack: an entry above the composer's top stays opaque while the keyboard moves. */
 export const DockFadeStackDark: StoryObj<typeof meta> = { ...dockFade({ wrap: 'stack' }), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const DockFadeStackLight: StoryObj<typeof meta> = { ...dockFade({ wrap: 'stack' }), globals: { mode: 'light', viewport: { value: 'm390' } } }
+/** Phone chat on iOS, the entries in a Stack in one Container: an entry above the composer's top stays opaque. */
+export const DockFadeContainerDark: StoryObj<typeof meta> = {
+  ...dockFade({ wrap: 'container' }),
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+}
+/** Phone chat on iOS, a glided group under the entries: the group is never faded. */
+export const DockFadeGlideDark: StoryObj<typeof meta> = { ...dockFade({ wrap: 'glide' }), globals: { mode: 'dark', viewport: { value: 'm390' } } }
+/** Phone chat on iOS: a flick while the keyboard moves ends the fades, and the entries show plainly. */
+export const DockFadeFlickDark: StoryObj<typeof meta> = {
+  ...dockFade({ wrap: 'stack', flick: true }),
+  globals: { mode: 'dark', viewport: { value: 'm390' } },
+}

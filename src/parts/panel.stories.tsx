@@ -460,6 +460,16 @@ function TouchEdge() {
             </div>
           </Panel>
         </div>
+        <Panel title="Direct child" meta="30">
+          {rows.map((r) => (
+            <div key={r} className={row}>
+              {r}
+            </div>
+          ))}
+        </Panel>
+        <div className={row} data-testid="after">
+          After the panel
+        </div>
         <div className={cardWidth} data-testid="long">
           <Panel title="Linked from 30">
             {rows.map((r) => (
@@ -515,6 +525,14 @@ const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
   page.scrollTop = page.scrollHeight
   await expect(Math.round(long.getBoundingClientRect().bottom)).toBeLessThanOrEqual(Math.round(pageBox.bottom))
   page.scrollTop = 0
+  // A section that is a direct child of the page's flex column does not shrink (Codex review of #361): its body does
+  // not overflow, and the next item starts under the panel, so no row draws over it.
+  const direct = canvas.getByRole('region', { name: 'Direct child' })
+  const directBody = direct.querySelector('.panel__body')
+  const after = canvasElement.querySelector('[data-testid="after"]')
+  if (!(directBody instanceof HTMLElement) || !(after instanceof HTMLElement)) throw new Error('no direct panel or marker')
+  await expect(directBody.scrollHeight).toBe(directBody.clientHeight)
+  await expect(Math.round(after.getBoundingClientRect().top)).toBeGreaterThanOrEqual(Math.round(directBody.getBoundingClientRect().top + directBody.scrollHeight))
 }
 
 /** A section or notice panel with a touch button at its end corner, and a long section in a page that scrolls (R72). */

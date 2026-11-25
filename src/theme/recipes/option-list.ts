@@ -81,6 +81,10 @@ export const optionList = defineSlotRecipe({
       cursor: 'pointer',
       userSelect: 'none',
       _hover: { bg: 'accent.faint' },
+      // A row under a finger or the mouse (R72): the selected fill, as ListRow's pressed row (R38), with no selected
+      // border, so a tap shows on a phone or tablet. OptionList sets data-pressed from pointerdown to pointerup,
+      // pointercancel or pointerleave, never on a disabled row. The chosen row keeps its own look. No transition.
+      '&[data-pressed]:not([data-state=checked])': { bg: 'surface.selected' },
       outline: 'none',
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
       _disabled: { cursor: 'not-allowed', opacity: 'disabled', _hover: { bg: 'transparent' } },

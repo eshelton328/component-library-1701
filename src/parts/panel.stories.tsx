@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { expect, within } from 'storybook/test'
+import { expect, fn, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { Button } from '../controls/button'
 import { Grid } from '../controls/layout'
@@ -432,3 +432,109 @@ const noticePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const NoticeDark: StoryObj<typeof meta> = { render: () => <Notice />, globals: { mode: 'dark' }, play: noticePlay }
 export const NoticeLight: StoryObj<typeof meta> = { render: () => <Notice />, globals: { mode: 'light' }, play: noticePlay }
+
+const pageScroller = css({ h: 'shell.dialog', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16' })
+const cardWidth = css({ w: 'shell.dialogLg' })
+const atEnd = css({ alignSelf: 'flex-end' })
+
+function TouchEdge() {
+  return (
+    <main className={page}>
+      <div className={pageScroller} data-testid="page">
+        <div className={cardWidth}>
+          <Panel tone="needsYou">
+            <div className={row}>Which colour for the QA card?</div>
+            <div className={atEnd}>
+              <Button variant="primary" size="lg" touch onClick={sendTouch}>
+                Send answer
+              </Button>
+            </div>
+          </Panel>
+        </div>
+        <div className={cardWidth}>
+          <Panel variant="notice" title="Waiting">
+            <div className={atEnd}>
+              <Button size="sm" touch onClick={openTouch}>
+                Open
+              </Button>
+            </div>
+          </Panel>
+        </div>
+        <Panel title="Direct child" meta="30">
+          {rows.map((r) => (
+            <div key={r} className={row}>
+              {r}
+            </div>
+          ))}
+        </Panel>
+        <div className={row} data-testid="after">
+          After the panel
+        </div>
+        <div className={cardWidth} data-testid="long">
+          <Panel title="Linked from 30">
+            {rows.map((r) => (
+              <div key={r} className={row}>
+                {r}
+              </div>
+            ))}
+          </Panel>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+const sendTouch = fn()
+const openTouch = fn()
+
+const touchPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  // A Button touch at the end corner of a section or notice body keeps its whole touch area (R72): a point 6 px past
+  // the button's end and bottom edges, inside its 12 px area but outside the body, hits the button and a tap there
+  // presses it. A scrolling body clipped the area at its edge, so that point hit the panel.
+  for (const [name, called] of [
+    ['Send answer', sendTouch],
+    ['Open', openTouch],
+  ] as const) {
+    called.mockClear()
+    const button = canvas.getByRole('button', { name })
+    const body = button.closest('.panel__body')
+    if (!(body instanceof HTMLElement)) throw new Error(`no body for ${name}`)
+    const b = button.getBoundingClientRect()
+    const r = body.getBoundingClientRect()
+    const at = { x: Math.round(b.right + 6), y: Math.round(b.bottom + 6) }
+    await expect([at.x > r.right, at.y > r.bottom]).toEqual([true, true])
+    const hit = document.elementFromPoint(at.x, at.y)
+    await expect(hit).toBe(button)
+    // A tap goes to the element drawn at its point, so a click on that element is the tap.
+    if (hit instanceof HTMLElement) hit.click()
+    await expect(called).toHaveBeenCalledTimes(1)
+    await expect(getComputedStyle(body).overflowY).toBe('visible')
+  }
+  // A long section grows as tall as its content and its page scrolls; the panel does not scroll or spill out of the
+  // page, which keeps its fixed height.
+  const page = canvasElement.querySelector('[data-testid="page"]')
+  const long = canvasElement.querySelector('[data-testid="long"] section')
+  if (!(page instanceof HTMLElement) || !(long instanceof HTMLElement)) throw new Error('no page or long panel')
+  const body = long.querySelector('.panel__body')
+  if (!(body instanceof HTMLElement)) throw new Error('no long body')
+  await expect(body.scrollHeight).toBe(body.clientHeight)
+  await expect(long.getBoundingClientRect().height).toBeGreaterThan(page.clientHeight)
+  await expect(page.scrollHeight).toBeGreaterThan(page.clientHeight)
+  const pageBox = page.getBoundingClientRect()
+  page.scrollTop = page.scrollHeight
+  await expect(Math.round(long.getBoundingClientRect().bottom)).toBeLessThanOrEqual(Math.round(pageBox.bottom))
+  page.scrollTop = 0
+  // A section that is a direct child of the page's flex column does not shrink (Codex review of #361): its body does
+  // not overflow, and the next item starts under the panel, so no row draws over it.
+  const direct = canvas.getByRole('region', { name: 'Direct child' })
+  const directBody = direct.querySelector('.panel__body')
+  const after = canvasElement.querySelector('[data-testid="after"]')
+  if (!(directBody instanceof HTMLElement) || !(after instanceof HTMLElement)) throw new Error('no direct panel or marker')
+  await expect(directBody.scrollHeight).toBe(directBody.clientHeight)
+  await expect(Math.round(after.getBoundingClientRect().top)).toBeGreaterThanOrEqual(Math.round(directBody.getBoundingClientRect().top + directBody.scrollHeight))
+}
+
+/** A section or notice panel with a touch button at its end corner, and a long section in a page that scrolls (R72). */
+export const TouchAreaDark: StoryObj<typeof meta> = { render: () => <TouchEdge />, globals: { mode: 'dark' }, play: touchPlay }
+export const TouchAreaLight: StoryObj<typeof meta> = { render: () => <TouchEdge />, globals: { mode: 'light' }, play: touchPlay }

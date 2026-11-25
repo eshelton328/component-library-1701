@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
+import { expect, fireEvent, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
 import { BrainIcon, PlusIcon, TerminalIcon } from '../foundations/icons'
 import { OptionList, type OptionListItem } from './option-list'
@@ -495,3 +495,91 @@ const smallPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 
 export const SmallDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <Small />, play: smallPlay }
 export const SmallLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <Small />, play: smallPlay }
+
+function PressedChoices() {
+  return (
+    <main className={page}>
+      <div className={sheet}>
+        <OptionList
+          label="Sort by"
+          items={[...sorts, { value: 'owner', label: 'Owner', description: 'Not available yet', disabled: true }]}
+          defaultValue="newest"
+        />
+      </div>
+      <div className={column}>
+        <OptionList label="Choose one" items={choices} defaultValue="rpc" variant="card" />
+      </div>
+      <div className={column}>
+        <OptionList label="Answer sent" items={choices} variant="card" disabled />
+      </div>
+      <span hidden data-swatch="selected" className={selectedSwatch} />
+      <span hidden data-swatch="outline" className={outlineSwatch} />
+      <span hidden data-swatch="border" className={borderSwatch} />
+    </main>
+  )
+}
+
+const pressedPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  // No mouse rests on a row, so a hover fill does not hide the pressed one.
+  await restPointerOn(canvasElement)
+  const fill = (row: HTMLElement) => getComputedStyle(row).backgroundColor
+  const clear = 'rgba(0, 0, 0, 0)'
+  const sortList = canvas.getByRole('radiogroup', { name: 'Sort by' })
+  const row = rowOf(within(sortList).getByRole('radio', { name: 'Title' }))
+  const title = within(row).getByText('Title')
+  // A list row: down shows the selected fill, up takes it away, so a tap leaves no row highlighted (R72).
+  await expect(fill(row)).toBe(clear)
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'touch' })
+  await expect(row).toHaveAttribute('data-pressed')
+  await expect(fill(row)).toBe(swatch('selected'))
+  await fireEvent.pointerUp(title, { button: 0, pointerType: 'touch' })
+  await expect(fill(row)).toBe(clear)
+  // A press that becomes a scroll (pointercancel) or leaves the row (pointerleave, from pointerout) drops the fill.
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'touch' })
+  await fireEvent.pointerCancel(title, { pointerType: 'touch' })
+  await expect(fill(row)).toBe(clear)
+  await fireEvent.pointerDown(title, { button: 0, pointerType: 'mouse' })
+  await fireEvent.pointerOut(title, { pointerType: 'mouse', relatedTarget: canvasElement })
+  await expect(fill(row)).toBe(clear)
+  // A secondary button does not press the row.
+  await fireEvent.pointerDown(title, { button: 2, pointerType: 'mouse' })
+  await expect(row).not.toHaveAttribute('data-pressed')
+  await fireEvent.pointerUp(title, { button: 2, pointerType: 'mouse' })
+  // The chosen row keeps its own look while pressed.
+  const newest = rowOf(within(sortList).getByRole('radio', { name: 'Newest first' }))
+  const newestBefore = fill(newest)
+  await fireEvent.pointerDown(within(newest).getByText('Newest first'), { button: 0, pointerType: 'touch' })
+  await expect(fill(newest)).toBe(newestBefore)
+  await fireEvent.pointerUp(within(newest).getByText('Newest first'), { button: 0, pointerType: 'touch' })
+  // A disabled row shows no pressed fill.
+  const owner = rowOf(within(sortList).getByRole('radio', { name: 'Owner' }))
+  await fireEvent.pointerDown(within(owner).getByText('Owner'), { button: 0, pointerType: 'touch' })
+  await expect(owner).not.toHaveAttribute('data-pressed')
+  await fireEvent.pointerUp(within(owner).getByText('Owner'), { button: 0, pointerType: 'touch' })
+  // A card that is not chosen takes the selected fill with its own border; the chosen card keeps its cyan outline.
+  const cards = canvas.getByRole('radiogroup', { name: 'Choose one' })
+  const plain = rowOf(within(cards).getByRole('radio', { name: 'Plain fetch with zod schemas' }))
+  const plainText = within(plain).getByText('Plain fetch with zod schemas')
+  await fireEvent.pointerDown(plainText, { button: 0, pointerType: 'touch' })
+  await expect([fill(plain), getComputedStyle(plain).borderTopColor]).toEqual([swatch('selected'), swatch('border')])
+  await fireEvent.pointerUp(plainText, { button: 0, pointerType: 'touch' })
+  await expect(fill(plain)).toBe(clear)
+  // A disabled list (the card while its answer is sent) shows no pressed fill.
+  const sent = canvas.getByRole('radiogroup', { name: 'Answer sent' })
+  const sentRow = rowOf(within(sent).getByRole('radio', { name: 'Hono RPC client' }))
+  await fireEvent.pointerDown(within(sentRow).getByText('Hono RPC client'), { button: 0, pointerType: 'touch' })
+  await expect(sentRow).not.toHaveAttribute('data-pressed')
+  await fireEvent.pointerUp(within(sentRow).getByText('Hono RPC client'), { button: 0, pointerType: 'touch' })
+  // A whole tap (down, up, click) picks the row and leaves no pressed fill.
+  await userEvent.click(title)
+  await expect(within(sortList).getByRole('radio', { name: 'Title' })).toBeChecked()
+  await expect(row).not.toHaveAttribute('data-pressed')
+}
+
+/**
+ * The pressed state (R72): a row or card under a finger or the mouse takes the selected fill until the press ends, as
+ * ListRow's pressed row does (R38), so a tap shows on a phone or tablet. iOS draws no :active look on a tap.
+ */
+export const PressedDark: StoryObj<typeof meta> = { globals: { mode: 'dark' }, render: () => <PressedChoices />, play: pressedPlay }
+export const PressedLight: StoryObj<typeof meta> = { globals: { mode: 'light' }, render: () => <PressedChoices />, play: pressedPlay }

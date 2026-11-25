@@ -50,8 +50,19 @@ export type CardProps = {
   badgePosition?: 'title' | 'end' | undefined
   /** A line under the title, such as a path; a long one ends with an ellipsis and shows in full in a tooltip. */
   subtitle?: string | undefined
-  /** One line of description; a long one ends with an ellipsis and shows in full in a tooltip. */
+  /**
+   * The description; a cut one ends with an ellipsis and shows in full in a tooltip. `descriptionLines` sets how many
+   * lines it takes.
+   */
   description?: string | undefined
+  /**
+   * The lines of the description. `1`, the default, is one line at Small; at Default and Large it wraps onto as many
+   * lines as it needs (d-122), and a card with no description has no description line. `2` always takes exactly two
+   * lines of the description's line height, at each text size: a longer description is clamped to two lines with an
+   * ellipsis, and a card with no description, or one that loads, keeps the two lines empty. Cards with `2` in a grid
+   * have one height (the Artifacts card, the-bridge review R77).
+   */
+  descriptionLines?: 1 | 2 | undefined
   /** The meta row at the end, such as a kind, an age or counts. */
   meta?: ReactNode
   /**
@@ -90,8 +101,11 @@ export type CardProps = {
  * `onSelect`, the title is a button and a click anywhere on the card
  * presses it.
  */
-export function Card({ title, loading = false, media, leading, badge, badgePosition = 'title', subtitle, description, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
+export function Card({ title, loading = false, media, leading, badge, badgePosition = 'title', subtitle, description, descriptionLines = 1, meta, trailing, padding = 'default', metaSpacer = false, onSelect }: CardProps) {
   const hasMedia = shown(media)
+  const hasDescription = description !== undefined && description !== ''
+  // Two reserved lines: the slot is drawn with or without text, and its text is clamped at each text size.
+  const reserved = descriptionLines === 2
   // A card with onSelect owns its cut description: a hover on the card, or the keyboard focus on its title button,
   // opens its tooltip, and it takes no tab stop of its own. The subtitle keeps its own, so one hover opens one tip.
   const rootRef = useRef<HTMLElement>(null)
@@ -108,7 +122,7 @@ export function Card({ title, loading = false, media, leading, badge, badgePosit
     onSelect()
   }
   return (
-    <Root ref={rootRef} media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} onClick={onSelect === undefined || loading ? undefined : select} data-loading={loading ? '' : undefined}>
+    <Root ref={rootRef} media={hasMedia} padding={padding} metaSpacer={metaSpacer} badgePosition={badgePosition} descriptionLines={reserved ? '2' : '1'} onClick={onSelect === undefined || loading ? undefined : select} data-loading={loading ? '' : undefined}>
       {hasMedia ? <Media>{media}</Media> : null}
       <Body>
         <Header>
@@ -123,7 +137,7 @@ export function Card({ title, loading = false, media, leading, badge, badgePosit
                 ) : (
                   <Action type="button">
                     {/* Above the title, so its tip never covers the description's tip below the description. */}
-                    <TruncatedText placement={description === undefined || description === '' ? 'bottom' : 'top'}>{title}</TruncatedText>
+                    <TruncatedText placement={hasDescription ? 'top' : 'bottom'}>{title}</TruncatedText>
                   </Action>
                 )}
               </Title>
@@ -137,15 +151,15 @@ export function Card({ title, loading = false, media, leading, badge, badgePosit
           </Heading>
           {shown(trailing) ? <Trailing>{trailing}</Trailing> : null}
         </Header>
-        {description === undefined || description === '' ? null : (
-          <Description>
-            {loading ? <Skeleton width="full" /> : (
-                <TruncatedText owner={owner} grow>
+        {hasDescription || reserved ? (
+          <Description aria-hidden={hasDescription ? undefined : 'true'}>
+            {!hasDescription ? null : loading ? <Skeleton width="full" /> : (
+                <TruncatedText owner={owner} lines={reserved ? 2 : 1} grow={!reserved}>
                   {description}
                 </TruncatedText>
               )}
           </Description>
-        )}
+        ) : null}
         {shown(meta) ? <Meta>{meta}</Meta> : null}
       </Body>
     </Root>

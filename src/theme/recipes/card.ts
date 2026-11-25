@@ -3,7 +3,11 @@ import { defineSlotRecipe } from '@pandacss/dev'
 // The cards of Artifacts and Toolkit.
 // - With media: the Artifacts card (D1 402:15468): a thumbnail on top
 //   (402:15469), then a body (402:15496) with the title row and its badge,
-//   a one-line description and a meta row.
+//   a description and a meta row. Figma draws one line of description; the
+//   Artifacts page passes `descriptionLines={2}`, which keeps the slot two
+//   lines high with or without text, so every artifact card has one height
+//   (the-bridge review R77, the owner: "Artifact cards should always be the
+//   same height").
 // - Without media: the Toolkit card (D1 425:77): a leading tile (425:79), the
 //   name and its path (425:82), a description, and a footer at the bottom.
 // When the card has `onSelect`, its title is a button whose hit area covers
@@ -110,7 +114,13 @@ export const card = defineSlotRecipe({
       title: {},
       end: { title: { flex: '1' } },
     },
+    // `2` gives the description exactly two lines of its own line height (`lh`, so it scales with the text size),
+    // with text or without; Card clamps the text to two lines. `1` lets the slot take its text's height.
+    descriptionLines: {
+      '1': {},
+      '2': { description: { h: 'calc(2 * 1lh)', flexShrink: '0' } },
+    },
   },
   compoundVariants: [{ media: false, padding: 'compact', css: { body: { py: '10', px: '12' } } }],
-  defaultVariants: { media: false, padding: 'default', metaSpacer: false, badgePosition: 'title' },
+  defaultVariants: { media: false, padding: 'default', metaSpacer: false, badgePosition: 'title', descriptionLines: '1' },
 })

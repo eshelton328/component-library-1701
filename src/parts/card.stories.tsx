@@ -759,3 +759,80 @@ const growCardPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** A Toolkit card at Small, Default and Large: the larger sizes wrap its subtitle and description. */
 export const GrowTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowCard />, play: growCardPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const GrowTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowCard />, play: growCardPlay, globals: { mode: 'light', textSize: 'small' } }
+
+// Artifact cards of one height (the-bridge screen review R77, the owner: "Artifact cards should always be the same
+// height"). `descriptionLines={2}` gives the description exactly two lines at each text size: a long one is clamped
+// to two lines with an ellipsis, and a card with none, or one that loads, keeps two empty lines. The cards sit in a
+// grid inside a box each, as the-bridge's Artifacts grid has them, and the cells do not stretch them: each card
+// keeps its own height, so the check sees the card's height and not the row's.
+const sameHeightLong =
+  'Projects app for the-bridge: the projects overview and a project page, from the component-library-1701 Design System, with the held-out cases and the planted defects that check the graders'
+const sameHeightLongTitle = 'component-library-1701 Design System overview with every token, part and page of the-bridge'
+
+function SameHeightCards() {
+  const card = (testId: string, extra: { title?: string; description?: string; loading?: boolean; isNew?: boolean }) => (
+    <div className={column} data-testid={testId}>
+      <Card
+        descriptionLines={2}
+        title={extra.loading === true ? '' : (extra.title ?? 'NCC-1701 Projects')}
+        loading={extra.loading}
+        media={<div className={thumbnail} />}
+        badge={extra.isNew === true ? <Badge label="New" icon={<SparkIcon size="12" />} tone="working" size="sm" /> : undefined}
+        badgePosition="end"
+        description={extra.description}
+        meta={
+          <div className={metaWide}>
+            <MetaLine icon="md" leading={<KindMark kind="claude" size="16" />} items={['Claude', 'the-bridge']} trailing="16h" />
+          </div>
+        }
+        onSelect={extra.loading === true ? undefined : () => undefined}
+      />
+    </div>
+  )
+  return (
+    <main className={page}>
+      <Grid columns="2" gap="24">
+        {card('none', { isNew: true })}
+        {card('long', { description: sameHeightLong })}
+        {card('short', { description: 'Short' })}
+        {card('loading', { loading: true })}
+        {card('longTitle', { title: sameHeightLongTitle, description: 'Short', isNew: true })}
+      </Grid>
+    </main>
+  )
+}
+
+const sameHeightPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const ids = ['none', 'long', 'short', 'loading', 'longTitle'] as const
+  const article = (id: string) => find(canvasElement, `[data-testid="${id}"] article`)
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      // Every card has the height of the card with no description, in a row and across rows.
+      const heights = ids.map((id) => ({ id, size, height: Math.round(article(id).getBoundingClientRect().height) }))
+      const first = heights[0]?.height
+      await expect(heights).toEqual(ids.map((id) => ({ id, size, height: first })))
+      // The description slot is two lines of its own line height, at each text size: with text, without and loading.
+      for (const id of ids) {
+        const slot = article(id).querySelector('.card__description')
+        if (!(slot instanceof HTMLElement)) throw new Error(`no description slot in ${id} at ${size}`)
+        const line = Number.parseFloat(getComputedStyle(slot).lineHeight)
+        await expect({ id, size, height: Math.round(slot.getBoundingClientRect().height) }).toEqual({ id, size, height: Math.round(2 * line) })
+      }
+      // The long description is clamped to two lines with an ellipsis, at each size, and nothing spills.
+      const longText = find(article('long'), '.card__description .truncated-text')
+      await expect(getComputedStyle(longText).webkitLineClamp).toBe('2')
+      await waitFor(() => expect(longText.scrollHeight - longText.clientHeight).toBeGreaterThan(1))
+      // The long title stays on one line and is cut, so the title row keeps one height too.
+      const longTitle = find(article('longTitle'), '.card__title .truncated-text')
+      await waitFor(() => expect(longTitle.scrollWidth).toBeGreaterThan(longTitle.clientWidth))
+      await expect(textSpills(canvasElement)).toEqual([])
+    })
+  }
+}
+
+/**
+ * `descriptionLines={2}`: artifact cards with no, a long, a short and a loading description, and one with a long
+ * title, have one height (R77).
+ */
+export const SameHeightDark: StoryObj<typeof meta> = { render: () => <SameHeightCards />, play: sameHeightPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const SameHeightLight: StoryObj<typeof meta> = { render: () => <SameHeightCards />, play: sameHeightPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -264,6 +264,7 @@ export type CardProps = {
     badgePosition?: 'title' | 'end' | undefined;
     subtitle?: string | undefined;
     description?: string | undefined;
+    descriptionLines?: 1 | 2 | undefined;
     meta?: ReactNode;
     trailing?: ReactNode;
     padding?: 'default' | 'compact' | undefined;

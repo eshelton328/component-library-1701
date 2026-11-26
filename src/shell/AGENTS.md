@@ -88,7 +88,9 @@ show it under Layout, Navigation or Overlays (d-065, d-066).
 - A page changes its layout for a keyboard move in `appShellDockEvent`
   (a composer that grows), never at the focus; a footer that changes its
   height during a move restarts the move from where it is drawn
-  (`GrowOnDock`).
+  (`GrowOnDock`). A body at its end starts each move at the end of the
+  move's layout, so a page that pins it there scrolls nothing after the
+  move's animations start (R76, `PinnedGrowOnDock`).
 - Read a token as a number only through `css-values.ts`, which throws
   on a form it does not know (audit L-2, `MotionTokens` story).
 - The tab bar stays in the shell's flow, never `position: fixed`. Its

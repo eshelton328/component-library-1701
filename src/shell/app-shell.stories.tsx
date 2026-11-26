@@ -3926,6 +3926,79 @@ export const GrowOnDockLight: StoryObj<typeof meta> = { ...growOnDock(0), global
 export const GrowLateDark: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'dark', viewport: { value: 'm390' } } }
 export const GrowLateLight: StoryObj<typeof meta> = { ...growOnDock(50), globals: { mode: 'light', viewport: { value: 'm390' } } }
 
+// The page's pin of its thread at the end, as the-bridge's usePinnedEnd: a ResizeObserver on the thread and the composer
+// that scrolls the thread to its end. The page makes it after the shell's own observer (the pin's effect runs after the
+// page's first commit), so in a resize it runs after the shell's.
+const pinToEnd = (body: HTMLElement, footer: Element) => {
+  const pin = new ResizeObserver(() => {
+    body.scrollTop = body.scrollHeight
+  })
+  pin.observe(body)
+  pin.observe(footer)
+  return () => {
+    pin.disconnect()
+  }
+}
+// Screen review R76 (iPad, the-bridge 06452ca8): a thread at its end, pinned there by the page, over a composer that
+// grows by its 28 px row in the open's move. The growth shrinks the thread's view in the move's layout, and the pin
+// scrolls the thread to its new end after the shell has made the move's animations. The thread must stay on its
+// track: the last line moves with the composer within 8 px a 60 Hz frame in the move (on R76's iPad it rose 28 px
+// ahead of the keyboard), and from the move's end on, neither the line nor the composer steps more than 2 px in a frame
+// (on R76's iPad the thread fell 28 px in the move's last frame).
+const pinnedGrowOnDock: StoryObj<typeof meta> = {
+  ...withMotion,
+  render: () => <GrowingChat />,
+  play: viewportPlay(async ({ canvasElement }, fakeViewport) => {
+    const { root, field, composer, footer } = threadParts(canvasElement)
+    const body = slotOf(canvasElement, 'scroll-frame__body')
+    const last = within(canvasElement).getByText('Message 40 of the thread')
+    const composerBox = within(canvasElement).getByRole('group', { name: 'Composer' })
+    const keyboard = 336
+    body.scrollTop = body.scrollHeight
+    const unpin = pinToEnd(body, footer)
+    await nextFrame()
+    const opening = recordBoxes(root, composer, [last], composerBox)
+    await nextFrame()
+    opening.act()
+    await userEvent.click(field)
+    await wait(110)
+    opening.act()
+    fakeViewport.move({ height: 844 - keyboard })
+    await waitFor(() => expect(root.dataset.keyboardEnd).not.toBeUndefined())
+    const openEnd = Number(root.dataset.keyboardEnd)
+    await wait(motionMs + 300)
+    opening.stop()
+    unpin()
+    await expect(within(canvasElement).getByTestId('grow-row')).toBeVisible()
+    const off: string[] = []
+    const moved = opening.moves[0] ?? openEnd - motionMs
+    const frames = opening.frames.filter((f) => f.at > moved)
+    if (frames.filter((f) => f.drawn < openEnd).length < 4) off.push(`${String(frames.length)} frames in the move`)
+    frames.forEach((f, i) => {
+      const before = frames[i - 1]
+      const line = f.lines[0]
+      const was = before?.lines[0]
+      if (before === undefined || line === null || line === undefined || was === null || was === undefined) return
+      const lineStep = line.bottom - was.bottom
+      const composerStep = f.composer.bottom - before.composer.bottom
+      const offComposer = lineStep - composerStep
+      // In the move: 8 px over a 60 Hz frame, and as much more over a longer one (`GrowOnDock`).
+      const bound = 8 * Math.max(1, (f.drawn - before.drawn) / frameMs)
+      if (Math.abs(offComposer) > bound) off.push(`@${f.drawn.toFixed(0)}: the last line moved ${offComposer.toFixed(1)} px off the composer`)
+      // The frame the move ends in, and each one after it.
+      if (f.drawn < openEnd) return
+      if (Math.abs(lineStep) > 2) off.push(`@${f.drawn.toFixed(0)}, after the move: the last line stepped ${lineStep.toFixed(1)} px`)
+      if (Math.abs(composerStep) > 2) off.push(`@${f.drawn.toFixed(0)}, after the move: the composer stepped ${composerStep.toFixed(1)} px`)
+    })
+    // The thread ends at its end, its last line over the composer.
+    await expect(body.scrollHeight - body.scrollTop - body.clientHeight).toBeLessThanOrEqual(1)
+    await expect(off).toEqual([])
+  }),
+}
+/** Phone chat on iOS: a thread that the page pins at its end stays on its track as the composer grows in the open. */
+export const PinnedGrowOnDockDark: StoryObj<typeof meta> = { ...pinnedGrowOnDock, globals: { mode: 'dark', viewport: { value: 'm390' } } }
+export const PinnedGrowOnDockLight: StoryObj<typeof meta> = { ...pinnedGrowOnDock, globals: { mode: 'light', viewport: { value: 'm390' } } }
+
 // An iPad in the desktop layout, with a chat in the detail and a list pane with its own ScrollFrame footer (the phone and
 // tablet layouts show one pane): the keyboard's inset lifts both
 // footers (Codex review of #314), so the list's footer moves with the composer in every frame of a move, and neither

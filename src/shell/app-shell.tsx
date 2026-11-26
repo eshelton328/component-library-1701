@@ -402,6 +402,17 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       return { footerBottom, body, glideTop }
     }
+    // A part's own transform, read with the move's other reads and after `stopMotion`, so a cancelled move adds nothing to
+    // it: `''` for none, or `undefined` when the part runs a transform animation of its own (a page's), which a `replace`
+    // would hold still for the move.
+    const ownTransform = (el: HTMLElement): string | undefined => {
+      const animated = el
+        .getAnimations()
+        .some((animation) => animation.effect instanceof KeyframeEffect && animation.effect.getKeyframes().some((frame) => 'transform' in frame))
+      if (animated) return undefined
+      const own = getComputedStyle(el).transform
+      return own === 'none' ? '' : own
+    }
     const stopMotion = () => {
       const move = moving
       moving = undefined
@@ -555,16 +566,19 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
       }
       const move: Motion = { start, target, clock: root.animate([], { duration: keyboardMotion }), animations: [], footers: new Map(), bodies: new Map(), glides: new Map(), cleanups: [] }
       const timing: KeyframeAnimationOptions = { duration: keyboardMotion, easing: 'linear', fill: 'both' }
-      // A footer's animation replaces its transform, the dock's own; a body's child's adds to the child's own transform
-      // (Codex review of #314).
-      const animate = (el: HTMLElement, steps: Track, values: number[], composite: CompositeOperation = 'replace') => {
+      // Every part's animation replaces its transform, as the footer's does: WebKit runs a transform animation on the
+      // compositor only when it replaces, and one that adds waits for the main thread, so the thread stood still for 2 to 7
+      // frames of an open while the composer rose (R44). A part's own transform (`own`, from `ownTransform`) comes first
+      // in each keyframe, the same transform as the move's added to it (Codex review of #314). `undefined`: the part runs
+      // a transform animation of its own, and the move's adds to it.
+      const animate = (el: HTMLElement, steps: Track, values: number[], own: string | undefined) => {
         const animation = el.animate(
           values.map((value, i) => ({
             offset: steps.offsets[i] ?? 1,
             easing: steps.easings[i] ?? 'linear',
-            transform: `translateY(${String(value)}px)`,
+            transform: `${own ?? ''} translateY(${String(value)}px)`.trimStart(),
           })),
-          { ...timing, composite },
+          { ...timing, composite: own === undefined ? 'add' : 'replace' },
         )
         animation.startTime = start
         move.animations.push(animation)
@@ -620,7 +634,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           const box = child.getBoundingClientRect()
           return box.bottom + highest > top && box.top + lowest < foot
         }
-        return { el, tracks, shifts, inView, children: [...el.children].filter(inView) }
+        return { el, tracks, shifts, inView, children: [...el.children].filter(inView).map((child) => ({ child, own: ownTransform(child) })) }
       })
       // A glide element moves from where it is drawn to its top at the target's layout, in step with the keyboard's reach
       // over its frame, as a footer does: the layout of the move is its place, so a layout change at a close's start or an
@@ -639,7 +653,7 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
         if (Math.abs(end.top - top) < 0.5 && Math.abs(box.top - top) < 0.5) return []
         const seen = (at: number, { top: viewTop, foot }: { top: number; foot: number }) => at + box.height > viewTop && at < foot
         if (!seen(top, view) && !seen(end.top, end.view)) return []
-        return [{ el, steps: track(frameUnder(body.parentElement), top, end.top), place: box.top }]
+        return [{ el, steps: track(frameUnder(body.parentElement), top, end.top), place: box.top, own: ownTransform(el) }]
       })
       for (const { el, steps, place, height } of footerMoves) {
         move.footers.set(el, steps)
@@ -652,31 +666,35 @@ function useVisualViewportFit(diagnostic: RefObject<((diagnostic: AppShellDiagno
           el,
           steps,
           steps.values.map((value) => value - place),
+          '',
         )
       }
-      for (const { el, steps, place } of glideMoves) {
+      for (const { el, steps, place, own } of glideMoves) {
         move.glides.set(el, steps)
         animate(
           el,
           steps,
           steps.values.map((value) => value - place),
-          'add',
+          own,
         )
       }
       for (const { el, tracks, shifts, inView, children } of bodyShifts) {
         move.bodies.set(el, tracks)
-        for (const child of children) animate(child, tracks.scroll, shifts, 'add')
+        for (const { child, own } of children) animate(child, tracks.scroll, shifts, own)
         // A scroll during the move (a reader's flick, or a page that keeps its thread at the end) brings other children
         // into view, and a page may add a child (a new entry): each one in view moves with the others from then on, so
         // none is drawn at its place in the layout among them. The observer runs before the frame paints.
         if (shifts.some((shift) => Math.abs(shift) >= 0.5)) {
-          const moved = new Set<Element>(children)
+          const moved = new Set<Element>(children.map(({ child }) => child))
           const scrolled = () => {
             // All the reads first, then the animations (see above).
-            const entering = [...el.children].filter((child) => !moved.has(child)).filter(inView)
-            for (const child of entering) {
+            const entering = [...el.children]
+              .filter((child) => !moved.has(child))
+              .filter(inView)
+              .map((child) => ({ child, own: ownTransform(child) }))
+            for (const { child, own } of entering) {
               moved.add(child)
-              animate(child, tracks.scroll, shifts, 'add')
+              animate(child, tracks.scroll, shifts, own)
             }
           }
           el.addEventListener('scroll', scrolled, { passive: true })

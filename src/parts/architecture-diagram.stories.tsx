@@ -104,6 +104,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+// Each boundary and the parts inside it, written out by hand (Codex review of #371).
+const boundaryLines = new Map([
+  ['How the system works', ['Mac: Tailscale Serve, the-bridge web, the-bridge server, component-library-1701, herdr, Disk stores, Claude Code, Brain']],
+  ['How the-bridge works', ['the-bridge repository: contract/, web, server, component-library-1701, the-bridge.db']],
+  ['Every shape', [`A boundary: ${shapes.map((s) => diagramShapeNames[s]).join(', ')}`]],
+])
 const legendNames = (root: HTMLElement) => within(root).getAllByRole('listitem').filter((li) => li.closest('ul[aria-label="Legend"]') !== null).map((li) => li.textContent)
 const listed = (root: HTMLElement, name: string) => within(within(root).getByRole('list', { name })).getAllByRole('listitem').map((li) => li.textContent)
 
@@ -114,8 +120,9 @@ const expectText = async (root: HTMLElement, props: ArchitectureDiagramProps) =>
   const owners = [props.parts.some((p) => p.ours) ? 'Our code' : null, props.parts.some((p) => !p.ours) ? 'Third party' : null]
   const expected = [...shapes.filter((s) => used.has(s)).map((s) => diagramShapeNames[s]), ...owners, (props.boundaries ?? []).length > 0 ? 'Boundary' : null]
   await expect(legendNames(root)).toEqual(expected.filter((n) => n !== null))
-  await expect(listed(root, `Parts of ${props.title}`)).toEqual(props.parts.map((p) => `${p.name}, ${p.typeLine}`))
+  await expect(listed(root, `Parts of ${props.title}`)).toEqual(props.parts.map((p) => `${p.name}, ${p.typeLine}, ${p.ours ? 'our code' : 'third party'}`))
   const names = new Map(props.parts.map((p) => [p.id, p.name]))
+  await expect(listed(root, `Boundaries of ${props.title}`)).toEqual(boundaryLines.get(props.title) ?? [])
   await expect(listed(root, `Arrows of ${props.title}`)).toEqual(props.arrows.map((a) => `${names.get(a.from) ?? ''} → ${names.get(a.to) ?? ''}: ${a.label}`))
   await expect(root.querySelector('.architecture-diagram__svg')).toHaveAttribute('aria-hidden', 'true')
   await expect(within(root).getByRole('figure', { name: props.title })).toBeVisible()

@@ -183,8 +183,8 @@ const legendShapes = Object.keys(diagramShapeNames).filter((s): s is DiagramShap
  * A diagram that the server has laid out: each part as its shape at its box, with its name and type line; dashed
  * boundaries with their labels; arrows with a head at the part they point to and their labels. Our code has the
  * accent fill and a third party the neutral fill. Under it are the legend of the shapes in use (and Our code, Third
- * party and Boundary when used) and the caption. The drawing is hidden from screen readers, and a list carries its
- * parts and arrows (R15). When the drawing is wider than its box, the box scrolls sideways and shows `scrollHint` (R16).
+ * party and Boundary when used) and the caption. The drawing is hidden from screen readers, and lists carry its parts
+ * (with our code or third party), its boundaries (with the parts inside each) and its arrows (R15). When the drawing is wider than its box, the box scrolls sideways and shows `scrollHint` (R16).
  */
 export function ArchitectureDiagram({ title, caption, width, height, parts, boundaries = [], arrows, scrollHint }: ArchitectureDiagramProps) {
   const id = useId()
@@ -206,6 +206,8 @@ export function ArchitectureDiagram({ title, caption, width, height, parts, boun
     }
   }, [width])
   const names = new Map(parts.map((p) => [p.id, p.name]))
+  // A boundary holds the parts whose boxes are inside its outline.
+  const inside = (b: DiagramBoundary) => parts.filter((p) => p.x >= b.x && p.y >= b.y && p.x + p.width <= b.x + b.width && p.y + p.height <= b.y + b.height)
   const used = new Set(parts.map((p) => p.shape))
   const hasOurs = parts.some((p) => p.ours)
   const hasTheirs = parts.some((p) => !p.ours)
@@ -288,9 +290,16 @@ export function ArchitectureDiagram({ title, caption, width, height, parts, boun
       <Text>
         <ul aria-label={`Parts of ${title}`}>
           {parts.map((p) => (
-            <li key={p.id}>{p.typeLine === '' ? p.name : `${p.name}, ${p.typeLine}`}</li>
+            <li key={p.id}>{[p.name, p.typeLine, p.ours ? 'our code' : 'third party'].filter((s) => s !== '').join(', ')}</li>
           ))}
         </ul>
+        {boundaries.length > 0 ? (
+          <ul aria-label={`Boundaries of ${title}`}>
+            {boundaries.map((b) => (
+              <li key={b.id}>{`${b.label}: ${inside(b).map((p) => p.name).join(', ')}`}</li>
+            ))}
+          </ul>
+        ) : null}
         <ul aria-label={`Arrows of ${title}`}>
           {arrows.map((a) => (
             <li key={a.id}>{`${names.get(a.from) ?? a.from} → ${names.get(a.to) ?? a.to}: ${a.label}`}</li>

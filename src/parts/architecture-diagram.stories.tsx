@@ -159,6 +159,12 @@ const phonePlay: Story['play'] = async ({ canvasElement }) => {
   // The page does not scroll sideways; only the drawing's box does.
   await expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(window.innerWidth)
   await expectScrollAreas(canvasElement, 'x', '.architecture-diagram__body')
+  // A keyboard user sees where the focus is (Codex review of #371).
+  body.focus()
+  // Panda writes outline none as a transparent outline, so the ring must have a colour too.
+  await expect(getComputedStyle(body).outlineStyle).toBe('solid')
+  await expect(channels(getComputedStyle(body).outlineColor)[3]).toBeGreaterThan(0)
+  body.blur()
   body.scrollLeft = 200
   await expect(body.scrollLeft).toBeGreaterThan(0)
 }

@@ -1,4 +1,5 @@
 import { defineSlotRecipe } from '@pandacss/dev'
+import { focusRing } from './focus'
 import { scrollAreaX } from './scroll-area'
 
 // A laid-out architecture diagram (the-bridge Projects, Architecture tab; Figma "NCC-1701 Projects"
@@ -25,7 +26,16 @@ export const architectureDiagram = defineSlotRecipe({
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '8', minW: '0', m: '0' },
     // The drawing scrolls sideways in its own box on a narrow screen (R16); the page does not.
-    body: { minW: '0', overflowX: 'auto', overflowY: 'hidden', ...scrollAreaX, outline: 'none', borderRadius: 'md' },
+    // It takes the focus when it scrolls, so it draws the focus ring inside its edge, as the DiagramFrame body does.
+    body: {
+      minW: '0',
+      overflowX: 'auto',
+      overflowY: 'hidden',
+      ...scrollAreaX,
+      outline: 'none',
+      borderRadius: 'md',
+      [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '-2' },
+    },
     svg: { display: 'block', overflow: 'visible' },
     shape: {
       fill: 'surface.raised',

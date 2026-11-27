@@ -1491,6 +1491,32 @@ export type PageHeaderProps = Scalar<PageHeaderVariantProps> & {
 };
 
 // @public
+export function Pager(input: PagerProps): JSX.Element;
+
+// @public
+export type PagerLabels = {
+    group?: string | undefined;
+    previous?: string | undefined;
+    next?: string | undefined;
+    rows?: string | undefined;
+    range?: ((from: number, to: number, total: number) => string) | undefined;
+    page?: ((page: number, pages: number) => string) | undefined;
+    rowsOption?: ((size: number) => string) | undefined;
+};
+
+// @public (undocumented)
+export type PagerProps = {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange?: ((page: number) => void) | undefined;
+    pageSizes?: readonly number[] | undefined;
+    onPageSizeChange?: ((pageSize: number) => void) | undefined;
+    size?: 'desktop' | 'tablet' | 'phone' | undefined;
+    labels?: PagerLabels | undefined;
+};
+
+// @public
 export function Pane(input: PaneProps): JSX.Element;
 
 // @public

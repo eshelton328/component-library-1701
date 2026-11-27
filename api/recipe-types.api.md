@@ -813,6 +813,7 @@ export * from './more-drawer.js';
 export * from './nav-rail.js';
 export * from './option-list.js';
 export * from './page-header.js';
+export * from './pager.js';
 export * from './pane.js';
 export * from './panel.js';
 export * from './path-badge.js';
@@ -1425,6 +1426,26 @@ export type PageHeaderSlot = "root" | "title" | "count" | "countLabel" | "action
 export type PageHeaderRecipe = ConfigSlotRecipeRuntimeFn<PageHeaderSlot, PageHeaderVariantProps, PageHeaderVariantMap>
 
 export declare const pageHeader: PageHeaderRecipe;
+
+// pager.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type PagerVariant = {
+  size?: "desktop" | "tablet" | "phone"
+}
+
+export type PagerVariantProps = {
+  [K in keyof PagerVariant]?: ConditionalValue<PagerVariant[K]>
+}
+
+export type PagerVariantMap = RecipeVariantMap<PagerVariant>
+
+export type PagerSlot = "root" | "range" | "nav" | "current" | "pageName" | "rows"
+
+export type PagerRecipe = ConfigSlotRecipeRuntimeFn<PagerSlot, PagerVariantProps, PagerVariantMap>
+
+export declare const pager: PagerRecipe;
 
 // pane.d.ts
 import type { ConditionalValue } from '../types/system.js';

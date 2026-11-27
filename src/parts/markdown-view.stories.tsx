@@ -717,7 +717,7 @@ export const MathLight: StoryObj<typeof meta> = { render: () => <MathText />, pl
 
 // A flag in a fact value at Large on the phone (the-bridge Toolkit, NCC-145): the browser may break a line after a
 // hyphen-minus before a letter, so "--ste" showed as "--" and "ste". Each space-separated token of a value stays on
-// one line when it fits; a token wider than the line still breaks inside itself.
+// one line when it fits; a token wider than the line still breaks inside itself, and the value's text stays inline.
 const flagWidths = { popoverSm: css({ w: 'shell.popoverSm' }), popover: css({ w: 'shell.popover' }), phone: css({ w: 'shell.popoverPicker' }) }
 // A token wider than the narrowest column still breaks inside itself and stays in its box.
 const flagFacts = [...m08Facts, { key: 'Env', value: 'WRITER_RULES_DIRECTORY_OVERRIDE_FOR_THE_STE_CHECK' }]
@@ -757,6 +757,9 @@ const flagWordsPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canva
         const values = all(canvas.getByTestId(`flags-${width}`), '.script-explanation__factValue')
         const split = values.slice(0, 3).flatMap(splitTokens)
         for (const value of values) await expect(value.scrollWidth).toBeLessThanOrEqual(value.clientWidth)
+        // Every box inside a value stays inline, so find in page still matches a phrase across it (review of #368).
+        const boxes = values.flatMap((value) => [...value.querySelectorAll('*')].map((e) => getComputedStyle(e).display))
+        await expect(boxes.filter((d) => d !== 'inline')).toEqual([])
         await expect({ size, width, split }).toEqual({ size, width, split: [] })
         // The value keeps its text as given: real hyphen-minus signs, which a copy takes along.
         await expect(values[0]?.textContent).toBe('one or more files, --form, --ste')

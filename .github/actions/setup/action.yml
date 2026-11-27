@@ -45,6 +45,21 @@ runs:
       run: |
         printf '%s\n' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' 'Acquire::Retries "3";' \
           | sudo tee /etc/apt/apt.conf.d/80-ci-timeouts > /dev/null
+    # The runner image also lists packages.microsoft.com, which gave 403 and
+    # an unsigned InRelease on 2026-11-27, and apt-get update in the install
+    # below stopped the job (NCC-150, the-bridge NCC-148). Chromium's
+    # packages come only from the Ubuntu archive, and the runner is thrown
+    # away after the job, so move those source files out and print them.
+    - if: inputs.browser == 'true'
+      shell: bash
+      run: |
+        mapfile -t sources < <(grep -l 'packages\.microsoft\.com' /etc/apt/sources.list.d/* 2>/dev/null || true)
+        if [ "${#sources[@]}" -eq 0 ]; then echo "No apt source names packages.microsoft.com."; exit 0; fi
+        sudo mkdir -p /etc/apt/sources.list.d.off
+        for source in "${sources[@]}"; do
+          sudo mv "$source" /etc/apt/sources.list.d.off/
+          echo "Moved $source to /etc/apt/sources.list.d.off/"
+        done
     - if: inputs.browser == 'true'
       id: playwright-install
       shell: bash

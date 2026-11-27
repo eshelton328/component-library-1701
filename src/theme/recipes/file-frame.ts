@@ -68,8 +68,17 @@ export const fileFrame = defineSlotRecipe({
       color: 'fg.muted',
     },
     icon: { display: 'inline-flex', flexShrink: '0' },
-    // The meta gives way before the name: it shrinks 4 times as fast.
-    name: { textStyle: 'mono', color: 'fg.default', whiteSpace: 'nowrap', minW: '0', flexShrink: '1' },
+    // The meta gives way before the name: it shrinks 4 times as fast. At Default and Large the name, as the meta, keeps
+    // its longest word as its least width, so a path wraps after a "/" and never inside a word (NCC-142, PathWords).
+    name: {
+      textStyle: 'mono',
+      color: 'fg.default',
+      whiteSpace: 'nowrap',
+      minW: '0',
+      flexShrink: '1',
+      _textDefault: { minW: 'min-content' },
+      _textLarge: { minW: 'min-content' },
+    },
     // At Default and Large (d-131) the meta wraps (TruncatedText grow) and keeps its longest word as its least width,
     // so a long name or the end group never squeezes it into a column of single letters.
     meta: {

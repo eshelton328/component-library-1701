@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { css } from '../../styled-system/css'
-import { atTextSize, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
+import { atTextSize, brokenWords, expectGrown, textSizes, textSpills } from '../controls/text-size.testing'
 import { expectCutText } from '../controls/tooltip.testing'
+import { ViewSwitch } from '../controls/view-switch'
 import { SkillIcon } from '../foundations/icons'
 import { CodeLines } from './code-lines'
 import { FileFrame } from './file-frame'
@@ -339,3 +340,51 @@ const growMetaPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =>
 /** A long meta at Small, Default and Large: the larger sizes wrap it. */
 export const GrowMetaTextSizesDark: StoryObj<typeof meta> = { render: () => <GrowMeta />, play: growMetaPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const GrowMetaTextSizesLight: StoryObj<typeof meta> = { render: () => <GrowMeta />, play: growMetaPlay, globals: { mode: 'light', textSize: 'small' } }
+
+
+// A path in the bar at each text size (the-bridge Toolkit, NCC-142): the meta and the end group take the width, and
+// at Default and Large the name used to wrap inside a word ("scri" / "pts/check"). A name breaks only where a
+// word ends, such as after a "/", as the meta does.
+const pathWidths = {
+  popover: { className: css({ w: 'shell.popover' }), name: 'scripts/check' },
+  picker: { className: css({ w: 'shell.popoverPicker' }), name: 'hooks/check' },
+  wide: { className: wide, name: 'tools/check' },
+}
+const views = [
+  { value: 'explain', label: 'Explain' },
+  { value: 'code', label: 'Code' },
+]
+function PathWords() {
+  return (
+    <main className={page}>
+      {Object.entries(pathWidths).map(([width, { className, name }]) => (
+        <div key={width} className={className} data-testid={`path-${width}`}>
+          <FileFrame
+            name={name}
+            icon="code"
+            meta="Python · 437 lines · run, not read"
+            actions={<ViewSwitch label="View" tone="accent" items={views} defaultValue="code" />}
+            onCopy={() => undefined}
+            readOnly
+            variant="flush"
+          />
+        </div>
+      ))}
+    </main>
+  )
+}
+
+const pathWordsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      for (const width of Object.keys(pathWidths)) {
+        const name = el(within(canvasElement).getByTestId(`path-${width}`), '.file-frame__name')
+        await expect({ size, width, broken: brokenWords(name) }).toEqual({ size, width, broken: [] })
+      }
+    })
+  }
+}
+
+/** The path "scripts/check" beside a long meta, a switch, the copy icon and Read-only: no word breaks inside itself. */
+export const PathWordsDark: StoryObj<typeof meta> = { render: () => <PathWords />, play: pathWordsPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const PathWordsLight: StoryObj<typeof meta> = { render: () => <PathWords />, play: pathWordsPlay, globals: { mode: 'light', textSize: 'small' } }

@@ -1582,7 +1582,7 @@ export type ScriptExplanationVariantProps = {
 
 export type ScriptExplanationVariantMap = RecipeVariantMap<ScriptExplanationVariant>
 
-export type ScriptExplanationSlot = "root" | "card" | "label" | "summary" | "facts" | "factKey" | "factValue" | "steps" | "step" | "stepNumber" | "stepText" | "lineLink" | "note"
+export type ScriptExplanationSlot = "root" | "card" | "label" | "summary" | "facts" | "factKey" | "factValue" | "factFlag" | "steps" | "step" | "stepNumber" | "stepText" | "lineLink" | "note"
 
 export type ScriptExplanationRecipe = ConfigSlotRecipeRuntimeFn<ScriptExplanationSlot, ScriptExplanationVariantProps, ScriptExplanationVariantMap>
 

@@ -11,6 +11,12 @@ const Summary = withContext('p', 'summary')
 const Facts = withContext('dl', 'facts')
 const FactKey = withContext('dt', 'factKey')
 const FactValue = withContext('dd', 'factValue')
+const FactFlag = withContext('span', 'factFlag')
+
+// The parts of a fact value: each token's leading hyphens and the character after them in a `FactFlag`, so a line
+// never breaks after a flag's "--"; the rest as plain text, so the text and its find-in-page matches stay as given.
+const factParts = (value: string): ReactNode[] =>
+  value.split(/(?<=^|\s)(-+\S)/).map((part, i) => (i % 2 === 1 ? <FactFlag key={i}>{part}</FactFlag> : part))
 const Steps = withContext('ol', 'steps')
 const Step = withContext('li', 'step')
 const StepNumber = withContext('span', 'stepNumber')
@@ -112,7 +118,7 @@ function FactRow({ fact }: { fact: ScriptFact }) {
   return (
     <>
       <FactKey>{fact.key}</FactKey>
-      <FactValue>{fact.value}</FactValue>
+      <FactValue>{factParts(fact.value)}</FactValue>
     </>
   )
 }

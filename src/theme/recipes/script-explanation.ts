@@ -27,7 +27,7 @@ export const scriptExplanation = defineSlotRecipe({
   className: 'script-explanation',
   jsx: ['ScriptExplanation'],
   staticCss: ['*'],
-  slots: ['root', 'card', 'label', 'summary', 'facts', 'factKey', 'factValue', 'steps', 'step', 'stepNumber', 'stepText', 'lineLink', 'note'],
+  slots: ['root', 'card', 'label', 'summary', 'facts', 'factKey', 'factValue', 'factFlag', 'steps', 'step', 'stepNumber', 'stepText', 'lineLink', 'note'],
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '16', p: '20', minW: '0' },
     card: {
@@ -53,6 +53,11 @@ export const scriptExplanation = defineSlotRecipe({
     },
     factKey: { textStyle: 'mono', color: 'fg.muted' },
     factValue: { textStyle: 'mono', color: 'fg.default', m: '0', overflowWrap: 'anywhere' },
+    // The hyphens that start a token, such as a flag's "--", and the character after them: the browser may break a
+    // line after a hyphen-minus before a letter ("--" / "ste"), and this inline span holds them on one line. It stays
+    // inline, so find in page still matches across it (an inline-block stops Chromium's find), and the rest of
+    // the token still breaks by the value's overflowWrap (NCC-145, FlagWords).
+    factFlag: { whiteSpace: 'nowrap' },
     steps: { display: 'flex', flexDirection: 'column', gap: '12', m: '0', p: '0', listStyle: 'none' },
     step: { display: 'flex', alignItems: 'flex-start', gap: '10' },
     stepNumber: {

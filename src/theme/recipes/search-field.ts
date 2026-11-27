@@ -27,7 +27,12 @@ import { focusRing } from './focus'
 // At Default and Large (d-122) the line of text can be taller than the size's height less the border: the field then
 // grows with its line and the size's height stays its least. The input stretches to the field's whole height, with 2
 // above and below its line, so a click anywhere in the field still focuses it (growInput).
-const growRoot = (size: 'sm' | 'md' | 'lg') => ({ h: 'auto', minH: `control.${size}` }) as const
+// The least height sits on the input, not the root, so the root's own least height stays its content's: in a flex
+// column that runs out of height, such as a popover over a long list, the field never shrinks below its line, and
+// in a narrow row it still shrinks in width (NCC-141, TightColumn and NarrowRow).
+const growRoot = { h: 'auto' } as const
+const inputMin = (size: 'sm' | 'md' | 'lg') =>
+  ({ input: { minH: `calc(token(sizes.control.${size}) - 2 * token(borderWidths.default))` } }) as const
 const growInput = { h: 'auto', py: '2', alignSelf: 'stretch' } as const
 
 export const searchField = defineSlotRecipe({
@@ -87,9 +92,9 @@ export const searchField = defineSlotRecipe({
   },
   variants: {
     size: {
-      sm: { root: { h: 'control.sm', _textDefault: growRoot('sm'), _textLarge: growRoot('sm') } },
-      md: { root: { h: 'control.md', _textDefault: growRoot('md'), _textLarge: growRoot('md') } },
-      lg: { root: { h: 'control.lg', _textDefault: growRoot('lg'), _textLarge: growRoot('lg') } },
+      sm: { root: { h: 'control.sm', _textDefault: growRoot, _textLarge: growRoot }, ...inputMin('sm') },
+      md: { root: { h: 'control.md', _textDefault: growRoot, _textLarge: growRoot }, ...inputMin('md') },
+      lg: { root: { h: 'control.lg', _textDefault: growRoot, _textLarge: growRoot }, ...inputMin('lg') },
     },
     // The clear icon size: 12 (the default), or 16 for the x in a circle of
     // Inbox D10 (346:4201, 15 in Figma). An important size in `base` would

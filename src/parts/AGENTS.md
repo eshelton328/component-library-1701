@@ -83,3 +83,8 @@ under their purpose group, never under "Parts" (d-065).
   diff's line tints, and a fold after `fold` lines (default 20). It
   parses no code and copies nothing itself; MarkdownView's own `pre`
   style skips its body (`markdown-code-block.stories.tsx`).
+- `Pager` is controlled: it shows `page` (from 1) and reports Previous,
+  Next and the Rows picker through `onPageChange` and
+  `onPageSizeChange`; the caller sets the page after a size change. The
+  page picks `size` (`desktop`, `tablet`, `phone`), never a window
+  measure; `phone` draws no Rows picker.

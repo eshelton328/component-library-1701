@@ -27,7 +27,7 @@ export const scriptExplanation = defineSlotRecipe({
   className: 'script-explanation',
   jsx: ['ScriptExplanation'],
   staticCss: ['*'],
-  slots: ['root', 'card', 'label', 'summary', 'facts', 'factKey', 'factValue', 'steps', 'step', 'stepNumber', 'stepText', 'lineLink', 'note'],
+  slots: ['root', 'card', 'label', 'summary', 'facts', 'factKey', 'factValue', 'factToken', 'steps', 'step', 'stepNumber', 'stepText', 'lineLink', 'note'],
   base: {
     root: { display: 'flex', flexDirection: 'column', gap: '16', p: '20', minW: '0' },
     card: {
@@ -53,6 +53,10 @@ export const scriptExplanation = defineSlotRecipe({
     },
     factKey: { textStyle: 'mono', color: 'fg.muted' },
     factValue: { textStyle: 'mono', color: 'fg.default', m: '0', overflowWrap: 'anywhere' },
+    // Each space-separated token of a value, so a line breaks only at a space: the browser may break after a
+    // hyphen-minus before a letter ("--" / "ste"). A token wider than the line still breaks inside itself
+    // (NCC-145, FlagWords).
+    factToken: { display: 'inline-block', maxW: '100%' },
     steps: { display: 'flex', flexDirection: 'column', gap: '12', m: '0', p: '0', listStyle: 'none' },
     step: { display: 'flex', alignItems: 'flex-start', gap: '10' },
     stepNumber: {

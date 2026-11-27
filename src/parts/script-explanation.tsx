@@ -11,6 +11,7 @@ const Summary = withContext('p', 'summary')
 const Facts = withContext('dl', 'facts')
 const FactKey = withContext('dt', 'factKey')
 const FactValue = withContext('dd', 'factValue')
+const FactToken = withContext('span', 'factToken')
 const Steps = withContext('ol', 'steps')
 const Step = withContext('li', 'step')
 const StepNumber = withContext('span', 'stepNumber')
@@ -112,7 +113,10 @@ function FactRow({ fact }: { fact: ScriptFact }) {
   return (
     <>
       <FactKey>{fact.key}</FactKey>
-      <FactValue>{fact.value}</FactValue>
+      {/* Each token between spaces is a box of its own, so a line breaks at a space, never after a "--". */}
+      <FactValue>
+        {fact.value.split(/(\s+)/).map((part, i) => (part === '' || /^\s+$/.test(part) ? part : <FactToken key={i}>{part}</FactToken>))}
+      </FactValue>
     </>
   )
 }

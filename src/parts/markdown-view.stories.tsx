@@ -6,6 +6,7 @@ import { CodeLines, type CodeKind, type CodeSegment } from './code-lines'
 import { MarkdownView, type MarkdownHighlight } from './markdown-view'
 import { ScriptExplanation, type ScriptStep } from './script-explanation'
 import { expectScrollAreas } from '../controls/scroll-area.testing'
+import { atTextSize, textSizes } from '../controls/text-size.testing'
 
 const page = css({ bg: 'bg.canvas', p: '24', display: 'flex', flexWrap: 'wrap', gap: '24', alignItems: 'flex-start' })
 // The file preview and viewer panels of Toolkit D3, D6 and D10 (#0f1626, merged into surface.overlay).
@@ -712,3 +713,58 @@ const mathPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
 /** KaTeX math in the phone column: a wide display formula scrolls in its own box, and a formula keeps the text colour. */
 export const MathDark: StoryObj<typeof meta> = { render: () => <MathText />, play: mathPlay, globals: { mode: 'dark' } }
 export const MathLight: StoryObj<typeof meta> = { render: () => <MathText />, play: mathPlay, globals: { mode: 'light' } }
+
+
+// A flag in a fact value at Large on the phone (the-bridge Toolkit, NCC-145): the browser may break a line after a
+// hyphen-minus before a letter, so "--ste" showed as "--" and "ste". Each space-separated token of a value stays on
+// one line when it fits; a token wider than the line still breaks inside itself.
+const flagWidths = { popoverSm: css({ w: 'shell.popoverSm' }), popover: css({ w: 'shell.popover' }), phone: css({ w: 'shell.popoverPicker' }) }
+// A token wider than the narrowest column still breaks inside itself and stays in its box.
+const flagFacts = [...m08Facts, { key: 'Env', value: 'WRITER_RULES_DIRECTORY_OVERRIDE_FOR_THE_STE_CHECK' }]
+function FlagWords() {
+  return (
+    <main className={phoneItem}>
+      {Object.entries(flagWidths).map(([width, className]) => (
+        <div key={width} className={className} data-testid={`flags-${width}`}>
+          <ScriptExplanation layout="narrow" summary={`Flags at ${width}.`} summaryLabel={`Overview ${width}`} stepsLabel={`Steps ${width}`} facts={flagFacts} steps={[]} />
+        </div>
+      ))}
+    </main>
+  )
+}
+
+// The tokens (runs between spaces) inside `root` that the browser drew on more than one line.
+const splitTokens = (root: Element): string[] => {
+  const out: string[] = []
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    for (const match of (node.textContent ?? '').matchAll(/\S+/g)) {
+      const range = document.createRange()
+      range.setStart(node, match.index)
+      range.setEnd(node, match.index + match[0].length)
+      const tops = new Set([...range.getClientRects()].filter((r) => r.width > 0).map((r) => Math.round(r.top)))
+      if (tops.size > 1) out.push(match[0])
+    }
+  }
+  return out
+}
+
+const flagWordsPlay: NonNullable<StoryObj<typeof meta>['play']> = async ({ canvasElement }) => {
+  const canvas = within(canvasElement)
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      for (const width of Object.keys(flagWidths)) {
+        const values = all(canvas.getByTestId(`flags-${width}`), '.script-explanation__factValue')
+        const split = values.slice(0, 3).flatMap(splitTokens)
+        for (const value of values) await expect(value.scrollWidth).toBeLessThanOrEqual(value.clientWidth)
+        await expect({ size, width, split }).toEqual({ size, width, split: [] })
+        // The value keeps its text as given: real hyphen-minus signs, which a copy takes along.
+        await expect(values[0]?.textContent).toBe('one or more files, --form, --ste')
+      }
+    })
+  }
+}
+
+/** The phone's In, Out and Exit values at Small, Default and Large: a flag such as "--ste" never breaks after "--". */
+export const FlagWordsDark: StoryObj<typeof meta> = { render: () => <FlagWords />, play: flagWordsPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const FlagWordsLight: StoryObj<typeof meta> = { render: () => <FlagWords />, play: flagWordsPlay, globals: { mode: 'light', textSize: 'small' } }

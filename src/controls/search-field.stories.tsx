@@ -384,3 +384,33 @@ const tightColumnPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement })
 /** Search fields over a long list in a column that scrolls: no field shrinks below its line at any text size. */
 export const TightColumnDark: StoryObj<typeof meta> = { render: () => <TightColumn />, play: tightColumnPlay, globals: { mode: 'dark', textSize: 'small' } }
 export const TightColumnLight: StoryObj<typeof meta> = { render: () => <TightColumn />, play: tightColumnPlay, globals: { mode: 'light', textSize: 'small' } }
+
+
+// A field in a row narrower than its content, as the Inbox list tools put it beside their buttons (review of #366):
+// the field shrinks in width and the button stays in the row.
+const narrowRow = css({ display: 'flex', alignItems: 'center', gap: '6', w: 'shell.popoverXs' })
+function NarrowRow() {
+  return (
+    <div className={narrowRow} data-testid="narrow-row">
+      <SearchField label="Search the inbox" placeholder="Search the inbox" icon={<SearchIcon />} textSize="sm" />
+      <button type="button">Filter</button>
+    </div>
+  )
+}
+
+const narrowRowPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+  const row = within(canvasElement).getByTestId('narrow-row')
+  const button = within(row).getByRole('button', { name: 'Filter' })
+  for (const size of textSizes) {
+    await atTextSize(size, async () => {
+      await expect({ size, right: Math.round(button.getBoundingClientRect().right) }).toEqual({
+        size,
+        right: Math.round(row.getBoundingClientRect().right),
+      })
+    })
+  }
+}
+
+/** A search field in a row narrower than its content: it gives up width, so the button after it stays in the row. */
+export const NarrowRowDark: StoryObj<typeof meta> = { render: () => <NarrowRow />, play: narrowRowPlay, globals: { mode: 'dark', textSize: 'small' } }
+export const NarrowRowLight: StoryObj<typeof meta> = { render: () => <NarrowRow />, play: narrowRowPlay, globals: { mode: 'light', textSize: 'small' } }

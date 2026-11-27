@@ -349,6 +349,7 @@ const pathWidths = {
   popover: { className: css({ w: 'shell.popover' }), name: 'scripts/check' },
   picker: { className: css({ w: 'shell.popoverPicker' }), name: 'hooks/check' },
   wide: { className: wide, name: 'tools/check' },
+  narrow: { className: narrow, name: 'agents/diagram-reviewer-with-a-very-long-name.md' },
 }
 const views = [
   { value: 'explain', label: 'Explain' },
@@ -380,6 +381,10 @@ const pathWordsPlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) =
       for (const width of Object.keys(pathWidths)) {
         const name = el(within(canvasElement).getByTestId(`path-${width}`), '.file-frame__name')
         await expect({ size, width, broken: brokenWords(name) }).toEqual({ size, width, broken: [] })
+        // The end group stays in the box: the copy icon can be pressed (review of #367).
+        const box = rect(within(canvasElement).getByTestId(`path-${width}`))
+        const copy = rect(within(canvasElement).getByTestId(`path-${width}`).querySelector('.file-frame__end button') ?? name)
+        await expect({ size, width, inside: copy.right <= box.right && copy.left >= box.left }).toEqual({ size, width, inside: true })
       }
     })
   }

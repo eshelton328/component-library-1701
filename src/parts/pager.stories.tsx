@@ -28,11 +28,7 @@ function States() {
           <Pager {...props} />
         </div>
       ))}
-      <div hidden>
-        {Object.entries(swatches).map(([name, className]) => (
-          <span key={name} data-swatch={name} className={className} />
-        ))}
-      </div>
+      <div hidden>{Object.entries(swatches).map(([name, className]) => <span key={name} data-swatch={name} className={className} />)}</div>
     </main>
   )
 }
@@ -105,31 +101,27 @@ export const Dark: StoryObj<typeof meta> = { globals: { mode: 'dark' } }
 export const Light: StoryObj<typeof meta> = { globals: { mode: 'light' } }
 
 const onPageSizeChange = fn()
+// The caller sets the page after an await, as a page that loads its rows first does.
+const later = (set: () => void) => { void new Promise((done) => setTimeout(done, 50)).then(set) }
 
 function Controlled() {
   const [current, setCurrent] = useState(1)
   const [size, setSize] = useState(10)
+  const pick = (next: number) => { onPageSizeChange(next); setSize(next); setCurrent(1) }
   return (
     <main className={page}>
       <div className={desktop}>
-        <Pager
-          page={current}
-          pageSize={size}
-          total={18}
-          pageSizes={sizes}
-          onPageChange={setCurrent}
-          onPageSizeChange={(next) => {
-            onPageSizeChange(next)
-            setSize(next)
-            setCurrent(1)
-          }}
-        />
+        <Pager page={current} pageSize={size} total={18} pageSizes={sizes} onPageChange={(next) => { later(() => { setCurrent(next) }) }} onPageSizeChange={pick} />
       </div>
     </main>
   )
 }
 
-/** Next and Previous by click and keyboard, the focus at the ends, and a Rows change. */
+/**
+ * Next and Previous by keyboard and click with a caller that sets the page later, the focus at the ends, and a
+ * Rows change. Chromium keeps the focus on a button that turns disabled; WebKit moves it to the body, so the play
+ * blurs such a button, as WebKit does (Codex P1 on #365). Focus on any other element stays.
+ */
 export const Behaviour: StoryObj<typeof meta> = {
   globals: { mode: 'dark' },
   render: () => <Controlled />,
@@ -139,20 +131,31 @@ export const Behaviour: StoryObj<typeof meta> = {
     const prev = canvas.getByRole('button', { name: 'Previous page' })
     const next = canvas.getByRole('button', { name: 'Next page' })
     const range = () => canvasElement.querySelector('.pager__range')?.textContent
-    // A click on Next shows page 2, the last: Next turns off and the focus moves to Previous.
-    await userEvent.click(next)
-    await expect(range()).toBe('11–18 of 18')
-    await expect(canvasElement.querySelector('[aria-current="page"]')).toHaveTextContent('Page 2 of 2')
-    await expect(next).toBeDisabled()
-    await expect(prev).toHaveFocus()
-    // Enter on Previous goes back to page 1, and the focus moves to Next.
-    await userEvent.keyboard('{Enter}')
-    await expect(range()).toBe('1–10 of 18')
-    await expect(prev).toBeDisabled()
-    await expect(next).toHaveFocus()
-    // Space on Next goes forward again.
-    await userEvent.keyboard(' ')
-    await expect(range()).toBe('11–18 of 18')
+    const webkit = new MutationObserver(() => { for (const b of [prev, next]) if (b.hasAttribute('disabled') && document.activeElement === b) b.blur() })
+    webkit.observe(canvasElement, { attributes: true, subtree: true, attributeFilter: ['disabled'] })
+    try {
+      // Enter on Next shows page 2, the last: Next turns off and the focus moves to Previous.
+      next.focus()
+      await userEvent.keyboard('{Enter}')
+      await waitFor(() => expect(range()).toBe('11–18 of 18'))
+      await expect(canvasElement.querySelector('[aria-current="page"]')).toHaveTextContent('Page 2 of 2')
+      await expect(next).toBeDisabled()
+      await waitFor(() => expect(prev).toHaveFocus())
+      // A click on Previous goes back to page 1, and the focus moves to Next.
+      await userEvent.click(prev)
+      await waitFor(() => expect(range()).toBe('1–10 of 18'))
+      await expect(prev).toBeDisabled()
+      await waitFor(() => expect(next).toHaveFocus())
+      // Space on Next goes forward; when the focus moves to another control before the page comes, it stays there.
+      await userEvent.keyboard(' ')
+      const outside = canvasElement.appendChild(document.createElement('button'))
+      outside.focus()
+      await waitFor(() => expect(range()).toBe('11–18 of 18'))
+      await expect(outside).toHaveFocus()
+      outside.remove()
+    } finally {
+      webkit.disconnect()
+    }
     // Rows 25: the caller takes the size and goes to page 1; one page, so both buttons are off.
     await userEvent.click(canvas.getByRole('button', { name: 'Rows 10 rows' }))
     const menu = await within(document.body).findByRole('menu')

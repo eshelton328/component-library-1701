@@ -77,15 +77,20 @@ export function Pager({ page, pageSize, total, onPageChange, pageSizes, onPageSi
   const touch = size !== 'desktop'
   const button = touch ? ({ size: 'lg', touch: true } as const) : ({ size: 'sm' } as const)
   const rowsOption = labels?.rowsOption ?? defaultRowsOption
-  // The button to focus once the caller shows an end page, so the focus never stays on a button that turned off.
+  // When a pager button had the focus at the press, focus the enabled button once the caller shows an end page:
+  // from the body (where WebKit moves the focus of a button that turns off) or a pager button, never elsewhere.
   const focusAfter = useRef<HTMLButtonElement | null>(null)
   useEffect(() => {
     const target = focusAfter.current
+    if (target === null || target.disabled) return
     focusAfter.current = null
-    if (target !== null && document.activeElement !== null && !target.disabled && (document.activeElement === previousRef.current || document.activeElement === nextRef.current)) target.focus()
+    const active = document.activeElement
+    if (active === null || active === document.body || active === previousRef.current || active === nextRef.current) target.focus()
   }, [current])
   const go = (next: number) => {
-    focusAfter.current = next <= 1 ? nextRef.current : next >= pages ? previousRef.current : null
+    const active = document.activeElement
+    const owned = active !== null && (active === previousRef.current || active === nextRef.current)
+    focusAfter.current = !owned ? null : next <= 1 ? nextRef.current : next >= pages ? previousRef.current : null
     onPageChange?.(next)
   }
   return (

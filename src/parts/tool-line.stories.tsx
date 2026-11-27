@@ -154,7 +154,8 @@ export const Behaviour: StoryObj<typeof meta> = {
     onOpenChange.mockClear()
     const canvas = within(canvasElement)
     const toggle = canvas.getByRole('button', { name: 'Done Bash git status --short' })
-    await expect(toggle).toHaveAttribute('type', 'button')
+    // One header element in both modes (NCC-151): a div with the role, tab stop and keys of a button.
+    await expect(toggle).toHaveAttribute('tabindex', '0')
     await expect(toggle).toHaveAttribute('aria-expanded', 'false')
     const output = canvasElement.querySelector('.tool-line__output')
     if (!(output instanceof HTMLElement)) throw new Error('no output')
@@ -215,3 +216,56 @@ export const LongTarget: StoryObj<typeof meta> = {
     await expectCutText(staticText, `Edit ${longTarget}`)
   },
 }
+
+
+// A line that becomes expandable after its first render, as the-bridge makes a cut line expandable once it has
+// measured the cut (NCC-151). The header stays one element, so the text and its tooltip do not mount again.
+function LaterExpandable() {
+  const [expandable, setExpandable] = useState(false)
+  const [open, setOpen] = useState(false)
+  return (
+    <main className={page}>
+      <div className={narrowBox} data-testid="later">
+        <ToolLine name="Read" target={longTarget} open={open} onOpenChange={expandable ? setOpen : undefined}>
+          output
+        </ToolLine>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          setExpandable((now) => !now)
+        }}
+      >
+        Toggle expandable
+      </button>
+    </main>
+  )
+}
+
+/** A cut line that becomes expandable and back keeps its header and text nodes; the tooltip moves to the header. */
+const laterExpandablePlay: StoryObj<typeof meta>['play'] = async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const line = canvas.getByTestId('later')
+    const nodes = () => [line.querySelector('.tool-line__header'), line.querySelector('.truncated-text')]
+    const [header, text] = nodes()
+    if (!(header instanceof HTMLElement) || !(text instanceof HTMLElement)) throw new Error('no header or text')
+    // Not expandable: no button, and the cut text is a tab stop of its own.
+    await expect(within(line).queryByRole('button')).toBeNull()
+    await expect(text).toHaveAttribute('tabindex', '0')
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle expandable' }))
+    const toggle = within(line).getByRole('button')
+    await expect(nodes()).toEqual([header, text])
+    await expect(toggle).toBe(header)
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    // The header owns the cut text now: no tab stop of its own, and the tooltip follows the header.
+    await expect(text).not.toHaveAttribute('tabindex')
+    await expectCutText(text, `Read ${longTarget}`, toggle)
+    await userEvent.click(toggle)
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    // And back: the same nodes again, and no button.
+    await userEvent.click(canvas.getByRole('button', { name: 'Toggle expandable' }))
+    await expect(nodes()).toEqual([header, text])
+    await expect(within(line).queryByRole('button')).toBeNull()
+}
+export const LaterExpandableDark: StoryObj<typeof meta> = { render: () => <LaterExpandable />, play: laterExpandablePlay, globals: { mode: 'dark' } }
+export const LaterExpandableLight: StoryObj<typeof meta> = { render: () => <LaterExpandable />, play: laterExpandablePlay, globals: { mode: 'light' } }

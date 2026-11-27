@@ -34,7 +34,7 @@ export const toolLine = defineSlotRecipe({
       textStyle: 'mono',
       textAlign: 'start',
       outline: 'none',
-      '&:is(button)': { cursor: 'pointer' },
+      '&[role=button]': { cursor: 'pointer' },
       [focusRing]: { outlineWidth: 'strong', outlineStyle: 'solid', outlineColor: 'border.focus', outlineOffset: '2' },
     },
     dot: { flexShrink: '0', w: '6', h: '6', borderRadius: 'full' },

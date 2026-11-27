@@ -1,4 +1,4 @@
-import { Children, Fragment, isValidElement, useId, type ReactNode } from 'react'
+import { Children, Fragment, isValidElement, useId, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { createSlotRecipeContext } from '../../styled-system/jsx'
 import { toolLine, type ToolLineVariantProps } from '../../styled-system/recipes'
 import type { Scalar } from '../controls/scalar'
@@ -7,8 +7,7 @@ import { ChevronDownIcon, ChevronRightIcon } from '../foundations/icons'
 
 const { withProvider, withContext } = createSlotRecipeContext(toolLine)
 const Root = withProvider('div', 'root')
-const Toggle = withContext('button', 'header')
-const Static = withContext('div', 'header')
+const Header = withContext('div', 'header')
 const Dot = withContext('span', 'dot')
 const Text = withContext('span', 'text')
 const Chevron = withContext('span', 'chevron')
@@ -57,31 +56,35 @@ export function ToolLine({ name, target, state = 'done', stateLabel, open = fals
   const hasOutput = present(children)
   const expandable = hasOutput && onOpenChange !== undefined
   const text = target === undefined || target === '' ? name : `${name} ${target}`
-  const body = (
-    <>
-      <Dot role="img" aria-label={stateLabel ?? stateNames[state]} />
-      <Text>
-        <TruncatedText>{text}</TruncatedText>
-      </Text>
-      {expandable ? <Chevron>{open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}</Chevron> : null}
-    </>
-  )
+  // One header element whether or not the line expands, so a line that becomes expandable after its first render
+  // (the-bridge's cut lines, NCC-151) keeps its TruncatedText and tooltip: a div that takes the role, focus and keys
+  // of a button only while it expands. The owner ref changes with it, so the text finds its owner again.
+  const header = useRef<HTMLDivElement>(null)
+  const toggle = () => {
+    onOpenChange?.(!open)
+  }
+  // A button acts on Enter as the key goes down and on Space as it comes up.
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      toggle()
+    } else if (event.key === ' ') event.preventDefault()
+  }
+  const onKeyUp = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === ' ') toggle()
+  }
+  const button = expandable
+    ? { role: 'button', tabIndex: 0, 'aria-expanded': open, 'aria-controls': outputId, onClick: toggle, onKeyDown, onKeyUp }
+    : {}
   return (
     <Root state={state} data-state={expandable ? (open ? 'open' : 'closed') : undefined}>
-      {expandable ? (
-        <Toggle
-          type="button"
-          aria-expanded={open}
-          aria-controls={outputId}
-          onClick={() => {
-            onOpenChange(!open)
-          }}
-        >
-          {body}
-        </Toggle>
-      ) : (
-        <Static>{body}</Static>
-      )}
+      <Header ref={header} {...button}>
+        <Dot role="img" aria-label={stateLabel ?? stateNames[state]} />
+        <Text>
+          <TruncatedText owner={expandable ? header : undefined}>{text}</TruncatedText>
+        </Text>
+        {expandable ? <Chevron>{open ? <ChevronDownIcon size="12" /> : <ChevronRightIcon size="12" />}</Chevron> : null}
+      </Header>
       {hasOutput ? (
         <Output id={outputId} hidden={!open}>
           {children}

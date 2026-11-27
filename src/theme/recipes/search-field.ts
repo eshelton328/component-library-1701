@@ -26,7 +26,8 @@ import { focusRing } from './focus'
 // larger).
 // At Default and Large (d-122) the line of text can be taller than the size's height less the border: the field then
 // grows with its line and the size's height stays its least. The input stretches to the field's whole height, with 2
-// above and below its line, so a click anywhere in the field still focuses it (growInput).
+// above and below its line, so a click anywhere in the field still focuses it (growInput). The field never shrinks
+// in a flex column (TightColumn).
 const growRoot = (size: 'sm' | 'md' | 'lg') => ({ h: 'auto', minH: `control.${size}` }) as const
 const growInput = { h: 'auto', py: '2', alignSelf: 'stretch' } as const
 
@@ -41,6 +42,9 @@ export const searchField = defineSlotRecipe({
       alignItems: 'center',
       gap: '6',
       minWidth: '0',
+      // In a column that runs out of height, such as a popover with a long list, the field keeps its height and the
+      // list scrolls: a shrunk field cuts its line (NCC-141, TightColumn).
+      flexShrink: '0',
       px: '10',
       bg: 'surface.inset',
       borderRadius: 'md',

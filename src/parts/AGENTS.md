@@ -57,6 +57,11 @@ under their purpose group, never under "Parts" (d-065).
   the frame shows a skeleton, the diagram or the reason and source, and
   a "Show source" toggle. Its body takes the focus, so a wide diagram
   scrolls with the arrow keys, as the Table frame does.
+- `ArchitectureDiagram` draws a diagram that the server laid out (f-008
+  R10, R15, R16): it uses existing tokens only, and each stroke keeps 3:1
+  against the card (`ShapesDark`, `ShapesLight`). The drawing is
+  `aria-hidden`; a hidden list carries the parts and arrows. A drawing
+  wider than its box scrolls in the box with the hint (`PhoneDark`).
 - `ImageFigure` is an image in a Markdown message: the picture at its own
   size up to the column's width, a button that opens it in a `wide`
   Dialog, a skeleton while it loads and a line with its text alternative

@@ -26,6 +26,24 @@ export type AppShellRecipe = ConfigSlotRecipeRuntimeFn<AppShellSlot, AppShellVar
 
 export declare const appShell: AppShellRecipe;
 
+// architecture-diagram.d.ts
+import type { ConditionalValue } from '../types/system.js';
+import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
+
+export type ArchitectureDiagramVariant = {}
+
+export type ArchitectureDiagramVariantProps = {
+  [K in keyof ArchitectureDiagramVariant]?: ConditionalValue<ArchitectureDiagramVariant[K]>
+}
+
+export type ArchitectureDiagramVariantMap = RecipeVariantMap<ArchitectureDiagramVariant>
+
+export type ArchitectureDiagramSlot = "root" | "body" | "svg" | "shape" | "mark" | "dot" | "name" | "type" | "arrow" | "head" | "arrowLabel" | "boundary" | "boundaryLabel" | "hint" | "legend" | "legendItem" | "caption" | "text"
+
+export type ArchitectureDiagramRecipe = ConfigSlotRecipeRuntimeFn<ArchitectureDiagramSlot, ArchitectureDiagramVariantProps, ArchitectureDiagramVariantMap>
+
+export declare const architectureDiagram: ArchitectureDiagramRecipe;
+
 // back-row.d.ts
 import type { ConditionalValue } from '../types/system.js';
 import type { ConfigSlotRecipeRuntimeFn, RecipeVariantMap } from '../types/recipe.js';
@@ -763,6 +781,7 @@ export * from './skeleton.js';
 export * from './status-pill.js';
 export * from './truncated-text.js';
 export * from './app-shell.js';
+export * from './architecture-diagram.js';
 export * from './back-row.js';
 export * from './badge.js';
 export * from './bottom-sheet.js';

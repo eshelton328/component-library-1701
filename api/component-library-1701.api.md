@@ -93,6 +93,21 @@ export type AppShellProps = Scalar<AppShellVariantProps> & {
 };
 
 // @public
+export function ArchitectureDiagram(input: ArchitectureDiagramProps): JSX.Element;
+
+// @public (undocumented)
+export type ArchitectureDiagramProps = {
+    title: string;
+    caption?: string | undefined;
+    width: number;
+    height: number;
+    parts: readonly DiagramPart[];
+    boundaries?: readonly DiagramBoundary[] | undefined;
+    arrows: readonly DiagramArrow[];
+    scrollHint?: string | undefined;
+};
+
+// @public
 export function ArrowDownIcon(props: IconProps): JSX.Element;
 
 // @public
@@ -537,6 +552,26 @@ export type DetailSplitProps = {
 };
 
 // @public
+export type DiagramArrow = {
+    id: string;
+    from: string;
+    to: string;
+    label: string;
+    points: readonly DiagramPoint[];
+    labelAt: DiagramPoint;
+};
+
+// @public
+export type DiagramBoundary = {
+    id: string;
+    label: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+// @public
 export function DiagramFrame(input: DiagramFrameProps): JSX.Element;
 
 // @public (undocumented)
@@ -548,6 +583,41 @@ export type DiagramFrameProps = {
     children?: ReactNode;
     showSource?: boolean | undefined;
     onShowSourceChange?: ((showSource: boolean) => void) | undefined;
+};
+
+// @public
+export type DiagramPart = {
+    id: string;
+    name: string;
+    typeLine: string;
+    shape: DiagramShape;
+    ours: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
+// @public
+export type DiagramPoint = {
+    x: number;
+    y: number;
+};
+
+// @public
+export type DiagramShape = 'device' | 'service' | 'webApp' | 'terminalApp' | 'package' | 'dataStore' | 'folder' | 'file' | 'buildStep';
+
+// @public
+export const diagramShapeNames: {
+    readonly device: "Device";
+    readonly package: "Package";
+    readonly service: "Service or system";
+    readonly webApp: "Web app";
+    readonly terminalApp: "Terminal app";
+    readonly folder: "Folder of files";
+    readonly dataStore: "Data store";
+    readonly file: "File or schema";
+    readonly buildStep: "Build step";
 };
 
 // @public
